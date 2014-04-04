@@ -1,5 +1,12 @@
 #include <glib.h>
 
+#ifndef __DS3_HEADER__
+#define __DS3_HEADER__
+
+typedef enum {
+    false, true
+}ds3_bool;
+
 typedef enum {
   GET, PUT, POST, DELETE
 }http_verb;
@@ -11,7 +18,7 @@ typedef struct {
 
 typedef struct {
     char * endpoint;
-    ds3_creds creds; 
+    ds3_creds * creds; 
 }ds3_client;
 
 typedef struct {
@@ -26,12 +33,18 @@ typedef struct {
 }ds3_get_service_response;
 
 
-ds3_request * ds3_init_get_service();
+ds3_request * ds3_init_get_service(void);
 
 ds3_client * ds3_init_client(const char * endpoint, const ds3_creds * creds);
 
-ds3_get_service_response * ds3_get_service(const ds3_request * request);
+ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
 
 void ds3_print_request(const ds3_request * request);
 
+void ds3_free_client(ds3_client * client);
+
 void ds3_free_request(ds3_request * request);
+
+void ds3_cleanup(void);
+
+#endif
