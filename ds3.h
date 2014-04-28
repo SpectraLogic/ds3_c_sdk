@@ -13,11 +13,14 @@ typedef enum {
 
 typedef struct {
     char * access_id;
+    size_t access_id_len;
     char * secret_key;
+    size_t secret_key_len;
 }ds3_creds;
 
 typedef struct {
     char * endpoint;
+    size_t endpoint_len;
     ds3_creds * creds; 
 }ds3_client;
 
@@ -35,16 +38,19 @@ typedef struct {
 
 ds3_request * ds3_init_get_service(void);
 
-ds3_client * ds3_init_client(const char * endpoint, const ds3_creds * creds);
+ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
+
+ds3_client * ds3_create_client(const char * endpoint, const ds3_creds * creds);
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
 
 void ds3_print_request(const ds3_request * request);
+
+void ds3_free_creds(ds3_creds * client);
 
 void ds3_free_client(ds3_client * client);
 
 void ds3_free_request(ds3_request * request);
 
 void ds3_cleanup(void);
-
 #endif

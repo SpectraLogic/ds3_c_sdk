@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=`pkg-config --libs --cflags glib-2.0` `curl-config --cflags` \
   `curl-config --libs`
+CFLAGS+= -g
 
 all: main.o ds3.o net.o
 		$(CC) *.o $(CFLAGS) -o ds3 

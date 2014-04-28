@@ -10,16 +10,34 @@ GHashTable * _create_hash_table(void) {
     return hash;
 }
 
-ds3_client * ds3_init_client(const char * endpoint, const ds3_creds * creds) {
+ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key) {
+    if(access_id == NULL || secret_key == NULL) {
+        fprintf(stderr, "Arguments cannot be NULL\n");
+        return NULL;
+    }
+    
+    ds3_creds * creds = (ds3_creds *) calloc(1, sizeof(ds3_creds));
+
+    creds->access_id = g_strdup(access_id);
+    creds->access_id_len = strlen(creds->access_id);
+
+    creds->secret_key = g_strdup(secret_key); 
+    creds->secret_key_len = strlen(creds->secret_key);
+
+    return creds;
+}
+
+ds3_client * ds3_create_client(const char * endpoint, const ds3_creds * creds) {
     if(endpoint == NULL) {
-        printf("Null endpoint\n");
+        fprintf(stderr, "Null endpoint\n");
         return NULL;
     }
 
     ds3_client * client = (ds3_client *) calloc(1, sizeof(ds3_client));
-    size_t length = strlen(endpoint);
-    client->endpoint = (char *) calloc(length + 1, sizeof(char));
-    strncpy(client->endpoint, endpoint, length);
+    
+    client->endpoint = g_strdup(endpoint);
+    client->endpoint_len = strlen(client->endpoint);
+
     return client;
 }
 
@@ -44,6 +62,21 @@ void ds3_print_request(const ds3_request * request) {
     }
     printf("Verb: %s\n", net_get_verb(request->verb));
     printf("Path: %s\n", request->uri);
+}
+
+void ds3_free_creds(ds3_creds * creds) {
+    if(creds == NULL) {
+        return;
+    }
+
+    if(creds->access_id != NULL) {
+        free(creds->access_id);
+    }
+
+    if(creds->secret_key != NULL) {
+        free(creds->secret_key);
+    }
+    free(creds);
 }
 
 void ds3_free_client(ds3_client * client) {
