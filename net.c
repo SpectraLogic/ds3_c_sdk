@@ -65,11 +65,12 @@ char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * reso
     GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA1, creds->secret_key, creds->secret_key_len);
     g_hmac_update(hmac, signature_str, -1);
     g_hmac_get_digest(hmac, buffer, &bufSize);
-    fprintf(stdout, "Digest Size: %ld\nDigest: %s\n", bufSize, buffer);
+    
     gchar * signature = g_base64_encode(buffer, bufSize);
     
     g_free(signature_str);
     g_hmac_unref(hmac);
+    free(buffer);
 
     return signature;
 }
