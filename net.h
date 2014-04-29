@@ -3,6 +3,8 @@
 #ifndef __DS3__NET__HEADER__
 #define __DS3__NET__HEADER__
 
+#define net_log(...) fprintf(stderr, __VA_ARGS__)
+
 char * net_get_verb(http_verb verb);
 
 char * net_compute_signature(const ds3_creds *, http_verb verb, char * resource_name,

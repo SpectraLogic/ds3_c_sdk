@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
-#include "net.h"
+
 #include "ds3.h"
+#include "net.h"
 
 GHashTable * _create_hash_table(void) {
     GHashTable * hash =  g_hash_table_new(g_str_hash, g_str_equal);
@@ -11,12 +12,13 @@ GHashTable * _create_hash_table(void) {
 }
 
 ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key) {
+    ds3_creds * creds;
     if(access_id == NULL || secret_key == NULL) {
         fprintf(stderr, "Arguments cannot be NULL\n");
         return NULL;
     }
     
-    ds3_creds * creds = (ds3_creds *) calloc(1, sizeof(ds3_creds));
+    creds = (ds3_creds *) calloc(1, sizeof(ds3_creds));
 
     creds->access_id = g_strdup(access_id);
     creds->access_id_len = strlen(creds->access_id);
@@ -27,17 +29,19 @@ ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key) {
     return creds;
 }
 
-ds3_client * ds3_create_client(const char * endpoint, const ds3_creds * creds) {
+ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds) {
+    ds3_client * client;
     if(endpoint == NULL) {
         fprintf(stderr, "Null endpoint\n");
         return NULL;
     }
 
-    ds3_client * client = (ds3_client *) calloc(1, sizeof(ds3_client));
+    client = (ds3_client *) calloc(1, sizeof(ds3_client));
     
     client->endpoint = g_strdup(endpoint);
     client->endpoint_len = strlen(client->endpoint);
-
+    
+    client->creds = creds;
     return client;
 }
 
@@ -52,16 +56,37 @@ ds3_request * ds3_init_get_service(void) {
 }
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request) {
-
+    if(client == NULL || request == NULL) {
+        fprintf(stderr, "All arguments must be filled in\n");
+    }
+    net_process_request(client, request);
+    return NULL;    
 }
 
 void ds3_print_request(const ds3_request * request) {
     if(request == NULL) {
-      printf("Request object was null\n");
+      fprintf(stderr, "Request object was null\n");
       return;
     }
     printf("Verb: %s\n", net_get_verb(request->verb));
     printf("Path: %s\n", request->uri);
+}
+
+void ds3_free_service_response(ds3_get_service_response * response){
+    size_t buckets;
+    int i;
+
+    if(response == NULL) {
+        return;
+    }
+
+    buckets = response->num_buckets;
+
+    for(i = 0; i<buckets; i++) {
+        free(response->buckets[i]);
+    }
+    free(response->buckets);
+    free(response);
 }
 
 void ds3_free_creds(ds3_creds * creds) {

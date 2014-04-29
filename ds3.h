@@ -33,6 +33,7 @@ typedef struct {
 
 typedef struct {
     char ** buckets;
+    size_t num_buckets;
 }ds3_get_service_response;
 
 
@@ -40,7 +41,7 @@ ds3_request * ds3_init_get_service(void);
 
 ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
 
-ds3_client * ds3_create_client(const char * endpoint, const ds3_creds * creds);
+ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds);
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
 

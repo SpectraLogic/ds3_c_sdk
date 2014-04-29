@@ -31,6 +31,7 @@ char * net_get_verb(http_verb verb) {
 
 char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
                                      char * content_type, char * md5, char * amz_headers) {
+    char * verb_str; 
     if(resource_name == NULL) {
         fprintf(stderr, "resource_name is required\n");
         return NULL;
@@ -39,25 +40,25 @@ char * _generate_signature_str(http_verb verb, char * resource_name, char * date
         fprintf(stderr, "date is required");
         return NULL;
     }
-    char * verb_str = net_get_verb(verb);
-    /*
-    size_t total_len = 0;
-    total_len += strlen(verb_str) + 1; // +1 for the newline
-    total_len += strlen(md5) +1;
-    total_len += strlen(content_type) + 1;
-    total_len += strlen(date) + 1;
-    total_len += strlen(amz_headers);
-    total_len += strlen(resource_name) +1; // +1 for NULL character 
-    */
+    verb_str = net_get_verb(verb);
 
     return g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
+}
+
+char * _generate_date_string(void) {
+    GDateTime * time  = g_date_time_new_now_local();
+    
+    char * date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
+    fprintf(stdout, "Date: %s\n", date_string);
+    g_date_time_unref(time);
+
+    return date_string;
 }
 
 char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * resource_name,
                              char * date, char * content_type, char * md5, char * amz_headers) {
     char * signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
     fprintf(stdout, "Signature:\n%s\n", signature_str);
-    //char * checksum = g_compute_hmac_for_string(G_CHECKSUM_SHA1, creds->secret_key, creds->secret_key_len, signature_str, -1);
    
     gsize bufSize = 256;
     guint8 * buffer = (guint8 *) calloc(bufSize, sizeof(guint8)); 
@@ -75,6 +76,9 @@ char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * reso
     return signature;
 }
 
+//TODO this should return some kind of response
+//     need to think about how to return back data for a stream (large object)
+//     and data that will be consummed by the xml parser
 void net_process_request(const ds3_client * client, const ds3_request * request) {
     _init_curl();
     
@@ -82,14 +86,36 @@ void net_process_request(const ds3_client * client, const ds3_request * request)
     CURLcode res;
 
     if(handle) {
-      curl_easy_setopt(handle, CURLOPT_URL, client->endpoint);
+        curl_easy_setopt(handle, CURLOPT_URL, client->endpoint);
 
-      res = curl_easy_perform(handle);
-      if(res != CURLE_OK) {
-          fprintf(stderr, "curl_easy_perform() failed %s\n", curl_easy_strerror(res));
-      }
+        char * date = _generate_date_string(); 
+        char * date_header = g_strconcat("Date: ", date, NULL);
+        net_log("Created the date field\n");
 
-      curl_easy_cleanup(handle);
+        char * signature = net_compute_signature(client->creds, request->verb, request->uri, date, "", "", "");
+        net_log("I created the signature\n");
+        struct curl_slist *headers = NULL;
+        char * auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id, ":", signature, NULL);
+        net_log("I created the header struct\n");
+        headers = curl_slist_append(headers, auth_header);
+        headers = curl_slist_append(headers, date_header);
+
+        net_log("I finished adding in the extra headers\n");
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+        net_log("I'm starting the request\n");
+        res = curl_easy_perform(handle);
+        if(res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed %s\n", curl_easy_strerror(res));
+        }
+
+
+        g_free(date);
+        g_free(date_header);
+        g_free(signature);
+        g_free(auth_header);
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(handle);
     }
     else {
         printf("Failed to create curl handle\n");
