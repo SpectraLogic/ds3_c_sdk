@@ -39,28 +39,53 @@ ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds) {
     client = (ds3_client *) calloc(1, sizeof(ds3_client));
     
     client->endpoint = g_strdup(endpoint);
-    client->endpoint_len = strlen(client->endpoint);
+    client->endpoint_len = strlen(endpoint);
     
     client->creds = creds;
     return client;
 }
 
-ds3_request * ds3_init_get_service(void) {
+void ds3_client_proxy(ds3_client * client, const char * proxy) {
+    client->proxy = g_strdup(proxy);
+    client->proxy_len = strlen(proxy);
+}
+
+ds3_request * _common_request_init(void){
     ds3_request * request = (ds3_request *) calloc(1, sizeof(ds3_request));
-    request->verb = GET;
-    request->uri = (char *) calloc(2, sizeof(char));
-    request->uri[0] = '/';
     request->headers = _create_hash_table();
     request->query_params = _create_hash_table();
     return request;
 }
 
-ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request) {
+ds3_request * ds3_init_get_service(void) {
+    ds3_request * request = _common_request_init(); 
+    request->verb = GET;
+    request->path = (char *) calloc(2, sizeof(char));
+    request->path [0] = '/';
+    return request;
+}
+
+ds3_request * ds3_init_get_bucket(const char * bucket_name) {
+    ds3_request * request = _common_request_init(); 
+    request->verb = GET;
+    request->path = g_strconcat("/", bucket_name, NULL);
+    return request;
+}
+
+void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
     }
     net_process_request(client, request);
+}
+
+ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request) {
+    _internal_request_dispatcher(client, request); 
     return NULL;    
+}
+
+void ds3_get_bucket(const ds3_client * client, const ds3_request * request) {
+    _internal_request_dispatcher(client, request);
 }
 
 void ds3_print_request(const ds3_request * request) {
@@ -69,7 +94,7 @@ void ds3_print_request(const ds3_request * request) {
       return;
     }
     printf("Verb: %s\n", net_get_verb(request->verb));
-    printf("Path: %s\n", request->uri);
+    printf("Path: %s\n", request->path);
 }
 
 void ds3_free_service_response(ds3_get_service_response * response){
@@ -114,6 +139,9 @@ void ds3_free_client(ds3_client * client) {
     if(client->creds != NULL) {
         free(client->creds);
     }
+    if(client->proxy != NULL) {
+        free(client->proxy);
+    }
     free(client);
 }
 
@@ -121,8 +149,8 @@ void ds3_free_request(ds3_request * request) {
     if(request == NULL) {
         return;
     }
-    if(request->uri != NULL) {
-        free(request->uri);
+    if(request->path != NULL) {
+        free(request->path);
     }
     if(request->headers != NULL) {
         g_hash_table_destroy(request->headers);

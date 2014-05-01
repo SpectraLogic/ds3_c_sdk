@@ -1,9 +1,6 @@
-#include "ds3.h"
-
 #ifndef __DS3__NET__HEADER__
 #define __DS3__NET__HEADER__
-
-#define net_log(...) fprintf(stderr, __VA_ARGS__)
+#include "ds3.h"
 
 char * net_get_verb(http_verb verb);
 

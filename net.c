@@ -5,6 +5,7 @@
 #include <glib.h>
 #include "net.h"
 #include "ds3.h"
+#include "util.h"
 
 void _init_curl(void) {
     static ds3_bool initialized = false;
@@ -30,7 +31,7 @@ char * net_get_verb(http_verb verb) {
 }
 
 char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
-                                     char * content_type, char * md5, char * amz_headers) {
+                               char * content_type, char * md5, char * amz_headers) {
     char * verb_str; 
     if(resource_name == NULL) {
         fprintf(stderr, "resource_name is required\n");
@@ -86,30 +87,30 @@ void net_process_request(const ds3_client * client, const ds3_request * request)
     CURLcode res;
 
     if(handle) {
-        curl_easy_setopt(handle, CURLOPT_URL, client->endpoint);
+        char * url = g_strconcat(client->endpoint, request->path, NULL);
+        curl_easy_setopt(handle, CURLOPT_URL, url);
+
+        if(client->proxy != NULL) {
+          curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
+        }
 
         char * date = _generate_date_string(); 
         char * date_header = g_strconcat("Date: ", date, NULL);
-        net_log("Created the date field\n");
-
-        char * signature = net_compute_signature(client->creds, request->verb, request->uri, date, "", "", "");
-        net_log("I created the signature\n");
+        char * signature = net_compute_signature(client->creds, request->verb, request->path, date, "", "", "");
         struct curl_slist *headers = NULL;
         char * auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id, ":", signature, NULL);
-        net_log("I created the header struct\n");
+
         headers = curl_slist_append(headers, auth_header);
         headers = curl_slist_append(headers, date_header);
 
-        net_log("I finished adding in the extra headers\n");
         curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
 
-        net_log("I'm starting the request\n");
         res = curl_easy_perform(handle);
         if(res != CURLE_OK) {
             fprintf(stderr, "curl_easy_perform() failed %s\n", curl_easy_strerror(res));
         }
 
-
+        g_free(url);
         g_free(date);
         g_free(date_header);
         g_free(signature);
