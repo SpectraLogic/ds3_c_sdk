@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=`pkg-config --libs --cflags glib-2.0` `curl-config --cflags` \
-  `curl-config --libs`
+  `curl-config --libs` `xml2-config --cflags`
 CFLAGS+= -g -DDS3_LOG # Debug flags
 
 all: main.o ds3.o net.o

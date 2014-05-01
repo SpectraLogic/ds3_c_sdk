@@ -1,4 +1,5 @@
 #include <glib.h>
+#include <libxml/parser.h>
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
@@ -120,11 +121,11 @@ void ds3_free_creds(ds3_creds * creds) {
     }
 
     if(creds->access_id != NULL) {
-        free(creds->access_id);
+        g_free(creds->access_id);
     }
 
     if(creds->secret_key != NULL) {
-        free(creds->secret_key);
+        g_free(creds->secret_key);
     }
     free(creds);
 }
@@ -134,13 +135,10 @@ void ds3_free_client(ds3_client * client) {
       return;
     }
     if(client->endpoint != NULL) {
-        free(client->endpoint);
-    }
-    if(client->creds != NULL) {
-        free(client->creds);
+        g_free(client->endpoint);
     }
     if(client->proxy != NULL) {
-        free(client->proxy);
+        g_free(client->proxy);
     }
     free(client);
 }
@@ -150,7 +148,7 @@ void ds3_free_request(ds3_request * request) {
         return;
     }
     if(request->path != NULL) {
-        free(request->path);
+        g_free(request->path);
     }
     if(request->headers != NULL) {
         g_hash_table_destroy(request->headers);
