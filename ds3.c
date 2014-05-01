@@ -7,7 +7,7 @@
 #include "ds3.h"
 #include "net.h"
 
-GHashTable * _create_hash_table(void) {
+static GHashTable * _create_hash_table(void) {
     GHashTable * hash =  g_hash_table_new(g_str_hash, g_str_equal);
     return hash;
 }
@@ -19,7 +19,7 @@ ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key) {
         return NULL;
     }
     
-    creds = (ds3_creds *) calloc(1, sizeof(ds3_creds));
+    creds = g_new0(ds3_creds, 1);
 
     creds->access_id = g_strdup(access_id);
     creds->access_id_len = strlen(creds->access_id);
@@ -37,7 +37,7 @@ ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds) {
         return NULL;
     }
 
-    client = (ds3_client *) calloc(1, sizeof(ds3_client));
+    client = g_new0(ds3_client, 1);
     
     client->endpoint = g_strdup(endpoint);
     client->endpoint_len = strlen(endpoint);
@@ -52,7 +52,7 @@ void ds3_client_proxy(ds3_client * client, const char * proxy) {
 }
 
 ds3_request * _common_request_init(void){
-    ds3_request * request = (ds3_request *) calloc(1, sizeof(ds3_request));
+    ds3_request * request = g_new0(ds3_request, 1);
     request->headers = _create_hash_table();
     request->query_params = _create_hash_table();
     return request;
@@ -61,7 +61,7 @@ ds3_request * _common_request_init(void){
 ds3_request * ds3_init_get_service(void) {
     ds3_request * request = _common_request_init(); 
     request->verb = GET;
-    request->path = (char *) calloc(2, sizeof(char));
+    request->path =  g_new0(char, 2);
     request->path [0] = '/';
     return request;
 }
@@ -73,11 +73,11 @@ ds3_request * ds3_init_get_bucket(const char * bucket_name) {
     return request;
 }
 
-void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request) {
+static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
     }
-    net_process_request(client, request);
+    net_process_request(client, request, NULL, NULL);
 }
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request) {
@@ -109,10 +109,10 @@ void ds3_free_service_response(ds3_get_service_response * response){
     buckets = response->num_buckets;
 
     for(i = 0; i<buckets; i++) {
-        free(response->buckets[i]);
+        g_free(response->buckets[i]);
     }
-    free(response->buckets);
-    free(response);
+    g_free(response->buckets);
+    g_free(response);
 }
 
 void ds3_free_creds(ds3_creds * creds) {
@@ -127,7 +127,7 @@ void ds3_free_creds(ds3_creds * creds) {
     if(creds->secret_key != NULL) {
         g_free(creds->secret_key);
     }
-    free(creds);
+    g_free(creds);
 }
 
 void ds3_free_client(ds3_client * client) {
@@ -140,7 +140,7 @@ void ds3_free_client(ds3_client * client) {
     if(client->proxy != NULL) {
         g_free(client->proxy);
     }
-    free(client);
+    g_free(client);
 }
 
 void ds3_free_request(ds3_request * request) {
@@ -156,7 +156,7 @@ void ds3_free_request(ds3_request * request) {
     if(request->query_params != NULL) {
         g_hash_table_destroy(request->query_params);
     }
-    free(request);
+    g_free(request);
 }
 
 void ds3_cleanup(void) {

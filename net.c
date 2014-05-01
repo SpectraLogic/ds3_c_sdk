@@ -7,7 +7,7 @@
 #include "ds3.h"
 #include "util.h"
 
-void _init_curl(void) {
+static void _init_curl(void) {
     static ds3_bool initialized = false;
 
     if(!initialized) {
@@ -30,7 +30,7 @@ char * net_get_verb(http_verb verb) {
     }
 }
 
-char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
+static char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
                                char * content_type, char * md5, char * amz_headers) {
     char * verb_str; 
     if(resource_name == NULL) {
@@ -46,7 +46,7 @@ char * _generate_signature_str(http_verb verb, char * resource_name, char * date
     return g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
 }
 
-char * _generate_date_string(void) {
+static char * _generate_date_string(void) {
     GDateTime * time  = g_date_time_new_now_local();
     
     char * date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
@@ -80,7 +80,7 @@ char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * reso
 //TODO this should return some kind of response
 //     need to think about how to return back data for a stream (large object)
 //     and data that will be consummed by the xml parser
-void net_process_request(const ds3_client * client, const ds3_request * request) {
+void net_process_request(const ds3_client * client, const ds3_request * request, void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
     _init_curl();
     
     CURL * handle = curl_easy_init();
@@ -92,6 +92,11 @@ void net_process_request(const ds3_client * client, const ds3_request * request)
 
         if(client->proxy != NULL) {
           curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
+        }
+
+        if(user_struct != NULL && write_data !=NULL) {
+           curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_data);
+           curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
         }
 
         char * date = _generate_date_string(); 
