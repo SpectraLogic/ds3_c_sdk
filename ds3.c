@@ -1,8 +1,8 @@
 #include <glib.h>
-#include <libxml/parser.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
+#include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
 
 #include "ds3.h"
 #include "net.h"
@@ -73,20 +73,113 @@ ds3_request * ds3_init_get_bucket(const char * bucket_name) {
     return request;
 }
 
-static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request) {
+static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request,void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
+        return;
     }
-    net_process_request(client, request, NULL, NULL);
+    net_process_request(client, request, user_struct, write_data);
+}
+
+static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *user_data) {
+    size_t realsize = size * nmemb;
+    GByteArray* blob = (GByteArray*) user_data;
+    
+    g_byte_array_append(blob, contents, realsize);
+    return realsize;
+}
+
+static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response * response) {
+}
+
+static void _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node, ds3_get_service_response * response) {
+    xmlNodePtr child_node;
+    xmlChar * text;
+    ds3_owner * owner = g_new0(ds3_owner, 1);
+    
+    child_node = owner_node->xmlChildrenNode;
+
+    while(child_node != NULL) {
+        if(xmlStrcmp(child_node->name, (const xmlChar *) "DisplayName") == 0) {
+            text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
+            owner->name = g_strdup(text);
+            owner->name_size = strlen(text);
+            xmlFree(text);
+        }
+        else if(xmlStrcmp(child_node->name, (const xmlChar *) "ID") == 0) {
+            text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
+            owner->id = g_strdup(text);
+            owner->id_size = strlen(text);
+            xmlFree(text);
+        }
+        else {
+            fprintf(stderr, "Unknown xml element: (%s)\n", child_node->name);
+            return;
+        }
+        child_node = child_node->next;
+    }
+
+    response->owner = owner;
 }
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request) {
-    _internal_request_dispatcher(client, request); 
-    return NULL;    
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    GByteArray* xml_blob = g_byte_array_new();
+    ds3_get_service_response * response;
+    
+    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff);
+   
+    doc = xmlParseMemory(xml_blob->data, xml_blob->len);
+
+    if(doc == NULL) {
+        fprintf(stderr, "Failed to parse document.");
+        fprintf(stdout, "Result: %s\n", xml_blob->data);
+        xmlFreeDoc(doc);
+        g_byte_array_free(xml_blob, TRUE);
+        return NULL;
+    }
+
+    root = xmlDocGetRootElement(doc);
+    
+    if(xmlStrcmp(root->name, (const xmlChar*) "ListAllMyBucketsResult") != 0) {
+        fprintf(stderr, "wrong document, expected root node to be ListAllMyBucketsResult");
+        fprintf(stdout, "Result: %s\n", xml_blob->data);
+        xmlFreeDoc(doc);
+        g_byte_array_free(xml_blob, TRUE);
+        return NULL;
+    }
+
+    response = g_new0(ds3_get_service_response, 1);
+    child_node = root->xmlChildrenNode;
+    while(child_node != NULL) {
+        if(xmlStrcmp(child_node->name, (const xmlChar*) "Buckets") == 0) {
+            //process buckets here
+            _parse_buckets(doc, child_node, response);
+
+        }
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Owner") == 0) {
+            //process owner here
+            _parse_owner(doc, child_node, response);
+        }
+        else {
+            fprintf(stderr, "Unknown xml element: (%s)\b", child_node->name);
+        }
+        child_node = child_node->next;
+    }
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    return response;    
 }
 
 void ds3_get_bucket(const ds3_client * client, const ds3_request * request) {
-    _internal_request_dispatcher(client, request);
+    GByteArray* xml_blob = g_byte_array_new();
+    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff);
+    fprintf(stdout, "Result: %s\n", xml_blob->data);
+
+    g_byte_array_free(xml_blob, TRUE);
 }
 
 void ds3_print_request(const ds3_request * request) {
@@ -99,20 +192,49 @@ void ds3_print_request(const ds3_request * request) {
 }
 
 void ds3_free_service_response(ds3_get_service_response * response){
-    size_t buckets;
+    size_t num_buckets;
     int i;
 
     if(response == NULL) {
         return;
     }
 
-    buckets = response->num_buckets;
+    num_buckets = response->num_buckets;
 
-    for(i = 0; i<buckets; i++) {
-        g_free(response->buckets[i]);
+    for(i = 0; i<num_buckets; i++) {
+        ds3_free_bucket(response->buckets[i]);
     }
+    ds3_free_owner(response->owner);
     g_free(response->buckets);
     g_free(response);
+}
+
+void ds3_free_bucket(ds3_bucket * bucket) {
+    if(bucket == NULL) {
+        fprintf(stderr, "Bucket was NULL\n");
+        return;
+    }
+    if(bucket->name != NULL) {
+        g_free(bucket->name);
+    }
+    if(bucket->creation_date != NULL) {
+        g_free(bucket->creation_date);
+    }
+    g_free(bucket);
+}
+
+void ds3_free_owner(ds3_owner * owner) {
+    if(owner == NULL) {
+        fprintf(stderr, "Owner was NULL\n");
+        return;
+    }
+    if(owner->name != NULL) {
+        g_free(owner->name);
+    }
+    if(owner->id != NULL) {
+        g_free(owner->id);
+    }
+    g_free(owner);
 }
 
 void ds3_free_creds(ds3_creds * creds) {

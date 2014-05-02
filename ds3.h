@@ -34,8 +34,23 @@ typedef struct {
 }ds3_request;
 
 typedef struct {
-    char ** buckets;
+    char * creation_date;
+    size_t creation_date_size;
+    char * name;
+    size_t name_size;
+}ds3_bucket;
+
+typedef struct {
+    char * name;
+    size_t name_size;
+    char * id;
+    size_t id_size;
+}ds3_owner;
+
+typedef struct {
+    ds3_bucket ** buckets ;
     size_t num_buckets;
+    ds3_owner *owner;
 }ds3_get_service_response;
 
 
@@ -53,6 +68,8 @@ void ds3_get_bucket(const ds3_client * client, const ds3_request * request);
 
 
 void ds3_print_request(const ds3_request * request);
+void ds3_free_bucket(ds3_bucket * bucket);
+void ds3_free_owner(ds3_owner * owber);
 void ds3_free_creds(ds3_creds * client);
 void ds3_free_client(ds3_client * client);
 void ds3_free_request(ds3_request * request);
