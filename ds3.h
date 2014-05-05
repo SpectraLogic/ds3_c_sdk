@@ -48,7 +48,7 @@ typedef struct {
 }ds3_owner;
 
 typedef struct {
-    ds3_bucket ** buckets ;
+    ds3_bucket * buckets;
     size_t num_buckets;
     ds3_owner *owner;
 }ds3_get_service_response;

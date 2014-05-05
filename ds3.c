@@ -90,16 +90,44 @@ static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *use
 }
 
 static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response * response) {
+    xmlChar * text;
+    xmlNodePtr data_ptr; 
+    xmlNodePtr curr;
+    GArray * array = g_array_new(FALSE, TRUE, sizeof(ds3_bucket));
+
+    for(curr = buckets_node->xmlChildrenNode; curr != NULL; curr = curr->next) {
+        ds3_bucket bucket; 
+        memset(&bucket, 0, sizeof(ds3_bucket));
+        for(data_ptr = curr->xmlChildrenNode; data_ptr != NULL; data_ptr = data_ptr->next) {
+            if(xmlStrcmp(data_ptr->name, (const xmlChar *) "CreationDate") == 0) {
+                text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
+                bucket.creation_date = g_strdup(text);
+                bucket.creation_date_size = strlen(text);
+                xmlFree(text);
+            }else if(xmlStrcmp(data_ptr->name, (const xmlChar *) "Name") == 0) {
+                text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
+                bucket.name= g_strdup(text);
+                bucket.name_size= strlen(text);
+                xmlFree(text);
+            }
+            else {
+                fprintf(stderr, "Unknown element: (%s)\n", data_ptr->name);
+            }
+        }
+        g_array_append_val(array, bucket);
+    }
+
+    response->num_buckets = array->len;
+    response->buckets = (ds3_bucket *)array->data;
+    g_array_free(array, FALSE);
 }
 
 static void _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node, ds3_get_service_response * response) {
     xmlNodePtr child_node;
     xmlChar * text;
     ds3_owner * owner = g_new0(ds3_owner, 1);
-    
-    child_node = owner_node->xmlChildrenNode;
 
-    while(child_node != NULL) {
+    for(child_node = owner_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(xmlStrcmp(child_node->name, (const xmlChar *) "DisplayName") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             owner->name = g_strdup(text);
@@ -116,7 +144,6 @@ static void _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node, ds3_get_service_r
             fprintf(stderr, "Unknown xml element: (%s)\n", child_node->name);
             return;
         }
-        child_node = child_node->next;
     }
 
     response->owner = owner;
@@ -152,8 +179,8 @@ ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_
     }
 
     response = g_new0(ds3_get_service_response, 1);
-    child_node = root->xmlChildrenNode;
-    while(child_node != NULL) {
+    
+    for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(xmlStrcmp(child_node->name, (const xmlChar*) "Buckets") == 0) {
             //process buckets here
             _parse_buckets(doc, child_node, response);
@@ -166,7 +193,7 @@ ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_
         else {
             fprintf(stderr, "Unknown xml element: (%s)\b", child_node->name);
         }
-        child_node = child_node->next;
+        
     }
 
     xmlFreeDoc(doc);
@@ -202,7 +229,9 @@ void ds3_free_service_response(ds3_get_service_response * response){
     num_buckets = response->num_buckets;
 
     for(i = 0; i<num_buckets; i++) {
-        ds3_free_bucket(response->buckets[i]);
+        ds3_bucket bucket = response->buckets[i];
+        g_free(bucket.name);
+        g_free(bucket.creation_date);
     }
     ds3_free_owner(response->owner);
     g_free(response->buckets);
