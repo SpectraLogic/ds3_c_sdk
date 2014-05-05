@@ -80,9 +80,10 @@ char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * reso
 //TODO this should return some kind of response
 //     need to think about how to return back data for a stream (large object)
 //     and data that will be consummed by the xml parser
-void net_process_request(const ds3_client * client, const ds3_request * request, void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
+void net_process_request(const ds3_client * client, const ds3_request * _request, void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
     _init_curl();
     
+    _ds3_request * request = (_ds3_request *) _request;
     CURL * handle = curl_easy_init();
     CURLcode res;
 
