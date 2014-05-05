@@ -82,6 +82,7 @@ typedef struct {
 
 ds3_request * ds3_init_get_service(void);
 ds3_request * ds3_init_get_bucket(const char * bucket_name);
+ds3_request * ds3_init_get_object(const char * bucket_name, const char * object_name);
 
 ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
 
@@ -91,6 +92,7 @@ void ds3_client_proxy(ds3_client * client, const char * proxy);
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
 
 ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_request * request);
+void ds3_get_object(const ds3_client * client, const ds3_request *request, void * user_data, size_t (* callback)(void*, size_t, size_t, void*));
 
 void ds3_print_request(const ds3_request * request);
 
@@ -103,4 +105,7 @@ void ds3_free_creds(ds3_creds * client);
 void ds3_free_client(ds3_client * client);
 void ds3_free_request(ds3_request * request);
 void ds3_cleanup(void);
+
+// provided helpers
+size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 #endif

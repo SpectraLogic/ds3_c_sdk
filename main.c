@@ -26,12 +26,17 @@ int main (int args, char * argv[]) {
         ds3_print_request(request);
         
         ds3_get_bucket_response * bucket_response = ds3_get_bucket(client, request);
+        ds3_free_request(request);
         for(n = 0; n < bucket_response->num_objects; n++) {
             ds3_object object = bucket_response->objects[n];
             printf("Object: (%s) with size %lu\n", object.name, object.size);
+            request = ds3_init_get_object(bucket.name, object.name);
+            FILE * out = fopen(object.name, "w");
+            ds3_get_object(client, request, out, ds3_write_to_file);
+            ds3_free_request(request);
+            fclose(out);
         }
 
-        ds3_free_request(request);
         ds3_free_bucket_response(bucket_response);
     }
 
