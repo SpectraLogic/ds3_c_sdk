@@ -1,6 +1,7 @@
 #ifndef __UTIL_HEADER__
 #define __UTIL_HEADER__
 
+#include "glib.h"
 #include "stdint.h"
 #include "ds3.h"
 

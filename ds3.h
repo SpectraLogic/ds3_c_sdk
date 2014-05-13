@@ -95,9 +95,11 @@ ds3_request * ds3_init_delete_object(const char * bucket_name, const char * obje
 void ds3_client_proxy(ds3_client * client, const char * proxy);
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
+
 ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_request * request);
 void ds3_put_bucket(const ds3_client * client, const ds3_request * request);
 void ds3_delete_bucket(const ds3_client * client, const ds3_request * request);
+
 void ds3_get_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
 void ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
 void ds3_delete_object(const ds3_client * client, const ds3_request * request);
