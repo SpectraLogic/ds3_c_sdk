@@ -80,20 +80,22 @@ typedef struct {
     size_t prefix_size;
 }ds3_get_bucket_response;
 
+ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
+ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds);
+
 ds3_request * ds3_init_get_service(void);
 ds3_request * ds3_init_get_bucket(const char * bucket_name);
 ds3_request * ds3_init_get_object(const char * bucket_name, const char * object_name);
 ds3_request * ds3_init_put_bucket(const char * bucket_name);
-
-ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
-ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds);
+ds3_request * ds3_init_delete_bucket(const char * bucket_name);
 
 void ds3_client_proxy(ds3_client * client, const char * proxy);
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
 ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_request * request);
-void ds3_get_object(const ds3_client * client, const ds3_request *request, void * user_data, size_t (* callback)(void*, size_t, size_t, void*));
+void ds3_get_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
 void ds3_put_bucket(const ds3_client * client, const ds3_request * request);
+void ds3_delete_bucket(const ds3_client * client, const ds3_request * request);
 
 void ds3_print_request(const ds3_request * request);
 

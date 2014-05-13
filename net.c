@@ -16,9 +16,6 @@ static void _init_curl(void) {
         }
         initialized = true;
     }
-    else {
-        fprintf(stderr, "libcurl was already initialized\n");
-    }
 }
 
 char * net_get_verb(http_verb verb) {
@@ -110,6 +107,9 @@ void net_process_request(const ds3_client * client, const ds3_request * _request
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
                 }
                 break;
+            }
+            case DELETE: {
+                curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
             }
         }
 

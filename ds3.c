@@ -88,6 +88,13 @@ ds3_request * ds3_init_put_bucket(const char * bucket_name) {
     return (ds3_request *) request;
 }
 
+ds3_request * ds3_init_delete_bucket(const char * bucket_name) {
+    _ds3_request * request = _common_request_init();
+    request->verb = DELETE;
+    request->path = g_strconcat("/", bucket_name, NULL);
+    return (ds3_request *) request;
+}
+
 static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request,void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
@@ -395,6 +402,10 @@ void ds3_get_object(const ds3_client * client, const ds3_request * request, void
 }
 
 void ds3_put_bucket(const ds3_client * client, const ds3_request * request) {
+    _internal_request_dispatcher(client, request, NULL, NULL);
+}
+
+void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
     _internal_request_dispatcher(client, request, NULL, NULL);
 }
 
