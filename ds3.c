@@ -81,6 +81,13 @@ ds3_request * ds3_init_get_object(const char *bucket_name, const char *object_na
     return (ds3_request *) request;
 }
 
+ds3_request * ds3_init_put_bucket(const char * bucket_name) {
+    _ds3_request * request = _common_request_init();
+    request->verb = PUT;
+    request->path = g_strconcat("/", bucket_name, NULL);
+    return (ds3_request *) request;
+}
+
 static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request,void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
@@ -385,6 +392,10 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
 
 void ds3_get_object(const ds3_client * client, const ds3_request * request, void *user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
     _internal_request_dispatcher(client, request, user_data, callback);
+}
+
+void ds3_put_bucket(const ds3_client * client, const ds3_request * request) {
+    _internal_request_dispatcher(client, request, NULL, NULL);
 }
 
 void ds3_print_request(const ds3_request * _request) {

@@ -100,6 +100,19 @@ void net_process_request(const ds3_client * client, const ds3_request * _request
            curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
         }
 
+        switch(request->verb) {
+            case PUT: {
+                if (user_struct == NULL || write_data == NULL) {
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
+                }
+                else {
+                curl_easy_setopt(handle, CURLOPT_PUT, 1L);
+                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                }
+                break;
+            }
+        }
+
         char * date = _generate_date_string(); 
         char * date_header = g_strconcat("Date: ", date, NULL);
         char * signature = net_compute_signature(client->creds, request->verb, request->path, date, "", "", "");
