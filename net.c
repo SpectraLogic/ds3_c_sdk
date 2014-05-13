@@ -24,6 +24,7 @@ char * net_get_verb(http_verb verb) {
         case PUT: return "PUT";
         case POST: return "POST";
         case DELETE : return "DELETE";
+        case HEAD : return "HEAD";
     }
 }
 
@@ -74,10 +75,7 @@ char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * reso
     return signature;
 }
 
-//TODO this should return some kind of response
-//     need to think about how to return back data for a stream (large object)
-//     and data that will be consummed by the xml parser
-void net_process_request(const ds3_client * client, const ds3_request * _request, void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
+void net_process_request(const ds3_client * client, const ds3_request * _request, void * user_struct, size_t (*handler_func)(void*, size_t, size_t, void*)) {
     _init_curl();
     
     _ds3_request * request = (_ds3_request *) _request;
@@ -87,29 +85,37 @@ void net_process_request(const ds3_client * client, const ds3_request * _request
     if(handle) {
         char * url = g_strconcat(client->endpoint, request->path, NULL);
         curl_easy_setopt(handle, CURLOPT_URL, url);
-
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L); //tell curl to follow redirects
+        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, client->num_redirects);
         if(client->proxy != NULL) {
           curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
         }
 
-        if(user_struct != NULL && write_data !=NULL) {
-           curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_data);
-           curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
-        }
 
         switch(request->verb) {
+            case GET: {
+                if(user_struct != NULL && handler_func !=NULL) {
+                   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handler_func);
+                   curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
+                }
+                break;
+            }
             case PUT: {
-                if (user_struct == NULL || write_data == NULL) {
+                if (user_struct == NULL || handler_func == NULL) {
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
                 }
                 else {
-                curl_easy_setopt(handle, CURLOPT_PUT, 1L);
+                    curl_easy_setopt(handle, CURLOPT_PUT, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                    curl_easy_setopt(handle, CURLOPT_READDATA, user_struct);
+                    curl_easy_setopt(handle, CURLOPT_READFUNCTION, handler_func);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
                 }
                 break;
             }
             case DELETE: {
                 curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+                break;
             }
         }
 

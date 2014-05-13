@@ -8,7 +8,7 @@ typedef enum {
 }ds3_bool;
 
 typedef enum {
-  GET, PUT, POST, DELETE
+  GET, PUT, POST, DELETE, HEAD
 }http_verb;
 
 typedef struct {
@@ -23,6 +23,7 @@ typedef struct {
     size_t endpoint_len;
     char * proxy;
     size_t  proxy_len;
+    uint64_t num_redirects;
     ds3_creds * creds; 
 }ds3_client;
 
@@ -87,15 +88,19 @@ ds3_request * ds3_init_get_service(void);
 ds3_request * ds3_init_get_bucket(const char * bucket_name);
 ds3_request * ds3_init_get_object(const char * bucket_name, const char * object_name);
 ds3_request * ds3_init_put_bucket(const char * bucket_name);
+ds3_request * ds3_init_put_object(const char * bucket_name, const char * object_name, uint64_t size);
 ds3_request * ds3_init_delete_bucket(const char * bucket_name);
+ds3_request * ds3_init_delete_object(const char * bucket_name, const char * object_name);
 
 void ds3_client_proxy(ds3_client * client, const char * proxy);
 
 ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request);
 ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_request * request);
-void ds3_get_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
 void ds3_put_bucket(const ds3_client * client, const ds3_request * request);
 void ds3_delete_bucket(const ds3_client * client, const ds3_request * request);
+void ds3_get_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
+void ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
+void ds3_delete_object(const ds3_client * client, const ds3_request * request);
 
 void ds3_print_request(const ds3_request * request);
 
@@ -111,4 +116,5 @@ void ds3_cleanup(void);
 
 // provided helpers
 size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
+size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 #endif
