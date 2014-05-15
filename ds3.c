@@ -140,13 +140,13 @@ static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_servi
         for(data_ptr = curr->xmlChildrenNode; data_ptr != NULL; data_ptr = data_ptr->next) {
             if(xmlStrcmp(data_ptr->name, (const xmlChar *) "CreationDate") == 0) {
                 text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
-                bucket.creation_date = g_strdup(text);
-                bucket.creation_date_size = strlen(text);
+                bucket.creation_date = g_strdup((char *) text);
+                bucket.creation_date_size = strlen((char *) text);
                 xmlFree(text);
             }else if(xmlStrcmp(data_ptr->name, (const xmlChar *) "Name") == 0) {
                 text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
-                bucket.name= g_strdup(text);
-                bucket.name_size= strlen(text);
+                bucket.name = g_strdup((char *) text);
+                bucket.name_size = strlen((char *) text);
                 xmlFree(text);
             }
             else {
@@ -169,14 +169,14 @@ static ds3_owner * _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node) {
     for(child_node = owner_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(xmlStrcmp(child_node->name, (const xmlChar *) "DisplayName") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            owner->name = g_strdup(text);
-            owner->name_size = strlen(text);
+            owner->name = g_strdup((char *) text);
+            owner->name_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "ID") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            owner->id = g_strdup(text);
-            owner->id_size = strlen(text);
+            owner->id = g_strdup((char *) text);
+            owner->id_size = strlen((char *) text);
             xmlFree(text);
         }
         else {
@@ -196,7 +196,7 @@ ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_
     
     _internal_request_dispatcher(client, request, xml_blob, load_xml_buff);
    
-    doc = xmlParseMemory(xml_blob->data, xml_blob->len);
+    doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
 
     if(doc == NULL) {
         fprintf(stderr, "Failed to parse document.");
@@ -247,8 +247,8 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
     for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(xmlStrcmp(child_node->name, (const xmlChar *) "Key") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            object.name = g_strdup(text);
-            object.name_size = strlen(text);
+            object.name = g_strdup((char *) text);
+            object.name_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "ETag") == 0) {
@@ -256,8 +256,8 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
             if(text == NULL) {
                 continue;
             }
-            object.etag= g_strdup(text);
-            object.etag_size = strlen(text);
+            object.etag= g_strdup((char *) text);
+            object.etag_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "LastModified") == 0) {
@@ -265,8 +265,8 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
             if(text == NULL) {
                 continue;
             }
-            object.last_modified = g_strdup(text);
-            object.last_modified_size = strlen(text);
+            object.last_modified = g_strdup((char *) text);
+            object.last_modified_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "StorageClass") == 0) {
@@ -274,13 +274,13 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
             if(text == NULL) {
                 continue;
             }
-            object.storage_class = g_strdup(text);
-            object.storage_class_size = strlen(text);
+            object.storage_class = g_strdup((char *) text);
+            object.storage_class_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "Size") == 0) { 
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            uint64_t size = strtoul(text, NULL, 10);
+            uint64_t size = strtoul((const char *)text, NULL, 10);
             object.size = size;
             xmlFree(text);
         }
@@ -291,7 +291,6 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
         else {
             fprintf(stderr, "Unknown xml element: (%s)\n", child_node->name);
         }
-
     }
 
     return object;
@@ -307,7 +306,7 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
     GByteArray* xml_blob = g_byte_array_new();
     _internal_request_dispatcher(client, request, xml_blob, load_xml_buff);
     
-    doc = xmlParseMemory(xml_blob->data, xml_blob->len);
+    doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
         fprintf(stderr, "Failed to parse document");
         fprintf(stdout, "Result: %s\n", xml_blob->data);
@@ -337,13 +336,13 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
             if(text == NULL) {
                 continue;
             }
-            response->creation_date = g_strdup(text);
-            response->creation_date_size = strlen(text);
+            response->creation_date = g_strdup((char *) text);
+            response->creation_date_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "IsTruncated") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            if(strncmp(text, "true", 4) == 0) {
+            if(strncmp((char *) text, "true", 4) == 0) {
                 response->is_truncated = true; 
             }
             else {
@@ -356,21 +355,21 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
             if(text == NULL) {
                 continue;
             }
-            response->marker= g_strdup(text);
-            response->marker_size = strlen(text);
+            response->marker = g_strdup((char *) text);
+            response->marker_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "MaxKeys") == 0) {
             uint64_t max_keys; 
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            max_keys = strtoul(text, NULL, 10); 
+            max_keys = strtoul((const char *)text, NULL, 10); 
             response->max_keys = max_keys;
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "Name") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            response->name = g_strdup(text);
-            response->name_size = strlen(text);
+            response->name = g_strdup((char *) text);
+            response->name_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "Delimiter") == 0) {
@@ -378,8 +377,8 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
             if(text == NULL) {
                 continue;
             }
-            response->delimiter= g_strdup(text);
-            response->delimiter_size = strlen(text);
+            response->delimiter= g_strdup((char *) text);
+            response->delimiter_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "NextMarker") == 0) {
@@ -387,8 +386,8 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
             if(text == NULL) {
                 continue;
             }
-            response->next_marker= g_strdup(text);
-            response->next_marker_size = strlen(text);
+            response->next_marker= g_strdup((char *) text);
+            response->next_marker_size = strlen((char *) text);
             xmlFree(text);
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "Prefix") == 0) {
@@ -396,8 +395,8 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
             if(text == NULL) {
                 continue;
             }
-            response->prefix = g_strdup(text);
-            response->prefix_size = strlen(text);
+            response->prefix = g_strdup((char *) text);
+            response->prefix_size = strlen((char *) text);
             xmlFree(text);
         }
         else {

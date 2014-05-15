@@ -26,9 +26,11 @@ char * net_get_verb(http_verb verb) {
         case DELETE : return "DELETE";
         case HEAD : return "HEAD";
     }
+
+    return NULL;
 }
 
-static char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
+static unsigned char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
                                char * content_type, char * md5, char * amz_headers) {
     char * verb_str; 
     if(resource_name == NULL) {
@@ -41,7 +43,7 @@ static char * _generate_signature_str(http_verb verb, char * resource_name, char
     }
     verb_str = net_get_verb(verb);
 
-    return g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
+    return (unsigned char *) g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
 }
 
 static char * _generate_date_string(void) {
@@ -56,13 +58,13 @@ static char * _generate_date_string(void) {
 
 char * net_compute_signature(const ds3_creds *creds, http_verb verb, char * resource_name,
                              char * date, char * content_type, char * md5, char * amz_headers) {
-    char * signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
+    unsigned char * signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
     fprintf(stdout, "Signature:\n%s\n", signature_str);
    
     gsize bufSize = 256;
     guint8 * buffer = (guint8 *) calloc(bufSize, sizeof(guint8)); 
 
-    GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA1, creds->secret_key, creds->secret_key_len);
+    GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA1,(unsigned char *) creds->secret_key, creds->secret_key_len);
     g_hmac_update(hmac, signature_str, -1);
     g_hmac_get_digest(hmac, buffer, &bufSize);
     
@@ -91,12 +93,24 @@ void net_process_request(const ds3_client * client, const ds3_request * _request
           curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
         }
 
-
         switch(request->verb) {
             case GET: {
                 if(user_struct != NULL && handler_func !=NULL) {
                    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handler_func);
                    curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
+                }
+                break;
+            }
+            case POST: {
+                if (user_struct == NULL || handler_func == NULL) {
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
+                }
+                else {
+                    curl_easy_setopt(handle, CURLOPT_POST, 1L);
+                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                    curl_easy_setopt(handle, CURLOPT_READDATA, user_struct);
+                    curl_easy_setopt(handle, CURLOPT_READFUNCTION, handler_func);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
                 }
                 break;
             }
@@ -115,6 +129,10 @@ void net_process_request(const ds3_client * client, const ds3_request * _request
             }
             case DELETE: {
                 curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+                break;
+            }
+            case HEAD: {
+                curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
                 break;
             }
         }
