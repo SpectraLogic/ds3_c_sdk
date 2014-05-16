@@ -3,8 +3,12 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
-    false, true
+    True, False
 }ds3_bool;
 
 typedef enum {
@@ -119,4 +123,8 @@ void ds3_cleanup(void);
 // provided helpers
 size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

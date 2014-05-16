@@ -1,13 +1,188 @@
 #include <glib.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 
 #include "ds3.h"
-#include "util.h"
-#include "net.h"
 
+//---------- Define opaque struct ----------//  
+struct _ds3_request{
+    http_verb verb;
+    char *path;
+    size_t path_size;
+    uint64_t length;
+    GHashTable * headers;
+    GHashTable * query_params;
+};
+
+//---------- Networking code ----------// 
+static void _init_curl(void) {
+    static ds3_bool initialized = False;
+
+    if(!initialized) {
+        if(curl_global_init(CURL_GLOBAL_ALL) != 0) {
+          fprintf(stderr, "Encountered an error initializing libcurl\n");
+        }
+        initialized = True;
+    }
+}
+
+static char * _net_get_verb(http_verb verb) {
+    switch(verb) {
+        case GET: return "GET";
+        case PUT: return "PUT";
+        case POST: return "POST";
+        case DELETE : return "DELETE";
+        case HEAD : return "HEAD";
+    }
+
+    return NULL;
+}
+
+static unsigned char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
+                               char * content_type, char * md5, char * amz_headers) {
+    char * verb_str; 
+    if(resource_name == NULL) {
+        fprintf(stderr, "resource_name is required\n");
+        return NULL;
+    }
+    if(date == NULL) {
+        fprintf(stderr, "date is required");
+        return NULL;
+    }
+    verb_str = _net_get_verb(verb);
+
+    return (unsigned char *) g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
+}
+
+static char * _generate_date_string(void) {
+    GDateTime * time  = g_date_time_new_now_local();
+    
+    char * date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
+    fprintf(stdout, "Date: %s\n", date_string);
+    g_date_time_unref(time);
+
+    return date_string;
+}
+
+static char * _net_compute_signature(const ds3_creds *creds, http_verb verb, char * resource_name,
+                             char * date, char * content_type, char * md5, char * amz_headers) {
+    unsigned char * signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
+    fprintf(stdout, "Signature:\n%s\n", signature_str);
+   
+    gsize bufSize = 256;
+    guint8 * buffer = (guint8 *) calloc(bufSize, sizeof(guint8)); 
+
+    GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA1,(unsigned char *) creds->secret_key, creds->secret_key_len);
+    g_hmac_update(hmac, signature_str, -1);
+    g_hmac_get_digest(hmac, buffer, &bufSize);
+    
+    gchar * signature = g_base64_encode(buffer, bufSize);
+    
+    g_free(signature_str);
+    g_hmac_unref(hmac);
+    free(buffer);
+
+    return signature;
+}
+
+static void _net_process_request(const ds3_client * client, const ds3_request * _request, void * user_struct, size_t (*handler_func)(void*, size_t, size_t, void*)) {
+    _init_curl();
+    
+    struct _ds3_request * request = (struct _ds3_request *) _request;
+    CURL * handle = curl_easy_init();
+    CURLcode res;
+
+    if(handle) {
+        char * url = g_strconcat(client->endpoint, request->path, NULL);
+        curl_easy_setopt(handle, CURLOPT_URL, url);
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L); //tell curl to follow redirects
+        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, client->num_redirects);
+        if(client->proxy != NULL) {
+          curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
+        }
+
+        switch(request->verb) {
+            case GET: {
+                if(user_struct != NULL && handler_func !=NULL) {
+                   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handler_func);
+                   curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
+                }
+                break;
+            }
+            case POST: {
+                if (user_struct == NULL || handler_func == NULL) {
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
+                }
+                else {
+                    curl_easy_setopt(handle, CURLOPT_POST, 1L);
+                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                    curl_easy_setopt(handle, CURLOPT_READDATA, user_struct);
+                    curl_easy_setopt(handle, CURLOPT_READFUNCTION, handler_func);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
+                }
+                break;
+            }
+            case PUT: {
+                if (user_struct == NULL || handler_func == NULL) {
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
+                }
+                else {
+                    curl_easy_setopt(handle, CURLOPT_PUT, 1L);
+                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                    curl_easy_setopt(handle, CURLOPT_READDATA, user_struct);
+                    curl_easy_setopt(handle, CURLOPT_READFUNCTION, handler_func);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
+                }
+                break;
+            }
+            case DELETE: {
+                curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+                break;
+            }
+            case HEAD: {
+                curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
+                break;
+            }
+        }
+
+        char * date = _generate_date_string(); 
+        char * date_header = g_strconcat("Date: ", date, NULL);
+        char * signature = _net_compute_signature(client->creds, request->verb, request->path, date, "", "", "");
+        struct curl_slist *headers = NULL;
+        char * auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id, ":", signature, NULL);
+
+        headers = curl_slist_append(headers, auth_header);
+        headers = curl_slist_append(headers, date_header);
+
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+        res = curl_easy_perform(handle);
+        if(res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed %s\n", curl_easy_strerror(res));
+        }
+
+        g_free(url);
+        g_free(date);
+        g_free(date_header);
+        g_free(signature);
+        g_free(auth_header);
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(handle);
+    }
+    else {
+        printf("Failed to create curl handle\n");
+    }
+}
+
+static void net_cleanup(void) {
+    curl_global_cleanup();
+}
+
+//---------- Ds3 code ----------// 
 static GHashTable * _create_hash_table(void) {
     GHashTable * hash =  g_hash_table_new(g_str_hash, g_str_equal);
     return hash;
@@ -54,15 +229,15 @@ void ds3_client_proxy(ds3_client * client, const char * proxy) {
     client->proxy_len = strlen(proxy);
 }
 
-static _ds3_request * _common_request_init(void){
-    _ds3_request * request = g_new0(_ds3_request, 1);
+static struct _ds3_request * _common_request_init(void){
+    struct _ds3_request * request = g_new0(struct _ds3_request, 1);
     request->headers = _create_hash_table();
     request->query_params = _create_hash_table();
     return request;
 }
 
 ds3_request * ds3_init_get_service(void) {
-    _ds3_request * request = _common_request_init(); 
+    struct _ds3_request * request = _common_request_init(); 
     request->verb = GET;
     request->path =  g_new0(char, 2);
     request->path [0] = '/';
@@ -70,28 +245,28 @@ ds3_request * ds3_init_get_service(void) {
 }
 
 ds3_request * ds3_init_get_bucket(const char * bucket_name) {
-    _ds3_request * request = _common_request_init(); 
+    struct _ds3_request * request = _common_request_init(); 
     request->verb = GET;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request *) request;
 }
 
 ds3_request * ds3_init_get_object(const char *bucket_name, const char *object_name) {
-    _ds3_request * request = _common_request_init();
+    struct _ds3_request * request = _common_request_init();
     request->verb = GET;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request *) request;
 }
 
 ds3_request * ds3_init_delete_object(const char *bucket_name, const char *object_name) {
-    _ds3_request * request = _common_request_init();
+    struct _ds3_request * request = _common_request_init();
     request->verb = DELETE;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request *) request;
 }
 
 ds3_request * ds3_init_put_object(const char *bucket_name, const char *object_name, uint64_t length) {
-    _ds3_request * request = _common_request_init();
+    struct _ds3_request * request = _common_request_init();
     request->verb = PUT;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     request->length = length;
@@ -99,14 +274,14 @@ ds3_request * ds3_init_put_object(const char *bucket_name, const char *object_na
 }
 
 ds3_request * ds3_init_put_bucket(const char * bucket_name) {
-    _ds3_request * request = _common_request_init();
+    struct _ds3_request * request = _common_request_init();
     request->verb = PUT;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request *) request;
 }
 
 ds3_request * ds3_init_delete_bucket(const char * bucket_name) {
-    _ds3_request * request = _common_request_init();
+    struct _ds3_request * request = _common_request_init();
     request->verb = DELETE;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request *) request;
@@ -117,14 +292,14 @@ static void _internal_request_dispatcher(const ds3_client * client, const ds3_re
         fprintf(stderr, "All arguments must be filled in\n");
         return;
     }
-    net_process_request(client, request, user_struct, write_data);
+    _net_process_request(client, request, user_struct, write_data);
 }
 
 static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *user_data) {
     size_t realsize = size * nmemb;
     GByteArray* blob = (GByteArray*) user_data;
     
-    g_byte_array_append(blob, contents, realsize);
+    g_byte_array_append(blob, (const guint8 *) contents, realsize);
     return realsize;
 }
 
@@ -343,10 +518,10 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
         else if(xmlStrcmp(child_node->name, (const xmlChar *) "IsTruncated") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(strncmp((char *) text, "true", 4) == 0) {
-                response->is_truncated = true; 
+                response->is_truncated = True; 
             }
             else {
-                response->is_truncated = false; 
+                response->is_truncated = False; 
             }
             xmlFree(text);
         }
@@ -434,13 +609,13 @@ void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
 }
 
 void ds3_print_request(const ds3_request * _request) {
-    const _ds3_request * request; 
+    const struct _ds3_request * request; 
     if(_request == NULL) {
       fprintf(stderr, "Request object was null\n");
       return;
     }
-    request = (_ds3_request *)_request;
-    printf("Verb: %s\n", net_get_verb(request->verb));
+    request = (struct _ds3_request *)_request;
+    printf("Verb: %s\n", _net_get_verb(request->verb));
     printf("Path: %s\n", request->path);
 }
 
@@ -550,11 +725,11 @@ void ds3_free_client(ds3_client * client) {
 }
 
 void ds3_free_request(ds3_request * _request) {
-    _ds3_request * request; 
+    struct _ds3_request * request; 
     if(_request == NULL) {
         return;
     }
-    request = (_ds3_request *) _request;
+    request = (struct _ds3_request *) _request;
     if(request->path != NULL) {
         g_free(request->path);
     }
@@ -578,3 +753,4 @@ size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_dat
 size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
     return fread(buffer, size, nmemb, (FILE *) user_data);
 }
+
