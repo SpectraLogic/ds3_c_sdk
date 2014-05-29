@@ -1,0 +1,13 @@
+lib_LTLIBRARIES = libds3.la
+bin_PROGRAMS = ds3
+include_HEADERS = ds3.h
+
+libds3_la_SOURCES = ds3.c
+libds3_la_CFLAGS = $(LIBXML2_CFLAGS) $(GLIB2_CFLAGS) $(LIBCURL_CFLAGS)
+libds3_la_LIBADD = $(LIBXML2_LIBS) $(GLIB2_LIBS) $(LIBCURL_LIBS)
+libds3_la_LDFLAGS = -version-info $(VERSION)
+
+ds3_SOURCES = main.c ds3.c
+ds3_CFLAGS = $(LIBXML2_CFLAGS) $(GLIB2_CFLAGS) $(LIBCURL_CFLAGS)
+ds3_LDADD = $(LIBXML2_LIBS) $(GLIB2_LIBS) $(LIBCURL_LIBS)
+
