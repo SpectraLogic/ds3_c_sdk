@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
@@ -629,7 +632,37 @@ void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
 }
 
 ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * request) {
-    //TODO need to fill this out
+
+    xmlNodePtr root_node, objects_node, object_node;
+    xmlDocPtr doc;
+    xmlChar *xml_buff;
+    int buff_size;
+    
+    doc = xmlNewDoc((xmlChar *)"1.0");
+    root_node = xmlNewNode(NULL, (xmlChar *) "MasterObjectList");
+    
+    objects_node = xmlNewNode(NULL, (xmlChar *) "Objects");
+
+    xmlAddChild(root_node, objects_node);
+
+    object_node = xmlNewNode(NULL, (xmlChar *) "Object");
+    xmlAddChild(objects_node, object_node);
+
+    xmlSetProp(object_node, (xmlChar *) "Name", (xmlChar *) "file1.txt");
+    xmlSetProp(object_node, (xmlChar *) "Size", (xmlChar *) "1245");
+
+    xmlDocSetRootElement(doc, root_node);
+
+    xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
+    printf("%s\n", (char *) xml_buff);
+
+    xmlFreeDoc(doc);
+    //GByteArray* xml_blob = g_byte_array_new();
+    //_internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
+
+    xmlFree(xml_buff);
+
+
     return NULL;
 }
 
@@ -793,3 +826,53 @@ size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_da
     return fread(buffer, size, nmemb, (FILE *) user_data);
 }
 
+static ds3_bulk_object _ds3_bulk_object_from_file(const char * file_name) {
+
+    struct stat file_info;
+    memset(&file_info, 0, sizeof(struct stat));
+
+    int result = stat(file_name, &file_info);
+    if (result != 0) {
+        fprintf(stderr, "Failed to get file info for %s\n", file_name);
+    }
+
+    ds3_bulk_object obj;
+    memset(&obj, 0, sizeof(ds3_bulk_object));
+
+    obj.name = g_strdup(file_name);
+    obj.name_size = strlen(file_name);
+    obj.size = file_info.st_size;
+
+    return obj;
+}
+
+ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files) {
+    uint64_t i;
+    ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
+    obj_list->size = num_files;
+    obj_list->list = g_new0(ds3_bulk_object, num_files);
+    
+    for(i = 0; i < num_files; i++) {
+        obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i]);
+    }
+
+    return obj_list;
+}
+
+void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
+    uint64_t i, count;
+    if(object_list == NULL) {
+        return;
+    }
+    count = object_list->size;
+    for(i = 0; i < count; i++) {
+        char * file_name = object_list->list[i].name;
+        if (file_name == NULL) {
+            continue;
+        }
+        g_free(file_name);
+    }
+
+    g_free(object_list->list);
+    g_free(object_list);
+}

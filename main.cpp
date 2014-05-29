@@ -18,7 +18,13 @@ int main (int args, char * argv[]) {
     ds3_client_proxy(client, "192.168.56.1:8888");
     
     char * bucket = "books1";
-  
+
+    request = ds3_init_get_bulk(bucket, NULL);
+
+    ds3_bulk(client, request);
+    ds3_free_request(request);
+
+    /*
     request = ds3_init_get_service();
     ds3_get_service_response * response = ds3_get_service(client, request);
     ds3_free_request(request);

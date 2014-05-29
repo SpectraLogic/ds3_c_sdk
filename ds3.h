@@ -92,6 +92,11 @@ typedef struct {
 }ds3_bulk_object;
 
 typedef struct {
+    ds3_bulk_object *list;
+    uint64_t size;
+}ds3_bulk_object_list;
+
+typedef struct {
     char * job_id;
     size_t job_id_size;
 }ds3_bulk_response;
@@ -140,6 +145,9 @@ void ds3_cleanup(void);
 // provided helpers
 size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
+
+ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files);
+void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
 
 #ifdef __cplusplus
 }
