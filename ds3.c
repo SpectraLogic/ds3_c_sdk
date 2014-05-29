@@ -287,6 +287,22 @@ ds3_request * ds3_init_delete_bucket(const char * bucket_name) {
     return (ds3_request *) request;
 }
 
+ds3_request * ds3_init_get_bulk(const char * bucket_name, const ds3_bulk_object * object_list) {
+    struct _ds3_request * request = _common_request_init();
+    request->verb = GET;
+    request->path = g_strconcat("/_rest_/buckets/", bucket_name, NULL);
+    g_hash_table_insert(request->query_params, "operation", "start_bulk_get");
+    return (ds3_request *) request;
+}
+
+ds3_request * ds3_init_put_bulk(const char * bucket_name, const ds3_bulk_object * object_list) {
+    struct _ds3_request * request = _common_request_init();
+    request->verb = GET;
+    request->path = g_strconcat("/_rest_/buckets/", bucket_name, NULL);
+    g_hash_table_insert(request->query_params, "operation", "start_bulk_put");
+    return (ds3_request *) request;
+}
+
 static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request,void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
@@ -608,6 +624,12 @@ void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
     _internal_request_dispatcher(client, request, NULL, NULL);
 }
 
+ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * request) {
+    //TODO need to fill this out
+    return NULL;
+}
+
+
 void ds3_print_request(const ds3_request * _request) {
     const struct _ds3_request * request; 
     if(_request == NULL) {
@@ -665,6 +687,19 @@ void ds3_free_service_response(ds3_get_service_response * response){
     }
     ds3_free_owner(response->owner);
     g_free(response->buckets);
+    g_free(response);
+}
+
+void ds3_free_bulk_response(ds3_bulk_response * response) {
+    if(response == NULL) {
+        fprintf(stderr, "Bulk response was NULL\n");
+        return;
+    }
+
+    if(response->job_id != NULL) {
+        g_free(response->job_id);
+    }
+
     g_free(response);
 }
 

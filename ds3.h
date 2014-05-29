@@ -85,6 +85,17 @@ typedef struct {
     size_t prefix_size;
 }ds3_get_bucket_response;
 
+typedef struct {
+    char * name;
+    size_t name_size;
+    uint64_t size;
+}ds3_bulk_object;
+
+typedef struct {
+    char * job_id;
+    size_t job_id_size;
+}ds3_bulk_response;
+
 ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
 ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds);
 
@@ -95,6 +106,9 @@ ds3_request * ds3_init_put_bucket(const char * bucket_name);
 ds3_request * ds3_init_put_object(const char * bucket_name, const char * object_name, uint64_t size);
 ds3_request * ds3_init_delete_bucket(const char * bucket_name);
 ds3_request * ds3_init_delete_object(const char * bucket_name, const char * object_name);
+
+ds3_request * ds3_init_put_bulk(const char * bucket_name, const ds3_bulk_object * object_list);
+ds3_request * ds3_init_get_bulk(const char * bucket_name, const ds3_bulk_object * object_list);
 
 void ds3_client_proxy(ds3_client * client, const char * proxy);
 
@@ -108,10 +122,13 @@ void ds3_get_object(const ds3_client * client, const ds3_request * request, void
 void ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
 void ds3_delete_object(const ds3_client * client, const ds3_request * request);
 
+ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * request);
+
 void ds3_print_request(const ds3_request * request);
 
 void ds3_free_service_response(ds3_get_service_response * response);
 void ds3_free_bucket_response(ds3_get_bucket_response * response);
+void ds3_free_bulk_response(ds3_bulk_response * response);
 
 void ds3_free_bucket(ds3_bucket * bucket);
 void ds3_free_owner(ds3_owner * owner);
