@@ -89,7 +89,7 @@ static char * _net_compute_signature(const ds3_creds *creds, http_verb verb, cha
     return signature;
 }
 
-static void _net_process_request(const ds3_client * client, const ds3_request * _request, void * user_struct, size_t (*handler_func)(void*, size_t, size_t, void*)) {
+static void _net_process_request(const ds3_client * client, const ds3_request * _request, void * read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void * write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     _init_curl();
     
     struct _ds3_request * request = (struct _ds3_request *) _request;
@@ -105,36 +105,36 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
           curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
         }
 
+        //Register the read and write handlers if they are set
+        if(read_user_struct != NULL && read_handler_func != NULL) {
+           curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, read_handler_func);
+           curl_easy_setopt(handle, CURLOPT_WRITEDATA, read_user_struct);
+        }
+
+        if(write_user_struct != NULL && write_handler_func != NULL) {
+            curl_easy_setopt(handle, CURLOPT_READDATA, write_user_struct);
+            curl_easy_setopt(handle, CURLOPT_READFUNCTION, write_handler_func);
+        }
+
         switch(request->verb) {
-            case GET: {
-                if(user_struct != NULL && handler_func !=NULL) {
-                   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handler_func);
-                   curl_easy_setopt(handle, CURLOPT_WRITEDATA, user_struct);
-                }
-                break;
-            }
             case POST: {
-                if (user_struct == NULL || handler_func == NULL) {
+                if (write_user_struct == NULL || write_handler_func == NULL) {
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
                 }
                 else {
                     curl_easy_setopt(handle, CURLOPT_POST, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_READDATA, user_struct);
-                    curl_easy_setopt(handle, CURLOPT_READFUNCTION, handler_func);
                     curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
                 }
                 break;
             }
             case PUT: {
-                if (user_struct == NULL || handler_func == NULL) {
+                if (write_user_struct == NULL || write_handler_func == NULL) {
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
                 }
                 else {
                     curl_easy_setopt(handle, CURLOPT_PUT, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_READDATA, user_struct);
-                    curl_easy_setopt(handle, CURLOPT_READFUNCTION, handler_func);
                     curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
                 }
                 break;
@@ -145,6 +145,10 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
             }
             case HEAD: {
                 curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
+                break;
+            }
+            case GET: {
+                //Placeholder if we need to put anything here.
                 break;
             }
         }
@@ -303,12 +307,12 @@ ds3_request * ds3_init_put_bulk(const char * bucket_name, const ds3_bulk_object 
     return (ds3_request *) request;
 }
 
-static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request,void * user_struct, size_t (*write_data)(void*, size_t, size_t, void*)) {
+static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request, void * read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void * write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
         return;
     }
-    _net_process_request(client, request, user_struct, write_data);
+    _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func);
 }
 
 static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *user_data) {
@@ -385,7 +389,7 @@ ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_service_response * response;
     
-    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff);
+    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
    
     doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
 
@@ -495,7 +499,7 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
     ds3_get_bucket_response * response;
     GArray * object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
     GByteArray* xml_blob = g_byte_array_new();
-    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff);
+    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
     
     doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
@@ -605,23 +609,23 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
 }
 
 void ds3_get_object(const ds3_client * client, const ds3_request * request, void *user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
-    _internal_request_dispatcher(client, request, user_data, callback);
+    _internal_request_dispatcher(client, request, user_data, callback, NULL, NULL);
 }
 
 void ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *)) {
-    _internal_request_dispatcher(client, request, user_data, callback);
+    _internal_request_dispatcher(client, request, NULL, NULL, user_data, callback);
 }
 
 void ds3_delete_object(const ds3_client * client, const ds3_request * request) {
-    _internal_request_dispatcher(client, request, NULL, NULL);
+    _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 void ds3_put_bucket(const ds3_client * client, const ds3_request * request) {
-    _internal_request_dispatcher(client, request, NULL, NULL);
+    _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
-    _internal_request_dispatcher(client, request, NULL, NULL);
+    _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * request) {
