@@ -1,6 +1,7 @@
 #!/bin/sh
 
-make maintainer-clean \
+make -C ./sample clean \
+    && make maintainer-clean \
     && rm -rf \
         aclocal.m4 \
         ar-lib \
@@ -14,5 +15,6 @@ make maintainer-clean \
         ltmain.sh \
         m4 \
         Makefile.in \
-        missing
+        missing \
+        install
 
