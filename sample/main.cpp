@@ -4,8 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <glib.h>
-#include "./ds3.h"
+#include <ds3.h>
 
 int main (int args, char * argv[]) {
     ds3_request *request;
