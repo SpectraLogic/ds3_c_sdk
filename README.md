@@ -24,6 +24,7 @@ terminal window.
     $ make
     $ su
     # make install
+    # ldconfig
     # exit
     $
 
@@ -46,7 +47,7 @@ To build the SDK from a git clone you must have a relatively recent version of
 GNU autoutils installed. While the release tarball does contain the build
 scripts that autoutils generates, the git repository does not.
 
-Assuming you have autotools installed, you can execute `./run_auto_tools.sh`
+Assuming you have autotools installed, you can execute `autoreconf --install`
 and then follow the same instructions as the tarball release.
 
 Usage
@@ -60,12 +61,24 @@ TODO: We're still working on this. Stay tuned.
 Unix
 ----
 
-See the `/sample` directory for an example.
-
 The SDK provides a pkg-config definition, so you can determine the proper
 compiler tags using the following commands:
 
  * Compiler flags: `pkg-config --cflags libds3`
  * Linker flags: `pkg-config --libs libds3`
  * Both compiler and linker flags: `pkg-config --cflags --libs libds3`
+
+# Sample
+
+The `/sample` directory has an example of using the sdk. It provides a Makefile
+to build the SDK and itself.
+
+To build the sample, use the following commands:
+
+    $ cd directory/containing/source/tree
+    $ cd sample
+    $ make deps # Builds the SDK and installs it into directory/containing/source/tree**/install**
+    $ make
+
+To run it, just use `make run`.
 
