@@ -6,6 +6,7 @@ Makefile.in
 /config.*
 /configure
 /depcomp
+/install
 /install-sh
 /libtool
 /ltmain.sh

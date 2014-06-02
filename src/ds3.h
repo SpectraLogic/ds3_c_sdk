@@ -112,8 +112,8 @@ ds3_request * ds3_init_put_object(const char * bucket_name, const char * object_
 ds3_request * ds3_init_delete_bucket(const char * bucket_name);
 ds3_request * ds3_init_delete_object(const char * bucket_name, const char * object_name);
 
-ds3_request * ds3_init_put_bulk(const char * bucket_name, const ds3_bulk_object * object_list);
-ds3_request * ds3_init_get_bulk(const char * bucket_name, const ds3_bulk_object * object_list);
+ds3_request * ds3_init_put_bulk(const char * bucket_name, ds3_bulk_object_list * object_list);
+ds3_request * ds3_init_get_bulk(const char * bucket_name, ds3_bulk_object_list * object_list);
 
 void ds3_client_proxy(ds3_client * client, const char * proxy);
 

@@ -19,7 +19,30 @@ struct _ds3_request{
     uint64_t length;
     GHashTable * headers;
     GHashTable * query_params;
+
+    //These next few elements are only for the bulk commands
+    ds3_bulk_object_list * object_list;
 };
+
+typedef struct {
+    char * buff;
+    size_t size;
+    size_t total_read;
+}ds3_xml_send_buff;
+
+
+size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    ds3_xml_send_buff * xml_buff = (ds3_xml_send_buff *) user_data;
+    size_t to_read = size * nmemb;
+    size_t remaining = xml_buff->size - xml_buff->total_read;
+
+    if(remaining < to_read) {
+        to_read = remaining;
+    }
+    
+    strncpy((char *)buffer, xml_buff->buff, to_read);
+    return to_read;
+}
 
 //---------- Networking code ----------// 
 static void _init_curl(void) {
@@ -294,19 +317,21 @@ ds3_request * ds3_init_delete_bucket(const char * bucket_name) {
     return (ds3_request *) request;
 }
 
-ds3_request * ds3_init_get_bulk(const char * bucket_name, const ds3_bulk_object * object_list) {
+ds3_request * ds3_init_get_bulk(const char * bucket_name, ds3_bulk_object_list * object_list) {
     struct _ds3_request * request = _common_request_init();
-    request->verb = GET;
+    request->verb = PUT;
     request->path = g_strconcat("/_rest_/buckets/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_get");
+    request->object_list = object_list;
     return (ds3_request *) request;
 }
 
-ds3_request * ds3_init_put_bulk(const char * bucket_name, const ds3_bulk_object * object_list) {
+ds3_request * ds3_init_put_bulk(const char * bucket_name, ds3_bulk_object_list * object_list) {
     struct _ds3_request * request = _common_request_init();
-    request->verb = GET;
+    request->verb = PUT;
     request->path = g_strconcat("/_rest_/buckets/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_put");
+    request->object_list = object_list;
     return (ds3_request *) request;
 }
 
@@ -631,37 +656,78 @@ void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
     _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
-ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * request) {
+ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _request) {
+
+    uint64_t i;
+    int buff_size;
+    char size_buff[21]; //The max size of an uint64_t should be 20 characters
+    
+    struct _ds3_request * request;
+    ds3_bulk_object_list * obj_list;
+    ds3_bulk_object obj;
+    ds3_xml_send_buff send_buff;
 
     xmlNodePtr root_node, objects_node, object_node;
     xmlDocPtr doc;
     xmlChar *xml_buff;
-    int buff_size;
     
+    if(client == NULL || _request == NULL) {
+        fprintf(stderr, "All arguments must be filled in\n");
+        return NULL;
+    }
+    
+    request = (struct _ds3_request *) _request;
+
+    if(request->object_list == NULL || request->object_list->size == 0) {
+        fprintf(stderr, "The bulk commands require a list of files");
+        return NULL;
+    }
+
+    // Init the data structures declared above the null check
+    memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
+    memset(&obj, 0, sizeof(ds3_bulk_object));
+    obj_list = request->object_list;
+
+    // Start creating the xml body to send to the server.
     doc = xmlNewDoc((xmlChar *)"1.0");
     root_node = xmlNewNode(NULL, (xmlChar *) "MasterObjectList");
     
     objects_node = xmlNewNode(NULL, (xmlChar *) "Objects");
-
     xmlAddChild(root_node, objects_node);
+    
+    for(i = 0; i < obj_list->size; i++) {
+        obj = obj_list->list[i];
+        memset(size_buff, 0, sizeof(char) * 21);
+        snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
 
-    object_node = xmlNewNode(NULL, (xmlChar *) "Object");
-    xmlAddChild(objects_node, object_node);
+        object_node = xmlNewNode(NULL, (xmlChar *) "Object");
+        xmlAddChild(objects_node, object_node);
 
-    xmlSetProp(object_node, (xmlChar *) "Name", (xmlChar *) "file1.txt");
-    xmlSetProp(object_node, (xmlChar *) "Size", (xmlChar *) "1245");
+        xmlSetProp(object_node, (xmlChar *) "Name", (xmlChar *) obj.name);
+        xmlSetProp(object_node, (xmlChar *) "Size", (xmlChar *) size_buff );
+    }
 
     xmlDocSetRootElement(doc, root_node);
 
     xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
     printf("%s\n", (char *) xml_buff);
 
-    xmlFreeDoc(doc);
-    //GByteArray* xml_blob = g_byte_array_new();
-    //_internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
+    send_buff.buff = (char *) xml_buff;
+    send_buff.size = strlen(send_buff.buff);
 
+    GByteArray* xml_blob = g_byte_array_new();
+    _net_process_request(client, request, xml_blob, load_xml_buff, _ds3_send_xml_buff, (void *)&send_buff);
+
+    // Cleanup the data sent to the server.
+    xmlFreeDoc(doc);
     xmlFree(xml_buff);
 
+    // Start processing the data that was received back.
+
+    //doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
+    printf("%s\n", (const char *) xml_blob->data);
+
+    g_byte_array_free(xml_blob, TRUE);
 
     return NULL;
 }

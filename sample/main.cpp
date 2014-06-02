@@ -18,10 +18,16 @@ int main (int args, char * argv[]) {
     
     char * bucket = "books1";
 
-    request = ds3_init_get_bulk(bucket, NULL);
+    const char * files[] = {"huckfinn.txt", "ulysses.txt"};
+
+    ds3_bulk_object_list * list = ds3_convert_file_list(files, 2);
+
+    request = ds3_init_get_bulk(bucket, list);
 
     ds3_bulk(client, request);
     ds3_free_request(request);
+
+    ds3_free_bulk_object_list(list);
 
     /*
     request = ds3_init_get_service();
