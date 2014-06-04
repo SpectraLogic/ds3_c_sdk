@@ -32,6 +32,7 @@ typedef struct {
 
 
 size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    fprintf(stderr, "Sending the next chunk of data to ds3\n");
     ds3_xml_send_buff * xml_buff = (ds3_xml_send_buff *) user_data;
     size_t to_read = size * nmemb;
     size_t remaining = xml_buff->size - xml_buff->total_read;
@@ -98,9 +99,9 @@ static char * _net_compute_signature(const ds3_creds *creds, http_verb verb, cha
                              char * date, char * content_type, char * md5, char * amz_headers) {
     unsigned char * signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
     fprintf(stdout, "Signature:\n%s\n", signature_str);
-   
+  
     gsize bufSize = 256;
-    guint8 * buffer = (guint8 *) calloc(bufSize, sizeof(guint8)); 
+    guint8 buffer[256];
 
     GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA1,(unsigned char *) creds->secret_key, creds->secret_key_len);
     g_hmac_update(hmac, signature_str, -1);
@@ -110,9 +111,42 @@ static char * _net_compute_signature(const ds3_creds *creds, http_verb verb, cha
     
     g_free(signature_str);
     g_hmac_unref(hmac);
-    free(buffer);
 
     return signature;
+}
+
+typedef struct {
+    char ** entries;
+    size_t size;
+}query_entries;
+
+static void _hash_for_each(gpointer _key, gpointer _value, gpointer _user_data) {
+    char * key = (char *) _key;
+    char * value = (char *) _value;
+    query_entries * entries = (query_entries *) _user_data;
+
+    entries->entries[entries->size] = g_strconcat(key, "=", value, NULL);
+}
+
+static char * _net_gen_query_params(GHashTable * query_params) {
+    if (g_hash_table_size(query_params) > 0) {
+        //build the query string
+        query_entries q_entries;
+        memset(&q_entries, 0, sizeof(query_entries));
+        char ** entries = g_new0(char *, g_hash_table_size(query_params));
+        char * return_string;
+        q_entries.entries = entries;
+
+        g_hash_table_foreach(query_params, _hash_for_each, &q_entries);
+        
+        return_string = g_strjoinv("&", entries);
+
+        g_free(entries);
+        return return_string;
+    }
+    else {
+        return NULL;
+    }
 }
 
 static void _net_process_request(const ds3_client * client, const ds3_request * _request, void * read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void * write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
@@ -123,7 +157,15 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
     CURLcode res;
 
     if(handle) {
-        char * url = g_strconcat(client->endpoint, request->path, NULL);
+        char * url;
+        char * query_params = _net_gen_query_params(request->query_params);
+        if (query_params == NULL) {
+            url = g_strconcat(client->endpoint, request->path, NULL);
+        }
+        else {
+            url = g_strconcat(client->endpoint, request->path,"?",query_params, NULL);
+            g_free(query_params);
+        }
         curl_easy_setopt(handle, CURLOPT_URL, url);
         curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L); //tell curl to follow redirects
         curl_easy_setopt(handle, CURLOPT_MAXREDIRS, client->num_redirects);
@@ -133,13 +175,15 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
 
         //Register the read and write handlers if they are set
         if(read_user_struct != NULL && read_handler_func != NULL) {
-           curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, read_handler_func);
-           curl_easy_setopt(handle, CURLOPT_WRITEDATA, read_user_struct);
+            printf("Setting the read handlers\n");
+            curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, read_handler_func);
+            curl_easy_setopt(handle, CURLOPT_WRITEDATA, read_user_struct);
         }
 
         if(write_user_struct != NULL && write_handler_func != NULL) {
-            curl_easy_setopt(handle, CURLOPT_READDATA, write_user_struct);
+            printf("Setting the write handlers\n");
             curl_easy_setopt(handle, CURLOPT_READFUNCTION, write_handler_func);
+            curl_easy_setopt(handle, CURLOPT_READDATA, write_user_struct);
         }
 
         switch(request->verb) {
@@ -159,6 +203,7 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
                 }
                 else {
+                    printf("Setting up curl to do a put");
                     curl_easy_setopt(handle, CURLOPT_PUT, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
                     curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
@@ -344,6 +389,7 @@ static void _internal_request_dispatcher(const ds3_client * client, const ds3_re
 }
 
 static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *user_data) {
+    printf("loading buffer with xml data.");
     size_t realsize = size * nmemb;
     GByteArray* blob = (GByteArray*) user_data;
     
@@ -715,8 +761,10 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
     send_buff.buff = (char *) xml_buff;
     send_buff.size = strlen(send_buff.buff);
 
+    request->length = send_buff.size; // make sure to set the size of the request.
+
     GByteArray* xml_blob = g_byte_array_new();
-    _net_process_request(client, request, xml_blob, load_xml_buff, _ds3_send_xml_buff, (void *)&send_buff);
+    _net_process_request(client, request, xml_blob, load_xml_buff, (void *) &send_buff, _ds3_send_xml_buff);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
