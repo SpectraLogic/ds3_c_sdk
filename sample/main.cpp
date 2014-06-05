@@ -11,9 +11,9 @@ int main (int args, char * argv[]) {
     int i,n;
     puts("Starting playing with sdk code\n");
 
-    ds3_creds * creds = ds3_create_creds("cnlhbg==","6S2XeqEy");
+    ds3_creds * creds = ds3_create_creds("cnlhbg==","MrR3K4Bi");
 
-    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
+    ds3_client * client = ds3_create_client("http://192.168.56.102:8080", creds);
     ds3_client_proxy(client, "192.168.56.1:8888");
     
     char * bucket = "books1";
@@ -22,10 +22,14 @@ int main (int args, char * argv[]) {
 
     ds3_bulk_object_list * list = ds3_convert_file_list(files, 2);
 
-    request = ds3_init_get_bulk(bucket, list);
+    request = ds3_init_put_bulk(bucket, list);
 
-    ds3_bulk(client, request);
+    ds3_bulk_response * response = ds3_bulk(client, request);
     ds3_free_request(request);
+
+    printf("JobId: %s, Total Object Lists: %lu\n", response->job_id, response->list_size);
+
+    ds3_free_bulk_response(response);
 
     ds3_free_bulk_object_list(list);
 

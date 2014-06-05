@@ -94,11 +94,16 @@ typedef struct {
 typedef struct {
     ds3_bulk_object *list;
     uint64_t size;
+    uint64_t chunk_number;
+    char * server_id;
+    size_t server_id_size;
 }ds3_bulk_object_list;
 
 typedef struct {
     char * job_id;
     size_t job_id_size;
+    ds3_bulk_object_list ** list;
+    size_t list_size;
 }ds3_bulk_response;
 
 ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
