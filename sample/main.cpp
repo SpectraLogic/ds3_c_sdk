@@ -16,7 +16,7 @@ int main (int args, char * argv[]) {
     ds3_client * client = ds3_create_client("http://192.168.56.102:8080", creds);
     ds3_client_proxy(client, "192.168.56.1:8888");
     
-    char * bucket = "books1";
+    char * bucket = "books2";
 
     const char * files[] = {"huckfinn.txt", "ulysses.txt"};
 
