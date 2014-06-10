@@ -14,34 +14,37 @@
 //---------- Define opaque struct ----------//  
 struct _ds3_request{
     http_verb verb;
-    char *path;
+    char* path;
     size_t path_size;
     uint64_t length;
-    GHashTable * headers;
-    GHashTable * query_params;
+    GHashTable* headers;
+    GHashTable* query_params;
 
     //These next few elements are only for the bulk commands
-    ds3_bulk_object_list * object_list;
+    ds3_bulk_object_list* object_list;
 };
 
 typedef struct {
-    char * buff;
+    char* buff;
     size_t size;
     size_t total_read;
 }ds3_xml_send_buff;
 
 
 size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    fprintf(stderr, "Sending the next chunk of data to ds3\n");
-    ds3_xml_send_buff * xml_buff = (ds3_xml_send_buff *) user_data;
-    size_t to_read = size * nmemb;
-    size_t remaining = xml_buff->size - xml_buff->total_read;
+    size_t to_read; 
+    size_t remaining;
+    ds3_xml_send_buff* xml_buff;
+    
+    xml_buff = (ds3_xml_send_buff*) user_data;
+    to_read = size * nmemb;
+    remaining = xml_buff->size - xml_buff->total_read;
 
     if(remaining < to_read) {
         to_read = remaining;
     }
     
-    strncpy((char *)buffer, xml_buff->buff, to_read);
+    strncpy((char*)buffer, xml_buff->buff, to_read);
     return to_read;
 }
 
@@ -57,7 +60,7 @@ static void _init_curl(void) {
     }
 }
 
-static char * _net_get_verb(http_verb verb) {
+static char* _net_get_verb(http_verb verb) {
     switch(verb) {
         case GET: return "GET";
         case PUT: return "PUT";
@@ -69,9 +72,9 @@ static char * _net_get_verb(http_verb verb) {
     return NULL;
 }
 
-static unsigned char * _generate_signature_str(http_verb verb, char * resource_name, char * date,
-                               char * content_type, char * md5, char * amz_headers) {
-    char * verb_str; 
+static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
+                               char* content_type, char* md5, char* amz_headers) {
+    char* verb_str; 
     if(resource_name == NULL) {
         fprintf(stderr, "resource_name is required\n");
         return NULL;
@@ -82,32 +85,35 @@ static unsigned char * _generate_signature_str(http_verb verb, char * resource_n
     }
     verb_str = _net_get_verb(verb);
 
-    return (unsigned char *) g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
+    return (unsigned char*) g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
 }
 
-static char * _generate_date_string(void) {
-    GDateTime * time  = g_date_time_new_now_local();
+static char* _generate_date_string(void) {
+    GDateTime* time  = g_date_time_new_now_local();
+    char* date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
     
-    char * date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
     fprintf(stdout, "Date: %s\n", date_string);
     g_date_time_unref(time);
 
     return date_string;
 }
 
-static char * _net_compute_signature(const ds3_creds *creds, http_verb verb, char * resource_name,
-                             char * date, char * content_type, char * md5, char * amz_headers) {
-    unsigned char * signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
-    fprintf(stdout, "Signature:\n%s\n", signature_str);
-  
+static char* _net_compute_signature(const ds3_creds* creds, http_verb verb, char* resource_name,
+                             char* date, char* content_type, char* md5, char* amz_headers) {
+    GHmac* hmac;
+    gchar* signature;
     gsize bufSize = 256;
     guint8 buffer[256];
+    unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers); 
+    
+    fprintf(stdout, "Signature:\n%s\n", signature_str);
+  
 
-    GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA1,(unsigned char *) creds->secret_key, creds->secret_key_len);
+    hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key, creds->secret_key_len);
     g_hmac_update(hmac, signature_str, -1);
     g_hmac_get_digest(hmac, buffer, &bufSize);
     
-    gchar * signature = g_base64_encode(buffer, bufSize);
+    signature = g_base64_encode(buffer, bufSize);
     
     g_free(signature_str);
     g_hmac_unref(hmac);
@@ -116,25 +122,26 @@ static char * _net_compute_signature(const ds3_creds *creds, http_verb verb, cha
 }
 
 typedef struct {
-    char ** entries;
+    char** entries;
     size_t size;
 }query_entries;
 
 static void _hash_for_each(gpointer _key, gpointer _value, gpointer _user_data) {
-    char * key = (char *) _key;
-    char * value = (char *) _value;
-    query_entries * entries = (query_entries *) _user_data;
+    char* key = (char*) _key;
+    char* value = (char*) _value;
+    query_entries* entries = (query_entries*) _user_data;
 
     entries->entries[entries->size] = g_strconcat(key, "=", value, NULL);
 }
 
-static char * _net_gen_query_params(GHashTable * query_params) {
+static char* _net_gen_query_params(GHashTable* query_params) {
     if (g_hash_table_size(query_params) > 0) {
-        //build the query string
         query_entries q_entries;
+        char** entries;
+        char* return_string;
+        //build the query string
         memset(&q_entries, 0, sizeof(query_entries));
-        char ** entries = g_new0(char *, g_hash_table_size(query_params));
-        char * return_string;
+        entries = g_new0(char*, g_hash_table_size(query_params));
         q_entries.entries = entries;
 
         g_hash_table_foreach(query_params, _hash_for_each, &q_entries);
@@ -149,16 +156,23 @@ static char * _net_gen_query_params(GHashTable * query_params) {
     }
 }
 
-static void _net_process_request(const ds3_client * client, const ds3_request * _request, void * read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void * write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
+static void _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     _init_curl();
     
-    struct _ds3_request * request = (struct _ds3_request *) _request;
-    CURL * handle = curl_easy_init();
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    CURL* handle = curl_easy_init();
     CURLcode res;
 
     if(handle) {
-        char * url;
-        char * query_params = _net_gen_query_params(request->query_params);
+        char* url;
+        char* query_params = _net_gen_query_params(request->query_params);
+        
+        char* date;
+        char* date_header;
+        char* signature;
+        struct curl_slist* headers;
+        char* auth_header;
+        
         if (query_params == NULL) {
             url = g_strconcat(client->endpoint, request->path, NULL);
         }
@@ -175,13 +189,11 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
 
         //Register the read and write handlers if they are set
         if(read_user_struct != NULL && read_handler_func != NULL) {
-            printf("Setting the read handlers\n");
             curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, read_handler_func);
             curl_easy_setopt(handle, CURLOPT_WRITEDATA, read_user_struct);
         }
 
         if(write_user_struct != NULL && write_handler_func != NULL) {
-            printf("Setting the write handlers\n");
             curl_easy_setopt(handle, CURLOPT_READFUNCTION, write_handler_func);
             curl_easy_setopt(handle, CURLOPT_READDATA, write_user_struct);
         }
@@ -203,7 +215,6 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
                 }
                 else {
-                    printf("Setting up curl to do a put");
                     curl_easy_setopt(handle, CURLOPT_PUT, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
                     curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
@@ -224,11 +235,11 @@ static void _net_process_request(const ds3_client * client, const ds3_request * 
             }
         }
 
-        char * date = _generate_date_string(); 
-        char * date_header = g_strconcat("Date: ", date, NULL);
-        char * signature = _net_compute_signature(client->creds, request->verb, request->path, date, "", "", "");
-        struct curl_slist *headers = NULL;
-        char * auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id, ":", signature, NULL);
+        date = _generate_date_string(); 
+        date_header = g_strconcat("Date: ", date, NULL);
+        signature = _net_compute_signature(client->creds, request->verb, request->path, date, "", "", "");
+        headers = NULL;
+        auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id, ":", signature, NULL);
 
         headers = curl_slist_append(headers, auth_header);
         headers = curl_slist_append(headers, date_header);
@@ -258,13 +269,13 @@ static void net_cleanup(void) {
 }
 
 //---------- Ds3 code ----------// 
-static GHashTable * _create_hash_table(void) {
-    GHashTable * hash =  g_hash_table_new(g_str_hash, g_str_equal);
+static GHashTable* _create_hash_table(void) {
+    GHashTable* hash =  g_hash_table_new(g_str_hash, g_str_equal);
     return hash;
 }
 
-ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key) {
-    ds3_creds * creds;
+ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key) {
+    ds3_creds* creds;
     if(access_id == NULL || secret_key == NULL) {
         fprintf(stderr, "Arguments cannot be NULL\n");
         return NULL;
@@ -281,8 +292,8 @@ ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key) {
     return creds;
 }
 
-ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds) {
-    ds3_client * client;
+ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
+    ds3_client* client;
     if(endpoint == NULL) {
         fprintf(stderr, "Null endpoint\n");
         return NULL;
@@ -299,88 +310,88 @@ ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds) {
     return client;
 }
 
-void ds3_client_proxy(ds3_client * client, const char * proxy) {
+void ds3_client_proxy(ds3_client* client, const char* proxy) {
     client->proxy = g_strdup(proxy);
     client->proxy_len = strlen(proxy);
 }
 
-static struct _ds3_request * _common_request_init(void){
-    struct _ds3_request * request = g_new0(struct _ds3_request, 1);
+static struct _ds3_request* _common_request_init(void){
+    struct _ds3_request* request = g_new0(struct _ds3_request, 1);
     request->headers = _create_hash_table();
     request->query_params = _create_hash_table();
     return request;
 }
 
-ds3_request * ds3_init_get_service(void) {
-    struct _ds3_request * request = _common_request_init(); 
+ds3_request* ds3_init_get_service(void) {
+    struct _ds3_request* request = _common_request_init(); 
     request->verb = GET;
     request->path =  g_new0(char, 2);
     request->path [0] = '/';
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_get_bucket(const char * bucket_name) {
-    struct _ds3_request * request = _common_request_init(); 
+ds3_request* ds3_init_get_bucket(const char* bucket_name) {
+    struct _ds3_request* request = _common_request_init(); 
     request->verb = GET;
     request->path = g_strconcat("/", bucket_name, NULL);
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_get_object(const char *bucket_name, const char *object_name) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = GET;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_delete_object(const char *bucket_name, const char *object_name) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = DELETE;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_put_object(const char *bucket_name, const char *object_name, uint64_t length) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = PUT;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     request->length = length;
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_put_bucket(const char * bucket_name) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_put_bucket(const char* bucket_name) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = PUT;
     request->path = g_strconcat("/", bucket_name, NULL);
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_delete_bucket(const char * bucket_name) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = DELETE;
     request->path = g_strconcat("/", bucket_name, NULL);
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_get_bulk(const char * bucket_name, ds3_bulk_object_list * object_list) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_get");
     request->object_list = object_list;
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-ds3_request * ds3_init_put_bulk(const char * bucket_name, ds3_bulk_object_list * object_list) {
-    struct _ds3_request * request = _common_request_init();
+ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
+    struct _ds3_request* request = _common_request_init();
     request->verb = PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_put");
     request->object_list = object_list;
-    return (ds3_request *) request;
+    return (ds3_request*) request;
 }
 
-static void _internal_request_dispatcher(const ds3_client * client, const ds3_request * request, void * read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void * write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
+static void _internal_request_dispatcher(const ds3_client* client, const ds3_request* request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
         return;
@@ -388,8 +399,7 @@ static void _internal_request_dispatcher(const ds3_client * client, const ds3_re
     _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func);
 }
 
-static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *user_data) {
-    printf("loading buffer with xml data.");
+static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void* user_data) {
     size_t realsize = size * nmemb;
     GByteArray* blob = (GByteArray*) user_data;
     
@@ -397,25 +407,27 @@ static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void *use
     return realsize;
 }
 
-static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response * response) {
-    xmlChar * text;
+static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
+    xmlChar* text;
     xmlNodePtr data_ptr; 
     xmlNodePtr curr;
-    GArray * array = g_array_new(FALSE, TRUE, sizeof(ds3_bucket));
+    GArray* array = g_array_new(FALSE, TRUE, sizeof(ds3_bucket));
 
     for(curr = buckets_node->xmlChildrenNode; curr != NULL; curr = curr->next) {
         ds3_bucket bucket; 
         memset(&bucket, 0, sizeof(ds3_bucket));
+        
         for(data_ptr = curr->xmlChildrenNode; data_ptr != NULL; data_ptr = data_ptr->next) {
-            if(xmlStrcmp(data_ptr->name, (const xmlChar *) "CreationDate") == 0) {
+            if(xmlStrcmp(data_ptr->name, (const xmlChar*) "CreationDate") == 0) {
                 text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
-                bucket.creation_date = g_strdup((char *) text);
-                bucket.creation_date_size = strlen((char *) text);
+                bucket.creation_date = g_strdup((char*) text);
+                bucket.creation_date_size = strlen((char*) text);
                 xmlFree(text);
-            }else if(xmlStrcmp(data_ptr->name, (const xmlChar *) "Name") == 0) {
+            }
+            else if(xmlStrcmp(data_ptr->name, (const xmlChar*) "Name") == 0) {
                 text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
-                bucket.name = g_strdup((char *) text);
-                bucket.name_size = strlen((char *) text);
+                bucket.name = g_strdup((char*) text);
+                bucket.name_size = strlen((char*) text);
                 xmlFree(text);
             }
             else {
@@ -426,26 +438,26 @@ static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_servi
     }
 
     response->num_buckets = array->len;
-    response->buckets = (ds3_bucket *)array->data;
+    response->buckets = (ds3_bucket*)array->data;
     g_array_free(array, FALSE);
 }
 
-static ds3_owner * _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node) {
+static ds3_owner* _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node) {
     xmlNodePtr child_node;
-    xmlChar * text;
-    ds3_owner * owner = g_new0(ds3_owner, 1);
+    xmlChar* text;
+    ds3_owner* owner = g_new0(ds3_owner, 1);
 
     for(child_node = owner_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(xmlStrcmp(child_node->name, (const xmlChar *) "DisplayName") == 0) {
+        if(xmlStrcmp(child_node->name, (const xmlChar*) "DisplayName") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            owner->name = g_strdup((char *) text);
-            owner->name_size = strlen((char *) text);
+            owner->name = g_strdup((char*) text);
+            owner->name_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "ID") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "ID") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            owner->id = g_strdup((char *) text);
-            owner->id_size = strlen((char *) text);
+            owner->id = g_strdup((char*) text);
+            owner->id_size = strlen((char*) text);
             xmlFree(text);
         }
         else {
@@ -456,16 +468,16 @@ static ds3_owner * _parse_owner(xmlDocPtr doc, xmlNodePtr owner_node) {
     return owner;
 }
 
-ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_request * request) {
+ds3_get_service_response* ds3_get_service(const ds3_client* client, const ds3_request* request) {
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
     GByteArray* xml_blob = g_byte_array_new();
-    ds3_get_service_response * response;
+    ds3_get_service_response* response;
     
     _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
    
-    doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
 
     if(doc == NULL) {
         fprintf(stderr, "Failed to parse document.");
@@ -490,7 +502,6 @@ ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_
         if(xmlStrcmp(child_node->name, (const xmlChar*) "Buckets") == 0) {
             //process buckets here
             _parse_buckets(doc, child_node, response);
-
         }
         else if(xmlStrcmp(child_node->name, (const xmlChar*) "Owner") == 0) {
             //process owner here
@@ -509,52 +520,53 @@ ds3_get_service_response * ds3_get_service(const ds3_client * client, const ds3_
 
 static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
     xmlNodePtr child_node;
-    xmlChar *text;
+    xmlChar* text;
     ds3_object object;
     memset(&object, 0, sizeof(ds3_object));
 
     for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(xmlStrcmp(child_node->name, (const xmlChar *) "Key") == 0) {
+        if(xmlStrcmp(child_node->name, (const xmlChar*) "Key") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            object.name = g_strdup((char *) text);
-            object.name_size = strlen((char *) text);
+            object.name = g_strdup((char*) text);
+            object.name_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "ETag") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "ETag") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            object.etag= g_strdup((char *) text);
-            object.etag_size = strlen((char *) text);
+            object.etag= g_strdup((char*) text);
+            object.etag_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "LastModified") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "LastModified") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            object.last_modified = g_strdup((char *) text);
-            object.last_modified_size = strlen((char *) text);
+            object.last_modified = g_strdup((char*) text);
+            object.last_modified_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "StorageClass") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "StorageClass") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            object.storage_class = g_strdup((char *) text);
-            object.storage_class_size = strlen((char *) text);
+            object.storage_class = g_strdup((char*) text);
+            object.storage_class_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "Size") == 0) { 
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Size") == 0) { 
+            uint64_t size; 
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            uint64_t size = strtoul((const char *)text, NULL, 10);
+            size = strtoul((const char*)text, NULL, 10);
             object.size = size;
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "Owner") == 0) { 
-            ds3_owner * owner = _parse_owner(doc, child_node);
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Owner") == 0) { 
+            ds3_owner* owner = _parse_owner(doc, child_node);
             object.owner = owner;
         }        
         else {
@@ -565,17 +577,17 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
     return object;
 }
 
-ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_request * request) {
+ds3_get_bucket_response* ds3_get_bucket(const ds3_client* client, const ds3_request* request) {
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    xmlChar * text;
-    ds3_get_bucket_response * response;
-    GArray * object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
+    xmlChar* text;
+    ds3_get_bucket_response* response;
+    GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
     GByteArray* xml_blob = g_byte_array_new();
     _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
     
-    doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
         fprintf(stderr, "Failed to parse document");
         fprintf(stdout, "Result: %s\n", xml_blob->data);
@@ -585,7 +597,7 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
 
     root = xmlDocGetRootElement(doc);
 
-    if(xmlStrcmp(root->name, (const xmlChar *) "ListBucketResult") != 0) {
+    if(xmlStrcmp(root->name, (const xmlChar*) "ListBucketResult") != 0) {
         fprintf(stderr, "wrong document, expected root node to be ListBucketResult");
         fprintf(stdout, "Result: %s\n", xml_blob->data);
         xmlFreeDoc(doc);
@@ -596,25 +608,25 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
     response = g_new0(ds3_get_bucket_response, 1);
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(xmlStrcmp(child_node->name, (const xmlChar *) "Contents") == 0) {
+        if(xmlStrcmp(child_node->name, (const xmlChar*) "Contents") == 0) {
             ds3_object object = _parse_object(doc, child_node);
             g_array_append_val(object_array, object);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "CreationDate") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "CreationDate") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            response->creation_date = g_strdup((char *) text);
-            response->creation_date_size = strlen((char *) text);
+            response->creation_date = g_strdup((char*) text);
+            response->creation_date_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "IsTruncated") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "IsTruncated") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            if(strncmp((char *) text, "true", 4) == 0) {
+            if(strncmp((char*) text, "true", 4) == 0) {
                 response->is_truncated = True; 
             }
             else {
@@ -622,59 +634,59 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
             }
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "Marker") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Marker") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            response->marker = g_strdup((char *) text);
-            response->marker_size = strlen((char *) text);
+            response->marker = g_strdup((char*) text);
+            response->marker_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "MaxKeys") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "MaxKeys") == 0) {
             uint64_t max_keys; 
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            max_keys = strtoul((const char *)text, NULL, 10); 
+            max_keys = strtoul((const char*)text, NULL, 10); 
             response->max_keys = max_keys;
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "Name") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Name") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            response->name = g_strdup((char *) text);
-            response->name_size = strlen((char *) text);
+            response->name = g_strdup((char*) text);
+            response->name_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "Delimiter") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Delimiter") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            response->delimiter= g_strdup((char *) text);
-            response->delimiter_size = strlen((char *) text);
+            response->delimiter= g_strdup((char*) text);
+            response->delimiter_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "NextMarker") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "NextMarker") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            response->next_marker= g_strdup((char *) text);
-            response->next_marker_size = strlen((char *) text);
+            response->next_marker= g_strdup((char*) text);
+            response->next_marker_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(child_node->name, (const xmlChar *) "Prefix") == 0) {
+        else if(xmlStrcmp(child_node->name, (const xmlChar*) "Prefix") == 0) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
             if(text == NULL) {
                 continue;
             }
-            response->prefix = g_strdup((char *) text);
-            response->prefix_size = strlen((char *) text);
+            response->prefix = g_strdup((char*) text);
+            response->prefix_size = strlen((char*) text);
             xmlFree(text);
         }
         else {
@@ -682,7 +694,7 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
         }
     }
 
-    response->objects = (ds3_object *) object_array->data;
+    response->objects = (ds3_object*) object_array->data;
     response->num_objects = object_array->len;
     xmlFreeDoc(doc);
     g_array_free(object_array, FALSE);
@@ -691,51 +703,51 @@ ds3_get_bucket_response * ds3_get_bucket(const ds3_client * client, const ds3_re
     return response;
 }
 
-void ds3_get_object(const ds3_client * client, const ds3_request * request, void *user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
+void ds3_get_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
     _internal_request_dispatcher(client, request, user_data, callback, NULL, NULL);
 }
 
-void ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *)) {
+void ds3_put_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*)) {
     _internal_request_dispatcher(client, request, NULL, NULL, user_data, callback);
 }
 
-void ds3_delete_object(const ds3_client * client, const ds3_request * request) {
+void ds3_delete_object(const ds3_client* client, const ds3_request* request) {
     _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
-void ds3_put_bucket(const ds3_client * client, const ds3_request * request) {
+void ds3_put_bucket(const ds3_client* client, const ds3_request* request) {
     _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
-void ds3_delete_bucket(const ds3_client * client, const ds3_request * request) {
+void ds3_delete_bucket(const ds3_client* client, const ds3_request* request) {
     _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 static ds3_bulk_object _parse_bulk_object(xmlDocPtr doc, xmlNodePtr object_node) {
     xmlNodePtr child_node;
-    xmlChar *text;
-    struct _xmlAttr * attribute;
+    xmlChar* text;
+    struct _xmlAttr* attribute;
 
     ds3_bulk_object response;
     memset(&response, 0, sizeof(ds3_bulk_object));
 
     for(attribute = object_node->properties; attribute != NULL; attribute = attribute->next) {
-        if(xmlStrcmp(attribute->name, (const xmlChar *) "Name") == 0) {
+        if(xmlStrcmp(attribute->name, (const xmlChar*) "Name") == 0) {
             text = xmlNodeListGetString(doc, attribute->children, 1);
             if(text == NULL) {
                 continue;
             }
-            response.name = g_strdup((char *) text);
-            response.name_size = strlen((char *) text);
+            response.name = g_strdup((char*) text);
+            response.name_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(attribute->name, (const xmlChar *) "Size") == 0) {
+        else if(xmlStrcmp(attribute->name, (const xmlChar*) "Size") == 0) {
             uint64_t size;
             text = xmlNodeListGetString(doc, attribute->children, 1);
             if(text == NULL) {
                 continue;
             }
-            size = strtoul((const char *)text, NULL, 10);
+            size = strtoul((const char*)text, NULL, 10);
             response.size = size;
         }
         else {
@@ -750,31 +762,31 @@ static ds3_bulk_object _parse_bulk_object(xmlDocPtr doc, xmlNodePtr object_node)
     return response;
 }
 
-static ds3_bulk_object_list * _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objects_node) {
+static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objects_node) {
     xmlNodePtr object_node, child_node;
-    xmlChar * text;
-    struct _xmlAttr * attribute;
+    xmlChar* text;
+    struct _xmlAttr* attribute;
 
-    ds3_bulk_object_list * response = g_new0(ds3_bulk_object_list, 1);
-    GArray * object_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object));
+    ds3_bulk_object_list* response = g_new0(ds3_bulk_object_list, 1);
+    GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object));
 
     for(attribute = objects_node->properties; attribute != NULL; attribute = attribute->next) {
-        if(xmlStrcmp(attribute->name, (const xmlChar *) "ServerId") == 0) {
+        if(xmlStrcmp(attribute->name, (const xmlChar*) "ServerId") == 0) {
             text = xmlNodeListGetString(doc, attribute->children, 1);
             if(text == NULL) {
                 continue;
             }
-            response->server_id= g_strdup((char *) text);
-            response->server_id_size = strlen((char *) text);
+            response->server_id= g_strdup((char*) text);
+            response->server_id_size = strlen((char*) text);
             xmlFree(text);
         }
-        else if(xmlStrcmp(attribute->name, (const xmlChar *) "ChunkNumber") == 0) {
+        else if(xmlStrcmp(attribute->name, (const xmlChar*) "ChunkNumber") == 0) {
             uint64_t chunk_number;
             text = xmlNodeListGetString(doc, attribute->children, 1);
             if(text == NULL) {
                 continue;
             }
-            chunk_number = strtoul((const char *)text, NULL, 10);
+            chunk_number = strtoul((const char*)text, NULL, 10);
             response->chunk_number = chunk_number;
         }
         else {
@@ -784,7 +796,7 @@ static ds3_bulk_object_list * _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr obje
     }
 
     for(child_node = objects_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(xmlStrcmp(child_node->name, (const xmlChar *) "Object") == 0) {
+        if(xmlStrcmp(child_node->name, (const xmlChar*) "Object") == 0) {
             ds3_bulk_object object = _parse_bulk_object(doc, child_node);
             g_array_append_val(object_array, object);
         }
@@ -793,36 +805,39 @@ static ds3_bulk_object_list * _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr obje
         }
     }
 
-    response->list = (ds3_bulk_object *) object_array->data;
+    response->list = (ds3_bulk_object*) object_array->data;
     response->size = object_array->len;
     g_array_free(object_array, FALSE);
     return response;
 }
 
-ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _request) {
-    ds3_bulk_response * response;
-    xmlChar * text;
+ds3_bulk_response* ds3_bulk(const ds3_client* client, const ds3_request* _request) {
+    ds3_bulk_response* response;
+    xmlChar* text;
     xmlNodePtr root, root_node, objects_node, object_node, child_node;
-    struct _xmlAttr * attribute;
+    struct _xmlAttr* attribute;
     
     uint64_t i;
     int buff_size;
     char size_buff[21]; //The max size of an uint64_t should be 20 characters
     
-    struct _ds3_request * request;
-    ds3_bulk_object_list * obj_list;
+    struct _ds3_request* request;
+    ds3_bulk_object_list* obj_list;
     ds3_bulk_object obj;
     ds3_xml_send_buff send_buff;
 
+    GByteArray* xml_blob;
+    GArray* objects_array; 
+
     xmlDocPtr doc;
-    xmlChar *xml_buff;
+    xmlChar* xml_buff;
     
     if(client == NULL || _request == NULL) {
         fprintf(stderr, "All arguments must be filled in\n");
         return NULL;
     }
     
-    request = (struct _ds3_request *) _request;
+    request = (struct _ds3_request*) _request;
 
     if(request->object_list == NULL || request->object_list->size == 0) {
         fprintf(stderr, "The bulk commands require a list of files");
@@ -835,10 +850,10 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
     obj_list = request->object_list;
 
     // Start creating the xml body to send to the server.
-    doc = xmlNewDoc((xmlChar *)"1.0");
-    root_node = xmlNewNode(NULL, (xmlChar *) "MasterObjectList");
+    doc = xmlNewDoc((xmlChar*)"1.0");
+    root_node = xmlNewNode(NULL, (xmlChar*) "MasterObjectList");
     
-    objects_node = xmlNewNode(NULL, (xmlChar *) "Objects");
+    objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
     xmlAddChild(root_node, objects_node);
     
     for(i = 0; i < obj_list->size; i++) {
@@ -846,34 +861,30 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
         memset(size_buff, 0, sizeof(char) * 21);
         snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
 
-        object_node = xmlNewNode(NULL, (xmlChar *) "Object");
+        object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
 
-        xmlSetProp(object_node, (xmlChar *) "Name", (xmlChar *) obj.name);
-        xmlSetProp(object_node, (xmlChar *) "Size", (xmlChar *) size_buff );
+        xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name);
+        xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff );
     }
 
     xmlDocSetRootElement(doc, root_node);
-
     xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
-    printf("%s\n", (char *) xml_buff);
 
-    send_buff.buff = (char *) xml_buff;
+    send_buff.buff = (char*) xml_buff;
     send_buff.size = strlen(send_buff.buff);
 
     request->length = send_buff.size; // make sure to set the size of the request.
 
-    GByteArray* xml_blob = g_byte_array_new();
-    _net_process_request(client, request, xml_blob, load_xml_buff, (void *) &send_buff, _ds3_send_xml_buff);
+    xml_blob = g_byte_array_new();
+    _net_process_request(client, request, xml_blob, load_xml_buff, (void*) &send_buff, _ds3_send_xml_buff);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
     xmlFree(xml_buff);
     
     // Start processing the data that was received back.
-
-
-    doc = xmlParseMemory((const char *) xml_blob->data, xml_blob->len);
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
         fprintf(stderr, "Failed to parse document");
         fprintf(stdout, "Result: %s\n", xml_blob->data);
@@ -883,7 +894,7 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
 
     root = xmlDocGetRootElement(doc);
 
-    if(xmlStrcmp(root->name, (const xmlChar *) "MasterObjectList") != 0) {
+    if(xmlStrcmp(root->name, (const xmlChar*) "MasterObjectList") != 0) {
         fprintf(stderr, "wrong document, expected root node to be MasterObjectList");
         fprintf(stdout, "Result: %s\n", xml_blob->data);
         xmlFreeDoc(doc);
@@ -891,18 +902,18 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
         return NULL;
     }
 
-    GArray * objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
+    objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
 
     response = g_new0(ds3_bulk_response, 1);
 
     for(attribute = root->properties; attribute != NULL; attribute = attribute->next) {
-        if(xmlStrcmp(attribute->name, (const xmlChar *) "JobId") == 0) {
+        if(xmlStrcmp(attribute->name, (const xmlChar*) "JobId") == 0) {
             text = xmlNodeListGetString(doc, attribute->children, 1);
             if(text == NULL) {
                 continue;
             }
-            response->job_id = g_strdup((char *) text);
-            response->job_id_size = strlen((char *) text);
+            response->job_id = g_strdup((char*) text);
+            response->job_id_size = strlen((char*) text);
             xmlFree(text);
         }
         else {
@@ -911,8 +922,8 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
     }
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(xmlStrcmp(child_node->name, (const xmlChar *) "Objects") == 0) {
-            ds3_bulk_object_list * obj_list = _parse_bulk_objects(doc, child_node);
+        if(xmlStrcmp(child_node->name, (const xmlChar*) "Objects") == 0) {
+            ds3_bulk_object_list* obj_list = _parse_bulk_objects(doc, child_node);
             g_array_append_val(objects_array, obj_list);
         }
         else {
@@ -920,7 +931,7 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
         }
     }
 
-    response->list = (ds3_bulk_object_list **) objects_array->data;
+    response->list = (ds3_bulk_object_list**) objects_array->data;
     response->list_size = objects_array->len;
     g_byte_array_free(xml_blob, TRUE);
     g_array_free(objects_array, FALSE);
@@ -929,18 +940,18 @@ ds3_bulk_response * ds3_bulk(const ds3_client * client, const ds3_request * _req
 }
 
 
-void ds3_print_request(const ds3_request * _request) {
-    const struct _ds3_request * request; 
+void ds3_print_request(const ds3_request* _request) {
+    const struct _ds3_request* request; 
     if(_request == NULL) {
       fprintf(stderr, "Request object was null\n");
       return;
     }
-    request = (struct _ds3_request *)_request;
+    request = (struct _ds3_request*)_request;
     printf("Verb: %s\n", _net_get_verb(request->verb));
     printf("Path: %s\n", request->path);
 }
 
-void ds3_free_bucket_response(ds3_get_bucket_response * response){
+void ds3_free_bucket_response(ds3_get_bucket_response* response){
     size_t num_objects;
     int i;
     if(response == NULL) {
@@ -969,7 +980,7 @@ void ds3_free_bucket_response(ds3_get_bucket_response * response){
     g_free(response);
 }
 
-void ds3_free_service_response(ds3_get_service_response * response){
+void ds3_free_service_response(ds3_get_service_response* response){
     size_t num_buckets;
     int i;
 
@@ -984,12 +995,13 @@ void ds3_free_service_response(ds3_get_service_response * response){
         g_free(bucket.name);
         g_free(bucket.creation_date);
     }
+    
     ds3_free_owner(response->owner);
     g_free(response->buckets);
     g_free(response);
 }
 
-void ds3_free_bulk_response(ds3_bulk_response * response) {
+void ds3_free_bulk_response(ds3_bulk_response* response) {
     int i;
     if(response == NULL) {
         fprintf(stderr, "Bulk response was NULL\n");
@@ -1010,7 +1022,7 @@ void ds3_free_bulk_response(ds3_bulk_response * response) {
     g_free(response);
 }
 
-void ds3_free_bucket(ds3_bucket * bucket) {
+void ds3_free_bucket(ds3_bucket* bucket) {
     if(bucket == NULL) {
         fprintf(stderr, "Bucket was NULL\n");
         return;
@@ -1024,7 +1036,7 @@ void ds3_free_bucket(ds3_bucket * bucket) {
     g_free(bucket);
 }
 
-void ds3_free_owner(ds3_owner * owner) {
+void ds3_free_owner(ds3_owner* owner) {
     if(owner == NULL) {
         fprintf(stderr, "Owner was NULL\n");
         return;
@@ -1038,7 +1050,7 @@ void ds3_free_owner(ds3_owner * owner) {
     g_free(owner);
 }
 
-void ds3_free_creds(ds3_creds * creds) {
+void ds3_free_creds(ds3_creds* creds) {
     if(creds == NULL) {
         return;
     }
@@ -1053,7 +1065,7 @@ void ds3_free_creds(ds3_creds * creds) {
     g_free(creds);
 }
 
-void ds3_free_client(ds3_client * client) {
+void ds3_free_client(ds3_client* client) {
     if(client == NULL) {
       return;
     }
@@ -1066,12 +1078,12 @@ void ds3_free_client(ds3_client * client) {
     g_free(client);
 }
 
-void ds3_free_request(ds3_request * _request) {
-    struct _ds3_request * request; 
+void ds3_free_request(ds3_request* _request) {
+    struct _ds3_request* request; 
     if(_request == NULL) {
         return;
     }
-    request = (struct _ds3_request *) _request;
+    request = (struct _ds3_request*) _request;
     if(request->path != NULL) {
         g_free(request->path);
     }
@@ -1089,19 +1101,19 @@ void ds3_cleanup(void) {
 }
 
 size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return fwrite(buffer, size, nmemb, (FILE *) user_data);
+    return fwrite(buffer, size, nmemb, (FILE*) user_data);
 }
 
 size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return fread(buffer, size, nmemb, (FILE *) user_data);
+    return fread(buffer, size, nmemb, (FILE*) user_data);
 }
 
-static ds3_bulk_object _ds3_bulk_object_from_file(const char * file_name) {
-
+static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name) {
     struct stat file_info;
+    int result; 
     memset(&file_info, 0, sizeof(struct stat));
 
-    int result = stat(file_name, &file_info);
+    result = stat(file_name, &file_info);
     if (result != 0) {
         fprintf(stderr, "Failed to get file info for %s\n", file_name);
     }
@@ -1116,7 +1128,7 @@ static ds3_bulk_object _ds3_bulk_object_from_file(const char * file_name) {
     return obj;
 }
 
-ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files) {
+ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num_files) {
     uint64_t i;
     ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
     obj_list->size = num_files;
@@ -1136,7 +1148,7 @@ void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
     }
     count = object_list->size;
     for(i = 0; i < count; i++) {
-        char * file_name = object_list->list[i].name;
+        char* file_name = object_list->list[i].name;
         if (file_name == NULL) {
             continue;
         }
