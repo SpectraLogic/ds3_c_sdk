@@ -141,6 +141,7 @@ ds3_error* ds3_delete_object(const ds3_client * client, const ds3_request * requ
 void ds3_free_service_response(ds3_get_service_response * response);
 void ds3_free_bucket_response(ds3_get_bucket_response * response);
 void ds3_free_bulk_response(ds3_bulk_response * response);
+void ds3_free_error(ds3_error * error);
 
 void ds3_free_bucket(ds3_bucket * bucket);
 void ds3_free_owner(ds3_owner * owner);
