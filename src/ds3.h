@@ -7,6 +7,17 @@
 extern "C" {
 #endif
 
+// For windows DLL symbol exports.
+#ifdef _WIN32
+#    ifdef LIBRARY_EXPORTS
+#        define LIBRARY_API __declspec(dllexport)
+#    else
+#        define LIBRARY_API __declspec(dllimport)
+#    endif
+#else
+#    define LIBRARY_API
+#endif
+
 typedef enum {
     True, False
 }ds3_bool;
@@ -112,51 +123,51 @@ typedef struct {
     size_t error_message_size;
 }ds3_error;
 
-ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
-ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds);
+LIBRARY_API ds3_creds * ds3_create_creds(const char * access_id, const char * secret_key);
+LIBRARY_API ds3_client * ds3_create_client(const char * endpoint, ds3_creds * creds);
 
-ds3_request * ds3_init_get_service(void);
-ds3_request * ds3_init_get_bucket(const char * bucket_name);
-ds3_request * ds3_init_get_object(const char * bucket_name, const char * object_name);
-ds3_request * ds3_init_put_bucket(const char * bucket_name);
-ds3_request * ds3_init_put_object(const char * bucket_name, const char * object_name, uint64_t size);
-ds3_request * ds3_init_delete_bucket(const char * bucket_name);
-ds3_request * ds3_init_delete_object(const char * bucket_name, const char * object_name);
+LIBRARY_API ds3_request * ds3_init_get_service(void);
+LIBRARY_API ds3_request * ds3_init_get_bucket(const char * bucket_name);
+LIBRARY_API ds3_request * ds3_init_get_object(const char * bucket_name, const char * object_name);
+LIBRARY_API ds3_request * ds3_init_put_bucket(const char * bucket_name);
+LIBRARY_API ds3_request * ds3_init_put_object(const char * bucket_name, const char * object_name, uint64_t size);
+LIBRARY_API ds3_request * ds3_init_delete_bucket(const char * bucket_name);
+LIBRARY_API ds3_request * ds3_init_delete_object(const char * bucket_name, const char * object_name);
 
-ds3_request * ds3_init_put_bulk(const char * bucket_name, ds3_bulk_object_list * object_list);
-ds3_request * ds3_init_get_bulk(const char * bucket_name, ds3_bulk_object_list * object_list);
+LIBRARY_API ds3_request * ds3_init_put_bulk(const char * bucket_name, ds3_bulk_object_list * object_list);
+LIBRARY_API ds3_request * ds3_init_get_bulk(const char * bucket_name, ds3_bulk_object_list * object_list);
 
-void ds3_client_proxy(ds3_client * client, const char * proxy);
+LIBRARY_API void ds3_client_proxy(ds3_client * client, const char * proxy);
 
-ds3_error* ds3_get_service(const ds3_client * client, const ds3_request * request, ds3_get_service_response** response);
-ds3_error* ds3_get_bucket(const ds3_client * client, const ds3_request * request, ds3_get_bucket_response** response);
-ds3_error* ds3_bulk(const ds3_client * client, const ds3_request * request, ds3_bulk_response** response);
+LIBRARY_API ds3_error* ds3_get_service(const ds3_client * client, const ds3_request * request, ds3_get_service_response** response);
+LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client * client, const ds3_request * request, ds3_get_bucket_response** response);
+LIBRARY_API ds3_error* ds3_bulk(const ds3_client * client, const ds3_request * request, ds3_bulk_response** response);
 
-ds3_error* ds3_put_bucket(const ds3_client * client, const ds3_request * request);
-ds3_error* ds3_delete_bucket(const ds3_client * client, const ds3_request * request);
-ds3_error* ds3_get_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
-ds3_error* ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
-ds3_error* ds3_delete_object(const ds3_client * client, const ds3_request * request);
+LIBRARY_API ds3_error* ds3_put_bucket(const ds3_client * client, const ds3_request * request);
+LIBRARY_API ds3_error* ds3_delete_bucket(const ds3_client * client, const ds3_request * request);
+LIBRARY_API ds3_error* ds3_get_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
+LIBRARY_API ds3_error* ds3_put_object(const ds3_client * client, const ds3_request * request, void * user_data, size_t (* callback)(void *, size_t, size_t, void *));
+LIBRARY_API ds3_error* ds3_delete_object(const ds3_client * client, const ds3_request * request);
 
-void ds3_free_service_response(ds3_get_service_response * response);
-void ds3_free_bucket_response(ds3_get_bucket_response * response);
-void ds3_free_bulk_response(ds3_bulk_response * response);
-void ds3_free_error(ds3_error * error);
+LIBRARY_API void ds3_free_service_response(ds3_get_service_response * response);
+LIBRARY_API void ds3_free_bucket_response(ds3_get_bucket_response * response);
+LIBRARY_API void ds3_free_bulk_response(ds3_bulk_response * response);
+LIBRARY_API void ds3_free_error(ds3_error * error);
 
-void ds3_free_bucket(ds3_bucket * bucket);
-void ds3_free_owner(ds3_owner * owner);
-void ds3_free_creds(ds3_creds * client);
-void ds3_free_client(ds3_client * client);
-void ds3_free_request(ds3_request * request);
-void ds3_cleanup(void);
+LIBRARY_API void ds3_free_bucket(ds3_bucket * bucket);
+LIBRARY_API void ds3_free_owner(ds3_owner * owner);
+LIBRARY_API void ds3_free_creds(ds3_creds * client);
+LIBRARY_API void ds3_free_client(ds3_client * client);
+LIBRARY_API void ds3_free_request(ds3_request * request);
+LIBRARY_API void ds3_cleanup(void);
 
-void ds3_print_request(const ds3_request * request);
+LIBRARY_API void ds3_print_request(const ds3_request * request);
 // provided helpers
-size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
-size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
+LIBRARY_API size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
+LIBRARY_API size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 
-ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files);
-void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
+LIBRARY_API ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files);
+LIBRARY_API void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
 
 #ifdef __cplusplus
 }
