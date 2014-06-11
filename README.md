@@ -96,7 +96,8 @@ compiler tags using the following commands:
  * Linker flags: `pkg-config --libs libds3`
  * Both compiler and linker flags: `pkg-config --cflags --libs libds3`
 
-# Sample
+Sample
+------
 
 The `/sample` directory has an example of using the sdk. It provides a Makefile
 to build the SDK and itself.
