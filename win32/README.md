@@ -15,10 +15,7 @@ Studio install path inside of `/win32/package.bat`.
 To build the client including the sample executable do the following:
 
 1. Open a new Visual Studio Command Prompt.
-2. Run the following command:
-
-    nmake -f Makefile.vc
-
+2. Run the following command: `nmake -f Makefile.vc`
 3. Makefile.vc places the resulting binaries inside of `/win32/output/bin` by
    default.
 
