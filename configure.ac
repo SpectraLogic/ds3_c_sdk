@@ -8,7 +8,7 @@ AM_PROG_CC_C_O
 
 LT_INIT
 
-GLIB2_CHECK="glib-2.0 >= 2.36"
+GLIB2_CHECK="glib-2.0 >= 2.34"
 LIBCURL_CHECK="libcurl >= 7.31"
 LIBXML2_CHECK="libxml-2.0 >= 2.9"
 

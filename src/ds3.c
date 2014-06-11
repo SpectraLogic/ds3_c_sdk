@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
@@ -62,11 +61,11 @@ static void _init_curl(void) {
 
 static char* _net_get_verb(http_verb verb) {
     switch(verb) {
-        case GET: return "GET";
-        case PUT: return "PUT";
-        case POST: return "POST";
-        case DELETE : return "DELETE";
-        case HEAD : return "HEAD";
+        case HTTP_GET: return "GET";
+        case HTTP_PUT: return "PUT";
+        case HTTP_POST: return "POST";
+        case HTTP_DELETE : return "DELETE";
+        case HTTP_HEAD : return "HEAD";
     }
 
     return NULL;
@@ -199,7 +198,7 @@ static void _net_process_request(const ds3_client* client, const ds3_request* _r
         }
 
         switch(request->verb) {
-            case POST: {
+            case HTTP_POST: {
                 if (write_user_struct == NULL || write_handler_func == NULL) {
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
                 }
@@ -210,7 +209,7 @@ static void _net_process_request(const ds3_client* client, const ds3_request* _r
                 }
                 break;
             }
-            case PUT: {
+            case HTTP_PUT: {
                 if (write_user_struct == NULL || write_handler_func == NULL) {
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
                 }
@@ -221,15 +220,15 @@ static void _net_process_request(const ds3_client* client, const ds3_request* _r
                 }
                 break;
             }
-            case DELETE: {
+            case HTTP_DELETE: {
                 curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
                 break;
             }
-            case HEAD: {
+            case HTTP_HEAD: {
                 curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
                 break;
             }
-            case GET: {
+            case HTTP_GET: {
                 //Placeholder if we need to put anything here.
                 break;
             }
@@ -324,7 +323,7 @@ static struct _ds3_request* _common_request_init(void){
 
 ds3_request* ds3_init_get_service(void) {
     struct _ds3_request* request = _common_request_init(); 
-    request->verb = GET;
+    request->verb = HTTP_GET;
     request->path =  g_new0(char, 2);
     request->path [0] = '/';
     return (ds3_request*) request;
@@ -332,28 +331,28 @@ ds3_request* ds3_init_get_service(void) {
 
 ds3_request* ds3_init_get_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(); 
-    request->verb = GET;
+    request->verb = HTTP_GET;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = GET;
+    request->verb = HTTP_GET;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = DELETE;
+    request->verb = HTTP_DELETE;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = PUT;
+    request->verb = HTTP_PUT;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     request->length = length;
     return (ds3_request*) request;
@@ -361,21 +360,21 @@ ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_nam
 
 ds3_request* ds3_init_put_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = PUT;
+    request->verb = HTTP_PUT;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = DELETE;
+    request->verb = HTTP_DELETE;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = PUT;
+    request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_get");
     request->object_list = object_list;
@@ -384,7 +383,7 @@ ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* ob
 
 ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
-    request->verb = PUT;
+    request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_put");
     request->object_list = object_list;
@@ -859,7 +858,7 @@ ds3_bulk_response* ds3_bulk(const ds3_client* client, const ds3_request* _reques
     for(i = 0; i < obj_list->size; i++) {
         obj = obj_list->list[i];
         memset(size_buff, 0, sizeof(char) * 21);
-        snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
+        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);

@@ -12,7 +12,7 @@ typedef enum {
 }ds3_bool;
 
 typedef enum {
-  GET, PUT, POST, DELETE, HEAD
+  HTTP_GET, HTTP_PUT, HTTP_POST, HTTP_DELETE, HTTP_HEAD
 }http_verb;
 
 typedef struct {
