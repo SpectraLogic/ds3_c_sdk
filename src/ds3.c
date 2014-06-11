@@ -858,7 +858,7 @@ ds3_bulk_response* ds3_bulk(const ds3_client* client, const ds3_request* _reques
     for(i = 0; i < obj_list->size; i++) {
         obj = obj_list->list[i];
         memset(size_buff, 0, sizeof(char) * 21);
-        snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
+        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
