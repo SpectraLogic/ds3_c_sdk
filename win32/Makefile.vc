@@ -2,7 +2,7 @@ DEPS=deps\install
 DEPS_LIBDIR=$(DEPS)\lib
 DEPS_INCLUDE=/I$(DEPS)\include /I$(DEPS)\include\glib-2.0 /I$(DEPS_LIBDIR)\glib-2.0\include
 DEPS_DEFINE=/DCURL_STATICLIB /Dinline=__inline
-DEPS_LIBS=$(DEPS_LIBDIR)\glib-2.0.lib $(DEPS_LIBDIR)\libxml2_a.lib $(DEPS_LIBDIR)\libcurl_a.lib $(DEPS_LIBDIR)\iconv.lib
+DEPS_LIBS=$(DEPS_LIBDIR)\glib-2.0.lib $(DEPS_LIBDIR)\libxml2_a.lib $(DEPS_LIBDIR)\libcurl_a.lib
 COMPAT_INCLUDE=/Icompatibility_includes
 !IF !DEFINED(OUTPUT)
 OUTPUT=output
