@@ -12,10 +12,10 @@ all: $(OUTPUT)\include\ds3.h $(OUTPUT)\bin\ds3.dll $(OUTPUT)\bin\sample.exe
 
 $(OUTPUT)\bin\sample.exe: $(OUTPUT)\bin\ds3.dll obj\sample.obj $(OUTPUT)\bin
     link $(OUTPUT)\lib\ds3.lib obj\sample.obj /OUT:$(OUTPUT)\bin\sample.exe
-    copy $(DEPS)\bin\*.dll $(OUTPUT)\bin
 
 $(OUTPUT)\bin\ds3.dll: obj\ds3.obj $(OUTPUT)\bin $(OUTPUT)\lib
     link /DLL /DEF:ds3.def obj\ds3.obj /OUT:$(OUTPUT)\bin\ds3.dll /IMPLIB:$(OUTPUT)\lib\ds3.lib $(DEPS_LIBS)
+    copy $(DEPS)\bin\*.dll $(OUTPUT)\bin
 
 $(OUTPUT)\include\ds3.h: ..\src\ds3.h $(OUTPUT)\include
 	copy ..\src\ds3.h $(OUTPUT)\include\ds3.h
