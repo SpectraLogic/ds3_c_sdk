@@ -138,14 +138,24 @@ static char* _net_gen_query_params(GHashTable* query_params) {
         query_entries q_entries;
         char** entries;
         char* return_string;
+        int i;
         //build the query string
         memset(&q_entries, 0, sizeof(query_entries));
-        entries = g_new0(char*, g_hash_table_size(query_params));
-        q_entries.entries = entries;
 
+        //We need the +1 so that it is NULL terminating for g_strjoinv
+        entries = g_new0(char*, g_hash_table_size(query_params) + 1);
+        q_entries.entries = entries;
         g_hash_table_foreach(query_params, _hash_for_each, &q_entries);
         
         return_string = g_strjoinv("&", entries);
+
+        for(i= 0; ; i++ ) {
+            char* current_string = entries[i];
+            if(current_string == NULL) {
+                break;
+            }
+            g_free(current_string);
+        }
 
         g_free(entries);
         return return_string;
@@ -751,6 +761,7 @@ static ds3_bulk_object _parse_bulk_object(xmlDocPtr doc, xmlNodePtr object_node)
             }
             size = strtoul((const char*)text, NULL, 10);
             response.size = size;
+            xmlFree(text);
         }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
@@ -790,6 +801,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objec
             }
             chunk_number = strtoul((const char*)text, NULL, 10);
             response->chunk_number = chunk_number;
+            xmlFree(text);
         }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
@@ -941,6 +953,8 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
 
     response->list = (ds3_bulk_object_list**) objects_array->data;
     response->list_size = objects_array->len;
+    
+    xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
     g_array_free(objects_array, FALSE);
 
