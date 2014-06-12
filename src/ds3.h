@@ -117,10 +117,14 @@ typedef struct {
     size_t                  list_size;
 }ds3_bulk_response;
 
+typedef enum {
+  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_FAILED_REQUEST, DS3_ERROR_MISSING_ARGS
+}ds3_error_code;
+
 typedef struct {
-    int     errno;
-    char*   error_message;
-    size_t  error_message_size;
+    ds3_error_code  code;
+    char*           message;
+    size_t          message_size;
 }ds3_error;
 
 LIBRARY_API ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key);

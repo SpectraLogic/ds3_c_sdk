@@ -29,6 +29,13 @@ typedef struct {
     size_t total_read;
 }ds3_xml_send_buff;
 
+static ds3_error* _ds3_create_error(ds3_error_code code, const char * message) {
+    ds3_error* error = g_new0(ds3_error, 1);
+    error->code = code;
+    error->message = g_strdup(message);
+    error->message_size = strlen(error->message);
+    return error;
+}
 
 size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
     size_t to_read; 
@@ -256,9 +263,6 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
 
         res = curl_easy_perform(handle);
-        if(res != CURLE_OK) {
-            fprintf(stderr, "curl_easy_perform() failed %s\n", curl_easy_strerror(res));
-        }
 
         g_free(url);
         g_free(date);
@@ -267,10 +271,15 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         g_free(auth_header);
         curl_slist_free_all(headers);
         curl_easy_cleanup(handle);
+        if(res != CURLE_OK) {
+            char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
+            ds3_error* error = _ds3_create_error(DS3_ERROR_FAILED_REQUEST, message);
+            g_free(message);
+            return error;
+        }
     }
     else {
-        //TODO make this return a ds3_error
-        fprintf(stderr, "Failed to create curl handle\n");
+        return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
     }
     return NULL;
 }
@@ -404,8 +413,7 @@ ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* ob
 
 static ds3_error* _internal_request_dispatcher(const ds3_client* client, const ds3_request* request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
-        fprintf(stderr, "All arguments must be filled in\n");
-        return NULL; //TODO come back through and update this to an actual ds3_error
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing"); 
     }
     return _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func);
 }
@@ -491,20 +499,22 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
 
     if(doc == NULL) {
-        fprintf(stderr, "Failed to parse document.");
-        fprintf(stdout, "Result: %s\n", xml_blob->data);
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
         g_byte_array_free(xml_blob, TRUE);
-        return NULL; //TODO replace with ds3_error
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
     }
 
     root = xmlDocGetRootElement(doc);
     
     if(xmlStrcmp(root->name, (const xmlChar*) "ListAllMyBucketsResult") != 0) {
-        fprintf(stderr, "wrong document, expected root node to be ListAllMyBucketsResult");
-        fprintf(stdout, "Result: %s\n", xml_blob->data);
+        char* message = g_strconcat("Expected the root element to be 'ListAllMyBucketsResult'.  The actual response is: ", xml_blob->data, NULL);
         xmlFreeDoc(doc);
         g_byte_array_free(xml_blob, TRUE);
-        return NULL; //TODO replace with ds3_error
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
     }
 
     response = g_new0(ds3_get_service_response, 1);
@@ -601,20 +611,22 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
-        fprintf(stderr, "Failed to parse document");
-        fprintf(stdout, "Result: %s\n", xml_blob->data);
-        g_byte_array_free(xml_blob, TRUE); 
-        return NULL; //TODO replace with ds3_error
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
     }
 
     root = xmlDocGetRootElement(doc);
 
     if(xmlStrcmp(root->name, (const xmlChar*) "ListBucketResult") != 0) {
-        fprintf(stderr, "wrong document, expected root node to be ListBucketResult");
-        fprintf(stdout, "Result: %s\n", xml_blob->data);
-        xmlFreeDoc(doc);
+        char* message = g_strconcat("Expected the root element to be 'ListBucketsResult'.  The actual response is: ", xml_blob->data, NULL);
         g_byte_array_free(xml_blob, TRUE);
-        return NULL; //TODO replace with ds3_error
+        xmlFreeDoc(doc);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
     }
 
     response = g_new0(ds3_get_bucket_response, 1);
@@ -848,15 +860,13 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     xmlChar* xml_buff;
     
     if(client == NULL || _request == NULL) {
-        fprintf(stderr, "All arguments must be filled in\n");
-        return NULL; //TODO make into a ds3_error 
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing"); 
     }
     
     request = (struct _ds3_request*) _request;
 
     if(request->object_list == NULL || request->object_list->size == 0) {
-        fprintf(stderr, "The bulk commands require a list of files");
-        return NULL; //TODO make into a ds3_error 
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process"); 
     } 
 
     // Init the data structures declared above the null check
@@ -906,20 +916,22 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
-        fprintf(stderr, "Failed to parse document");
-        fprintf(stdout, "Result: %s\n", xml_blob->data);
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
         g_byte_array_free(xml_blob, TRUE);
-        return NULL; //TODO make into a ds3_error 
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
     }
 
     root = xmlDocGetRootElement(doc);
 
     if(xmlStrcmp(root->name, (const xmlChar*) "MasterObjectList") != 0) {
-        fprintf(stderr, "wrong document, expected root node to be MasterObjectList");
-        fprintf(stdout, "Result: %s\n", xml_blob->data);
+        char* message = g_strconcat("Expected the root element to be 'MasterObjectList'.  The actual response is: ", xml_blob->data, NULL);
         xmlFreeDoc(doc);
         g_byte_array_free(xml_blob, TRUE);
-        return NULL; //TODO make into a ds3_error 
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
     }
 
     objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
@@ -1124,8 +1136,8 @@ void ds3_free_error(ds3_error* error) {
         return;
     }
 
-    if(error->error_message != NULL) {
-        g_free(error->error_message);
+    if(error->message != NULL) {
+        g_free(error->message);
     }
 
     g_free(error);
