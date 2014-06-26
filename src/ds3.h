@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    True, False
+    False, True
 }ds3_bool;
 
 typedef enum {
