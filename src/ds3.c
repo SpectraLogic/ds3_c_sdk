@@ -44,6 +44,34 @@ typedef struct {
     size_t total_read;
 }ds3_xml_send_buff;
 
+typedef struct {
+    uint64_t status_code;
+    char* status_message;
+    size_t status_message_size;
+    size_t header_count;
+    GHashTable* headers;
+}ds3_response_data;
+
+typedef struct {
+    char* key;
+    size_t key_size;
+    char* value;
+    size_t value_size;
+}ds3_response_header;
+
+static void _ds3_free_response_header(gpointer data) {
+    ds3_response_header* header;
+    if (data == NULL) {
+        return;
+    }
+        
+    header = (ds3_response_header*) data;
+    g_free(header->key);
+    g_free(header->value);
+    g_free(data);
+    
+}
+
 static ds3_error* _ds3_create_error(ds3_error_code code, const char * message) {
     ds3_error* error = g_new0(ds3_error, 1);
     error->code = code;
@@ -52,7 +80,7 @@ static ds3_error* _ds3_create_error(ds3_error_code code, const char * message) {
     return error;
 }
 
-size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
+static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
     size_t to_read; 
     size_t remaining;
     ds3_xml_send_buff* xml_buff;
@@ -66,6 +94,78 @@ size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_da
     }
     
     strncpy((char*)buffer, xml_buff->buff, to_read);
+    return to_read;
+}
+
+static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    size_t to_read;
+    char* header_buff;
+    char** split_result;
+    ds3_response_header* header;
+    ds3_response_data* response_data = (ds3_response_data*) user_data;
+    GHashTable* headers = response_data->headers;
+    
+    printf("size %d, nmemb %d\n", size, nmemb); 
+    to_read = size * nmemb;
+    printf("Header ToRead: %d\n", to_read);
+    if (to_read < 2) {
+        return 0;
+    }
+    
+    header_buff = g_new0(char, to_read+1); //+1 for the null byte
+    strncpy(header_buff, (char*)buffer, to_read);
+    header_buff = g_strchomp(header_buff);
+    
+    // If we have read all the headers, then the last line will only be \n\r
+    if (strlen(header_buff) == 0) {
+        g_free(header_buff);
+        return to_read;
+    }
+
+    printf("Header value: %s\n", header_buff);
+    printf("Current Header Count: %lu\n", response_data->header_count);
+    
+    if (response_data->header_count < 1) {
+        printf("Processing the status line, is this changing\n");
+        if (g_str_has_prefix(header_buff, "HTTP/1.1") == TRUE) {
+            // parse out status code and the status string
+            char* endpointer;
+            uint64_t status_code;
+            split_result = g_strsplit(header_buff, " ", 1000);
+            status_code = g_ascii_strtoll(split_result[1], &endpointer, 10);
+            if (status_code == 0 && endpointer != NULL) {
+                fprintf(stderr, "Encountered a problem parsing the status code\n");
+                g_strfreev(split_result);
+                g_free(header_buff);
+                return 0;
+            }
+            response_data->status_code = status_code;
+            response_data->status_message = g_strjoinv(" ", split_result + 2);
+            printf("Status Message: %s\n", response_data->status_message);
+            response_data->status_message_size = strlen(response_data->status_message);
+            g_strfreev(split_result);
+        }
+        else {
+            fprintf(stderr, "Unsupported Protocol\n");
+            g_free(header_buff);
+            return 0;
+        }
+    }
+    else {
+        printf("Processing a header\n");
+        split_result = g_strsplit(header_buff, ": ", 2);
+        header = g_new0(ds3_response_header, 1); 
+        header->key = g_strdup(split_result[0]);
+        header->key_size = strlen(header->key);
+        header->value = g_strdup(split_result[1]);
+        header->value_size = strlen(header->value);
+
+        g_hash_table_insert(headers, header->key, header);
+        
+        g_strfreev(split_result);
+    }
+    response_data->header_count++;
+    g_free(header_buff);
     return to_read;
 }
 
@@ -196,14 +296,20 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
     if(handle) {
         char* url;
-        char* query_params = _net_gen_query_params(request->query_params);
         
         char* date;
         char* date_header;
         char* signature;
         struct curl_slist* headers;
         char* auth_header;
+        char* query_params = _net_gen_query_params(request->query_params);
+        ds3_response_data response_data;
+        GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, _ds3_free_response_header);
+
+        memset(&response_data, 0, sizeof(ds3_response_data));
         
+        response_data.headers = response_headers;
+
         if (query_params == NULL) {
             url = g_strconcat(client->endpoint, request->path, NULL);
         }
@@ -214,11 +320,16 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         curl_easy_setopt(handle, CURLOPT_URL, url);
         curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L); //tell curl to follow redirects
         curl_easy_setopt(handle, CURLOPT_MAXREDIRS, client->num_redirects);
+        
+        // Setup header collection
+        curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, _process_header_line);
+        curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response_data);
+
         if(client->proxy != NULL) {
           curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy);
         }
 
-        //Register the read and write handlers if they are set
+        // Register the read and write handlers if they are set
         if(read_user_struct != NULL && read_handler_func != NULL) {
             curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, read_handler_func);
             curl_easy_setopt(handle, CURLOPT_WRITEDATA, read_user_struct);
@@ -284,6 +395,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         g_free(date_header);
         g_free(signature);
         g_free(auth_header);
+        g_free(response_data.status_message); 
+        g_hash_table_destroy(response_headers);
         curl_slist_free_all(headers);
         curl_easy_cleanup(handle);
         if(res != CURLE_OK) {

@@ -1,20 +1,49 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ds3.h>
 
 int main (int args, char * argv[]) {
-    ds3_bulk_response *response;
-    int i,n;
-    puts("Starting playing with sdk code\n");
+    ds3_get_service_response *response; 
+    uint64_t i,n;
 
     ds3_creds * creds = ds3_create_creds("cnlhbg==","MrR3K4Bi");
-
     ds3_client * client = ds3_create_client("http://192.168.56.102:8080", creds);
+    
     ds3_client_proxy(client, "192.168.56.1:8888");
     
+    ds3_request* request = ds3_init_get_service();
+    ds3_error* error = ds3_get_service(client, request, &response);
+    ds3_free_request(request);
+   
+    if(error != NULL) {
+        printf("Got an error: %s\n", error->message);
+        return 1;
+    }
+
+    if (response == NULL) {
+        printf("Response was null\n");
+        return 1;
+    }
+
+    if(response->num_buckets == NULL) {
+        printf("Num buckets is null\n");
+        return 1;
+    }
+
+    for (i = 0; i < response->num_buckets; i++) {
+        ds3_bucket bucket = response->buckets[i];
+        printf("Bucket: (%s) created on %s\n", bucket.name, bucket.creation_date);
+    }
+    
+    ds3_free_service_response(response);
+
+    /*
+    
+    ds3_bulk_response *response;
     char * bucket = "books6";
 
     const char * files[] = {"huckfinn.txt", "ulysses.txt"};
@@ -32,19 +61,7 @@ int main (int args, char * argv[]) {
     ds3_free_bulk_response(response);
 
     ds3_free_bulk_object_list(list);
-
-    /*
-    request = ds3_init_get_service();
-    ds3_get_service_response * response = ds3_get_service(client, request);
-    ds3_free_request(request);
-
-    for(i = 0; i < response->num_buckets; i++) {
-        ds3_bucket bucket = response->buckets[i];
-        printf("Bucket: (%s) created on %s\n", bucket.name, bucket.creation_date);
-    }
     
-    ds3_free_service_response(response);
-    /*
     request = ds3_init_get_bucket(bucket);
 
     ds3_print_request(request);
