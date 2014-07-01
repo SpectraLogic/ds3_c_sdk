@@ -142,7 +142,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
             if (status_code == 100) {
                 printf("Ignoring 100 status code header line\n");
                 g_free(header_buff);
-            	g_strfreev(split_result);
+                g_strfreev(split_result);
                 return to_read;
             }
             else {
@@ -150,7 +150,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
                 response_data->status_message = g_strjoinv(" ", split_result + 2);
                 printf("Status Message: %s\n", response_data->status_message);
                 response_data->status_message_size = strlen(response_data->status_message);
-            	g_strfreev(split_result);
+                g_strfreev(split_result);
             }
         }
         else {
