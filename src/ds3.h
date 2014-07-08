@@ -133,13 +133,22 @@ typedef struct {
 }ds3_bulk_response;
 
 typedef enum {
-  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_FAILED_REQUEST, DS3_ERROR_MISSING_ARGS
+  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_REQUEST_FAILED, DS3_ERROR_MISSING_ARGS, DS3_ERROR_BAD_STATUS_CODE
 }ds3_error_code;
 
 typedef struct {
-    ds3_error_code  code;
-    char*           message;
-    size_t          message_size;
+    uint64_t  status_code;
+    char*     status_message;
+    size_t    status_message_size;
+    char*     error_body;
+    size_t    error_body_size;
+}ds3_error_response;
+
+typedef struct {
+    ds3_error_code      code;
+    char*               message;
+    size_t              message_size;
+    ds3_error_response* error;
 }ds3_error;
 
 LIBRARY_API ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key);

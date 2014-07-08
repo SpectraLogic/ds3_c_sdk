@@ -34,6 +34,8 @@ struct _ds3_request{
     GHashTable* headers;
     GHashTable* query_params;
 
+    uint64_t expected_status_code;
+
     //These next few elements are only for the bulk commands
     ds3_bulk_object_list* object_list;
 };
@@ -50,6 +52,9 @@ typedef struct {
     size_t status_message_size;
     size_t header_count;
     GHashTable* headers;
+    GByteArray* body; // this will only be used when getting errors
+
+    void* user_data;
 }ds3_response_data;
 
 typedef struct {
@@ -69,7 +74,6 @@ static void _ds3_free_response_header(gpointer data) {
     g_free(header->key);
     g_free(header->value);
     g_free(data);
-    
 }
 
 static ds3_error* _ds3_create_error(ds3_error_code code, const char * message) {
@@ -398,18 +402,30 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         res = curl_easy_perform(handle);
 
+
         g_free(url);
         g_free(date);
         g_free(date_header);
         g_free(signature);
         g_free(auth_header);
-        g_free(response_data.status_message); 
         g_hash_table_destroy(response_headers);
         curl_slist_free_all(headers);
         curl_easy_cleanup(handle);
+        //process the response
+        if(request->expected_status_code != response_data.status_code) {
+            ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
+            error->error = g_new0(ds3_error_response, 1);
+            error->error->status_code = response_data.status_code;
+            error->error->status_message = g_strdup(response_data.status_message);
+            error->error->status_message_size = strlen(error->error->status_message);
+
+            g_free(response_data.status_message);
+            return error;
+        }
+        g_free(response_data.status_message); 
         if(res != CURLE_OK) {
             char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
-            ds3_error* error = _ds3_create_error(DS3_ERROR_FAILED_REQUEST, message);
+            ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
             g_free(message);
             return error;
         }
@@ -479,7 +495,8 @@ static struct _ds3_request* _common_request_init(void){
 }
 
 ds3_request* ds3_init_get_service(void) {
-    struct _ds3_request* request = _common_request_init(); 
+    struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 200;
     request->verb = HTTP_GET;
     request->path =  g_new0(char, 2);
     request->path [0] = '/';
@@ -488,6 +505,7 @@ ds3_request* ds3_init_get_service(void) {
 
 ds3_request* ds3_init_get_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(); 
+    request->expected_status_code = 200;
     request->verb = HTTP_GET;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
@@ -495,6 +513,7 @@ ds3_request* ds3_init_get_bucket(const char* bucket_name) {
 
 ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 200;
     request->verb = HTTP_GET;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request*) request;
@@ -502,6 +521,7 @@ ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_nam
 
 ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 204;
     request->verb = HTTP_DELETE;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request*) request;
@@ -509,6 +529,7 @@ ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_
 
 ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     request->length = length;
@@ -517,6 +538,7 @@ ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_nam
 
 ds3_request* ds3_init_put_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
@@ -524,6 +546,7 @@ ds3_request* ds3_init_put_bucket(const char* bucket_name) {
 
 ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 204;
     request->verb = HTTP_DELETE;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
@@ -531,6 +554,7 @@ ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
 
 ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_get");
@@ -540,6 +564,7 @@ ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* ob
 
 ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
+    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     g_hash_table_insert(request->query_params, "operation", "start_bulk_put");
@@ -628,10 +653,16 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
+    ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
     
-    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
-   
+    error = _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
+    
+    if(error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
 
     if(doc == NULL) {
@@ -1274,6 +1305,20 @@ void ds3_free_error(ds3_error* error) {
 
     if(error->message != NULL) {
         g_free(error->message);
+    }
+
+    if(error->error != NULL) {
+        ds3_error_response* error_response = error->error;
+
+        if(error_response->status_message != NULL) {
+            g_free(error_response->status_message);
+        }
+
+        if(error_response->error_body != NULL) {
+            g_free(error_response->error_body);            
+        }
+
+        g_free(error_response);
     }
 
     g_free(error);

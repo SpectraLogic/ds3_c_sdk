@@ -11,7 +11,7 @@ int main (int args, char * argv[]) {
     uint64_t i,n;
 
     ds3_creds * creds = ds3_create_creds("cnlhbg==","MrR3K4Bi");
-    ds3_client * client = ds3_create_client("http://192.168.56.102:8080", creds);
+    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
     
     ds3_client_proxy(client, "192.168.56.1:8888");
     
@@ -20,17 +20,29 @@ int main (int args, char * argv[]) {
     ds3_free_request(request);
    
     if(error != NULL) {
-        printf("Got an error: %s\n", error->message);
+        if(error->error != NULL) {
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
+        }
+        else {
+            printf("Got a runtime error: %s\n", error->message);
+        }
+        ds3_free_error(error);
+        ds3_free_creds(creds);
+        ds3_free_client(client);
         return 1;
     }
 
     if (response == NULL) {
         printf("Response was null\n");
+        ds3_free_creds(creds);
+        ds3_free_client(client);
         return 1;
     }
 
     if(response->num_buckets == NULL) {
         printf("Num buckets is null\n");
+        ds3_free_creds(creds);
+        ds3_free_client(client);
         return 1;
     }
 
