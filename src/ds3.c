@@ -120,9 +120,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
     ds3_response_data* response_data = (ds3_response_data*) user_data;
     GHashTable* headers = response_data->headers;
     
-    printf("size %d, nmemb %d\n", size, nmemb); 
     to_read = size * nmemb;
-    printf("Header ToRead: %d\n", to_read);
     if (to_read < 2) {
         return 0;
     }
@@ -137,11 +135,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
         return to_read;
     }
 
-    printf("Header value: %s\n", header_buff);
-    printf("Current Header Count: %lu\n", response_data->header_count);
-    
     if (response_data->header_count < 1) {
-        printf("Processing the status line, is this changing\n");
         if (g_str_has_prefix(header_buff, "HTTP/1.1") == TRUE) {
             // parse out status code and the status string
             char* endpointer;
@@ -155,7 +149,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
                 return 0;
             }
             if (status_code == 100) {
-                printf("Ignoring 100 status code header line\n");
+                fprintf(stderr, "Ignoring 100 status code header line\n");
                 g_free(header_buff);
                 g_strfreev(split_result);
                 return to_read;
@@ -163,7 +157,6 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
             else {
                 response_data->status_code = status_code;
                 response_data->status_message = g_strjoinv(" ", split_result + 2);
-                printf("Status Message: %s\n", response_data->status_message);
                 response_data->status_message_size = strlen(response_data->status_message);
                 g_strfreev(split_result);
             }
@@ -175,7 +168,6 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
         }
     }
     else {
-        printf("Processing a header\n");
         split_result = g_strsplit(header_buff, ": ", 2);
         header = g_new0(ds3_response_header, 1); 
         header->key = g_strdup(split_result[0]);
