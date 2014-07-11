@@ -22,6 +22,7 @@ int main (int args, char * argv[]) {
     if(error != NULL) {
         if(error->error != NULL) {
             printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
+            printf("Message Body: %s\n", error->error->error_body);
         }
         else {
             printf("Got a runtime error: %s\n", error->message);

@@ -47,14 +47,17 @@ typedef struct {
 }ds3_xml_send_buff;
 
 typedef struct {
+    // These attributes are used when processing a response header
     uint64_t status_code;
     char* status_message;
     size_t status_message_size;
     size_t header_count;
     GHashTable* headers;
-    GByteArray* body; // this will only be used when getting errors
 
+    // These attributes are used when processing a response body
+    GByteArray* body; // this will only be used when getting errors
     void* user_data;
+    size_t (*user_func)(void*, size_t, size_t, void*);
 }ds3_response_data;
 
 typedef struct {
@@ -99,6 +102,14 @@ static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* 
     
     strncpy((char*)buffer, xml_buff->buff, to_read);
     return to_read;
+}
+
+static size_t load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    size_t realsize = size * nmemb;
+    GByteArray* blob = (GByteArray*) user_data;
+    
+    g_byte_array_append(blob, (const guint8 *) buffer, realsize);
+    return realsize;
 }
 
 static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void* user_data) {
@@ -179,6 +190,18 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
     response_data->header_count++;
     g_free(header_buff);
     return to_read;
+}
+
+static size_t _process_response_body(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    ds3_response_data* response_data = (ds3_response_data*) user_data;
+
+    // If we got an error, collect the error body
+    if (response_data->status_code >= 400) {
+        return load_buffer(buffer, size, nmemb, response_data->body); 
+    }
+    else { // If we did not get an error, call he user's defined callbacks.
+        return response_data->user_func(buffer, size, nmemb, response_data->user_data);
+    }
 }
 
 //---------- Networking code ----------// 
@@ -283,7 +306,7 @@ static char* _net_gen_query_params(GHashTable* query_params) {
         
         return_string = g_strjoinv("&", entries);
 
-        for(i= 0; ; i++ ) {
+        for(i = 0; ; i++) {
             char* current_string = entries[i];
             if(current_string == NULL) {
                 break;
@@ -319,8 +342,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, _ds3_free_response_header);
 
         memset(&response_data, 0, sizeof(ds3_response_data));
-        
         response_data.headers = response_headers;
+        response_data.body = g_byte_array_new();
 
         if (query_params == NULL) {
             url = g_strconcat(client->endpoint, request->path, NULL);
@@ -343,9 +366,13 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         // Register the read and write handlers if they are set
         if(read_user_struct != NULL && read_handler_func != NULL) {
-            curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, read_handler_func);
-            curl_easy_setopt(handle, CURLOPT_WRITEDATA, read_user_struct);
+            response_data.user_data = read_user_struct;
+            response_data.user_func = read_handler_func;
         }
+
+        // We must always set this so we can collect the error message body
+        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, _process_response_body);
+        curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response_data);
 
         if(write_user_struct != NULL && write_handler_func != NULL) {
             curl_easy_setopt(handle, CURLOPT_READFUNCTION, write_handler_func);
@@ -418,10 +445,14 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             error->error->status_code = response_data.status_code;
             error->error->status_message = g_strdup(response_data.status_message);
             error->error->status_message_size = strlen(error->error->status_message);
+            error->error->error_body = g_strdup(response_data.body->data);
+            error->error->error_body_size = response_data.body->len;
 
+            g_byte_array_free(response_data.body, TRUE);
             g_free(response_data.status_message);
             return error;
         }
+        g_byte_array_free(response_data.body, TRUE);
         g_free(response_data.status_message); 
         if(res != CURLE_OK) {
             char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
@@ -579,13 +610,6 @@ static ds3_error* _internal_request_dispatcher(const ds3_client* client, const d
     return _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func);
 }
 
-static size_t load_xml_buff(void* contents, size_t size, size_t nmemb, void* user_data) {
-    size_t realsize = size * nmemb;
-    GByteArray* blob = (GByteArray*) user_data;
-    
-    g_byte_array_append(blob, (const guint8 *) contents, realsize);
-    return realsize;
-}
 
 static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
     xmlChar* text;
@@ -656,7 +680,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
     
-    error = _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
     
     if(error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
@@ -774,7 +798,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     xmlChar* text;
     GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
     GByteArray* xml_blob = g_byte_array_new();
-    _internal_request_dispatcher(client, request, xml_blob, load_xml_buff, NULL, NULL);
+    _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
     
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
@@ -1069,7 +1093,7 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     request->length = send_buff.size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
-    error_response = _net_process_request(client, request, xml_blob, load_xml_buff, (void*) &send_buff, _ds3_send_xml_buff);
+    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
