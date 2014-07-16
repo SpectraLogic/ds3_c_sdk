@@ -23,3 +23,5 @@ Makefile.in
 *.l[ao]
 *~
 !/sample/Makefile
+/win32/output
+/win32/ds3.zip

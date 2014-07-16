@@ -437,7 +437,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             error->error->status_code = response_data.status_code;
             error->error->status_message = g_strdup(response_data.status_message);
             error->error->status_message_size = strlen(error->error->status_message);
-            error->error->error_body = g_strdup(response_data.body->data);
+            error->error->error_body = g_strdup((char*)response_data.body->data);
             error->error->error_body_size = response_data.body->len;
 
             g_byte_array_free(response_data.body, TRUE);
