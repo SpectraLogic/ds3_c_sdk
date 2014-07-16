@@ -244,7 +244,17 @@ The following is an example of performing a get bucket:
 
 ```c
 
-ds3_get_bucket_response *response; 
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+// "ds3.h" is the only header that needs to be included to use the DS3 API.
+#include "ds3.h"
+
+int main (int args, char * argv[]) {
+    ds3_get_bucket_response *response; 
     uint64_t i;
 
     // Setup client credentials and then the actual client itself.
