@@ -10,7 +10,7 @@ int main (int args, char * argv[]) {
     ds3_get_service_response *response; 
     uint64_t i,n;
 
-    ds3_creds * creds = ds3_create_creds("cnlhbg==","MrR3K4Bi");
+    ds3_creds * creds = ds3_create_creds("<access_key>","<secret_key>");
     ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
     
     ds3_client_proxy(client, "192.168.56.1:8888");
