@@ -1,6 +1,7 @@
 .PHONY: run clean
 
 CPP=g++
+CC=gcc
 PKG_CONFIG=PKG_CONFIG_PATH="../install/lib/pkgconfig" pkg-config
 LIBS=`$(PKG_CONFIG) --libs libds3`
 CFLAGS=`$(PKG_CONFIG) --cflags libds3`
@@ -15,10 +16,10 @@ deps:
 	./build_local.sh
 
 sample: main.o
-	$(CPP) *.o $(CFLAGS) $(LIBS) -o sample
+	$(CC) *.o $(CFLAGS) $(LIBS) -o sample
 
 main.o: ../install/lib/pkgconfig/libds3.pc
-	$(CPP) -c main.cpp $(CFLAGS)
+	$(CC) -c main.c $(CFLAGS)
 
 ../install/lib/pkgconfig/libds3.pc:
 	$(error SDK not built. Please run make deps)
