@@ -114,7 +114,7 @@ To run it, just use `make run`.
 Code Samples
 ------------
 
-The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of buckets back from DS3.
+The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from DS3.
 
 ```c
 
@@ -124,21 +124,34 @@ The following section contains several examples of using the DS3 C SDK.  The fir
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+// "ds3.h" is the only header that needs to be included to use the DS3 API.
 #include "ds3.h"
 
 int main (int args, char * argv[]) {
+    // Allocate space for the response pointer.
+    // The DS3 client library will end up consuming this.
     ds3_get_service_response *response; 
     uint64_t i;
 
+    // Setup client credentials and then the actual client itself.
     ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
     ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
     
+    // You can optionally set a proxy server that a request should be sent through
     //ds3_client_proxy(client, "192.168.56.1:8888");
     
+    // Create the get service request.  All requests to a DS3 appliance start this way.
+    // All ds3_init_* functions return a ds3_request struct
+    
     ds3_request* request = ds3_init_get_service();
+    
+    // This performs the request to a DS3 appliance.
+    // If there is an error 'error' will not be NULL
+    // If the request completed successfully then 'error' will be NULL
     ds3_error* error = ds3_get_service(client, request, &response);
     ds3_free_request(request);
    
+    // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
             printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
@@ -183,3 +196,46 @@ int main (int args, char * argv[]) {
 
 ```
 
+The next demonstrates how to create a new bucket:
+
+```c
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "ds3.h"
+
+int main (int args, char * argv[]) {
+    ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
+    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
+    
+    char * bucket = "books";
+    ds3_request * create_bucket_request = ds3_init_put_bucket(bucket);
+    ds3_error* error = ds3_put_bucket(client, create_bucket_request);
+    ds3_free_request(create_bucket_request);
+    
+    if(error != NULL) {
+        if(error->error != NULL) {
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message);
+            printf("Message Body: %s\n", error->error->error_body);
+        }
+        else {
+            printf("Got a runtime error: %s\n", error->message);
+        }
+        ds3_free_error(error);
+        ds3_free_creds(creds);
+        ds3_free_client(client);
+        return 1;
+    }   
+
+    printf("Successfully created bucket: %s\n", bucket);
+    ds3_free_creds(creds);
+    ds3_free_client(client);
+    ds3_cleanup();
+
+    return 0;
+}
+```
