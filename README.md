@@ -99,7 +99,7 @@ compiler tags using the following commands:
 Sample
 ------
 
-The `/sample` directory has an example of using the sdk. It provides a Makefile
+The `/sample` directory has an example project that uses the sdk. It provides a Makefile
 to build the SDK and itself.
 
 To build the sample, use the following commands:
@@ -110,4 +110,76 @@ To build the sample, use the following commands:
     $ make
 
 To run it, just use `make run`.
+
+Code Samples
+------------
+
+The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of buckets back from DS3.
+
+```c
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "ds3.h"
+
+int main (int args, char * argv[]) {
+    ds3_get_service_response *response; 
+    uint64_t i;
+
+    ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
+    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
+    
+    //ds3_client_proxy(client, "192.168.56.1:8888");
+    
+    ds3_request* request = ds3_init_get_service();
+    ds3_error* error = ds3_get_service(client, request, &response);
+    ds3_free_request(request);
+   
+    if(error != NULL) {
+        if(error->error != NULL) {
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
+            printf("Message Body: %s\n", error->error->error_body);
+        }
+        else {
+            printf("Got a runtime error: %s\n", error->message);
+        }
+        ds3_free_error(error);
+        ds3_free_creds(creds);
+        ds3_free_client(client);
+        return 1;
+    }
+
+    if (response == NULL) {
+        printf("Response was null\n");
+        ds3_free_creds(creds);
+        ds3_free_client(client);
+        return 1;
+    }
+
+    if(response->num_buckets == 0) {
+        printf("No buckets returned\n");
+        ds3_free_creds(creds);
+        ds3_free_client(client);
+        return 1;
+    }
+
+    for (i = 0; i < response->num_buckets; i++) {
+        ds3_bucket bucket = response->buckets[i];
+        printf("Bucket: (%s) created on %s\n", bucket.name, bucket.creation_date);
+    }
+    
+    ds3_free_service_response(response);
+
+    ds3_free_creds(creds);
+    ds3_free_client(client);
+    ds3_cleanup();
+    
+    return 0;
+}
+
+```
 
