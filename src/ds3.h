@@ -17,6 +17,7 @@
 #define __DS3_HEADER__
 
 #include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
