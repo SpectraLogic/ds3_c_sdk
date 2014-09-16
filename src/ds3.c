@@ -430,7 +430,18 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         g_hash_table_destroy(response_headers);
         curl_slist_free_all(headers);
         curl_easy_cleanup(handle);
+        
         //process the response
+        if(res != CURLE_OK) {
+            char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
+            ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
+            g_byte_array_free(response_data.body, TRUE);
+            g_free(response_data.status_message); 
+            g_free(message);
+            return error;
+        }
+
+        fprintf(stderr, "Got status code of (%ld) expected (%ld)\n", response_data.status_code, request->expected_status_code);
         if(request->expected_status_code != response_data.status_code) {
             ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
             error->error = g_new0(ds3_error_response, 1);
@@ -446,12 +457,6 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         }
         g_byte_array_free(response_data.body, TRUE);
         g_free(response_data.status_message); 
-        if(res != CURLE_OK) {
-            char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
-            ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
-            g_free(message);
-            return error;
-        }
     }
     else {
         return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");

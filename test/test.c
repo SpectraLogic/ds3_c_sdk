@@ -3,11 +3,15 @@
 #include "ds3.h"
 #include "test.h"
 #include "service_tests.h"
+#include "bucket_tests.h"
 
 static ds3_client * get_client() {
-    char * endpoint = getenv("DS3_ENDPOINT");
-    char * access_key = getenv("DS3_ACCESS_KEY");
-    char * secret_key = getenv("DS3_SECRET_KEY");
+    char* endpoint = getenv("DS3_ENDPOINT");
+    char* access_key = getenv("DS3_ACCESS_KEY");
+    char* secret_key = getenv("DS3_SECRET_KEY");
+    char* proxy = getenv("http_proxy");
+
+    ds3_client* client;
 
     if (endpoint == NULL) {
         fprintf(stderr, "DS3_ENDPOINT must be set.\n");
@@ -24,9 +28,16 @@ static ds3_client * get_client() {
         exit(1);
     }
 
-    ds3_creds * creds = ds3_create_creds(access_key, secret_key);
- 
-    return ds3_create_client(endpoint, creds);
+    ds3_creds* creds = ds3_create_creds(access_key, secret_key);
+    
+    client = ds3_create_client(endpoint, creds);
+    
+    if (proxy != NULL) {
+        fprintf(stderr, "Setting proxy: %s\n", proxy);
+        ds3_client_proxy(client, proxy); 
+    }
+    
+    return client; 
 }
 
 static void run_tests(const ds3_client* client, const test* tests){
@@ -48,7 +59,7 @@ int main(int args, char * argv[]) {
     printf("Creating client\n");
     ds3_client * client = get_client();
 
-    test tests[3] = {test_get_service, NULL};
+    test tests[4] = {test_get_service, test_put_bucket, test_bulk_put, NULL};
 
     // Start test run.
     run_tests(client, tests);
