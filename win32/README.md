@@ -4,6 +4,16 @@ Overview
 This directory contains all of the files needed to build under Windows.
 Currently we build using Microsoft's nmake and MSVC 9 and above.
 
+Prerequesites
+-------------
+
+1. Powershell 4.0 or above 
+2. .NET Framework 4.5 or above
+
+Refer to "PowerShell DS3 Module" documentation in the DS3 Net sdk for information 
+about PowerShell installation.
+
+
 Basic Build
 -----------
 
@@ -12,7 +22,8 @@ executes the Visual Studio 2008 Command Prompt environment script, so if you're
 using a different version of Visual Studio you'll have to modify the Visual
 Studio install path inside of `/win32/package.bat`.
 
-To build the client including the sample executable do the following:
+To build the client including the sample executable do the following
+
 
 1. Open a new Visual Studio Command Prompt.
 2. Run the following command: `nmake -f Makefile.vc`
