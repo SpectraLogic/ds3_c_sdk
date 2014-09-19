@@ -1025,98 +1025,18 @@ static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objec
     return response;
 }
 
-ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_bulk_response** _response) {
-    ds3_bulk_response* response;
-    ds3_error* error_response;
-    xmlChar* text;
-    xmlNodePtr root, root_node, objects_node, object_node, child_node;
+static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _response){
     struct _xmlAttr* attribute;
-    
-    uint64_t i;
-    int buff_size;
-    char size_buff[21]; //The max size of an uint64_t should be 20 characters
-    
-    struct _ds3_request* request;
-    ds3_bulk_object_list* obj_list;
-    ds3_bulk_object obj;
-    ds3_xml_send_buff send_buff;
-
-    GByteArray* xml_blob;
     GArray* objects_array; 
-
-    xmlDocPtr doc;
-    xmlChar* xml_buff;
-    
-    if(client == NULL || _request == NULL) {
-        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing"); 
-    }
-    
-    request = (struct _ds3_request*) _request;
-
-    if(request->object_list == NULL || request->object_list->size == 0) {
-        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process"); 
-    } 
-
-    // Init the data structures declared above the null check
-    memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
-    memset(&obj, 0, sizeof(ds3_bulk_object));
-    obj_list = request->object_list;
-
-    // Start creating the xml body to send to the server.
-    doc = xmlNewDoc((xmlChar*)"1.0");
-    root_node = xmlNewNode(NULL, (xmlChar*) "MasterObjectList");
-    
-    objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
-    xmlAddChild(root_node, objects_node);
-    
-    for(i = 0; i < obj_list->size; i++) {
-        obj = obj_list->list[i];
-        memset(size_buff, 0, sizeof(char) * 21);
-        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
-
-        object_node = xmlNewNode(NULL, (xmlChar*) "Object");
-        xmlAddChild(objects_node, object_node);
-
-        xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name);
-        xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff );
-    }
-
-    xmlDocSetRootElement(doc, root_node);
-    xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
-
-    send_buff.buff = (char*) xml_buff;
-    send_buff.size = strlen(send_buff.buff);
-
-    request->length = send_buff.size; // make sure to set the size of the request.
-
-    xml_blob = g_byte_array_new();
-    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff);
-
-    // Cleanup the data sent to the server.
-    xmlFreeDoc(doc);
-    xmlFree(xml_buff);
-   
-    if(error_response != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error_response;
-    }
-
-    // Start processing the data that was received back.
-    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if(doc == NULL) {
-        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
-    }
+    xmlChar* text;
+    xmlNodePtr root, objects_node, object_node, child_node;
+    ds3_bulk_response* response;
 
     root = xmlDocGetRootElement(doc);
 
     if(xmlStrcmp(root->name, (const xmlChar*) "MasterObjectList") != 0) {
-        char* message = g_strconcat("Expected the root element to be 'MasterObjectList'.  The actual response is: ", xml_blob->data, NULL);
+        char* message = g_strconcat("Expected the root element to be 'MasterObjectList'.  The actual response is: ", root->name, NULL);
         xmlFreeDoc(doc);
-        g_byte_array_free(xml_blob, TRUE);
         ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
         g_free(message);
         return error;
@@ -1150,15 +1070,114 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
             fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
         }
     }
-
+    
     response->list = (ds3_bulk_object_list**) objects_array->data;
     response->list_size = objects_array->len;
+    g_array_free(objects_array, FALSE);
     
+    *_response = response;
+    return NULL;
+}
+
+static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list) {
+    char size_buff[21]; //The max size of an uint64_t should be 20 characters
+    xmlDocPtr doc;
+    ds3_bulk_object obj;
+    xmlNodePtr objects_node, object_node;
+    int i;
+    // Start creating the xml body to send to the server.
+    doc = xmlNewDoc((xmlChar*)"1.0");
+    
+    objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
+    
+    for(i = 0; i < obj_list->size; i++) {
+        memset(&obj, 0, sizeof(ds3_bulk_object));
+        memset(size_buff, 0, sizeof(char) * 21);
+        
+        obj = obj_list->list[i];
+        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
+
+        object_node = xmlNewNode(NULL, (xmlChar*) "Object");
+        xmlAddChild(objects_node, object_node);
+
+        xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name);
+        xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff );
+    }
+
+    xmlDocSetRootElement(doc, objects_node);
+
+    return doc;
+}
+
+ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_bulk_response** response) {
+    ds3_error* error_response;
+    
+    uint64_t i;
+    int buff_size;
+    
+    struct _ds3_request* request;
+    ds3_bulk_object_list* obj_list;
+    ds3_xml_send_buff send_buff;
+
+    GByteArray* xml_blob;
+
+    xmlDocPtr doc;
+    xmlChar* xml_buff;
+    
+    if(client == NULL || _request == NULL) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing"); 
+    }
+    
+    request = (struct _ds3_request*) _request;
+
+    if(request->object_list == NULL || request->object_list->size == 0) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process"); 
+    } 
+
+    // Init the data structures declared above the null check
+    memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
+    obj_list = request->object_list;
+
+    doc = _generate_xml_objects_list(obj_list);
+
+    xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
+
+    send_buff.buff = (char*) xml_buff;
+    send_buff.size = strlen(send_buff.buff);
+
+    request->length = send_buff.size; // make sure to set the size of the request.
+
+    xml_blob = g_byte_array_new();
+    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff);
+
+    // Cleanup the data sent to the server.
+    xmlFreeDoc(doc);
+    xmlFree(xml_buff);
+   
+    if(error_response != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error_response;
+    }
+
+    // Start processing the data that was received back.
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if(doc == NULL) {
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    error_response = _parse_master_object_list(doc, response);
+
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    g_array_free(objects_array, FALSE);
 
-    *_response = response;
+    if (error_response != NULL) {
+        return error_response;
+    }
+
     return NULL;
 }
 
