@@ -45,6 +45,7 @@ static void run_tests(const ds3_client* client, const test* tests){
     char* response;
     test current_test;
     for(i = 0; tests[i] != NULL; i++){
+        printf("-------- Executing Test -------\n");
         current_test = tests[i];
         response = current_test(client);
         if (response != NULL) {

@@ -11,7 +11,7 @@ char* test_get_service(const ds3_client* client){
     ds3_error* error = ds3_get_service(client, request, &response);
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
 
     ds3_free_request(request);
@@ -29,7 +29,7 @@ char* test_put_bucket(const ds3_client* client) {
     ds3_error* error = ds3_put_bucket(client, request);
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
     
     ds3_free_request(request);
@@ -38,12 +38,12 @@ char* test_put_bucket(const ds3_client* client) {
     error = ds3_get_service(client, request, &response);
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
 
     for (i = 0; i < response->num_buckets; i++) {
-        fprintf(stderr, "Expected Name (%s) actual (%s)\n", bucket_name, response->buckets[i].name);
-        if (strcmp(bucket_name, response->buckets[i].name) == 0) {
+        fprintf(stderr, "Expected Name (%s) actual (%s)\n", bucket_name, response->buckets[i].name->value);
+        if (strcmp(bucket_name, response->buckets[i].name->value) == 0) {
             found = true;
             break;
         } 
@@ -60,7 +60,7 @@ char* test_put_bucket(const ds3_client* client) {
     error = ds3_delete_bucket(client, request);
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
 
     ds3_free_request(request);

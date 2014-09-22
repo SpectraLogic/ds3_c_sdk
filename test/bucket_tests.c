@@ -13,7 +13,7 @@ char* test_bulk_put(const ds3_client * client) {
     ds3_get_bucket_response* bucket_response;
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
     
     ds3_free_request(request);
@@ -25,18 +25,18 @@ char* test_bulk_put(const ds3_client * client) {
     error = ds3_bulk(client, request, &response);
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
 
     ds3_free_request(request);
     for (i = 0; i < 4; i++) {
         ds3_bulk_object bulk_object = obj_list->list[i];
-        FILE* file = fopen(bulk_object.name, "r");
+        FILE* file = fopen(bulk_object.name->value, "r");
         
-        request = ds3_init_put_object(bucket_name, bulk_object.name, bulk_object.size);
+        request = ds3_init_put_object(bucket_name, bulk_object.name->value, bulk_object.size);
         error = ds3_put_object(client, request, file, ds3_read_from_file);
         if (error != NULL) {
-            return error->message;
+            return error->message->value;
         }
         ds3_free_request(request);
     }   
@@ -49,7 +49,7 @@ char* test_bulk_put(const ds3_client * client) {
     error = ds3_get_bucket(client, request, &bucket_response);
    
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
 
     if (bucket_response->num_objects != 4) {
@@ -74,7 +74,7 @@ char* test_bulk_put(const ds3_client * client) {
     error = ds3_delete_bucket(client, request);
 
     if (error != NULL) {
-        return error->message;
+        return error->message->value;
     }
 
     ds3_free_request(request);

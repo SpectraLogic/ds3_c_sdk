@@ -42,18 +42,46 @@ typedef enum {
   HTTP_GET, HTTP_PUT, HTTP_POST, HTTP_DELETE, HTTP_HEAD
 }http_verb;
 
+typedef enum {
+    CRITICAL,
+    VERY_HIGH,
+    HIGH,
+    NORMAL,
+    LOW,
+    BACKGROUND,
+    MINIMIZED_DUE_TO_TOO_MANY_RETRIES
+}ds3_job_priority;
+
+typedef enum {
+    PUT, GET
+}ds3_job_request_type;
+
+typedef enum {
+    CAPACITY, PERFORMANCE
+}ds3_write_optimization;
+
+typedef enum {
+    IN_ORDER, NONE
+}ds3_chunk_ordering;
+
+typedef struct{
+    char* value;
+    size_t size;
+}ds3_str;
+
+ds3_str* ds3_str_init(const char* string);
+char* ds3_str_value(const ds3_str* string);
+size_t ds3_str_size(const ds3_str* string);
+void ds3_str_free(ds3_str* string);
+
 typedef struct {
-    char*   access_id;
-    size_t  access_id_len;
-    char*   secret_key;
-    size_t  secret_key_len;
+    ds3_str* access_id;
+    ds3_str* secret_key;
 }ds3_creds;
 
 typedef struct {
-    char*       endpoint;
-    size_t      endpoint_len;
-    char*       proxy;
-    size_t      proxy_len;
+    ds3_str*    endpoint;
+    ds3_str*    proxy;
     uint64_t    num_redirects;
     ds3_creds*  creds; 
 }ds3_client;
@@ -61,30 +89,22 @@ typedef struct {
 typedef struct _ds3_request ds3_request;
 
 typedef struct {
-    char*   creation_date;
-    size_t  creation_date_size;
-    char*   name;
-    size_t  name_size;
+    ds3_str* creation_date;
+    ds3_str* name;
 }ds3_bucket;
 
 typedef struct {
-    char*   name;
-    size_t  name_size;
-    char*   id;
-    size_t  id_size;
+    ds3_str*    name;
+    ds3_str*    id;
 }ds3_owner;
 
 typedef struct {
-    char*       name;
-    size_t      name_size;
-    char*       etag;
-    size_t      etag_size;
+    ds3_str*    name;
+    ds3_str*    etag;
     uint64_t    size;
     ds3_owner*  owner;
-    char*       last_modified;
-    size_t      last_modified_size;
-    char*       storage_class;
-    size_t      storage_class_size;
+    ds3_str*    last_modified;
+    ds3_str*    storage_class;
 }ds3_object;
 
 typedef struct {
@@ -96,39 +116,41 @@ typedef struct {
 typedef struct {
     ds3_object* objects;
     size_t      num_objects;
-    char*       creation_date;
-    size_t      creation_date_size;
+    ds3_str*    creation_date;
     ds3_bool    is_truncated;
-    char*       marker;
-    size_t      marker_size;
-    char*       delimiter;
-    size_t      delimiter_size;
+    ds3_str*    marker;
+    ds3_str*    delimiter;
     uint32_t    max_keys;
-    char*       name;
-    size_t      name_size;
-    char*       next_marker;
-    size_t      next_marker_size;
-    char*       prefix;
-    size_t      prefix_size;
+    ds3_str*    name;
+    ds3_str*    next_marker;
+    ds3_str*    prefix;
 }ds3_get_bucket_response;
 
 typedef struct {
-    char*     name;
-    size_t    name_size;
-    uint64_t  size;
+    ds3_str*    name;
+    uint64_t    size;
 }ds3_bulk_object;
 
 typedef struct {
     ds3_bulk_object*  list;
     uint64_t          size;
     uint64_t          chunk_number;
-    char*             server_id;
-    size_t            server_id_size;
+    ds3_str*          server_id;
 }ds3_bulk_object_list;
 
 typedef struct {
-    char*                   job_id;
-    size_t                  job_id_size;
+    ds3_str*                bucket_name;
+    uint64_t                cached_size_in_bytes;
+    ds3_chunk_ordering      chuck_order;
+    uint64_t                completed_size_in_bytes;
+    ds3_str*                job_id;
+    uint64_t                original_size_in_bytes;
+    ds3_job_priority        priority;
+    ds3_job_request_type    request_type;
+    ds3_str*                start_date;
+    ds3_str*                user_id;
+    ds3_str*                user_name;
+    ds3_write_optimization  write_optimization;
     ds3_bulk_object_list**  list;
     size_t                  list_size;
 }ds3_bulk_response;
@@ -139,16 +161,13 @@ typedef enum {
 
 typedef struct {
     uint64_t  status_code;
-    char*     status_message;
-    size_t    status_message_size;
-    char*     error_body;
-    size_t    error_body_size;
+    ds3_str*  status_message;
+    ds3_str*  error_body;
 }ds3_error_response;
 
 typedef struct {
     ds3_error_code      code;
-    char*               message;
-    size_t              message_size;
+    ds3_str*            message;
     ds3_error_response* error;
 }ds3_error;
 
