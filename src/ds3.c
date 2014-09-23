@@ -1086,6 +1086,15 @@ static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _
             response->user_name = ds3_str_init((const char*) text);
             xmlFree(text);
         }
+        else if(attribute_equal(attribute, "CachedSizeInBytes") == true) {
+            response->cached_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        }
+        else if(attribute_equal(attribute, "CompletedSizeInBytes") == true) {
+            response->completed_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        }
+        else if(attribute_equal(attribute, "OriginalSizeInBytes") == true) {
+            response->original_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
         }
