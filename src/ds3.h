@@ -202,7 +202,6 @@ LIBRARY_API void ds3_free_bucket_response(ds3_get_bucket_response* response);
 LIBRARY_API void ds3_free_bulk_response(ds3_bulk_response* response);
 LIBRARY_API void ds3_free_error(ds3_error* error);
 
-LIBRARY_API void ds3_free_bucket(ds3_bucket* bucket);
 LIBRARY_API void ds3_free_owner(ds3_owner* owner);
 LIBRARY_API void ds3_free_creds(ds3_creds* client);
 LIBRARY_API void ds3_free_client(ds3_client* client);

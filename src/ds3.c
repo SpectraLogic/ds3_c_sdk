@@ -1316,20 +1316,6 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
     g_free(response);
 }
 
-void ds3_free_bucket(ds3_bucket* bucket) {
-    if(bucket == NULL) {
-        fprintf(stderr, "Bucket was NULL\n");
-        return;
-    }
-    if(bucket->name != NULL) {
-        g_free(bucket->name);
-    }
-    if(bucket->creation_date != NULL) {
-        g_free(bucket->creation_date);
-    }
-    g_free(bucket);
-}
-
 void ds3_free_owner(ds3_owner* owner) {
     if(owner == NULL) {
         fprintf(stderr, "Owner was NULL\n");
