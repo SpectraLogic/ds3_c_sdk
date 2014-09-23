@@ -441,7 +441,6 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         res = curl_easy_perform(handle);
 
-
         g_free(url);
         g_free(date);
         g_free(date_header);
@@ -629,8 +628,32 @@ static bool element_equal(const xmlNodePtr xml_node, const char* element_name){
     return xmlStrcmp(xml_node->name, (const xmlChar*) element_name) == 0;
 }
 
-static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
+static uint64_t xml_get_uint64(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
+    uint64_t size;
+    text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
+    if(text == NULL) {
+        return 0;
+    }
+    size = strtoul((const char*)text, NULL, 10);
+    xmlFree(text);
+    return size;
+}
+
+static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
+    xmlChar* text;
+    ds3_str* result;
+    text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
+    result = ds3_str_init((const char*) text);
+    xmlFree(text);
+    return result;
+}
+
+static uint64_t xml_get_uint64_from_attribute(xmlDocPtr doc, struct _xmlAttr* attribute) {
+    return xml_get_uint64(doc, (xmlNodePtr) attribute);
+}
+
+static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
     xmlNodePtr data_ptr; 
     xmlNodePtr curr;
     GArray* array = g_array_new(FALSE, TRUE, sizeof(ds3_bucket));
@@ -638,17 +661,13 @@ static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_servi
     for(curr = buckets_node->xmlChildrenNode; curr != NULL; curr = curr->next) {
         ds3_bucket bucket; 
         memset(&bucket, 0, sizeof(ds3_bucket));
-        
+
         for(data_ptr = curr->xmlChildrenNode; data_ptr != NULL; data_ptr = data_ptr->next) {
             if(element_equal(data_ptr, "CreationDate")) {
-                text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
-                bucket.creation_date = ds3_str_init((const char*) text);
-                xmlFree(text);
+                bucket.creation_date = xml_get_string(doc, data_ptr);
             }
             else if(element_equal(data_ptr, "Name")) {
-                text = xmlNodeListGetString(doc, data_ptr->xmlChildrenNode, 1);
-                bucket.name = ds3_str_init((const char*) text);
-                xmlFree(text);
+                bucket.name = xml_get_string(doc, data_ptr);
             }
             else {
                 fprintf(stderr, "Unknown element: (%s)\n", data_ptr->name);
@@ -781,12 +800,8 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
             object.storage_class = ds3_str_init((const char*) text);
             xmlFree(text);
         }
-        else if(element_equal(child_node, "Size") == true) { 
-            uint64_t size; 
-            text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            size = strtoul((const char*)text, NULL, 10);
-            object.size = size;
-            xmlFree(text);
+        else if(element_equal(child_node, "Size") == true) {
+            object.size = xml_get_uint64(doc, child_node);
         }
         else if(element_equal(child_node, "Owner") == true) { 
             ds3_owner* owner = _parse_owner(doc, child_node);
@@ -867,14 +882,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             xmlFree(text);
         }
         else if(element_equal(child_node, "MaxKeys") == true) {
-            uint64_t max_keys; 
-            text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-            if(text == NULL) {
-                continue;
-            }
-            max_keys = strtoul((const char*)text, NULL, 10); 
-            response->max_keys = max_keys;
-            xmlFree(text);
+            response->max_keys = xml_get_uint64(doc, child_node);
         }
         else if(element_equal(child_node, "Name") == true) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
@@ -960,14 +968,7 @@ static ds3_bulk_object _parse_bulk_object(xmlDocPtr doc, xmlNodePtr object_node)
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "Size") == true) {
-            uint64_t size;
-            text = xmlNodeListGetString(doc, attribute->children, 1);
-            if(text == NULL) {
-                continue;
-            }
-            size = strtoul((const char*)text, NULL, 10);
-            response.size = size;
-            xmlFree(text);
+            response.size = xml_get_uint64_from_attribute(doc, attribute);
         }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
@@ -999,14 +1000,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objec
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "ChunkNumber") == true) {
-            uint64_t chunk_number;
-            text = xmlNodeListGetString(doc, attribute->children, 1);
-            if(text == NULL) {
-                continue;
-            }
-            chunk_number = strtoul((const char*)text, NULL, 10);
-            response->chunk_number = chunk_number;
-            xmlFree(text);
+            response->chunk_number = xml_get_uint64_from_attribute(doc, attribute);
         }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
