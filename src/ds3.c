@@ -653,6 +653,23 @@ static uint64_t xml_get_uint64_from_attribute(xmlDocPtr doc, struct _xmlAttr* at
     return xml_get_uint64(doc, (xmlNodePtr) attribute);
 }
 
+static ds3_bool xml_get_bool_from_attribute(xmlDocPtr doc, struct _xmlAttr* attribute) {
+    xmlChar* text;
+    ds3_bool result;
+    text = xmlNodeListGetString(doc, attribute->xmlChildrenNode, 1);
+    if(strcmp(text, "true") == 0) {
+        result = True;
+    }
+    else if (strcmp(text, "false") == 0) {
+        result = False;
+    }
+    else {
+        fprintf(stderr, "Unknown boolean value\n");
+    }
+    xmlFree(text);
+    return result;
+}
+
 static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
     xmlNodePtr data_ptr; 
     xmlNodePtr curr;
@@ -967,8 +984,14 @@ static ds3_bulk_object _parse_bulk_object(xmlDocPtr doc, xmlNodePtr object_node)
             response.name = ds3_str_init((const char*) text);
             xmlFree(text);
         }
-        else if(attribute_equal(attribute, "Size") == true) {
-            response.size = xml_get_uint64_from_attribute(doc, attribute);
+        else if(attribute_equal(attribute, "InCache") == true) {
+            response.in_cache = xml_get_bool_from_attribute(doc, attribute);
+        } 
+        else if(attribute_equal(attribute, "Length") == true) {
+            response.length = xml_get_uint64_from_attribute(doc, attribute);
+        }
+        else if(attribute_equal(attribute, "Offset") == true) {
+            response.offset = xml_get_uint64_from_attribute(doc, attribute);
         }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
@@ -997,6 +1020,14 @@ static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objec
                 continue;
             }
             response->server_id = ds3_str_init((const char*) text);
+            xmlFree(text);
+        }
+        else if(attribute_equal(attribute, "ChunkId") == true) {
+            text = xmlNodeListGetString(doc, attribute->children, 1);
+            if(text == NULL) {
+                continue;
+            }
+            response->chunk_id = ds3_str_init((const char*) text);
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "ChunkNumber") == true) {
@@ -1134,7 +1165,7 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
         memset(size_buff, 0, sizeof(char) * 21);
         
         obj = obj_list->list[i];
-        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.size);
+        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
@@ -1431,7 +1462,7 @@ static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name) {
     memset(&obj, 0, sizeof(ds3_bulk_object));
 
     obj.name = ds3_str_init(file_name);
-    obj.size = file_info.st_size;
+    obj.length = file_info.st_size;
 
     return obj;
 }

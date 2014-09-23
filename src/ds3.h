@@ -128,7 +128,9 @@ typedef struct {
 
 typedef struct {
     ds3_str*    name;
-    uint64_t    size;
+    uint64_t    length;
+    uint64_t    offset;
+    ds3_bool    in_cache;
 }ds3_bulk_object;
 
 typedef struct {
@@ -136,6 +138,7 @@ typedef struct {
     uint64_t          size;
     uint64_t          chunk_number;
     ds3_str*          server_id;
+    ds3_str*          chunk_id;
 }ds3_bulk_object_list;
 
 typedef struct {

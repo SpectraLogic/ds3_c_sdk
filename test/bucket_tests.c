@@ -33,7 +33,7 @@ char* test_bulk_put(const ds3_client * client) {
         ds3_bulk_object bulk_object = obj_list->list[i];
         FILE* file = fopen(bulk_object.name->value, "r");
         
-        request = ds3_init_put_object(bucket_name, bulk_object.name->value, bulk_object.size);
+        request = ds3_init_put_object(bucket_name, bulk_object.name->value, bulk_object.length);
         error = ds3_put_object(client, request, file, ds3_read_from_file);
         if (error != NULL) {
             return error->message->value;
