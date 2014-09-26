@@ -20,8 +20,8 @@ $(OUTPUT)\bin\ds3.dll: obj\ds3.obj $(OUTPUT)\bin $(OUTPUT)\lib
 $(OUTPUT)\include\ds3.h: ..\src\ds3.h $(OUTPUT)\include
 	copy ..\src\ds3.h $(OUTPUT)\include\ds3.h
 
-obj\sample.obj: ..\sample\main.cpp $(OUTPUT)\include\ds3.h obj
-    cl /MD /c ..\sample\main.cpp /Foobj\sample.obj $(COMPAT_INCLUDE) /I$(OUTPUT)\include
+obj\sample.obj: ..\sample\main.c $(OUTPUT)\include\ds3.h obj
+    cl /MD /c ..\sample\main.c /Foobj\sample.obj $(COMPAT_INCLUDE) /I$(OUTPUT)\include
 
 obj\ds3.obj: ..\src\ds3.c ..\src\ds3.h obj
     cl /MD /c /Tp..\src\ds3.c /Foobj\ds3.obj $(DEPS_DEFINE) $(COMPAT_INCLUDE) $(DEPS_INCLUDE) /DLIBRARY_EXPORTS
