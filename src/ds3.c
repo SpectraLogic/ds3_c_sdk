@@ -657,10 +657,10 @@ static ds3_bool xml_get_bool_from_attribute(xmlDocPtr doc, struct _xmlAttr* attr
     xmlChar* text;
     ds3_bool result;
     text = xmlNodeListGetString(doc, attribute->xmlChildrenNode, 1);
-    if(strcmp(text, "true") == 0) {
+    if(xmlStrcmp(text, (xmlChar*)"true") == 0) {
         result = True;
     }
-    else if (strcmp(text, "false") == 0) {
+    else if (xmlStrcmp(text, (xmlChar*)"false") == 0) {
         result = False;
     }
     else {
