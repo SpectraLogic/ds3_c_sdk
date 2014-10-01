@@ -665,6 +665,7 @@ static ds3_bool xml_get_bool_from_attribute(xmlDocPtr doc, struct _xmlAttr* attr
     }
     else {
         fprintf(stderr, "Unknown boolean value\n");
+        result = False;
     }
     xmlFree(text);
     return result;
@@ -1006,7 +1007,7 @@ static ds3_bulk_object _parse_bulk_object(xmlDocPtr doc, xmlNodePtr object_node)
 }
 
 static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objects_node) {
-    xmlNodePtr object_node, child_node;
+    xmlNodePtr child_node;
     xmlChar* text;
     struct _xmlAttr* attribute;
 
@@ -1059,7 +1060,7 @@ static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _
     struct _xmlAttr* attribute;
     GArray* objects_array; 
     xmlChar* text;
-    xmlNodePtr root, objects_node, object_node, child_node;
+    xmlNodePtr root, child_node;
     ds3_bulk_response* response;
 
     root = xmlDocGetRootElement(doc);
@@ -1182,7 +1183,6 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
 ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_bulk_response** response) {
     ds3_error* error_response;
     
-    uint64_t i;
     int buff_size;
     
     struct _ds3_request* request;
