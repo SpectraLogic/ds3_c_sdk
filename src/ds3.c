@@ -528,6 +528,22 @@ void ds3_client_proxy(ds3_client* client, const char* proxy) {
     client->proxy = ds3_str_init(proxy);
 }
 
+void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
+    /*
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+
+    g_hash_table_insert(request->query_params, "prefix", prefix);
+    */
+}
+
+void ds3_request_set_delimeter(ds3_request* _request, const char* delimeter) {
+    /*
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+
+    g_hash_table_insert(request->query_params, "delimeter", delimeter); 
+    */
+}
+
 static struct _ds3_request* _common_request_init(void){
     struct _ds3_request* request = g_new0(struct _ds3_request, 1);
     request->headers = _create_hash_table();

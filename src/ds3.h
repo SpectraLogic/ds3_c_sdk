@@ -190,6 +190,9 @@ LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_obj
 
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
+LIBRARY_API void ds3_request_set_prefix(ds3_request* request, const char* prefix);
+LIBRARY_API void ds3_request_set_delimeter(ds3_request* request, const char* delimeter);
+
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
 LIBRARY_API ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
