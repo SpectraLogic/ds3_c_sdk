@@ -3,6 +3,6 @@
 #ifndef __DS3_TEST__
 #define __DS3_TEST__
 
-typedef char* (*test)(const ds3_client *);
+ds3_client * get_client();
 
 #endif
