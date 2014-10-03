@@ -41,3 +41,33 @@ ds3_client * get_client() {
     
     return client; 
 }
+
+void clear_bucket(const ds3_client* client, const char* bucket_name) {
+    uint64_t i;
+    ds3_request* request;
+    ds3_error* error;
+    ds3_get_bucket_response* bucket_response;
+    
+    request = ds3_init_get_bucket(bucket_name);
+    error = ds3_get_bucket(client, request, &bucket_response);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error == NULL);
+
+    for (i = 0; i < bucket_response->num_objects; i++) {
+        request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
+        error = ds3_delete_object(client, request);
+        ds3_free_request(request);
+        
+        if (error != NULL) {
+            fprintf(stderr, "Failed to delete object %s\n", bucket_response->objects[i].name->value);
+            ds3_free_error(error);
+        } 
+    }
+    
+    request = ds3_init_delete_bucket(bucket_name);
+    error = ds3_delete_bucket(client, request);
+    ds3_free_request(request);
+    
+    BOOST_CHECK(error == NULL);
+}
