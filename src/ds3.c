@@ -528,26 +528,26 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
     return client;
 }
 
+static void _set_query_param(ds3_request* _request, const char* key, const char* value) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+
+    g_hash_table_insert(request->query_params, (gpointer) key, (gpointer) g_strdup(value));
+} 
+
 void ds3_client_proxy(ds3_client* client, const char* proxy) {
     client->proxy = ds3_str_init(proxy);
 }
 
 void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
-    struct _ds3_request* request = (struct _ds3_request*) _request;
-
-    g_hash_table_insert(request->query_params, "prefix", prefix);
+    _set_query_param(_request, "prefix", prefix);
 }
 
 void ds3_request_set_delimeter(ds3_request* _request, const char* delimeter) {
-    struct _ds3_request* request = (struct _ds3_request*) _request;
-
-    g_hash_table_insert(request->query_params, "delimeter", delimeter); 
+    _set_query_param(_request, "delimeter", delimeter);
 }
 
 void ds3_request_set_next_marker(ds3_request* _request, const char* marker) {
-    struct _ds3_request* request = (struct _ds3_request*) _request;
-
-    g_hash_table_insert(request->query_params, "marker", marker); 
+    _set_query_param(_request, "marker", marker);
 }
 
 static struct _ds3_request* _common_request_init(void){
@@ -620,7 +620,7 @@ ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* ob
     request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
-    g_hash_table_insert(request->query_params, "operation", g_strdup("start_bulk_get"));
+    _set_query_param((ds3_request*) request, "operation", "start_bulk_get");
     request->object_list = object_list;
     return (ds3_request*) request;
 }
@@ -630,7 +630,7 @@ ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* ob
     request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
-    g_hash_table_insert(request->query_params, "operation", g_strdup("start_bulk_put"));
+    _set_query_param((ds3_request*) request, "operation", "start_bulk_put");
     request->object_list = object_list;
     return (ds3_request*) request;
 }

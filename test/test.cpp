@@ -71,3 +71,47 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     
     BOOST_CHECK(error == NULL);
 }
+
+void populate_with_objects(const ds3_client* client, const char* bucket_name) {
+    uint64_t i;
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    const char* books[4] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt"};
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_bulk_object_list* obj_list; 
+    ds3_bulk_response* response;
+    ds3_free_request(request);
+   
+    BOOST_CHECK(error == NULL);
+    
+    obj_list = ds3_convert_file_list(books, 4);
+    request = ds3_init_put_bulk(bucket_name, obj_list);
+    error = ds3_bulk(client, request, &response);
+
+    BOOST_CHECK(error == NULL);
+
+    ds3_free_request(request);
+    for (i = 0; i < 4; i++) {
+        ds3_bulk_object bulk_object = obj_list->list[i];
+        FILE* file = fopen(bulk_object.name->value, "r");
+        
+        request = ds3_init_put_object(bucket_name, bulk_object.name->value, bulk_object.length);
+        error = ds3_put_object(client, request, file, ds3_read_from_file);
+        ds3_free_request(request);
+        
+        BOOST_CHECK(error == NULL);
+    }   
+
+    ds3_free_bulk_response(response);
+    ds3_free_bulk_object_list(obj_list);
+}
+
+bool contains_object(const ds3_object* objects, uint64_t num_objects, const char* obj) {
+    uint64_t i;
+    for (i = 0; i < num_objects; i++) {
+        fprintf(stderr, "obj name: %s\n", objects[i].name->value);
+        if(strcmp(objects[i].name->value, obj) == 0) {
+            return true;
+        }
+    }
+    return false;
+}

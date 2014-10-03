@@ -9,6 +9,9 @@ CFLAGS+= -DBOOST_TEST_DYN_LINK -lboost_unit_test_framework
 
 all: test 
 
+mem: test
+	LD_LIBRARY_PATH=../install/lib valgrind --leak-check=full --track-origins=yes ./test
+
 run: test 
 	LD_LIBRARY_PATH=../install/lib ./test
 
