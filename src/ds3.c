@@ -542,8 +542,8 @@ void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
     _set_query_param(_request, "prefix", prefix);
 }
 
-void ds3_request_set_delimeter(ds3_request* _request, const char* delimeter) {
-    _set_query_param(_request, "delimiter", delimeter);
+void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
+    _set_query_param(_request, "delimiter", delimiter);
 }
 
 void ds3_request_set_next_marker(ds3_request* _request, const char* marker) {
