@@ -855,6 +855,34 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
     return object;
 }
 
+struct common_prefixes {
+    ds3_str** prefixes;
+    uint64_t num_prefixes;
+};
+
+static struct common_prefixes _parse_common_prefixes(xmlDocPtr doc, xmlNodePtr contents_node) {
+    xmlNodePtr child_node;
+    GArray* prefix_array = g_array_new(FALSE, TRUE, sizeof(ds3_str*));
+    struct common_prefixes prefixes;
+    memset(&prefixes, 0, sizeof(struct common_prefixes));
+    
+    for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if(element_equal(child_node, "Prefix") == true) {
+            ds3_str* prefix = xml_get_string(doc, child_node);
+            g_array_append_val(prefix_array, prefix);
+        }
+        else {
+            fprintf(stderr, "Unknown xml element: %s\n", child_node->name);
+        }
+    }
+
+    prefixes.prefixes = (ds3_str**) prefix_array->data;
+    prefixes.num_prefixes = prefix_array->len;
+    g_array_free(prefix_array, FALSE);
+
+    return prefixes;
+}
+
 ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** _response) {
     ds3_get_bucket_response* response;
     xmlDocPtr doc;
@@ -955,6 +983,11 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             }
             response->prefix = ds3_str_init((const char*) text);
             xmlFree(text);
+        }
+        else if(element_equal(child_node, "CommonPrefixes") == true) {
+            struct common_prefixes prefixes = _parse_common_prefixes(doc, child_node);
+            response->common_prefixes = prefixes.prefixes;
+            response->num_common_prefixes = prefixes.num_prefixes;
         }
         else {
             fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
@@ -1310,6 +1343,13 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
     ds3_str_free(response->name);
     ds3_str_free(response->next_marker);
     ds3_str_free(response->prefix);
+
+    if (response->common_prefixes != NULL) {
+        for(i = 0; i < response->num_common_prefixes; i++) {
+            ds3_str_free(response->common_prefixes[i]);
+        }
+        g_free(response->common_prefixes);
+    }
 
     g_free(response);
 }

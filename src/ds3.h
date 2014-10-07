@@ -124,6 +124,8 @@ typedef struct {
     ds3_str*    name;
     ds3_str*    next_marker;
     ds3_str*    prefix;
+    ds3_str**   common_prefixes;
+    uint64_t    num_common_prefixes;
 }ds3_get_bucket_response;
 
 typedef struct {
