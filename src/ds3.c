@@ -300,6 +300,7 @@ static void _hash_for_each(gpointer _key, gpointer _value, gpointer _user_data) 
     query_entries* entries = (query_entries*) _user_data;
 
     entries->entries[entries->size] = g_strconcat(key, "=", value, NULL);
+    entries->size++;
 }
 
 static char* _net_gen_query_params(GHashTable* query_params) {
