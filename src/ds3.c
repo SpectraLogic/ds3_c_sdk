@@ -551,8 +551,10 @@ void ds3_request_set_marker(ds3_request* _request, const char* marker) {
     _set_query_param(_request, "marker", marker);
 }
 
-void ds3_request_set_max_keys(ds3_request* _request, const char* max_keys) {
-    _set_query_param(_request, "max-keys", max_keys);
+void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
+    char max_keys_s[11];
+    g_snprintf(max_keys_s, sizeof(char) * 11, "%u", max_keys);
+    _set_query_param(_request, "max-keys", max_keys_s);
 }
 
 static struct _ds3_request* _common_request_init(void){
