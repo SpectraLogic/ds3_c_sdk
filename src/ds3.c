@@ -461,7 +461,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             return error;
         }
 
-        fprintf(stderr, "Got status code of (%ld) expected (%ld)\n", response_data.status_code, request->expected_status_code);
+        fprintf(stderr, "Got status code of (%llu) expected (%llu)\n", response_data.status_code, request->expected_status_code);
         if(request->expected_status_code != response_data.status_code) {
             ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
             error->error = g_new0(ds3_error_response, 1);
@@ -1228,7 +1228,7 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
         memset(size_buff, 0, sizeof(char) * 21);
         
         obj = obj_list->list[i];
-        g_snprintf(size_buff, sizeof(char) * 21, "%ld", obj.length);
+        g_snprintf(size_buff, sizeof(char) * 21, "%llu", obj.length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
