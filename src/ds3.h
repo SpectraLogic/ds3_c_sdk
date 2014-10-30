@@ -194,7 +194,7 @@ LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
 LIBRARY_API void ds3_request_set_prefix(ds3_request* request, const char* prefix);
 LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* delimiter);
-LIBRARY_API void ds3_request_set_next_marker(ds3_request* request, const char* next_marker);
+LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
 
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
