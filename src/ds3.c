@@ -551,6 +551,10 @@ void ds3_request_set_marker(ds3_request* _request, const char* marker) {
     _set_query_param(_request, "marker", marker);
 }
 
+void ds3_request_set_max_keys(ds3_request* _request, const char* max_keys) {
+    _set_query_param(_request, "max-keys", max_keys);
+}
+
 static struct _ds3_request* _common_request_init(void){
     struct _ds3_request* request = g_new0(struct _ds3_request, 1);
     request->headers = _create_hash_table();
