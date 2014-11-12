@@ -1522,13 +1522,19 @@ static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name) {
 
 ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num_files) {
     uint64_t i;
-    ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
-    obj_list->size = num_files;
-    obj_list->list = g_new0(ds3_bulk_object, num_files);
+    ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_files);
     
     for(i = 0; i < num_files; i++) {
         obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i]);
     }
+
+    return obj_list;
+}
+
+ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files) {
+    ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
+    obj_list->size = num_files;
+    obj_list->list = g_new0(ds3_bulk_object, num_files);
 
     return obj_list;
 }

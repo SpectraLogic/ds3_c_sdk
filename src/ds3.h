@@ -69,10 +69,10 @@ typedef struct{
     size_t size;
 }ds3_str;
 
-ds3_str* ds3_str_init(const char* string);
-char* ds3_str_value(const ds3_str* string);
-size_t ds3_str_size(const ds3_str* string);
-void ds3_str_free(ds3_str* string);
+LIBRARY_API ds3_str* ds3_str_init(const char* string);
+LIBRARY_API char* ds3_str_value(const ds3_str* string);
+LIBRARY_API size_t ds3_str_size(const ds3_str* string);
+LIBRARY_API void ds3_str_free(ds3_str* string);
 
 typedef struct {
     ds3_str* access_id;
@@ -223,7 +223,8 @@ LIBRARY_API void ds3_print_request(const ds3_request* request);
 LIBRARY_API size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 LIBRARY_API size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 
-LIBRARY_API ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files);
+LIBRARY_API ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num_files);
+LIBRARY_API ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files);
 LIBRARY_API void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
 
 #ifdef __cplusplus
