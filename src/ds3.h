@@ -69,10 +69,10 @@ typedef struct{
     size_t size;
 }ds3_str;
 
-ds3_str* ds3_str_init(const char* string);
-char* ds3_str_value(const ds3_str* string);
-size_t ds3_str_size(const ds3_str* string);
-void ds3_str_free(ds3_str* string);
+LIBRARY_API ds3_str* ds3_str_init(const char* string);
+LIBRARY_API char* ds3_str_value(const ds3_str* string);
+LIBRARY_API size_t ds3_str_size(const ds3_str* string);
+LIBRARY_API void ds3_str_free(ds3_str* string);
 
 typedef struct {
     ds3_str* access_id;
