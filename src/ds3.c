@@ -863,32 +863,25 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
     return object;
 }
 
-struct common_prefixes {
-    ds3_str** prefixes;
-    uint64_t num_prefixes;
-};
-
-static struct common_prefixes _parse_common_prefixes(xmlDocPtr doc, xmlNodePtr contents_node) {
+static ds3_str* _parse_common_prefixes(xmlDocPtr doc, xmlNodePtr contents_node) {
     xmlNodePtr child_node;
-    GArray* prefix_array = g_array_new(FALSE, TRUE, sizeof(ds3_str*));
-    struct common_prefixes prefixes;
-    memset(&prefixes, 0, sizeof(struct common_prefixes));
+    ds3_str* prefix = 0;
     
     for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Prefix") == true) {
-            ds3_str* prefix = xml_get_string(doc, child_node);
-            g_array_append_val(prefix_array, prefix);
+            if(prefix) {
+                fprintf(stderr, "More than one Prefix found in CommonPrefixes\n");
+            }
+            else {
+                prefix = xml_get_string(doc, child_node);
+            }
         }
         else {
             fprintf(stderr, "Unknown xml element: %s\n", child_node->name);
         }
     }
 
-    prefixes.prefixes = (ds3_str**) prefix_array->data;
-    prefixes.num_prefixes = prefix_array->len;
-    g_array_free(prefix_array, FALSE);
-
-    return prefixes;
+    return prefix;
 }
 
 ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** _response) {
@@ -898,6 +891,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     xmlNodePtr child_node;
     xmlChar* text;
     GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
+    GArray* common_prefix_array = g_array_new(FALSE, TRUE, sizeof(ds3_str*));
     GByteArray* xml_blob = g_byte_array_new();
     _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
     
@@ -993,9 +987,8 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             xmlFree(text);
         }
         else if(element_equal(child_node, "CommonPrefixes") == true) {
-            struct common_prefixes prefixes = _parse_common_prefixes(doc, child_node);
-            response->common_prefixes = prefixes.prefixes;
-            response->num_common_prefixes = prefixes.num_prefixes;
+            ds3_str* prefix = _parse_common_prefixes(doc, child_node);
+            g_array_append_val(common_prefix_array, prefix);
         }
         else {
             fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
@@ -1004,8 +997,11 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
 
     response->objects = (ds3_object*) object_array->data;
     response->num_objects = object_array->len;
+    response->common_prefixes = (ds3_str**)common_prefix_array->data;
+    response->num_common_prefixes = common_prefix_array->len;
     xmlFreeDoc(doc);
     g_array_free(object_array, FALSE);
+    g_array_free(common_prefix_array, FALSE);
     g_byte_array_free(xml_blob, TRUE);
     *_response = response;
     return NULL;
