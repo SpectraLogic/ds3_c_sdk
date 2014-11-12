@@ -223,7 +223,8 @@ LIBRARY_API void ds3_print_request(const ds3_request* request);
 LIBRARY_API size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 LIBRARY_API size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data);
 
-LIBRARY_API ds3_bulk_object_list * ds3_convert_file_list(const char** file_list, uint64_t num_files);
+LIBRARY_API ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num_files);
+LIBRARY_API ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files);
 LIBRARY_API void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
 
 #ifdef __cplusplus
