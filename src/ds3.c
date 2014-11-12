@@ -35,8 +35,6 @@ struct _ds3_request{
     GHashTable* headers;
     GHashTable* query_params;
 
-    uint64_t expected_status_code;
-
     //These next few elements are only for the bulk commands
     ds3_bulk_object_list* object_list;
 };
@@ -461,8 +459,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             return error;
         }
 
-        fprintf(stderr, "Got status code of (%llu) expected (%llu)\n", response_data.status_code, request->expected_status_code);
-        if(request->expected_status_code != response_data.status_code) {
+        if(response_data.status_code < 200 || response_data.status_code >= 300) {
             ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
             error->error = g_new0(ds3_error_response, 1);
             error->error->status_code = response_data.status_code;
@@ -567,7 +564,6 @@ static struct _ds3_request* _common_request_init(void){
 
 ds3_request* ds3_init_get_service(void) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 200;
     request->verb = HTTP_GET;
     request->path =  g_new0(char, 2);
     request->path [0] = '/';
@@ -576,7 +572,6 @@ ds3_request* ds3_init_get_service(void) {
 
 ds3_request* ds3_init_get_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(); 
-    request->expected_status_code = 200;
     request->verb = HTTP_GET;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
@@ -584,7 +579,6 @@ ds3_request* ds3_init_get_bucket(const char* bucket_name) {
 
 ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 200;
     request->verb = HTTP_GET;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request*) request;
@@ -592,7 +586,6 @@ ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_nam
 
 ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 204;
     request->verb = HTTP_DELETE;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     return (ds3_request*) request;
@@ -600,7 +593,6 @@ ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_
 
 ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
     request->length = length;
@@ -609,7 +601,6 @@ ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_nam
 
 ds3_request* ds3_init_put_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
@@ -617,7 +608,6 @@ ds3_request* ds3_init_put_bucket(const char* bucket_name) {
 
 ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 204;
     request->verb = HTTP_DELETE;
     request->path = g_strconcat("/", bucket_name, NULL);
     return (ds3_request*) request;
@@ -625,7 +615,6 @@ ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
 
 ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     _set_query_param((ds3_request*) request, "operation", "start_bulk_get");
@@ -635,7 +624,6 @@ ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* ob
 
 ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
-    request->expected_status_code = 200;
     request->verb = HTTP_PUT;
     request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
     _set_query_param((ds3_request*) request, "operation", "start_bulk_put");
@@ -1291,11 +1279,10 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
-        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
+	// Bulk put with just empty folder objects will return a 204 and thus
+	// not have a body.
         g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
+        return NULL;
     }
 
     error_response = _parse_master_object_list(doc, response);
