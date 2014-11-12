@@ -865,7 +865,7 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
 
 static ds3_str* _parse_common_prefixes(xmlDocPtr doc, xmlNodePtr contents_node) {
     xmlNodePtr child_node;
-    ds3_str* prefix = 0;
+    ds3_str* prefix = NULL;
     
     for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Prefix") == true) {
