@@ -238,6 +238,25 @@ static char* _net_get_verb(http_verb verb) {
     return NULL;
 }
 
+static char* _escape_url(const char* url) {
+    return curl_easy_escape(NULL, url, 0);
+}
+
+// Like _escape_url but don't encode "/".
+static char* _escape_url_object_name(const char* url) {
+    gchar** split = g_strsplit(url, "/", 0);
+    gchar** ptr;
+    gchar* escaped_ptr;
+    for (ptr = split; *ptr; ptr++) {
+        escaped_ptr = _escape_url(*ptr);
+	g_free(*ptr);
+	*ptr = escaped_ptr;
+    }
+    escaped_ptr = g_strjoinv("/", split);
+    g_strfreev(split);
+    return escaped_ptr;
+}
+
 static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
                                char* content_type, char* md5, char* amz_headers) {
     char* verb_str; 
@@ -528,8 +547,10 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
 
 static void _set_query_param(ds3_request* _request, const char* key, const char* value) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
+    gpointer escaped_key = (gpointer) _escape_url(key);
+    gpointer escaped_value = (gpointer) _escape_url(value);
 
-    g_hash_table_insert(request->query_params, (gpointer) key, (gpointer) g_strdup(value));
+    g_hash_table_insert(request->query_params, escaped_key, escaped_value);
 } 
 
 void ds3_client_proxy(ds3_client* client, const char* proxy) {
@@ -573,50 +594,70 @@ ds3_request* ds3_init_get_service(void) {
 ds3_request* ds3_init_get_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(); 
     request->verb = HTTP_GET;
-    request->path = g_strconcat("/", bucket_name, NULL);
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
+    request->path = g_strconcat("/", escaped_bucket_name, NULL);
+    g_free(escaped_bucket_name);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
     request->verb = HTTP_GET;
-    request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
+    gchar* escaped_object_name = _escape_url_object_name(object_name);
+    request->path = g_strconcat("/", escaped_bucket_name, "/", escaped_object_name, NULL);
+    g_free(escaped_bucket_name);
+    g_free(escaped_object_name);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init();
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
+    gchar* escaped_object_name = _escape_url_object_name(object_name);
     request->verb = HTTP_DELETE;
-    request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
+    request->path = g_strconcat("/", escaped_bucket_name, "/", escaped_object_name, NULL);
+    g_free(escaped_bucket_name);
+    g_free(escaped_object_name);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
     struct _ds3_request* request = _common_request_init();
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
+    gchar* escaped_object_name = _escape_url_object_name(object_name);
     request->verb = HTTP_PUT;
-    request->path = g_strconcat("/", bucket_name, "/", object_name, NULL);
+    request->path = g_strconcat("/", escaped_bucket_name, "/", escaped_object_name, NULL);
+    g_free(escaped_bucket_name);
+    g_free(escaped_object_name);
     request->length = length;
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_put_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
     request->verb = HTTP_PUT;
-    request->path = g_strconcat("/", bucket_name, NULL);
+    request->path = g_strconcat("/", escaped_bucket_name, NULL);
+    g_free(escaped_bucket_name);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init();
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
     request->verb = HTTP_DELETE;
-    request->path = g_strconcat("/", bucket_name, NULL);
+    request->path = g_strconcat("/", escaped_bucket_name, NULL);
+    g_free(escaped_bucket_name);
     return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
     request->verb = HTTP_PUT;
-    request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
+    request->path = g_strconcat("/_rest_/bucket/", escaped_bucket_name, NULL);
+    g_free(escaped_bucket_name);
     _set_query_param((ds3_request*) request, "operation", "start_bulk_get");
     request->object_list = object_list;
     return (ds3_request*) request;
@@ -624,8 +665,10 @@ ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* ob
 
 ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init();
+    gchar* escaped_bucket_name = _escape_url(bucket_name);
     request->verb = HTTP_PUT;
-    request->path = g_strconcat("/_rest_/bucket/", bucket_name, NULL);
+    request->path = g_strconcat("/_rest_/bucket/", escaped_bucket_name, NULL);
+    g_free(escaped_bucket_name);
     _set_query_param((ds3_request*) request, "operation", "start_bulk_put");
     request->object_list = object_list;
     return (ds3_request*) request;
