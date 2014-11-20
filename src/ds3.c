@@ -119,7 +119,8 @@ static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* 
         to_read = remaining;
     }
     
-    strncpy((char*)buffer, xml_buff->buff, to_read);
+    strncpy((char*)buffer, xml_buff->buff + xml_buff->total_read, to_read);
+    xml_buff->total_read += to_read;
     return to_read;
 }
 
