@@ -483,7 +483,13 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             error->error = g_new0(ds3_error_response, 1);
             error->error->status_code = response_data.status_code;
             error->error->status_message = ds3_str_init(response_data.status_message->value);
-            error->error->error_body = ds3_str_init((char*)response_data.body->data);
+
+            if (response_data.body != NULL && response_data.body->data != NULL) {
+                error->error->error_body = ds3_str_init((char*)response_data.body->data);
+            }
+            else {
+                error->error->error_body = ds3_str_init("(empty)");
+            }
 
             g_byte_array_free(response_data.body, TRUE);
             g_free(response_data.status_message);
