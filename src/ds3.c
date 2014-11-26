@@ -238,8 +238,14 @@ static char* _net_get_verb(http_verb verb) {
     return NULL;
 }
 
+// curl_easy_escape'd strings must be freed using curl_free.  Copy
+// the escaped string, using glib, since users of this function will
+// eventually wind up freeing it with g_free.
 static char* _escape_url(const char* url) {
-    return curl_easy_escape(NULL, url, 0);
+    char* curl_escaped_url = curl_easy_escape(NULL, url, 0);
+    char* escaped_url = g_strdup(curl_escaped_url);
+    curl_free(curl_escaped_url);
+    return escaped_url;
 }
 
 // Like _escape_url but don't encode "/".
