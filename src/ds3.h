@@ -83,7 +83,7 @@ typedef struct {
     ds3_str*    endpoint;
     ds3_str*    proxy;
     uint64_t    num_redirects;
-    ds3_creds*  creds; 
+    ds3_creds*  creds;
 }ds3_client;
 
 typedef struct _ds3_request ds3_request;
@@ -165,6 +165,16 @@ typedef enum {
 }ds3_error_code;
 
 typedef struct {
+    ds3_bulk_object_list*   objects;
+    uint64_t                retry_after;
+}ds3_allocate_chunk_response;
+
+typedef struct {
+    ds3_bulk_response* 	  object_list;
+    uint64_t              retry_after;
+}ds3_get_available_chunks_response;
+
+typedef struct {
     uint64_t  status_code;
     ds3_str*  status_message;
     ds3_str*  error_body;
@@ -186,6 +196,8 @@ LIBRARY_API ds3_request* ds3_init_put_bucket(const char* bucket_name);
 LIBRARY_API ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t size);
 LIBRARY_API ds3_request* ds3_init_delete_bucket(const char* bucket_name);
 LIBRARY_API ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name);
+LIBRARY_API ds3_request* ds3_init_allocate_chunk(const char* job_id);
+LIBRARY_API ds3_request* ds3_init_get_available_chunks(const char* job_id);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
@@ -200,6 +212,8 @@ LIBRARY_API void ds3_request_set_max_keys(ds3_request* request, uint32_t max_key
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
 LIBRARY_API ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
+LIBRARY_API ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* request, ds3_allocate_chunk_response** response);
+LIBRARY_API ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request* request, ds3_get_available_chunks_response** response);
 
 LIBRARY_API ds3_error* ds3_put_bucket(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_error* ds3_delete_bucket(const ds3_client* client, const ds3_request* request);

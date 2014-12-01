@@ -358,7 +358,7 @@ static char* _net_gen_query_params(GHashTable* query_params) {
     }
 }
 
-static ds3_error* _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
+static ds3_error* _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*), GHashTable** return_headers) {
     _init_curl();
 
     struct _ds3_request* request = (struct _ds3_request*) _request;
@@ -470,21 +470,21 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         g_free(date_header);
         g_free(signature);
         g_free(auth_header);
-        g_hash_table_destroy(response_headers);
         curl_slist_free_all(headers);
         curl_easy_cleanup(handle);
 
         //process the response
-        if(res != CURLE_OK) {
+        if (res != CURLE_OK) {
             char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
             ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
             g_byte_array_free(response_data.body, TRUE);
             g_free(response_data.status_message);
+            g_hash_table_destroy(response_headers);
             g_free(message);
             return error;
         }
 
-        if(response_data.status_code < 200 || response_data.status_code >= 300) {
+        if (response_data.status_code < 200 || response_data.status_code >= 300) {
             ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
             error->error = g_new0(ds3_error_response, 1);
             error->error->status_code = response_data.status_code;
@@ -492,11 +492,17 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             error->error->error_body = ds3_str_init((char*)response_data.body->data);
 
             g_byte_array_free(response_data.body, TRUE);
+            g_hash_table_destroy(response_headers);
             g_free(response_data.status_message);
             return error;
         }
         g_byte_array_free(response_data.body, TRUE);
         g_free(response_data.status_message);
+        if (return_headers == NULL) {
+            g_hash_table_destroy(response_headers);
+        } else {
+            *return_headers = response_headers;
+        }
     }
     else {
         return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
@@ -666,11 +672,32 @@ ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* ob
     return (ds3_request*) request;
 }
 
+ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
+    char* path = g_strconcat("/_rest_/job_chunk/", chunk_id, NULL);
+    ds3_str* path_str = ds3_str_init(path);
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
+
+    _set_query_param((ds3_request*) request, "operation", "allocate");
+    ds3_str_free(path_str);
+    g_free(path);
+    return (ds3_request*) request;
+}
+
+ds3_request* ds3_init_get_available_chunks(const char* job_id) {
+    ds3_str* path_str = ds3_str_init("/_rest_/job_chunk/");
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
+
+    _set_query_param((ds3_request*) request, "job", job_id);
+    ds3_str_free(path_str);
+
+    return (ds3_request*) request;
+}
+
 static ds3_error* _internal_request_dispatcher(const ds3_client* client, const ds3_request* request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
-    return _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func);
+    return _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, NULL);
 }
 
 static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name){
@@ -1279,13 +1306,13 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     xmlChar* xml_buff;
 
     if(client == NULL || _request == NULL) {
-        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing"); 
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
 
     request = (struct _ds3_request*) _request;
 
     if(request->object_list == NULL || request->object_list->size == 0) {
-        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process"); 
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
     }
 
     // Init the data structures declared above the null check
@@ -1302,7 +1329,7 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     request->length = send_buff.size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
-    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff);
+    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -1334,6 +1361,108 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     return NULL;
 }
 
+ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* request, ds3_allocate_chunk_response** response) {
+    ds3_error* error = NULL;
+    GByteArray* xml_blob = g_byte_array_new();
+    ds3_allocate_chunk_response* ds3_response = NULL;
+    ds3_bulk_object_list* object_list = NULL;
+    GHashTable* response_headers = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr root;
+
+    error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+
+    if (error != NULL) {
+        if (response_headers != NULL) {
+            g_hash_table_destroy(response_headers);
+        }
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    ds3_response = g_new0(ds3_allocate_chunk_response, 1);
+
+    // Start processing the data that was received back.
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if(doc == NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        if (g_hash_table_contains(response_headers, "Retry-After")) {
+            ds3_response->retry_after = strtoul(g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
+        } else {
+            g_hash_table_destroy(response_headers);
+            return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
+        }
+        g_hash_table_destroy(response_headers);
+        return NULL;
+    }
+
+    root = xmlDocGetRootElement(doc);
+    if(element_equal(root, "Objects")  == true) {
+        object_list = _parse_bulk_objects(doc, root);
+        ds3_response->objects = object_list;
+    }
+    else {
+        char* message = g_strconcat("Expected the root element to be 'Objects'.  The actual response is: ", root->name, NULL);
+        xmlFreeDoc(doc);
+        error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        g_byte_array_free(xml_blob, TRUE);
+        g_hash_table_destroy(response_headers);
+        return error;
+    }
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    if (response_headers != NULL) {
+        g_hash_table_destroy(response_headers);
+    }
+    return NULL;
+}
+
+ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request* request, ds3_get_available_chunks_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
+    ds3_get_available_chunks_response* ds3_response;
+    ds3_bulk_response* bulk_response;
+    GHashTable* response_headers = NULL;
+    xmlDocPtr doc;
+
+    error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+
+    if (error != NULL) {
+        if (response_headers != NULL) {
+            g_hash_table_destroy(response_headers);
+        }
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    ds3_response = g_new0(ds3_get_available_chunks_response, 1);
+
+    // Start processing the data that was received back.
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        if (g_hash_table_contains(response_headers, "Retry-After")) {
+            ds3_response->retry_after = strtoul(g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
+        } else {
+            g_hash_table_destroy(response_headers);
+            return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
+        }
+        g_hash_table_destroy(response_headers);
+        return NULL;
+    }
+
+    _parse_master_object_list(doc, &bulk_response);
+
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    if (response_headers != NULL) {
+        g_hash_table_destroy(response_headers);
+    }
+    return NULL;
+}
 
 void ds3_print_request(const ds3_request* _request) {
     const struct _ds3_request* request;
