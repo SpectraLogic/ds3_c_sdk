@@ -10,7 +10,7 @@ int main (int args, char * argv[]) {
     /*
     // Get Service
 
-    ds3_get_service_response *response; 
+    ds3_get_service_response *response;
     uint64_t i;
 
     // Setup client credentials and then the actual client itself.
@@ -133,11 +133,11 @@ int main (int args, char * argv[]) {
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -162,7 +162,7 @@ int main (int args, char * argv[]) {
 
     for (i = 0; i < response->num_objects; i++) {
         ds3_object object = response->objects[i];
-        printf("Object: (%s) created on %s\n", object.name, object.last_modified);
+        printf("Object: (%s) created on %s\n", object.name->value, object.last_modified->value);
     }
 
     ds3_free_bucket_response(response);
