@@ -1,17 +1,17 @@
 /*
- * ******************************************************************************
- *   Copyright 2014 Spectra Logic Corporation. All Rights Reserved.
- *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
- *   this file except in compliance with the License. A copy of the License is located at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file.
- *   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
- *   CONDITIONS OF ANY KIND, either express or implied. See the License for the
- *   specific language governing permissions and limitations under the License.
- * ****************************************************************************
- */
+* ******************************************************************************
+*   Copyright 2014 Spectra Logic Corporation. All Rights Reserved.
+*   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+*   this file except in compliance with the License. A copy of the License is located at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+*   or in the "license" file accompanying this file.
+*   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+*   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+*   specific language governing permissions and limitations under the License.
+* ****************************************************************************
+*/
 
 #include <glib.h>
 #include <stdlib.h>
@@ -557,6 +557,38 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
     return client;
 }
 
+ds3_error* ds3_create_client_from_env(ds3_client** client) {
+    ds3_creds* creds;
+    ds3_client* _client;
+    char* endpoint = getenv("DS3_ENDPOINT");
+    char* access_key = getenv("DS3_ACCESS_KEY");
+    char* secret_key = getenv("DS3_SECRET_KEY");
+    char* http_proxy = getenv("http_proxy");
+
+    if (endpoint == NULL) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "Missing enviornment variable 'DS3_ENDPOINT'");
+    }
+
+    if (access_key == NULL) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "Missing enviornment variable 'DS3_ACCESS_KEY'");
+    }
+
+    if (secret_key == NULL) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "Missing enviornment variable 'DS3_SECRET_KEY'");
+    }
+
+    creds = ds3_create_creds(access_key, secret_key);
+    _client = ds3_create_client(endpoint, creds);
+
+    if (http_proxy != NULL) {
+        ds3_client_proxy(_client, http_proxy);
+    }
+
+    *client = _client;
+
+    return NULL;
+}
+
 static void _set_query_param(ds3_request* _request, const char* key, const char* value) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
     gpointer escaped_key = (gpointer) _escape_url(key);
@@ -678,7 +710,6 @@ ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
 
     _set_query_param((ds3_request*) request, "operation", "allocate");
-    ds3_str_free(path_str);
     g_free(path);
     return (ds3_request*) request;
 }
@@ -1416,6 +1447,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     if (response_headers != NULL) {
         g_hash_table_destroy(response_headers);
     }
+    *response = ds3_response;
     return NULL;
 }
 
@@ -1613,17 +1645,17 @@ void ds3_free_client(ds3_client* client) {
 
 void ds3_free_request(ds3_request* _request) {
     struct _ds3_request* request;
-    if(_request == NULL) {
+    if (_request == NULL) {
         return;
     }
     request = (struct _ds3_request*) _request;
-    if(request->path != NULL) {
+    if (request->path != NULL) {
         ds3_str_free(request->path);
     }
-    if(request->headers != NULL) {
+    if (request->headers != NULL) {
         g_hash_table_destroy(request->headers);
     }
-    if(request->query_params != NULL) {
+    if (request->query_params != NULL) {
         g_hash_table_destroy(request->query_params);
     }
     g_free(request);
@@ -1725,4 +1757,29 @@ void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
 
     g_free(object_list->list);
     g_free(object_list);
+}
+
+void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+
+    if (response->objects != NULL) {
+        ds3_free_bulk_object_list(response->objects);
+    }
+
+    g_free(response);
+}
+
+void ds3_free_available_chunks_response(ds3_get_available_chunks_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    if (response->object_list != NULL) {
+        ds3_free_bulk_response(response->object_list);
+    }
+
+    g_free(response);
 }

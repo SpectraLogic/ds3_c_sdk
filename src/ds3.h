@@ -186,8 +186,9 @@ typedef struct {
     ds3_error_response* error;
 }ds3_error;
 
-LIBRARY_API ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key);
+LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secret_key);
 LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);
+LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 
 LIBRARY_API ds3_request* ds3_init_get_service(void);
 LIBRARY_API ds3_request* ds3_init_get_bucket(const char* bucket_name);
@@ -225,6 +226,8 @@ LIBRARY_API void ds3_free_service_response(ds3_get_service_response* response);
 LIBRARY_API void ds3_free_bucket_response(ds3_get_bucket_response* response);
 LIBRARY_API void ds3_free_bulk_response(ds3_bulk_response* response);
 LIBRARY_API void ds3_free_error(ds3_error* error);
+LIBRARY_API void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response);
+LIBRARY_API void ds3_free_available_chunks_response(ds3_get_available_chunks_response* response);
 
 LIBRARY_API void ds3_free_owner(ds3_owner* owner);
 LIBRARY_API void ds3_free_creds(ds3_creds* client);

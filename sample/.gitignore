@@ -1,1 +1,4 @@
 get-service
+put-bulk
+put-bucket
+get-bucket
