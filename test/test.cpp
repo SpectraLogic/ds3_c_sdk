@@ -31,7 +31,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     error = ds3_get_bucket(client, request, &bucket_response);
     ds3_free_request(request);
 
-    BOOST_CHECK(error == NULL);
+    BOOST_REQUIRE(error == NULL);
 
     for (i = 0; i < bucket_response->num_objects; i++) {
         request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
@@ -48,7 +48,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     error = ds3_delete_bucket(client, request);
     ds3_free_request(request);
 
-    BOOST_CHECK(error == NULL);
+    BOOST_REQUIRE(error == NULL);
 }
 
 void populate_with_objects(const ds3_client* client, const char* bucket_name) {
@@ -62,13 +62,13 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
 
     ds3_free_request(request);
 
-    BOOST_CHECK(error == NULL);
+    BOOST_REQUIRE(error == NULL);
 
     obj_list = ds3_convert_file_list(books, 4);
     request = ds3_init_put_bulk(bucket_name, obj_list);
     error = ds3_bulk(client, request, &response);
 
-    BOOST_CHECK(error == NULL);
+    BOOST_REQUIRE(error == NULL);
 
     ds3_free_request(request);
 
@@ -78,10 +78,10 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
 
     ds3_free_request(request);
 
-    BOOST_CHECK(error == NULL);
+    BOOST_REQUIRE(error == NULL);
 
-    BOOST_CHECK(chunk_response->retry_after == 0);
-    BOOST_CHECK(chunk_response->objects != NULL);
+    BOOST_REQUIRE(chunk_response->retry_after == 0);
+    BOOST_REQUIRE(chunk_response->objects != NULL);
 
     for (i = 0; i < chunk_response->objects->size; i++) {
         ds3_bulk_object bulk_object = chunk_response->objects->list[i];

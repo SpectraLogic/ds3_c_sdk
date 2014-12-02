@@ -1155,20 +1155,20 @@ static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objec
     GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object));
 
     for(attribute = objects_node->properties; attribute != NULL; attribute = attribute->next) {
-        if(attribute_equal(attribute, "ServerId") == true) {
-            text = xmlNodeListGetString(doc, attribute->children, 1);
-            if(text == NULL) {
-                continue;
-            }
-            response->server_id = ds3_str_init((const char*) text);
-            xmlFree(text);
-        }
-        else if(attribute_equal(attribute, "ChunkId") == true) {
+        if(attribute_equal(attribute, "ChunkId") == true) {
             text = xmlNodeListGetString(doc, attribute->children, 1);
             if(text == NULL) {
                 continue;
             }
             response->chunk_id = ds3_str_init((const char*) text);
+            xmlFree(text);
+        }
+        else if(attribute_equal(attribute, "NodeId") == true) {
+            text = xmlNodeListGetString(doc, attribute->children, 1);
+            if(text == NULL) {
+                continue;
+            }
+            response->node_id= ds3_str_init((const char*) text);
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "ChunkNumber") == true) {
@@ -1194,6 +1194,73 @@ static ds3_bulk_object_list* _parse_bulk_objects(xmlDocPtr doc, xmlNodePtr objec
     response->size = object_array->len;
     g_array_free(object_array, FALSE);
     return response;
+}
+
+static ds3_job_priority _match_priority(const xmlChar* priority_str) {
+    if (xmlStrcmp(priority_str, (const xmlChar*) "CRITICAL") == 0) {
+        return CRITICAL;
+    }
+    else if (xmlStrcmp(priority_str, (const xmlChar*) "VERY_HIGH") == 0) {
+        return VERY_HIGH;
+    }
+    else if (xmlStrcmp(priority_str, (const xmlChar*) "HIGH") == 0) {
+        return HIGH;
+    }
+    else if (xmlStrcmp(priority_str, (const xmlChar*) "NORMAL") == 0) {
+        return NORMAL;
+    }
+    else if (xmlStrcmp(priority_str, (const xmlChar*) "LOW") == 0) {
+        return LOW;
+    }
+    else if (xmlStrcmp(priority_str, (const xmlChar*) "BACKGROUND") == 0) {
+        return BACKGROUND;
+    }
+    else if (xmlStrcmp(priority_str, (const xmlChar*) "MINIMIZED_DUE_TO_TOO_MANY_RETRIES") == 0) {
+        return MINIMIZED_DUE_TO_TOO_MANY_RETRIES;
+    }
+    else {
+        fprintf(stderr, "ERROR: Unknown priority type of '%s'.  Returning LOW to be safe.\n", priority_str);
+        return LOW;
+    }
+}
+
+static ds3_job_request_type _match_request_type(const xmlChar* request_type) {
+    if (xmlStrcmp(request_type, (const xmlChar*) "PUT") == 0) {
+        return PUT;
+    }
+    else if (xmlStrcmp(request_type, (const xmlChar*) "GET") == 0) {
+        return GET;
+    }
+    else {
+        fprintf(stderr, "ERROR: Unknown request type of '%s'.  Returning GET for safety.\n", request_type);
+        return GET;
+    }
+}
+
+static ds3_write_optimization _match_write_optimization(const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "CAPACITY") == 0) {
+        return CAPACITY;
+    }
+    else if (xmlStrcmp(text, (const xmlChar*) "PERFORMANCE") == 0) {
+        return PERFORMANCE;
+    }
+    else {
+        fprintf(stderr, "ERROR: Unknown write optimization of '%s'.  Returning CAPACITY for safety.\n", text);
+        return CAPACITY;
+    }
+}
+
+static ds3_write_optimization _match_chunk_order(const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "IN_ORDER") == 0) {
+        return IN_ORDER;
+    }
+    else if (xmlStrcmp(text, (const xmlChar*) "NONE") == 0) {
+        return NONE;
+    }
+    else {
+        fprintf(stderr, "ERROR: Unknown chunk processing order guaruntee value of '%s'.  Returning IN_ORDER for safety.\n", text);
+        return NONE;
+    }
 }
 
 static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _response){
@@ -1266,6 +1333,38 @@ static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _
         }
         else if(attribute_equal(attribute, "OriginalSizeInBytes") == true) {
             response->original_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        }
+        else if(attribute_equal(attribute, "Priority") == true) {
+            text = xmlNodeListGetString(doc, attribute->children, 1);
+            if(text == NULL) {
+                continue;
+            }
+            response->priority = _match_priority(text);
+            xmlFree(text);
+        }
+        else if(attribute_equal(attribute, "RequestType") == true) {
+            text = xmlNodeListGetString(doc, attribute->children, 1);
+            if(text == NULL) {
+                continue;
+            }
+            response->request_type = _match_request_type(text);
+            xmlFree(text);
+        }
+        else if(attribute_equal(attribute, "WriteOptimization") == true) {
+            text = xmlNodeListGetString(doc, attribute->children, 1);
+            if(text == NULL) {
+                continue;
+            }
+            response->write_optimization = _match_write_optimization(text);
+            xmlFree(text);
+        }
+        else if(attribute_equal(attribute, "ChunkClientProcessingOrderGuarantee") == true) {
+            text = xmlNodeListGetString(doc, attribute->children, 1);
+            if(text == NULL) {
+                continue;
+            }
+            response->chunk_order = _match_chunk_order(text);
+            xmlFree(text);
         }
         else {
             fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);

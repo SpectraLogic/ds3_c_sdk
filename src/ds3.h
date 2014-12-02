@@ -139,6 +139,7 @@ typedef struct {
     ds3_bulk_object*  list;
     uint64_t          size;
     uint64_t          chunk_number;
+    ds3_str*          node_id;
     ds3_str*          server_id;
     ds3_str*          chunk_id;
 }ds3_bulk_object_list;
@@ -146,7 +147,7 @@ typedef struct {
 typedef struct {
     ds3_str*                bucket_name;
     uint64_t                cached_size_in_bytes;
-    ds3_chunk_ordering      chuck_order;
+    ds3_chunk_ordering      chunk_order;
     uint64_t                completed_size_in_bytes;
     ds3_str*                job_id;
     uint64_t                original_size_in_bytes;
