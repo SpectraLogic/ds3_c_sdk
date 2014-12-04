@@ -36,6 +36,7 @@ struct _ds3_request{
 
     //These next few elements are only for the bulk commands
     ds3_bulk_object_list* object_list;
+    ds3_chunk_ordering chunk_ordering;
 };
 
 typedef struct {
@@ -62,14 +63,21 @@ typedef struct {
     ds3_str* value;
 }ds3_response_header;
 
-ds3_str* ds3_str_init(const char* string){
+ds3_str* ds3_str_init(const char* string) {
     ds3_str* str = g_new0(ds3_str, 1);
     str->value = g_strdup(string);
     str->size = strlen(string);
     return str;
 }
 
-char* ds3_str_value(const ds3_str* string){
+ds3_str* ds3_str_dup(const ds3_str* string) {
+    ds3_str* str = g_new0(ds3_str, 1);
+    str->value = g_strdup(string->value);
+    str->size = string->size;
+    return str;
+}
+
+char* ds3_str_value(const ds3_str* string) {
     return string->value;
 }
 
@@ -690,10 +698,11 @@ ds3_request* ds3_init_delete_bucket(const char* bucket_name) {
     return (ds3_request*) _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, NULL));
 }
 
-ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
+ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", bucket_name, NULL));
     _set_query_param((ds3_request*) request, "operation", "start_bulk_get");
     request->object_list = object_list;
+    request->chunk_ordering = order;
     return (ds3_request*) request;
 }
 
@@ -1389,9 +1398,18 @@ static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _
     return NULL;
 }
 
+static char* _get_chunk_order_str(ds3_chunk_ordering order) {
+    if (order == NONE) {
+        return "NONE";
+    }
+    else {
+        return "IN_ORDER";
+    }
+}
+
 #define LENGTH_BUFF_SIZE 21
 
-static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list) {
+static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list, bool is_get, ds3_chunk_ordering order) {
     char size_buff[LENGTH_BUFF_SIZE]; //The max size of an uint64_t should be 20 characters
     xmlDocPtr doc;
     ds3_bulk_object obj;
@@ -1399,8 +1417,11 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
     int i;
     // Start creating the xml body to send to the server.
     doc = xmlNewDoc((xmlChar*)"1.0");
-
     objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
+
+    if (is_get) {
+        xmlSetProp(objects_node, (xmlChar*) "ChunkClientProcessingOrderGuarantee", (xmlChar*) _get_chunk_order_str(order));
+    }
 
     for(i = 0; i < obj_list->size; i++) {
         memset(&obj, 0, sizeof(ds3_bulk_object));
@@ -1413,12 +1434,24 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
         xmlAddChild(objects_node, object_node);
 
         xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name->value);
-        xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff );
+        if (!is_get) {
+            xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff);
+        }
     }
 
     xmlDocSetRootElement(doc, objects_node);
 
     return doc;
+}
+
+static bool _is_bulk_get(const struct _ds3_request* request) {
+
+    char* value = g_hash_table_lookup(request->query_params, "operation");
+
+    if (strcmp(value, "start_bulk_get") == 0) {
+        return true;
+    }
+    return false;
 }
 
 ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_bulk_response** response) {
@@ -1435,21 +1468,22 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     xmlDocPtr doc;
     xmlChar* xml_buff;
 
-    if(client == NULL || _request == NULL) {
+    if (client == NULL || _request == NULL) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
 
     request = (struct _ds3_request*) _request;
 
-    if(request->object_list == NULL || request->object_list->size == 0) {
+    if (request->object_list == NULL || request->object_list->size == 0) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
     }
+
 
     // Init the data structures declared above the null check
     memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
     obj_list = request->object_list;
 
-    doc = _generate_xml_objects_list(obj_list);
+    doc = _generate_xml_objects_list(obj_list, _is_bulk_get(_request), _request->chunk_ordering);
 
     xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
 
@@ -1801,14 +1835,15 @@ size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_da
 static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name) {
     struct stat file_info;
     int result;
+    ds3_bulk_object obj;
     memset(&file_info, 0, sizeof(struct stat));
+    memset(&obj, 0, sizeof(ds3_bulk_object));
 
     result = stat(file_name, &file_info);
     if (result != 0) {
         fprintf(stderr, "Failed to get file info for %s\n", file_name);
     }
 
-    ds3_bulk_object obj;
     memset(&obj, 0, sizeof(ds3_bulk_object));
 
     obj.name = ds3_str_init(file_name);
@@ -1823,6 +1858,20 @@ ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num
 
     for(i = 0; i < num_files; i++) {
         obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i]);
+    }
+
+    return obj_list;
+}
+
+ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_t num_objects) {
+    uint64_t i;
+    ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_objects);
+
+    for(i = 0; i < num_objects; i++) {
+        ds3_bulk_object obj;
+        memset(&obj, 0, sizeof(ds3_bulk_object));
+        obj.name = ds3_str_dup(objects[i].name);
+        obj_list->list[i] = obj;
     }
 
     return obj_list;
