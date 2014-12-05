@@ -1259,7 +1259,7 @@ static ds3_write_optimization _match_write_optimization(const xmlChar* text) {
     }
 }
 
-static ds3_write_optimization _match_chunk_order(const xmlChar* text) {
+static ds3_chunk_ordering _match_chunk_order(const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "IN_ORDER") == 0) {
         return IN_ORDER;
     }
