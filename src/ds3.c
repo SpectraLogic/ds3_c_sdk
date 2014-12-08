@@ -725,10 +725,9 @@ ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
 
 ds3_request* ds3_init_get_available_chunks(const char* job_id) {
     ds3_str* path_str = ds3_str_init("/_rest_/job_chunk/");
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
+    struct _ds3_request* request = _common_request_init(HTTP_GET, path_str);
 
     _set_query_param((ds3_request*) request, "job", job_id);
-    ds3_str_free(path_str);
 
     return (ds3_request*) request;
 }
