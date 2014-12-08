@@ -725,10 +725,9 @@ ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
 
 ds3_request* ds3_init_get_available_chunks(const char* job_id) {
     ds3_str* path_str = ds3_str_init("/_rest_/job_chunk/");
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
+    struct _ds3_request* request = _common_request_init(HTTP_GET, path_str);
 
     _set_query_param((ds3_request*) request, "job", job_id);
-    ds3_str_free(path_str);
 
     return (ds3_request*) request;
 }
@@ -1619,13 +1618,14 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     }
 
     _parse_master_object_list(doc, &bulk_response);
-
+    ds3_response->object_list = bulk_response;
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
     if (response_headers != NULL) {
         g_hash_table_destroy(response_headers);
     }
+    *response = ds3_response;
     return NULL;
 }
 
