@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
     ds3_client* client = get_client();
     uint64_t i;
     bool found = false;
-    const char* bucket_name = "test_bucket";
+    const char* bucket_name = "unit_test_bucket";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     ds3_get_service_response* response;
 

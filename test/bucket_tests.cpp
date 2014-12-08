@@ -8,7 +8,7 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     ds3_error* error;
     ds3_get_bucket_response* response;
     ds3_client* client = get_client();
-    const char* bucket_name = "test_bucket";
+    const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
 
     populate_with_objects(client, bucket_name);
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE( prefix ) {
     ds3_error* error;
     ds3_get_bucket_response* response;
     ds3_client* client = get_client();
-    const char* bucket_name = "test_bucket";
+    const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
 
     populate_with_objects(client, bucket_name);
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     ds3_error* error;
     ds3_get_bucket_response* response;
     ds3_client* client = get_client();
-    const char* bucket_name = "test_bucket";
+    const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
 
     populate_with_objects(client, bucket_name);
