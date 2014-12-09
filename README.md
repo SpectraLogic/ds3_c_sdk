@@ -3,6 +3,11 @@ DS3 C SDK
 
 This project contains a C library for using the DS3 Deep Storage REST interface.
 
+Contact Us
+==========
+
+Join us at our [Google Groups](https://groups.google.com/d/forum/spectralogicds3-sdks) forum to ask questions, or see frequently asked questions.
+
 Windows
 =======
 
