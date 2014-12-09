@@ -1445,7 +1445,7 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
 
 static bool _is_bulk_get(const struct _ds3_request* request) {
 
-    char* value = g_hash_table_lookup(request->query_params, "operation");
+    char* value = (char *) g_hash_table_lookup(request->query_params, "operation");
 
     if (strcmp(value, "start_bulk_get") == 0) {
         return true;
@@ -1550,7 +1550,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     if(doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
         if (g_hash_table_contains(response_headers, "Retry-After")) {
-            ds3_response->retry_after = strtoul(g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
+            ds3_response->retry_after = strtoul((char*)g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
         } else {
             g_hash_table_destroy(response_headers);
             return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
@@ -1608,7 +1608,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     if (doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
         if (g_hash_table_contains(response_headers, "Retry-After")) {
-            ds3_response->retry_after = strtoul(g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
+            ds3_response->retry_after = strtoul((char*)g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
         } else {
             g_hash_table_destroy(response_headers);
             return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
