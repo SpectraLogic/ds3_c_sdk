@@ -200,6 +200,9 @@ LIBRARY_API ds3_request* ds3_init_put_object(const char* bucket_name, const char
 LIBRARY_API ds3_request* ds3_init_delete_bucket(const char* bucket_name);
 LIBRARY_API ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name);
 LIBRARY_API ds3_request* ds3_init_allocate_chunk(const char* job_id);
+LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
+LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
+LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_get_available_chunks(const char* job_id);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
@@ -223,6 +226,9 @@ LIBRARY_API ds3_error* ds3_delete_bucket(const ds3_client* client, const ds3_req
 LIBRARY_API ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*));
 LIBRARY_API ds3_error* ds3_put_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*));
 LIBRARY_API ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* request);
+LIBRARY_API ds3_error* ds3_get_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
+LIBRARY_API ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
+LIBRARY_API ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request);
 
 LIBRARY_API void ds3_free_service_response(ds3_get_service_response* response);
 LIBRARY_API void ds3_free_bucket_response(ds3_get_bucket_response* response);

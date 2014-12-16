@@ -732,6 +732,33 @@ ds3_request* ds3_init_get_available_chunks(const char* job_id) {
     return (ds3_request*) request;
 }
 
+ds3_request* ds3_init_get_job(const char* job_id) {
+    char* path = g_strconcat("/_rest_/job/", job_id, NULL);
+    ds3_str* path_str = ds3_str_init(path);
+    struct _ds3_request* request = _common_request_init(HTTP_GET, path_str);
+
+    g_free(path);
+    return (ds3_request*) request;
+}
+
+ds3_request* ds3_init_put_job(const char* job_id) {
+    char* path = g_strconcat("/_rest_/job/", job_id, NULL);
+    ds3_str* path_str = ds3_str_init(path);
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
+
+    g_free(path);
+    return (ds3_request*) request;
+}
+
+ds3_request* ds3_init_delete_job(const char* job_id) {
+    char* path = g_strconcat("/_rest_/job/", job_id, NULL);
+    ds3_str* path_str = ds3_str_init(path);
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, path_str);
+
+    g_free(path);
+    return (ds3_request*) request;
+}
+
 static ds3_error* _internal_request_dispatcher(const ds3_client* client, const ds3_request* request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
     if(client == NULL || request == NULL) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
@@ -1634,6 +1661,54 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     }
     *response = ds3_response;
     return NULL;
+}
+
+static ds3_error* _common_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
+    ds3_bulk_response* bulk_response;
+    GHashTable* response_headers = NULL;
+    xmlDocPtr doc;
+
+    error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+
+    if (error != NULL) {
+        if (response_headers != NULL) {
+            g_hash_table_destroy(response_headers);
+        }
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    // Start processing the data that was received back.
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        g_hash_table_destroy(response_headers);
+        return NULL;
+    }
+
+    _parse_master_object_list(doc, &bulk_response);
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    if (response_headers != NULL) {
+        g_hash_table_destroy(response_headers);
+    }
+    *response = bulk_response;
+    return NULL;
+}
+
+ds3_error* ds3_get_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response) {
+    return _common_job(client, request, response);
+}
+
+ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response) {
+    return _common_job(client, request, response);
+}
+
+ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request) {
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 void ds3_print_request(const ds3_request* _request) {
