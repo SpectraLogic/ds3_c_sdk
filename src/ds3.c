@@ -978,11 +978,16 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
+    ds3_error* error;
     xmlChar* text;
     GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
     GArray* common_prefix_array = g_array_new(FALSE, TRUE, sizeof(ds3_str*));
     GByteArray* xml_blob = g_byte_array_new();
-    _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    if(error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
 
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
