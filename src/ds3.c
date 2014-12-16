@@ -1639,16 +1639,8 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if (doc == NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        if (g_hash_table_contains(response_headers, "Retry-After")) {
-            ds3_response->retry_after = strtoul((char*)g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
-        } else {
-            g_hash_table_destroy(response_headers);
-            return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
-        }
-        g_hash_table_destroy(response_headers);
-        return NULL;
+    if (response_headers != NULL && g_hash_table_contains(response_headers, "Retry-After")) {
+        ds3_response->retry_after = strtoul((char*)g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
     }
 
     _parse_master_object_list(doc, &bulk_response);
