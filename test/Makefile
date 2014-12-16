@@ -1,7 +1,12 @@
 .PHONY: run clean
 
-CPP=g++
+ifdef PKG_CONFIG_PATH
+PKG_CONFIG=PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):"../install/lib/pkgconfig" pkg-config
+else
 PKG_CONFIG=PKG_CONFIG_PATH="../install/lib/pkgconfig" pkg-config
+endif
+
+CPP=g++
 LIBS=`$(PKG_CONFIG) --libs libds3`
 CFLAGS=`$(PKG_CONFIG) --cflags libds3`
 CFLAGS+= -g -Wall# Debug flags
