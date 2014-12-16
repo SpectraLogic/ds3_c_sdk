@@ -980,8 +980,8 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     xmlNodePtr child_node;
     ds3_error* error;
     xmlChar* text;
-    GArray* object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
-    GArray* common_prefix_array = g_array_new(FALSE, TRUE, sizeof(ds3_str*));
+    GArray* object_array;
+    GArray* common_prefix_array;
     GByteArray* xml_blob = g_byte_array_new();
     error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
     if(error != NULL) {
@@ -1009,6 +1009,8 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
         return error;
     }
 
+    object_array = g_array_new(FALSE, TRUE, sizeof(ds3_object));
+    common_prefix_array = g_array_new(FALSE, TRUE, sizeof(ds3_str*));
     response = g_new0(ds3_get_bucket_response, 1);
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
