@@ -81,7 +81,6 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
     for (i = 0; i <= file_index;i++) {
         unlink(tmp_files[i]);
-        free(tmp_files[i]);
     }
 
     free(tmp_files);
