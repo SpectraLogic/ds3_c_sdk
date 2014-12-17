@@ -713,8 +713,8 @@ ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* ob
     return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
-    char* path = g_strconcat("/_rest_/job_chunk/", chunk_id, NULL);
+ds3_request* ds3_init_allocate_chunk(const char* job_id) {
+    char* path = g_strconcat("/_rest_/job_chunk/", job_id, NULL);
     ds3_str* path_str = ds3_str_init(path);
     struct _ds3_request* request = _common_request_init(HTTP_PUT, path_str);
 
