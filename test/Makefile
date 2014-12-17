@@ -1,9 +1,20 @@
 .PHONY: run clean
 
-ifdef PKG_CONFIG_PATH
-PKG_CONFIG=PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):"../install/lib/pkgconfig" pkg-config
-else
 PKG_CONFIG=PKG_CONFIG_PATH="../install/lib/pkgconfig" pkg-config
+
+ifdef LD_LIB_PATH
+LD_PATH=$(LD_LIB_PATH):../install/lib
+else
+LD_PATH=../install/lib
+endif
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+LIB_PATH=DYLD_FALLBACK_LIBRARY_PATH=$(LD_PATH)
+GDB=lldb
+else
+LIB_PATH=LD_LIBRARY_PATH=$(LD_PATH)
+GDB=gdb
 endif
 
 CPP=g++
@@ -15,13 +26,13 @@ CFLAGS+= -DBOOST_TEST_DYN_LINK -lboost_unit_test_framework
 all: test
 
 mem: test
-	LD_LIBRARY_PATH=../install/lib valgrind --leak-check=full --track-origins=yes ./test
+	$(LIB_PATH) valgrind --leak-check=full --track-origins=yes ./test
 
 debug: test
-	LD_LIBRARY_PATH=../install/lib gdb ./test
+	$(LIB_PATH) $(GDB) ./test
 
 run: test
-	LD_LIBRARY_PATH=../install/lib ./test --catch_system_errors=no
+	$(LIB_PATH) ./test --catch_system_errors=no
 
 deps:
 	./build_local.sh
