@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
@@ -1913,14 +1914,30 @@ size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_da
     return fread(buffer, size, nmemb, (FILE*) user_data);
 }
 
-static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name) {
+size_t ds3_write_to_fd(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return write(*(int*)user_data, buffer, size * nmemb);
+}
+
+size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return read(*(int*)user_data, buffer, size * nmemb);
+}
+
+static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name, const char* base_path) {
     struct stat file_info;
     int result;
     ds3_bulk_object obj;
+    char* file_to_stat;
     memset(&file_info, 0, sizeof(struct stat));
     memset(&obj, 0, sizeof(ds3_bulk_object));
 
-    result = stat(file_name, &file_info);
+    if (base_path != NULL) {
+        file_to_stat = g_strconcat(base_path, file_name, NULL);
+    }
+    else {
+        file_to_stat = g_strdup(file_name);
+    }
+
+    result = stat(file_to_stat, &file_info);
     if (result != 0) {
         fprintf(stderr, "Failed to get file info for %s\n", file_name);
     }
@@ -1930,15 +1947,21 @@ static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name) {
     obj.name = ds3_str_init(file_name);
     obj.length = file_info.st_size;
 
+    g_free(file_to_stat);
+
     return obj;
 }
 
 ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num_files) {
+    return ds3_convert_file_list_with_basepath(file_list, num_files, NULL);
+}
+
+ds3_bulk_object_list* ds3_convert_file_list_with_basepath(const char** file_list, uint64_t num_files, const char* base_path) {
     uint64_t i;
     ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_files);
 
     for(i = 0; i < num_files; i++) {
-        obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i]);
+        obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i], base_path);
     }
 
     return obj_list;

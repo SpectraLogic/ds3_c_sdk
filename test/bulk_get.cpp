@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include "ds3.h"
 #include "test.h"
@@ -89,4 +90,15 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
+}
+
+BOOST_AUTO_TEST_CASE( convert_list_helper ) {
+    const char* books[4] ={"beowulf.txt", "sherlock_holmes.txt", "tale_of_two_cities.txt", "ulysses.txt"};
+    ds3_bulk_object_list* obj_list;
+
+    obj_list = ds3_convert_file_list_with_basepath(books, 4, "resources/");
+
+    BOOST_CHECK(strcmp(obj_list->list[0].name->value, "beowulf.txt") == 0);
+    printf("beowulf.txt file size is: %llu\n", obj_list->list[0].length);
+    BOOST_CHECK(obj_list->list[0].length == 294059);
 }
