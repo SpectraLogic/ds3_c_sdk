@@ -685,8 +685,15 @@ ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_
 }
 
 ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
+    return ds3_init_put_object_for_job(bucket_name, object_name, length, NULL);
+}
+
+ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* object_name, uint64_t length, const char* job_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
     request->length = length;
+    if (job_id != NULL) {
+        _set_query_param((ds3_request*) request, "job", job_id);
+    }
     return (ds3_request*) request;
 }
 
@@ -1985,7 +1992,6 @@ void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response) {
     if (response == NULL) {
         return;
     }
-
 
     if (response->objects != NULL) {
         ds3_free_bulk_object_list(response->objects);
