@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <curl/curl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,8 @@ extern "C" {
 #else
 #    define LIBRARY_API
 #endif
+
+#define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
 
 typedef enum {
     False, True
