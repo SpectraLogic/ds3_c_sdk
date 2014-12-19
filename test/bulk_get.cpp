@@ -99,6 +99,15 @@ BOOST_AUTO_TEST_CASE( convert_list_helper ) {
     obj_list = ds3_convert_file_list_with_basepath(books, 4, "resources/");
 
     BOOST_CHECK(strcmp(obj_list->list[0].name->value, "beowulf.txt") == 0);
-    printf("beowulf.txt file size is: %llu\n", obj_list->list[0].length);
     BOOST_CHECK(obj_list->list[0].length == 294059);
+}
+
+BOOST_AUTO_TEST_CASE( directory_size ) {
+    const char* books[1] ={"resources"};
+    ds3_bulk_object_list* obj_list;
+
+    obj_list = ds3_convert_file_list_with_basepath(books, 1, NULL);
+
+    BOOST_CHECK(strcmp(obj_list->list[0].name->value, "resources") == 0);
+    BOOST_CHECK(obj_list->list[0].length == 0);
 }

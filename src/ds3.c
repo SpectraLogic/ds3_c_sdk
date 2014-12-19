@@ -292,7 +292,6 @@ static char* _generate_date_string(void) {
     GDateTime* time  = g_date_time_new_now_local();
     char* date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
 
-    fprintf(stdout, "Date: %s\n", date_string);
     g_date_time_unref(time);
 
     return date_string;
@@ -305,9 +304,6 @@ static char* _net_compute_signature(const ds3_creds* creds, http_verb verb, char
     gsize bufSize = 256;
     guint8 buffer[256];
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
-
-    fprintf(stdout, "Signature:\n%s\n", signature_str);
-
 
     hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key->value, creds->secret_key->size);
     g_hmac_update(hmac, signature_str, -1);
@@ -1727,8 +1723,6 @@ void ds3_print_request(const ds3_request* _request) {
       return;
     }
     request = (struct _ds3_request*)_request;
-    printf("Verb: %s\n", _net_get_verb(request->verb));
-    printf("Path: %s\n", request->path->value);
 }
 
 void ds3_free_bucket_response(ds3_get_bucket_response* response){
@@ -1954,7 +1948,13 @@ static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name, const c
     memset(&obj, 0, sizeof(ds3_bulk_object));
 
     obj.name = ds3_str_init(file_name);
-    obj.length = file_info.st_size;
+
+    if (S_ISDIR(file_info.st_mode)) {
+        obj.length = 0;
+    }
+    else {
+      obj.length = file_info.st_size;
+    }
 
     g_free(file_to_stat);
 
