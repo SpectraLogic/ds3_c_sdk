@@ -102,7 +102,6 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
 bool contains_object(const ds3_object* objects, uint64_t num_objects, const char* obj) {
     uint64_t i;
     for (i = 0; i < num_objects; i++) {
-        fprintf(stderr, "obj name: %s\n", objects[i].name->value);
         if(strcmp(objects[i].name->value, obj) == 0) {
             return true;
         }

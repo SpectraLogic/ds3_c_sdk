@@ -76,7 +76,6 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     BOOST_CHECK_EQUAL(num_objs, 0);
 
     BOOST_CHECK_EQUAL(response->num_common_prefixes, 1);
-    fprintf(stderr, "prefix value: %s\n", response->common_prefixes[0]->value);
     BOOST_CHECK_EQUAL(strcmp(response->common_prefixes[0]->value, "resources/"), 0);
 
     ds3_free_bucket_response(response);

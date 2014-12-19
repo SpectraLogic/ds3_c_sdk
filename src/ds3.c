@@ -177,7 +177,6 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
                 return 0;
             }
             if (status_code == 100) {
-                fprintf(stderr, "Ignoring 100 status code header line\n");
                 g_free(header_buff);
                 g_strfreev(split_result);
                 return to_read;
