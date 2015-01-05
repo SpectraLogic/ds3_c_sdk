@@ -1960,6 +1960,17 @@ static ds3_bulk_object _ds3_bulk_object_from_file(const char* file_name, const c
     return obj;
 }
 
+static ds3_bulk_object _ds3_bulk_object_with_name_and_length(const char* name, uint64_t length) {
+    ds3_bulk_object obj;
+
+    memset(&obj, 0, sizeof(ds3_bulk_object));
+
+    obj.name = ds3_str_init(name);
+    obj.length = length;
+
+    return obj;
+}
+
 ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num_files) {
     return ds3_convert_file_list_with_basepath(file_list, num_files, NULL);
 }
@@ -1970,6 +1981,17 @@ ds3_bulk_object_list* ds3_convert_file_list_with_basepath(const char** file_list
 
     for(i = 0; i < num_files; i++) {
         obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i], base_path);
+    }
+
+    return obj_list;
+}
+
+ds3_bulk_object_list* ds3_convert_file_list_with_names_and_lengths(const char** names, const uint64_t* lengths, uint64_t num_files) {
+    uint64_t i;
+    ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_files);
+
+    for(i = 0; i < num_files; i++) {
+        obj_list->list[i] = _ds3_bulk_object_with_name_and_length(names[i], lengths[i]);
     }
 
     return obj_list;
