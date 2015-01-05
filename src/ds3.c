@@ -20,10 +20,19 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
+#ifndef S_ISDIR
+#define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
+#endif
 
 #include "ds3.h"
 
