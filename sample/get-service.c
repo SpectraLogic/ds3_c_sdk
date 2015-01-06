@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include "ds3.h"
 
-int main (int args, char* argv[]) {
+int main () {
     // Get Service
 
     ds3_get_service_response *response;

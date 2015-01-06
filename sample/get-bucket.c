@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include "ds3.h"
 
-int main(int argsv, char* argsc[]) {
+int main() {
 
     ///*
     // Get Bucket
