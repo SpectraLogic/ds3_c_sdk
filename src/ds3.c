@@ -1096,7 +1096,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             xmlFree(text);
         }
         else if(element_equal(child_node, "MaxKeys") == true) {
-            response->max_keys = xml_get_uint64(doc, child_node);
+            response->max_keys = (uint32_t)xml_get_uint64(doc, child_node);
         }
         else if(element_equal(child_node, "Name") == true) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
@@ -1735,7 +1735,8 @@ void ds3_print_request(const ds3_request* _request) {
 
 void ds3_free_bucket_response(ds3_get_bucket_response* response){
     size_t num_objects;
-    int i;
+    size_t i;
+    uint64_t j;
     if(response == NULL) {
         return;
     }
@@ -1760,8 +1761,8 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
     ds3_str_free(response->prefix);
 
     if (response->common_prefixes != NULL) {
-        for(i = 0; i < response->num_common_prefixes; i++) {
-            ds3_str_free(response->common_prefixes[i]);
+        for(j = 0; j < response->num_common_prefixes; j++) {
+            ds3_str_free(response->common_prefixes[j]);
         }
         g_free(response->common_prefixes);
     }
@@ -1771,7 +1772,7 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
 
 void ds3_free_service_response(ds3_get_service_response* response){
     size_t num_buckets;
-    int i;
+    size_t i;
 
     if(response == NULL) {
         return;
@@ -1791,7 +1792,7 @@ void ds3_free_service_response(ds3_get_service_response* response){
 }
 
 void ds3_free_bulk_response(ds3_bulk_response* response) {
-    int i;
+    size_t i;
     if(response == NULL) {
         fprintf(stderr, "Bulk response was NULL\n");
         return;
@@ -2001,7 +2002,7 @@ ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_
 ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files) {
     ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
     obj_list->size = num_files;
-    obj_list->list = g_new0(ds3_bulk_object, num_files);
+    obj_list->list = g_new0(ds3_bulk_object, (gsize)num_files);
 
     return obj_list;
 }
