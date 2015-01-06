@@ -8,16 +8,18 @@ COMPAT_INCLUDE=/Icompatibility_includes
 OUTPUT=output
 !ENDIF
 
-all: $(OUTPUT)\include\ds3.h $(OUTPUT)\bin\ds3.dll $(OUTPUT)\bin\get-service.exe
+DIRS=obj output\include output\bin output\lib output\include
 
-$(OUTPUT)\bin\get-service.exe: $(OUTPUT)\bin\ds3.dll obj\get-service.obj $(OUTPUT)\bin
+all: $(DIRS) $(OUTPUT)\include\ds3.h $(OUTPUT)\bin\ds3.dll $(OUTPUT)\bin\get-service.exe
+
+$(OUTPUT)\bin\get-service.exe: $(OUTPUT)\bin\ds3.dll obj\get-service.obj
     link $(OUTPUT)\lib\ds3.lib obj\get-service.obj /OUT:$(OUTPUT)\bin\get-service.exe
 
-$(OUTPUT)\bin\ds3.dll: obj\ds3.obj $(OUTPUT)\bin $(OUTPUT)\lib
+$(OUTPUT)\bin\ds3.dll: obj\ds3.obj
     link /DLL obj\ds3.obj /OUT:$(OUTPUT)\bin\ds3.dll /IMPLIB:$(OUTPUT)\lib\ds3.lib $(DEPS_LIBS)
     copy $(DEPS)\bin\*.dll $(OUTPUT)\bin
 
-$(OUTPUT)\include\ds3.h: ..\src\ds3.h $(OUTPUT)\include
+$(OUTPUT)\include\ds3.h: ..\src\ds3.h
 	copy ..\src\ds3.h $(OUTPUT)\include\ds3.h
 
 obj\get-service.obj: ..\sample\get-service.c $(OUTPUT)\include\ds3.h obj
