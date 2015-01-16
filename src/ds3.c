@@ -20,19 +20,10 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
-
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
-
-#ifndef S_ISDIR
-#define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
-#endif
 
 #include "ds3.h"
 
@@ -699,15 +690,23 @@ ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_
 }
 
 ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
-    return ds3_init_put_object_for_job(bucket_name, object_name, length, NULL);
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
+    request->length = length;
+    return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* object_name, uint64_t length, const char* job_id) {
+ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, uint64_t length, const char* job_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
+    char buff[21];
+
     request->length = length;
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
     }
+
+    sprintf(buff, "%llu" , offset);
+    _set_query_param((ds3_request*) request, "offset", buff);
+
     return (ds3_request*) request;
 }
 
@@ -1096,7 +1095,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             xmlFree(text);
         }
         else if(element_equal(child_node, "MaxKeys") == true) {
-            response->max_keys = (uint32_t)xml_get_uint64(doc, child_node);
+            response->max_keys = xml_get_uint64(doc, child_node);
         }
         else if(element_equal(child_node, "Name") == true) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
@@ -1724,19 +1723,9 @@ ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request) 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
-void ds3_print_request(const ds3_request* _request) {
-    const struct _ds3_request* request;
-    if(_request == NULL) {
-      fprintf(stderr, "Request object was null\n");
-      return;
-    }
-    request = (struct _ds3_request*)_request;
-}
-
 void ds3_free_bucket_response(ds3_get_bucket_response* response){
     size_t num_objects;
-    size_t i;
-    uint64_t j;
+    int i;
     if(response == NULL) {
         return;
     }
@@ -1761,8 +1750,8 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
     ds3_str_free(response->prefix);
 
     if (response->common_prefixes != NULL) {
-        for(j = 0; j < response->num_common_prefixes; j++) {
-            ds3_str_free(response->common_prefixes[j]);
+        for(i = 0; i < response->num_common_prefixes; i++) {
+            ds3_str_free(response->common_prefixes[i]);
         }
         g_free(response->common_prefixes);
     }
@@ -1772,7 +1761,7 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
 
 void ds3_free_service_response(ds3_get_service_response* response){
     size_t num_buckets;
-    size_t i;
+    int i;
 
     if(response == NULL) {
         return;
@@ -1792,7 +1781,7 @@ void ds3_free_service_response(ds3_get_service_response* response){
 }
 
 void ds3_free_bulk_response(ds3_bulk_response* response) {
-    size_t i;
+    int i;
     if(response == NULL) {
         fprintf(stderr, "Bulk response was NULL\n");
         return;
@@ -2002,7 +1991,7 @@ ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_
 ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files) {
     ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
     obj_list->size = num_files;
-    obj_list->list = g_new0(ds3_bulk_object, (gsize)num_files);
+    obj_list->list = g_new0(ds3_bulk_object, num_files);
 
     return obj_list;
 }

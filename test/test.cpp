@@ -21,6 +21,23 @@ ds3_client * get_client() {
     return client;
 }
 
+void print_error(const ds3_error* error) {
+      printf("ds3_error_message: %s\n", error->message->value);
+      if (error->error != NULL) {
+          printf("ds3_status_code: %llu\n", error->error->status_code);
+          printf("ds3_status_message: %s\n", error->error->status_message->value);
+          printf("ds3_error_body: %s\n", error->error->error_body->value);
+      }
+}
+
+void handle_error(ds3_error* error) {
+    if (error != NULL) {
+        print_error(error);
+        BOOST_FAIL("Test failed with a ds3_error");
+        ds3_free_error(error);
+    }
+}
+
 void clear_bucket(const ds3_client* client, const char* bucket_name) {
     uint64_t i;
     ds3_request* request;
@@ -31,7 +48,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     error = ds3_get_bucket(client, request, &bucket_response);
     ds3_free_request(request);
 
-    BOOST_REQUIRE(error == NULL);
+    handle_error(error);
 
     for (i = 0; i < bucket_response->num_objects; i++) {
         request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
@@ -48,13 +65,13 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     error = ds3_delete_bucket(client, request);
     ds3_free_request(request);
 
-    BOOST_REQUIRE(error == NULL);
+    handle_error(error);
 }
 
 void populate_with_objects(const ds3_client* client, const char* bucket_name) {
-    uint64_t i;
+    uint64_t i, n;
     ds3_request* request = ds3_init_put_bucket(bucket_name);
-    const char* books[4] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt"};
+    const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
     ds3_error* error = ds3_put_bucket(client, request);
     ds3_bulk_object_list* obj_list;
     ds3_bulk_response* response;
@@ -62,39 +79,46 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
 
     ds3_free_request(request);
 
-    BOOST_REQUIRE(error == NULL);
+    handle_error(error);
 
-    obj_list = ds3_convert_file_list(books, 4);
+    obj_list = ds3_convert_file_list(books, 5);
     request = ds3_init_put_bulk(bucket_name, obj_list);
     error = ds3_bulk(client, request, &response);
 
-    BOOST_REQUIRE(error == NULL);
-
     ds3_free_request(request);
+    handle_error(error);
 
-    request = ds3_init_allocate_chunk(response->job_id->value);
+    for (n = 0; n < response->list_size; n ++) {
 
-    error = ds3_allocate_chunk(client, request, &chunk_response);
+      request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
 
-    ds3_free_request(request);
+      error = ds3_allocate_chunk(client, request, &chunk_response);
 
-    BOOST_REQUIRE(error == NULL);
+      ds3_free_request(request);
 
-    BOOST_REQUIRE(chunk_response->retry_after == 0);
-    BOOST_REQUIRE(chunk_response->objects != NULL);
+      handle_error(error);
 
-    for (i = 0; i < chunk_response->objects->size; i++) {
-        ds3_bulk_object bulk_object = chunk_response->objects->list[i];
-        FILE* file = fopen(bulk_object.name->value, "r");
+      BOOST_REQUIRE(chunk_response->retry_after == 0);
+      BOOST_REQUIRE(chunk_response->objects != NULL);
+      for (i = 0; i < chunk_response->objects->size; i++) {
+          ds3_bulk_object bulk_object = chunk_response->objects->list[i];
+          FILE* file = fopen(bulk_object.name->value, "r");
 
-        request = ds3_init_put_object(bucket_name, bulk_object.name->value, bulk_object.length);
-        error = ds3_put_object(client, request, file, ds3_read_from_file);
-        ds3_free_request(request);
+          request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
+          if (bulk_object.offset > 0) {
+              fseek(file, bulk_object.offset, SEEK_SET);
+          }
+          error = ds3_put_object(client, request, file, ds3_read_from_file);
+          ds3_free_request(request);
 
-        BOOST_CHECK(error == NULL);
+          fclose(file);
+          if (error != NULL) {
+              print_error(error);
+              ds3_free_error(error);
+          }
+      }
+      ds3_free_allocate_chunk_response(chunk_response);
     }
-
-    ds3_free_allocate_chunk_response(chunk_response);
     ds3_free_bulk_response(response);
     ds3_free_bulk_object_list(obj_list);
 }
@@ -108,3 +132,4 @@ bool contains_object(const ds3_object* objects, uint64_t num_objects, const char
     }
     return false;
 }
+

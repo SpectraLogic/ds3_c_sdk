@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     num_objs = response->num_objects;
 
     BOOST_CHECK(error == NULL);
-    BOOST_CHECK_EQUAL(num_objs, 4);
+    BOOST_CHECK_EQUAL(num_objs, 5);
 
     BOOST_CHECK(contains_object(response->objects, num_objs, "resources/beowulf.txt"));
 
