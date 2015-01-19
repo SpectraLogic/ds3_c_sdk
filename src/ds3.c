@@ -362,6 +362,19 @@ static char* _net_gen_query_params(GHashTable* query_params) {
     }
 }
 
+static struct curl_slist* _append_headers(struct curl_slist* header_list, GHashTable* headers_map) {
+    GHashTableIter iter;
+    gpointer key, value;
+    g_hash_table_iter_init(&iter, headers_map);
+
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        char* header_value = g_strconcat((char*)key, ": ", (char*)value, NULL);
+        header_list = curl_slist_append(header_list, header_value);
+        g_free(header_value);
+    }
+    return header_list;
+}
+
 static ds3_error* _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*), GHashTable** return_headers) {
     _init_curl();
 
@@ -464,6 +477,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         headers = curl_slist_append(headers, auth_header);
         headers = curl_slist_append(headers, date_header);
+
+        headers = _append_headers(headers, request->headers);
 
         curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
 
@@ -593,12 +608,21 @@ ds3_error* ds3_create_client_from_env(ds3_client** client) {
     return NULL;
 }
 
-static void _set_query_param(ds3_request* _request, const char* key, const char* value) {
-    struct _ds3_request* request = (struct _ds3_request*) _request;
+static void _set_map_value(GHashTable* map, const char* key, const char* value) {
     gpointer escaped_key = (gpointer) _escape_url(key);
     gpointer escaped_value = (gpointer) _escape_url(value);
 
-    g_hash_table_insert(request->query_params, escaped_key, escaped_value);
+    g_hash_table_insert(map, escaped_key, escaped_value);
+}
+
+static void _set_query_param(ds3_request* _request, const char* key, const char* value) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    _set_map_value(request->query_params, key, value);
+}
+
+static void _set_header(ds3_request* _request, const char* key, const char* value) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    _set_map_value(request->headers, key, value);
 }
 
 void ds3_client_proxy(ds3_client* client, const char* proxy) {
@@ -607,6 +631,10 @@ void ds3_client_proxy(ds3_client* client, const char* proxy) {
 
 void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
     _set_query_param(_request, "prefix", prefix);
+}
+
+void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
+   _set_header(_request, header_name, header_value);
 }
 
 void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {

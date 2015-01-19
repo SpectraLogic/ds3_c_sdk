@@ -215,6 +215,7 @@ LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_obj
 
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
+LIBRARY_API void ds3_request_set_custom_header(ds3_request* request, const char* header_name, const char* header_value);
 LIBRARY_API void ds3_request_set_prefix(ds3_request* request, const char* prefix);
 LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* delimiter);
 LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
