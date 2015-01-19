@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
         for(n = 0; n < chunk_object_list->size; n++, file_index++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
-            request = ds3_init_get_object(bucket_name, current_obj.name->value);
+            request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
             tmp_files[file_index] = (char*) calloc(13, sizeof(char));
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 12);
             w_file = fopen(tmp_files[file_index], "w+");

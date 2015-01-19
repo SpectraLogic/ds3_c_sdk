@@ -701,14 +701,18 @@ ds3_request* ds3_init_get_bucket(const char* bucket_name) {
 }
 
 ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
-    return ds3_init_get_object_for_job(bucket_name, object_name, NULL);
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
+    return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* object_name, const char* job_id) {
+ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, const char* job_id) {
+    char buff[21];
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
     }
+    sprintf(buff, "%llu" , offset);
+    _set_query_param((ds3_request*) request, "offset", buff);
 
     return (ds3_request*) request;
 }
