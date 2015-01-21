@@ -111,8 +111,8 @@ static void _ds3_free_response_header(gpointer data) {
     }
 
     header = (ds3_response_header*) data;
-    g_free(header->key);
-    g_free(header->value);
+    ds3_str_free(header->key);
+    ds3_str_free(header->value);
     g_free(data);
 }
 
@@ -210,7 +210,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
         header->key = ds3_str_init(split_result[0]);
         header->value = ds3_str_init(split_result[1]);
 
-        g_hash_table_insert(headers, header->key, header);
+        g_hash_table_insert(headers, header->key->value, header);
 
         g_strfreev(split_result);
     }
@@ -1625,6 +1625,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     ds3_allocate_chunk_response* ds3_response = NULL;
     ds3_bulk_object_list* object_list = NULL;
     GHashTable* response_headers = NULL;
+    ds3_response_header* retry_after_header;
     xmlDocPtr doc;
     xmlNodePtr root;
 
@@ -1645,7 +1646,8 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     if(doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
         if (g_hash_table_contains(response_headers, "Retry-After")) {
-            ds3_response->retry_after = strtoul((char*)g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
+            retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+            ds3_response->retry_after = strtoul(retry_after_header->value->value, NULL, 10);
         } else {
             g_hash_table_destroy(response_headers);
             return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
@@ -1684,6 +1686,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     ds3_get_available_chunks_response* ds3_response;
     ds3_bulk_response* bulk_response;
     GHashTable* response_headers = NULL;
+    ds3_response_header* retry_after_header;
     xmlDocPtr doc;
 
     error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
@@ -1701,7 +1704,8 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (response_headers != NULL && g_hash_table_contains(response_headers, "Retry-After")) {
-        ds3_response->retry_after = strtoul((char*)g_hash_table_lookup(response_headers, "Retry-After"), NULL, 10);
+        retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        ds3_response->retry_after = strtoul(retry_after_header->value->value, NULL, 10);
     }
 
     _parse_master_object_list(doc, &bulk_response);
