@@ -33,8 +33,8 @@ void print_error(const ds3_error* error) {
 void handle_error(ds3_error* error) {
     if (error != NULL) {
         print_error(error);
-        BOOST_FAIL("Test failed with a ds3_error");
         ds3_free_error(error);
+        BOOST_FAIL("Test failed with a ds3_error");
     }
 }
 
