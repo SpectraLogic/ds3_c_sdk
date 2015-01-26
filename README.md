@@ -324,5 +324,6 @@ int main (int args, char * argv[]) {
 }
 ```
 
-The structure of the code is very similar to the previous examples.  Setup the client, setup the call, perform the call.  Every request follows this same pattern.  Things get a little more complicated with the bulk get/put cases.  The following bulk put will demonstrate some of those complexities
+The structure of the code is very similar to the previous examples.  Setup the client, setup the call, perform the call.  Every request follows this same pattern.
 
+Additional examples are available here: [samples](sample)
