@@ -709,11 +709,6 @@ ds3_request* ds3_init_get_bucket(const char* bucket_name) {
     return (ds3_request*) _common_request_init(HTTP_GET, _build_path("/", bucket_name, NULL));
 }
 
-ds3_request* ds3_init_get_object(const char* bucket_name, const char* object_name) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
-    return (ds3_request*) request;
-}
-
 ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, const char* job_id) {
     char buff[21];
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
@@ -728,12 +723,6 @@ ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* ob
 
 ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
     return (ds3_request*) _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, object_name));
-}
-
-ds3_request* ds3_init_put_object(const char* bucket_name, const char* object_name, uint64_t length) {
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
-    request->length = length;
-    return (ds3_request*) request;
 }
 
 ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, uint64_t length, const char* job_id) {
