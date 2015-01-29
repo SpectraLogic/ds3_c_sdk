@@ -187,7 +187,7 @@ int main (int args, char * argv[]) {
 
     for (i = 0; i < response->num_buckets; i++) {
         ds3_bucket bucket = response->buckets[i];
-        printf("Bucket: (%s) created on %s\n", bucket.name, bucket.creation_date);
+        printf("Bucket: (%s) created on %s\n", bucket.name->value, bucket.creation_date->value);
     }
     
     ds3_free_service_response(response);
