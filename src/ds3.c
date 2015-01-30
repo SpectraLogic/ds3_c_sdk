@@ -1469,6 +1469,7 @@ static ds3_error* _parse_master_object_list(xmlDocPtr doc, ds3_bulk_response** _
             g_array_append_val(objects_array, obj_list);
         }
         else {
+            //TODO add Node xml handling
             fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
         }
     }
