@@ -1634,8 +1634,8 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
-        if (g_hash_table_contains(response_headers, "Retry-After")) {
-            retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        if (retry_after_header != NULL) {
             ds3_response->retry_after = strtoul(retry_after_header->value->value, NULL, 10);
         } else {
             g_hash_table_destroy(response_headers);
@@ -1692,9 +1692,11 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if (response_headers != NULL && g_hash_table_contains(response_headers, "Retry-After")) {
+    if (response_headers != NULL) {
         retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
-        ds3_response->retry_after = strtoul(retry_after_header->value->value, NULL, 10);
+        if (retry_after_header != NULL) {
+            ds3_response->retry_after = strtoul(retry_after_header->value->value, NULL, 10);
+        }
     }
 
     _parse_master_object_list(doc, &bulk_response);
