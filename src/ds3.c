@@ -120,6 +120,7 @@ static ds3_error* _ds3_create_error(ds3_error_code code, const char * message) {
     ds3_error* error = g_new0(ds3_error, 1);
     error->code = code;
     error->message = ds3_str_init(message);
+    error->error = NULL;
     return error;
 }
 
