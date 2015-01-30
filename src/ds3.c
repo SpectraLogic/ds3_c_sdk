@@ -298,7 +298,7 @@ static unsigned char* _generate_signature_str(http_verb verb, char* resource_nam
 
 static char* _generate_date_string(void) {
     GDateTime* time  = g_date_time_new_now_local();
-    char* date_string = g_date_time_format(time, "%a, %d %b %Y %T %z");
+    char* date_string = g_date_time_format(time, "%a, %d %b %Y %H:%M:%S %z");
 
     g_date_time_unref(time);
 
