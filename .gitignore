@@ -36,3 +36,6 @@ cmake_install.cmake
 *.sdf
 *.sln
 *.suo
+*.opensdf
+Debug/
+*.dir/
