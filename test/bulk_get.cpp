@@ -15,6 +15,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     ds3_get_bucket_response* response = NULL;
     ds3_bulk_response* bulk_response = NULL;
     ds3_bulk_object_list* object_list = NULL;
+    ds3_completed_job* completed_job = NULL;
     ds3_get_available_chunks_response* chunk_response = NULL;
     bool retry_get;
 
@@ -56,9 +57,10 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
         BOOST_REQUIRE(chunk_response != NULL);
 
-        if (chunk_response->retry_after != 0) {
+        if (chunk_response->object_list->list_size == 0) {
             // if this happens we need to try the request
             retry_get = true;
+            BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
             sleep(chunk_response->retry_after);
         }
 
@@ -77,6 +79,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
             w_file = fopen(tmp_files[file_index], "w+");
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             fclose(w_file);
+            handle_error(error);
         }
     }
 
@@ -85,11 +88,21 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     }
 
     free(tmp_files);
+    
+    // check to make sure that the 'job' has completed
+    request = ds3_init_get_completed_job(bulk_response->job_id->value);
+    error = ds3_get_completed_job(client, request, &completed_job);
 
+    BOOST_CHECK(completed_job != NULL);
+    BOOST_CHECK(strcmp(completed_job->id->value,bulk_response->job_id->value) == 0);
+    
+    ds3_free_request(request);
     ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
+    
+    handle_error(error);
 }
 
 BOOST_AUTO_TEST_CASE( convert_list_helper ) {

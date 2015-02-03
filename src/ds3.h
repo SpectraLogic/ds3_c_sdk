@@ -79,6 +79,11 @@ LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
 LIBRARY_API void ds3_str_free(ds3_str* string);
 
 typedef struct {
+    ds3_str* date_completed;
+    ds3_str* id;
+}ds3_completed_job;
+
+typedef struct {
     ds3_str* access_id;
     ds3_str* secret_key;
 }ds3_creds;
@@ -206,6 +211,7 @@ LIBRARY_API ds3_request* ds3_init_allocate_chunk(const char* chunk_id);
 LIBRARY_API ds3_request* ds3_init_get_available_chunks(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
+LIBRARY_API ds3_request* ds3_init_get_completed_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
@@ -232,6 +238,7 @@ LIBRARY_API ds3_error* ds3_put_object(const ds3_client* client, const ds3_reques
 LIBRARY_API ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_error* ds3_get_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
 LIBRARY_API ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
+LIBRARY_API ds3_error* ds3_get_completed_job(const ds3_client* client, const ds3_request* request, ds3_completed_job** completed_job);
 LIBRARY_API ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request);
 
 LIBRARY_API void ds3_free_service_response(ds3_get_service_response* response);
@@ -240,7 +247,7 @@ LIBRARY_API void ds3_free_bulk_response(ds3_bulk_response* response);
 LIBRARY_API void ds3_free_error(ds3_error* error);
 LIBRARY_API void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response);
 LIBRARY_API void ds3_free_available_chunks_response(ds3_get_available_chunks_response* response);
-
+LIBRARY_API void ds3_free_completed_job(ds3_completed_job* completed_job);
 LIBRARY_API void ds3_free_owner(ds3_owner* owner);
 LIBRARY_API void ds3_free_creds(ds3_creds* client);
 LIBRARY_API void ds3_free_client(ds3_client* client);

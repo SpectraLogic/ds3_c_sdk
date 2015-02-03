@@ -801,6 +801,15 @@ ds3_request* ds3_init_put_job(const char* job_id) {
     return (ds3_request*) request;
 }
 
+ds3_request* ds3_init_get_completed_job(const char* job_id) {
+    char* path = g_strconcat("/_rest_/completed_job/", job_id, NULL);
+    ds3_str* path_str = ds3_str_init(path);
+    struct _ds3_request* request = _common_request_init(HTTP_GET, path_str);
+
+    g_free(path);
+    return (ds3_request*) request;
+}
+
 ds3_request* ds3_init_delete_job(const char* job_id) {
     char* path = g_strconcat("/_rest_/job/", job_id, NULL);
     ds3_str* path_str = ds3_str_init(path);
@@ -1735,7 +1744,7 @@ static ds3_error* _common_job(const ds3_client* client, const ds3_request* reque
     if (doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
         g_hash_table_destroy(response_headers);
-        return NULL;
+        return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "Unexpected empty response body.");
     }
 
     _parse_master_object_list(doc, &bulk_response);
@@ -1755,6 +1764,75 @@ ds3_error* ds3_get_job(const ds3_client* client, const ds3_request* request, ds3
 
 ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response) {
     return _common_job(client, request, response);
+}
+
+ds3_error* ds3_get_completed_job(const ds3_client* client, const ds3_request* request, ds3_completed_job** _completed_job) {
+    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
+    GHashTable* response_headers = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr root, child_node;
+    xmlChar* text;
+    ds3_completed_job* completed_job;
+
+    error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+
+    if (error != NULL) {
+        if (response_headers != NULL) {
+            g_hash_table_destroy(response_headers);
+        }
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        g_hash_table_destroy(response_headers);
+        return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "Unexpected empty response body.");
+    }
+
+    root = xmlDocGetRootElement(doc);
+    if(element_equal(root, "Data")) {
+        completed_job = g_new0(ds3_completed_job, 1);
+        for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+            if(element_equal(child_node, "DateCompleted")  == true) {
+                text = xmlNodeListGetString(doc, child_node->children, 1);
+                if(text == NULL) {
+                    continue;
+                }
+                completed_job->date_completed = ds3_str_init((const char*) text);
+                xmlFree(text);
+            }
+            else if (element_equal(child_node, "Id") == true) {
+                text = xmlNodeListGetString(doc, child_node->children, 1);
+                if(text == NULL) {
+                    continue;
+                }
+                completed_job->id = ds3_str_init((const char*) text);
+                xmlFree(text);
+            }
+            else {
+                fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
+            }
+        }
+
+        *_completed_job = completed_job;
+    }
+    else {
+        char* message = g_strconcat("Expected the root element to be 'Data'.  The actual response is: ", root->name, NULL);
+        xmlFreeDoc(doc);
+        error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        g_byte_array_free(xml_blob, TRUE);
+        g_hash_table_destroy(response_headers);
+        return error;
+
+    }
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    g_hash_table_destroy(response_headers);
+    return NULL;
 }
 
 ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request) {
@@ -1853,6 +1931,21 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
     }
 
     g_free(response);
+}
+
+void ds3_free_completed_job(ds3_completed_job* completed_job) {
+    if(completed_job == NULL) {
+        fprintf(stderr, "completed_job was NULL\n");
+        return;
+    }
+    if(completed_job->id != NULL) {
+        ds3_str_free(completed_job->id);
+    }
+    if(completed_job->date_completed != NULL) {
+        ds3_str_free(completed_job->date_completed);
+    }
+
+    g_free(completed_job);
 }
 
 void ds3_free_owner(ds3_owner* owner) {
