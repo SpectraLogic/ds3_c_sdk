@@ -9,8 +9,6 @@ find_package(LibXml2 2.9 REQUIRED)
 find_package(CURL 7.31 REQUIRED)
 find_package(GLIB2 2.34 REQUIRED)
 
-add_library(ds3 ds3.c)
-
 if (LIBXML2_FOUND)
   include_directories(${LIBXML2_INCLUDE_DIR})
   target_link_libraries (ds3 ${LIBXML2_LIBRARIES})
