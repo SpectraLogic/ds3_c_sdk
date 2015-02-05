@@ -1717,7 +1717,6 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
 
     send_buff.buff = (char*) xml_buff;
     send_buff.size = strlen(send_buff.buff);
-    printf("%s\n", (char*) send_buff.buff);
 
     request->length = send_buff.size; // make sure to set the size of the request.
 
