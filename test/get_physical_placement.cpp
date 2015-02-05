@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
 
     ds3_bulk_object obj;
     memset(&obj, 0, sizeof(ds3_bulk_object));
-    obj.name = ds3_str_init("resources/beowulf.txt");
+    obj.name = ds3_str_init("resources/not-beowulf.txt");
     object_list->list[0] = obj;
 
     request = ds3_init_get_physical_placement(bucket_name, object_list);
