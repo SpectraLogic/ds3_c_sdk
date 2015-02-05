@@ -1674,8 +1674,11 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     response->num_tapes = tape_array->len;
     response->tapes = (ds3_tape*)tape_array->data;
 
-  *_response = response;
-  return NULL;
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+
+    *_response = response;
+    return NULL;
 
 }
 
