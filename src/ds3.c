@@ -1608,14 +1608,12 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     obj_list = request->object_list;
 
     // The chunk ordering is not used.  Just pass in NONE.
-    //doc = _generate_xml_objects_list(obj_list, false, true, NONE);
     doc = _generate_xml_objects_list(obj_list, GET_PHYSICAL_PLACEMENT, NONE);
 
     xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
 
     send_buff.buff = (char*) xml_buff;
     send_buff.size = strlen(send_buff.buff);
-    printf("%s\n", (char*) send_buff.buff);
 
     request->length = send_buff.size; // make sure to set the size of the request.
 
@@ -1667,7 +1665,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     for(child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Tape") == true) {
             memset(&tape, 0, sizeof(ds3_tape));
-            tape.barcode = ds3_str_init(child_node->children->content);
+            tape.barcode = xml_get_string(doc, child_node);
             g_array_append_val(tape_array, tape);
       }
     }
