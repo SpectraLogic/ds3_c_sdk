@@ -37,7 +37,7 @@ run: test
 deps:
 	./build_local.sh
 
-test: test.o service_tests.o bucket_tests.o bulk_get.o
+test: test.o service_tests.o bucket_tests.o bulk_get.o get_physical_placement.o
 	$(CPP) *.o $(CFLAGS) $(LIBS) -o test
 
 test.o: ../install/lib/pkgconfig/libds3.pc
@@ -51,6 +51,9 @@ bucket_tests.o:
 
 bulk_get.o:
 	$(CPP) -c bulk_get.cpp $(CFLAGS)
+get_physical_placement.o:
+	$(CPP) -c get_physical_placement.cpp $(CFLAGS)
+
 
 ../install/lib/pkgconfig/libds3.pc:
 	$(error SDK not built. Please run make deps)

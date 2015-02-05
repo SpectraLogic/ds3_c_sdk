@@ -55,6 +55,12 @@ typedef struct {
     size_t total_read;
 }ds3_xml_send_buff;
 
+typedef enum {
+    BULK_PUT,
+    BULK_GET,
+    GET_PHYSICAL_PLACEMENT
+}object_list_type;
+
 typedef struct {
     // These attributes are used when processing a response header
     uint64_t status_code;
@@ -760,6 +766,13 @@ ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* ob
 ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", bucket_name, NULL));
     _set_query_param((ds3_request*) request, "operation", "start_bulk_put");
+    request->object_list = object_list;
+    return (ds3_request*) request;
+}
+
+ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_object_list* object_list) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", bucket_name, NULL));
+    _set_query_param((ds3_request*) request, "operation", "get_physical_placement");
     request->object_list = object_list;
     return (ds3_request*) request;
 }
@@ -1518,7 +1531,7 @@ static char* _get_chunk_order_str(ds3_chunk_ordering order) {
 
 #define LENGTH_BUFF_SIZE 21
 
-static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list, bool is_get, ds3_chunk_ordering order) {
+static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list, object_list_type list_type, ds3_chunk_ordering order) {
     char size_buff[LENGTH_BUFF_SIZE]; //The max size of an uint64_t should be 20 characters
     xmlDocPtr doc;
     ds3_bulk_object obj;
@@ -1528,7 +1541,7 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
     doc = xmlNewDoc((xmlChar*)"1.0");
     objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
 
-    if (is_get) {
+    if (list_type == BULK_GET) {
         xmlSetProp(objects_node, (xmlChar*) "ChunkClientProcessingOrderGuarantee", (xmlChar*) _get_chunk_order_str(order));
     }
 
@@ -1543,7 +1556,7 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
         xmlAddChild(objects_node, object_node);
 
         xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name->value);
-        if (!is_get) {
+        if (list_type == BULK_PUT) {
             xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff);
         }
     }
@@ -1553,14 +1566,117 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
     return doc;
 }
 
-static bool _is_bulk_get(const struct _ds3_request* request) {
+static object_list_type _bulk_request_type(const struct _ds3_request* request) {
 
     char* value = (char *) g_hash_table_lookup(request->query_params, "operation");
 
     if (strcmp(value, "start_bulk_get") == 0) {
-        return true;
+        return BULK_GET;
     }
-    return false;
+    return BULK_PUT;
+}
+
+ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* _request, ds3_get_physical_placement_response** _response){
+    ds3_error* error_response;
+    ds3_get_physical_placement_response* response;
+
+    int buff_size;
+
+    struct _ds3_request* request;
+    ds3_bulk_object_list* obj_list;
+    ds3_xml_send_buff send_buff;
+
+    xmlNodePtr cur, child_node;
+
+    GByteArray* xml_blob;
+
+    xmlDocPtr doc;
+    xmlChar* xml_buff;
+
+    if (client == NULL || _request == NULL) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
+    }
+
+    request = (struct _ds3_request*) _request;
+
+    if (request->object_list == NULL || request->object_list->size == 0) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
+    }
+
+    // Init the data structures declared above the null check
+    memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
+    obj_list = request->object_list;
+
+    // The chunk ordering is not used.  Just pass in NONE.
+    //doc = _generate_xml_objects_list(obj_list, false, true, NONE);
+    doc = _generate_xml_objects_list(obj_list, GET_PHYSICAL_PLACEMENT, NONE);
+
+    xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
+
+    send_buff.buff = (char*) xml_buff;
+    send_buff.size = strlen(send_buff.buff);
+    printf("%s\n", (char*) send_buff.buff);
+
+    request->length = send_buff.size; // make sure to set the size of the request.
+
+    xml_blob = g_byte_array_new();
+    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Cleanup the data sent to the server.
+    xmlFreeDoc(doc);
+    xmlFree(xml_buff);
+
+    if(error_response != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error_response;
+    }
+
+    // Start processing the data that was received back.
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if(doc == NULL) {
+        //Bad result
+        g_byte_array_free(xml_blob, TRUE);
+        return NULL;
+    }
+
+    cur = xmlDocGetRootElement(doc);
+
+    if(element_equal(cur, "Data") == false) {
+        char* message = g_strconcat("Expected the root element to be 'Data'.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        xmlFreeDoc(doc);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    cur = cur->xmlChildrenNode;
+    if(element_equal(cur, "Tapes") == false) {
+        char* message = g_strconcat("Expected the interior element to be 'Tapes'.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        xmlFreeDoc(doc);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    GArray* tape_array = g_array_new(FALSE, TRUE, sizeof(ds3_tape));
+    response = g_new0(ds3_get_physical_placement_response, 1);
+    ds3_tape tape;
+
+    for(child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if(element_equal(child_node, "Tape") == true) {
+            memset(&tape, 0, sizeof(ds3_tape));
+            tape.barcode = ds3_str_init(child_node->children->content);
+            g_array_append_val(tape_array, tape);
+      }
+    }
+    response->num_tapes = tape_array->len;
+    response->tapes = (ds3_tape*)tape_array->data;
+
+  *_response = response;
+  return NULL;
+
 }
 
 ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_bulk_response** response) {
@@ -1592,12 +1708,13 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
     obj_list = request->object_list;
 
-    doc = _generate_xml_objects_list(obj_list, _is_bulk_get(_request), _request->chunk_ordering);
+    doc = _generate_xml_objects_list(obj_list, _bulk_request_type(_request), _request->chunk_ordering);
 
     xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
 
     send_buff.buff = (char*) xml_buff;
     send_buff.size = strlen(send_buff.buff);
+    printf("%s\n", (char*) send_buff.buff);
 
     request->length = send_buff.size; // make sure to set the size of the request.
 
@@ -1819,6 +1936,24 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
     }
 
     g_free(response);
+}
+
+void ds3_free_get_phsyical_placement_response(ds3_get_physical_placement_response* response){
+    size_t num_tapes;
+    int i;
+    if(response == NULL) {
+        return;
+    }
+    num_tapes = response->num_tapes;
+
+    for(i = 0; i < num_tapes; i++) {
+        ds3_tape tape = response->tapes[i];
+        ds3_str_free(tape.barcode);
+    }
+    g_free(response->tapes);
+
+    g_free(response);
+
 }
 
 void ds3_free_service_response(ds3_get_service_response* response){

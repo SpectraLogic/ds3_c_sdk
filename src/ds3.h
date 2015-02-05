@@ -172,6 +172,15 @@ typedef struct {
     ds3_job_status          status;
 }ds3_bulk_response;
 
+typedef struct {
+    ds3_str* barcode;
+}ds3_tape;
+
+typedef struct {
+    ds3_tape*		tapes;
+    uint64_t		num_tapes;
+}ds3_get_physical_placement_response;
+
 typedef enum {
   DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_REQUEST_FAILED, DS3_ERROR_MISSING_ARGS, DS3_ERROR_BAD_STATUS_CODE
 }ds3_error_code;
@@ -218,6 +227,8 @@ LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order);
 
+LIBRARY_API ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_object_list* object_list);
+
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
 LIBRARY_API void ds3_request_set_custom_header(ds3_request* request, const char* header_name, const char* header_value);
@@ -240,6 +251,7 @@ LIBRARY_API ds3_error* ds3_delete_object(const ds3_client* client, const ds3_req
 LIBRARY_API ds3_error* ds3_get_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
 LIBRARY_API ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
 LIBRARY_API ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request);
+LIBRARY_API ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* request, ds3_get_physical_placement_response** response);
 
 LIBRARY_API void ds3_free_service_response(ds3_get_service_response* response);
 LIBRARY_API void ds3_free_bucket_response(ds3_get_bucket_response* response);
@@ -247,6 +259,7 @@ LIBRARY_API void ds3_free_bulk_response(ds3_bulk_response* response);
 LIBRARY_API void ds3_free_error(ds3_error* error);
 LIBRARY_API void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response);
 LIBRARY_API void ds3_free_available_chunks_response(ds3_get_available_chunks_response* response);
+LIBRARY_API void ds3_free_get_phsyical_placement_response(ds3_get_physical_placement_response* response);
 LIBRARY_API void ds3_free_owner(ds3_owner* owner);
 LIBRARY_API void ds3_free_creds(ds3_creds* client);
 LIBRARY_API void ds3_free_client(ds3_client* client);
