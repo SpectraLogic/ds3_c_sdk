@@ -1593,6 +1593,9 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     xmlDocPtr doc;
     xmlChar* xml_buff;
 
+    GArray* tape_array = g_array_new(FALSE, TRUE, sizeof(ds3_tape));
+    ds3_tape tape;
+
     if (client == NULL || _request == NULL) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
@@ -1658,9 +1661,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
         return error;
     }
 
-    GArray* tape_array = g_array_new(FALSE, TRUE, sizeof(ds3_tape));
     response = g_new0(ds3_get_physical_placement_response, 1);
-    ds3_tape tape;
 
     for(child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Tape") == true) {
