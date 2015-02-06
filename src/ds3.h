@@ -75,7 +75,7 @@ typedef struct{
 typedef enum {
     IN_PROGRESS,
     COMPLETED,
-    CANCELED 
+    CANCELED
 }ds3_job_status;
 
 LIBRARY_API ds3_str* ds3_str_init(const char* string);
