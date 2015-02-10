@@ -50,6 +50,6 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
 
     ds3_free_bulk_response(bulk_response);
     ds3_free_get_phsyical_placement_response(get_physical_placement_response);
-
+    ds3_free_bucket_response(response);
     clear_bucket(client, bucket_name);
 }
