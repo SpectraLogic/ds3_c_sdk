@@ -78,6 +78,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 12);
             w_file = fopen(tmp_files[file_index], "w+");
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
+            ds3_free_request(request);
             fclose(w_file);
             handle_error(error);
         }
@@ -88,14 +89,14 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     }
 
     free(tmp_files);
-    
+
     // check to make sure that the 'job' has completed
     request = ds3_init_get_job(bulk_response->job_id->value);
     error = ds3_get_job(client, request, &completed_job);
 
     BOOST_CHECK(completed_job != NULL);
     BOOST_CHECK(completed_job->status == COMPLETED);
-    
+
     ds3_free_request(request);
     ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(completed_job);
