@@ -16,8 +16,6 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     */
     ds3_request* request = NULL;
     ds3_error* error = NULL;
-    ds3_get_bucket_response* response = NULL;
-    ds3_bulk_response* bulk_response = NULL;
     ds3_get_physical_placement_response* get_physical_placement_response = NULL;
     uint64_t num_tapes;
 
@@ -25,11 +23,6 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     const char* bucket_name = "unit_test_bucket";
 
     populate_with_objects(client, bucket_name);
-
-    request = ds3_init_get_bucket(bucket_name);
-    error = ds3_get_bucket(client, request, &response);
-    ds3_free_request(request);
-    BOOST_REQUIRE(error == NULL);
 
     ds3_bulk_object_list* object_list = ds3_init_bulk_object_list(1);
 
@@ -43,13 +36,16 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
 
     ds3_free_request(request);
     ds3_free_bulk_object_list(object_list);
+    handle_error(error);
+    if (get_physical_placement_response == NULL) {
+        BOOST_MESSAGE("The response was null without an error, which means we have no tape backend.  Skipping the test.");
+        clear_bucket(client, bucket_name);
+        return;
+    }
+
     num_tapes = get_physical_placement_response->num_tapes;
     BOOST_CHECK_EQUAL(num_tapes, 0);
 
-    BOOST_REQUIRE(error == NULL);
-
-    ds3_free_bulk_response(bulk_response);
     ds3_free_get_phsyical_placement_response(get_physical_placement_response);
-    ds3_free_bucket_response(response);
     clear_bucket(client, bucket_name);
 }

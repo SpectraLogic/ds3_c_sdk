@@ -233,7 +233,7 @@ static size_t _process_response_body(void* buffer, size_t size, size_t nmemb, vo
     if (response_data->status_code >= 400) {
         return load_buffer(buffer, size, nmemb, response_data->body);
     }
-    else { // If we did not get an error, call he user's defined callbacks.
+    else { // If we did not get an error, call the user's defined callbacks.
         return response_data->user_func(buffer, size, nmemb, response_data->user_data);
     }
 }
@@ -1578,7 +1578,7 @@ static object_list_type _bulk_request_type(const struct _ds3_request* request) {
 
 ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* _request, ds3_get_physical_placement_response** _response){
     ds3_error* error_response;
-    ds3_get_physical_placement_response* response;
+    ds3_get_physical_placement_response* response = NULL;
 
     int buff_size;
 
@@ -1652,27 +1652,29 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     }
 
     cur = cur->xmlChildrenNode;
-    if(element_equal(cur, "Tapes") == false) {
-        char* message = g_strconcat("Expected the interior element to be 'Tapes'.  The actual response is: ", xml_blob->data, NULL);
-        g_byte_array_free(xml_blob, TRUE);
-        xmlFreeDoc(doc);
-        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
+    if (cur != NULL) {
+        if(element_equal(cur, "Tapes") == false) {
+            char* message = g_strconcat("Expected the interior element to be 'Tapes'.  The actual response is: ", xml_blob->data, NULL);
+            g_byte_array_free(xml_blob, TRUE);
+            xmlFreeDoc(doc);
+            ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+            g_free(message);
+            return error;
+        }
+
+        response = g_new0(ds3_get_physical_placement_response, 1);
+
+        for(child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+            if(element_equal(child_node, "Tape") == true) {
+                memset(&tape, 0, sizeof(ds3_tape));
+                tape.barcode = xml_get_string(doc, child_node);
+                g_array_append_val(tape_array, tape);
+          }
+        }
+        response->num_tapes = tape_array->len;
+        response->tapes = (ds3_tape*)tape_array->data;
+
     }
-
-    response = g_new0(ds3_get_physical_placement_response, 1);
-
-    for(child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(element_equal(child_node, "Tape") == true) {
-            memset(&tape, 0, sizeof(ds3_tape));
-            tape.barcode = xml_get_string(doc, child_node);
-            g_array_append_val(tape_array, tape);
-      }
-    }
-    response->num_tapes = tape_array->len;
-    response->tapes = (ds3_tape*)tape_array->data;
-
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
 

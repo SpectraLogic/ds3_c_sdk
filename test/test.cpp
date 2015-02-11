@@ -64,7 +64,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     request = ds3_init_delete_bucket(bucket_name);
     error = ds3_delete_bucket(client, request);
     ds3_free_request(request);
-
+    ds3_free_bucket_response(bucket_response);
     handle_error(error);
 }
 
