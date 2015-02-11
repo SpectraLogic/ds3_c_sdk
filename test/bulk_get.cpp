@@ -37,6 +37,8 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
     object_list = ds3_convert_object_list(response->objects, response->num_objects);
 
+    ds3_free_bucket_response(response);
+
     request = ds3_init_get_bulk(bucket_name, object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
 
@@ -86,6 +88,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
     for (i = 0; i <= file_index;i++) {
         unlink(tmp_files[i]);
+        free(tmp_files[i]);
     }
 
     free(tmp_files);
@@ -103,7 +106,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
-    
+    free_client(client);
     handle_error(error);
 }
 
@@ -115,6 +118,8 @@ BOOST_AUTO_TEST_CASE( convert_list_helper ) {
 
     BOOST_CHECK(strcmp(obj_list->list[0].name->value, "beowulf.txt") == 0);
     BOOST_CHECK(obj_list->list[0].length == 294059);
+
+    ds3_free_bulk_object_list(obj_list);
 }
 
 BOOST_AUTO_TEST_CASE( directory_size ) {
@@ -125,4 +130,6 @@ BOOST_AUTO_TEST_CASE( directory_size ) {
 
     BOOST_CHECK(strcmp(obj_list->list[0].name->value, "resources") == 0);
     BOOST_CHECK(obj_list->list[0].length == 0);
+
+    ds3_free_bulk_object_list(obj_list);
 }

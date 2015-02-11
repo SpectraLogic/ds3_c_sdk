@@ -40,6 +40,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     if (get_physical_placement_response == NULL) {
         BOOST_MESSAGE("The response was null without an error, which means we have no tape backend.  Skipping the test.");
         clear_bucket(client, bucket_name);
+        ds3_free_client(client);
         return;
     }
 
@@ -48,4 +49,5 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
 
     ds3_free_get_phsyical_placement_response(get_physical_placement_response);
     clear_bucket(client, bucket_name);
+    free_client(client);
 }

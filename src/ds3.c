@@ -671,7 +671,7 @@ void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
 static struct _ds3_request* _common_request_init(http_verb verb, ds3_str* path) {
     struct _ds3_request* request = g_new0(struct _ds3_request, 1);
     request->headers = _create_hash_table();
-    request->query_params = _create_hash_table();
+    request->query_params = g_hash_table_new_full(g_str_hash, g_str_equal, _cleanup_hash_value, _cleanup_hash_value);
     request->verb = verb;
     request->path = path;
     return request;
@@ -1597,12 +1597,14 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     ds3_tape tape;
 
     if (client == NULL || _request == NULL) {
+        g_array_free(tape_array, TRUE);
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
 
     request = (struct _ds3_request*) _request;
 
     if (request->object_list == NULL || request->object_list->size == 0) {
+        g_array_free(tape_array, TRUE);
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
     }
 
@@ -1629,6 +1631,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
 
     if(error_response != NULL) {
         g_byte_array_free(xml_blob, TRUE);
+        g_array_free(tape_array, TRUE);
         return error_response;
     }
 
@@ -1637,6 +1640,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     if(doc == NULL) {
         //Bad result
         g_byte_array_free(xml_blob, TRUE);
+        g_array_free(tape_array, TRUE);
         return NULL;
     }
 
@@ -1645,6 +1649,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     if(element_equal(cur, "Data") == false) {
         char* message = g_strconcat("Expected the root element to be 'Data'.  The actual response is: ", xml_blob->data, NULL);
         g_byte_array_free(xml_blob, TRUE);
+        g_array_free(tape_array, TRUE);
         xmlFreeDoc(doc);
         ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
         g_free(message);
@@ -1656,6 +1661,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
         if(element_equal(cur, "Tapes") == false) {
             char* message = g_strconcat("Expected the interior element to be 'Tapes'.  The actual response is: ", xml_blob->data, NULL);
             g_byte_array_free(xml_blob, TRUE);
+            g_array_free(tape_array, TRUE);
             xmlFreeDoc(doc);
             ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
             g_free(message);
@@ -1677,6 +1683,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     }
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
+    g_array_free(tape_array, FALSE);
 
     *_response = response;
     return NULL;
@@ -2198,11 +2205,11 @@ ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files) {
 
 void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
     uint64_t i, count;
-    if(object_list == NULL) {
+    if (object_list == NULL) {
         return;
     }
     count = object_list->size;
-    for(i = 0; i < count; i++) {
+    for (i = 0; i < count; i++) {
         ds3_str* file_name = object_list->list[i].name;
         if (file_name == NULL) {
             continue;
@@ -2210,8 +2217,16 @@ void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
         ds3_str_free(file_name);
     }
 
-    if(object_list->server_id != NULL) {
+    if (object_list->server_id != NULL) {
         ds3_str_free(object_list->server_id);
+    }
+
+    if (object_list->node_id != NULL) {
+        ds3_str_free(object_list->node_id);
+    }
+
+    if (object_list->chunk_id != NULL) {
+        ds3_str_free(object_list->chunk_id);
     }
 
     g_free(object_list->list);

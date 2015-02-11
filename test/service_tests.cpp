@@ -15,6 +15,7 @@ BOOST_AUTO_TEST_CASE( get_service ) {
 
     ds3_free_request(request);
     ds3_free_service_response(response);
+    free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE( put_bucket) {
@@ -53,5 +54,6 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
     error = ds3_delete_bucket(client, request);
     ds3_free_request(request);
 
+    free_client(client);
     BOOST_CHECK(error == NULL);
 }

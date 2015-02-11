@@ -27,6 +27,7 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     ds3_free_bucket_response(response);
 
     clear_bucket(client, bucket_name);
+    free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE( prefix ) {
@@ -54,6 +55,7 @@ BOOST_AUTO_TEST_CASE( prefix ) {
 
     clear_bucket(client, bucket_name);
 
+    free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE( delimiter ) {
@@ -81,4 +83,5 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     ds3_free_bucket_response(response);
 
     clear_bucket(client, bucket_name);
+    free_client(client);
 }

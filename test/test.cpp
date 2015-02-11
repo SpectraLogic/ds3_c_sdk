@@ -7,7 +7,7 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
-ds3_client * get_client() {
+ds3_client* get_client() {
 
     ds3_client* client;
 
@@ -33,8 +33,8 @@ void print_error(const ds3_error* error) {
 void handle_error(ds3_error* error) {
     if (error != NULL) {
         print_error(error);
-        BOOST_FAIL("Test failed with a ds3_error");
         ds3_free_error(error);
+        BOOST_FAIL("Test failed with a ds3_error");
     }
 }
 
@@ -120,10 +120,7 @@ ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* 
           ds3_free_request(request);
 
           fclose(file);
-          if (error != NULL) {
-              print_error(error);
-              ds3_free_error(error);
-          }
+          handle_error(error);
       }
       ds3_free_allocate_chunk_response(chunk_response);
     }
@@ -140,5 +137,10 @@ bool contains_object(const ds3_object* objects, uint64_t num_objects, const char
         }
     }
     return false;
+}
+
+void free_client(ds3_client* client) {
+    ds3_free_creds(client->creds);
+    ds3_free_client(client);
 }
 
