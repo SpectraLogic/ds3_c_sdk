@@ -80,9 +80,14 @@ typedef struct {
 }ds3_response_header;
 
 ds3_str* ds3_str_init(const char* string) {
+    size_t size = strlen(string);
+    return ds3_str_init_with_size(string, size);
+}
+
+ds3_str* ds3_str_init_with_size(const char* string, size_t size) {
     ds3_str* str = g_new0(ds3_str, 1);
-    str->value = g_strdup(string);
-    str->size = strlen(string);
+    str->value = g_strndup(string, size);
+    str->size = size;
     return str;
 }
 
@@ -524,7 +529,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             error->error = g_new0(ds3_error_response, 1);
             error->error->status_code = response_data.status_code;
             error->error->status_message = ds3_str_init(response_data.status_message->value);
-            error->error->error_body = ds3_str_init((char*)response_data.body->data);
+            error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
 
             g_byte_array_free(response_data.body, TRUE);
             g_hash_table_destroy(response_headers);
