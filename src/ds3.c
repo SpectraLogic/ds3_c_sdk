@@ -518,7 +518,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
             ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
             g_byte_array_free(response_data.body, TRUE);
-            g_free(response_data.status_message);
+            ds3_str_free(response_data.status_message);
             g_hash_table_destroy(response_headers);
             g_free(message);
             return error;
@@ -533,11 +533,11 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
             g_byte_array_free(response_data.body, TRUE);
             g_hash_table_destroy(response_headers);
-            g_free(response_data.status_message);
+            ds3_str_free(response_data.status_message);
             return error;
         }
         g_byte_array_free(response_data.body, TRUE);
-        g_free(response_data.status_message);
+        ds3_str_free(response_data.status_message);
         if (return_headers == NULL) {
             g_hash_table_destroy(response_headers);
         } else {
@@ -2117,6 +2117,7 @@ void ds3_free_error(ds3_error* error) {
 
 void ds3_cleanup(void) {
     net_cleanup();
+    xmlCleanupParser();
 }
 
 size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
