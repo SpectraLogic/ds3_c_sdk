@@ -76,8 +76,8 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
             request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
-            tmp_files[file_index] = (char*) calloc(13, sizeof(char));
-            memcpy(tmp_files[file_index], FILE_TEMPLATE, 12);
+            tmp_files[file_index] = (char*) calloc(12, sizeof(char));
+            memcpy(tmp_files[file_index], FILE_TEMPLATE, 11);
             w_file = fopen(tmp_files[file_index], "w+");
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
         }
     }
 
-    for (i = 0; i <= file_index;i++) {
+    for (i = 0; i < file_index; i++) {
         unlink(tmp_files[i]);
         free(tmp_files[i]);
     }
