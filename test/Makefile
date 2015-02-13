@@ -26,7 +26,7 @@ CFLAGS+= -DBOOST_TEST_DYN_LINK -lboost_unit_test_framework
 all: test
 
 mem: test
-	$(LIB_PATH) valgrind --leak-check=full --track-origins=yes ./test
+	$(LIB_PATH) valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./test
 
 debug: test
 	$(LIB_PATH) $(GDB) ./test

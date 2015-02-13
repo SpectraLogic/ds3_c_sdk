@@ -7,6 +7,18 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
+struct TestCleanup {
+    TestCleanup() {
+        printf("global setup\n");
+    }
+    ~TestCleanup() {
+        printf("global teardown\n");
+        ds3_cleanup();
+    }
+};
+
+BOOST_GLOBAL_FIXTURE( TestCleanup );
+
 ds3_client* get_client() {
 
     ds3_client* client;
