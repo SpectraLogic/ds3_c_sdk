@@ -8,22 +8,24 @@
 #include <boost/test/unit_test.hpp>
 
 struct TestCleanup {
-    TestCleanup() {
-        printf("global setup\n");
-    }
+    TestCleanup() {}
     ~TestCleanup() {
-        printf("global teardown\n");
         ds3_cleanup();
     }
 };
 
 BOOST_GLOBAL_FIXTURE( TestCleanup );
 
-ds3_client* get_client() {
+void test_log(const char* message, void* user_data) {
+    fprintf(stderr, "Log Message: %s\n", message);
+}
 
+ds3_client* get_client() {
     ds3_client* client;
 
     ds3_error* error = ds3_create_client_from_env(&client);
+
+    ds3_client_register_logging(client, INFO, test_log, NULL);
 
     if (error != NULL) {
         fprintf(stderr, "Failed to construct ds3_client from enviornment variables: %s\n", error->message->value);

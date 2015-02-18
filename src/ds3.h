@@ -85,6 +85,16 @@ LIBRARY_API size_t ds3_str_size(const ds3_str* string);
 LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
 LIBRARY_API void ds3_str_free(ds3_str* string);
 
+typedef enum {
+  ERROR, WARN, INFO, DEBUG, TRACE
+}ds3_log_lvl;
+
+typedef struct {
+    void     (* log_callback)(const char* log_message, void* user_data);
+    void*       user_data;
+    ds3_log_lvl log_lvl;
+}ds3_log;
+
 typedef struct {
     ds3_str* access_id;
     ds3_str* secret_key;
@@ -95,6 +105,7 @@ typedef struct {
     ds3_str*    proxy;
     uint64_t    num_redirects;
     ds3_creds*  creds;
+    ds3_log*    log;
 }ds3_client;
 
 typedef struct _ds3_request ds3_request;
@@ -211,6 +222,7 @@ typedef struct {
 LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secret_key);
 LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
+LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
 
 LIBRARY_API ds3_request* ds3_init_get_service(void);
 LIBRARY_API ds3_request* ds3_init_get_bucket(const char* bucket_name);
