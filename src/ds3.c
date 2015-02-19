@@ -364,7 +364,7 @@ static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, 
     gsize bufSize = 256;
     guint8 buffer[256];
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
-    unsigned char* escaped_str = g_strescape(signature_str, NULL);
+    char* escaped_str = g_strescape((char*) signature_str, NULL);
 
     LOG(log, DEBUG, "signature string: %s", escaped_str);
     g_free(escaped_str);
@@ -471,11 +471,12 @@ static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t 
 }
 
 static ds3_error* _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*), GHashTable** return_headers) {
-    _init_curl();
-
     struct _ds3_request* request = (struct _ds3_request*) _request;
-    CURL* handle = curl_easy_init();
+    CURL* handle;
     CURLcode res;
+
+    _init_curl();
+    handle = curl_easy_init();
 
     if (handle) {
         char* url;
@@ -581,7 +582,6 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         headers = curl_slist_append(headers, auth_header);
         headers = curl_slist_append(headers, date_header);
-
         headers = _append_headers(headers, request->headers);
 
         curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
@@ -614,9 +614,14 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             error->error = g_new0(ds3_error_response, 1);
             error->error->status_code = response_data.status_code;
             error->error->status_message = ds3_str_init(response_data.status_message->value);
-            error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
-
-            g_byte_array_free(response_data.body, TRUE);
+            if (response_data.body != NULL) {
+                error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
+                g_byte_array_free(response_data.body, TRUE);
+            }
+            else {
+                LOG(client->log, ERROR, "The response body for the error is empty");
+                error->error->error_body = NULL;
+            }
             g_hash_table_destroy(response_headers);
             ds3_str_free(response_data.status_message);
             return error;
@@ -971,7 +976,7 @@ static ds3_bool xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, s
     return result;
 }
 
-static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
+static void _parse_buckets(const ds3_log* log, xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
     xmlNodePtr data_ptr;
     xmlNodePtr curr;
     GArray* array = g_array_new(FALSE, TRUE, sizeof(ds3_bucket));
@@ -988,7 +993,7 @@ static void _parse_buckets(xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_servi
                 bucket.name = xml_get_string(doc, data_ptr);
             }
             else {
-                fprintf(stderr, "Unknown element: (%s)\n", data_ptr->name);
+                LOG(log, ERROR, "Unknown element: (%s)\n", data_ptr->name);
             }
         }
         g_array_append_val(array, bucket);
@@ -1064,7 +1069,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Buckets") == true) {
             //process buckets here
-            _parse_buckets(doc, child_node, response);
+            _parse_buckets(client->log, doc, child_node, response);
         }
         else if(element_equal(child_node, "Owner") == true) {
             //process owner here
@@ -1072,7 +1077,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
             response->owner = owner;
         }
         else {
-            fprintf(stderr, "Unknown xml element: (%s)\b", child_node->name);
+            LOG(client->log, ERROR, "Unknown xml element: (%s)\b", child_node->name);
         }
     }
 
@@ -1133,21 +1138,21 @@ static ds3_object _parse_object(xmlDocPtr doc, xmlNodePtr contents_node) {
     return object;
 }
 
-static ds3_str* _parse_common_prefixes(xmlDocPtr doc, xmlNodePtr contents_node) {
+static ds3_str* _parse_common_prefixes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr contents_node) {
     xmlNodePtr child_node;
     ds3_str* prefix = NULL;
 
     for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Prefix") == true) {
             if(prefix) {
-                fprintf(stderr, "More than one Prefix found in CommonPrefixes\n");
+                LOG(log, WARN, "More than one Prefix found in CommonPrefixes\n");
             }
             else {
                 prefix = xml_get_string(doc, child_node);
             }
         }
         else {
-            fprintf(stderr, "Unknown xml element: %s\n", child_node->name);
+            LOG(log, ERROR, "Unknown xml element: %s\n", child_node->name);
         }
     }
 
@@ -1264,11 +1269,11 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             xmlFree(text);
         }
         else if(element_equal(child_node, "CommonPrefixes") == true) {
-            ds3_str* prefix = _parse_common_prefixes(doc, child_node);
+            ds3_str* prefix = _parse_common_prefixes(client->log, doc, child_node);
             g_array_append_val(common_prefix_array, prefix);
         }
         else {
-            fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
+            LOG(client->log, ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
@@ -1331,12 +1336,12 @@ static ds3_bulk_object _parse_bulk_object(const ds3_log* log, xmlDocPtr doc, xml
             response.offset = xml_get_uint64_from_attribute(doc, attribute);
         }
         else {
-            fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
+            LOG(log, ERROR, "Unknown attribute: (%s)\n", attribute->name);
         }
     }
 
     for(child_node = object_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
+        LOG(log, ERROR, "Unknown element: (%s)\n", child_node->name);
     }
 
     return response;
@@ -1371,7 +1376,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
             response->chunk_number = xml_get_uint64_from_attribute(doc, attribute);
         }
         else {
-            fprintf(stderr, "Unknown attribute: (%s)\n", attribute->name);
+            LOG(log, ERROR, "Unknown attribute: (%s)\n", attribute->name);
         }
 
     }
@@ -1382,7 +1387,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
             g_array_append_val(object_array, object);
         }
         else {
-            fprintf(stderr, "Unknown element: (%s)\n", child_node->name);
+            LOG(log, ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
@@ -1392,7 +1397,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
     return response;
 }
 
-static ds3_job_priority _match_priority(const xmlChar* priority_str) {
+static ds3_job_priority _match_priority(const ds3_log* log, const xmlChar* priority_str) {
     if (xmlStrcmp(priority_str, (const xmlChar*) "CRITICAL") == 0) {
         return CRITICAL;
     }
@@ -1415,12 +1420,12 @@ static ds3_job_priority _match_priority(const xmlChar* priority_str) {
         return MINIMIZED_DUE_TO_TOO_MANY_RETRIES;
     }
     else {
-        fprintf(stderr, "ERROR: Unknown priority type of '%s'.  Returning LOW to be safe.\n", priority_str);
+        LOG(log, ERROR, "ERROR: Unknown priority type of '%s'.  Returning LOW to be safe.\n", priority_str);
         return LOW;
     }
 }
 
-static ds3_job_request_type _match_request_type(const xmlChar* request_type) {
+static ds3_job_request_type _match_request_type(const ds3_log* log, const xmlChar* request_type) {
     if (xmlStrcmp(request_type, (const xmlChar*) "PUT") == 0) {
         return PUT;
     }
@@ -1428,12 +1433,12 @@ static ds3_job_request_type _match_request_type(const xmlChar* request_type) {
         return GET;
     }
     else {
-        fprintf(stderr, "ERROR: Unknown request type of '%s'.  Returning GET for safety.\n", request_type);
+        LOG(log, ERROR, "ERROR: Unknown request type of '%s'.  Returning GET for safety.\n", request_type);
         return GET;
     }
 }
 
-static ds3_write_optimization _match_write_optimization(const xmlChar* text) {
+static ds3_write_optimization _match_write_optimization(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "CAPACITY") == 0) {
         return CAPACITY;
     }
@@ -1441,12 +1446,12 @@ static ds3_write_optimization _match_write_optimization(const xmlChar* text) {
         return PERFORMANCE;
     }
     else {
-        fprintf(stderr, "ERROR: Unknown write optimization of '%s'.  Returning CAPACITY for safety.\n", text);
+        LOG(log, ERROR, "ERROR: Unknown write optimization of '%s'.  Returning CAPACITY for safety.\n", text);
         return CAPACITY;
     }
 }
 
-static ds3_chunk_ordering _match_chunk_order(const xmlChar* text) {
+static ds3_chunk_ordering _match_chunk_order(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "IN_ORDER") == 0) {
         return IN_ORDER;
     }
@@ -1454,12 +1459,12 @@ static ds3_chunk_ordering _match_chunk_order(const xmlChar* text) {
         return NONE;
     }
     else {
-        fprintf(stderr, "ERROR: Unknown chunk processing order guaruntee value of '%s'.  Returning IN_ORDER for safety.\n", text);
+        LOG(log, ERROR, "ERROR: Unknown chunk processing order guaruntee value of '%s'.  Returning IN_ORDER for safety.\n", text);
         return NONE;
     }
 }
 
-static ds3_job_status _match_job_status(const xmlChar* text) {
+static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text) {
     if(xmlStrcmp(text, (const xmlChar*) "IN_PROGRESS") == 0) {
         return IN_PROGRESS;
     }
@@ -1470,7 +1475,7 @@ static ds3_job_status _match_job_status(const xmlChar* text) {
         return CANCELED;
     }
     else {
-        fprintf(stderr, "ERROR: Unknown job status value of '%s'.  Returning IN_PROGRESS for safety.\n", text);
+        LOG(log, ERROR, "ERROR: Unknown job status value of '%s'.  Returning IN_PROGRESS for safety.\n", text);
         return IN_PROGRESS;
     }
 }
@@ -1551,7 +1556,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
             if(text == NULL) {
                 continue;
             }
-            response->priority = _match_priority(text);
+            response->priority = _match_priority(log, text);
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "RequestType") == true) {
@@ -1559,7 +1564,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
             if(text == NULL) {
                 continue;
             }
-            response->request_type = _match_request_type(text);
+            response->request_type = _match_request_type(log, text);
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "WriteOptimization") == true) {
@@ -1567,7 +1572,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
             if(text == NULL) {
                 continue;
             }
-            response->write_optimization = _match_write_optimization(text);
+            response->write_optimization = _match_write_optimization(log, text);
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "ChunkClientProcessingOrderGuarantee") == true) {
@@ -1575,7 +1580,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
             if(text == NULL) {
                 continue;
             }
-            response->chunk_order = _match_chunk_order(text);
+            response->chunk_order = _match_chunk_order(log, text);
             xmlFree(text);
         }
         else if(attribute_equal(attribute, "Status") == true) {
@@ -1583,7 +1588,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
             if(text == NULL) {
                 continue;
             }
-            response->status = _match_job_status(text);
+            response->status = _match_job_status(log, text);
             xmlFree(text);
         }
         else {
@@ -2080,7 +2085,6 @@ void ds3_free_service_response(ds3_get_service_response* response){
 void ds3_free_bulk_response(ds3_bulk_response* response) {
     int i;
     if(response == NULL) {
-        fprintf(stderr, "Bulk response was NULL\n");
         return;
     }
 
@@ -2116,7 +2120,6 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
 
 void ds3_free_owner(ds3_owner* owner) {
     if(owner == NULL) {
-        fprintf(stderr, "Owner was NULL\n");
         return;
     }
     if(owner->name != NULL) {
