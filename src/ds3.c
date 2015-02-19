@@ -357,13 +357,17 @@ static char* _generate_date_string(void) {
     return date_string;
 }
 
-static char* _net_compute_signature(const ds3_creds* creds, http_verb verb, char* resource_name,
+static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, http_verb verb, char* resource_name,
                              char* date, char* content_type, char* md5, char* amz_headers) {
     GHmac* hmac;
     gchar* signature;
     gsize bufSize = 256;
     guint8 buffer[256];
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
+    unsigned char* escaped_str = g_strescape(signature_str, NULL);
+
+    LOG(log, DEBUG, "signature string: %s", escaped_str);
+    g_free(escaped_str);
 
     hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key->value, creds->secret_key->size);
     g_hmac_update(hmac, signature_str, -1);
@@ -571,7 +575,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         date = _generate_date_string();
         date_header = g_strconcat("Date: ", date, NULL);
-        signature = _net_compute_signature(client->creds, request->verb, request->path->value, date, "", "", "");
+        signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", "", "");
         headers = NULL;
         auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
 
