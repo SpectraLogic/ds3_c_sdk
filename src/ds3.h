@@ -86,7 +86,7 @@ LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
 LIBRARY_API void ds3_str_free(ds3_str* string);
 
 typedef enum {
-  ERROR, WARN, INFO, DEBUG, TRACE
+  DS3_ERROR, DS3_WARN, DS3_INFO, DS3_DEBUG, DS3_TRACE
 }ds3_log_lvl;
 
 typedef struct {
