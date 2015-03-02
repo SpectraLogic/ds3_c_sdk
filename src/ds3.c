@@ -1681,7 +1681,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     ds3_bulk_object_list* obj_list;
     ds3_xml_send_buff send_buff;
 
-    xmlNodePtr cur, child_node;
+    xmlNodePtr cur, child_node, tape_attr;
 
     GByteArray* xml_blob;
 
@@ -1768,7 +1768,11 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
         for(child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
             if(element_equal(child_node, "Tape") == true) {
                 memset(&tape, 0, sizeof(ds3_tape));
-                tape.barcode = xml_get_string(doc, child_node);
+                for (tape_attr = child_node->xmlChildrenNode; tape_attr != NULL; tape_attr = tape_attr->next){
+                    if(element_equal(tape_attr, "BarCode") == true) {
+                      tape.barcode = xml_get_string(doc, tape_attr);
+                    }
+                }
                 g_array_append_val(tape_array, tape);
           }
         }
