@@ -31,7 +31,7 @@ ds3_client* get_client() {
         BOOST_FAIL("Failed to setup client.");
     }
 
-    ds3_client_register_logging(client, INFO, test_log, NULL);
+    ds3_client_register_logging(client, DS3_INFO, test_log, NULL);
 
     return client;
 }
