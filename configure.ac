@@ -1,4 +1,4 @@
-AC_INIT([ds3], [1.0], [SDKDeveloper@spectralogic.com])
+AC_INIT([ds3], [1.1], [SDKDeveloper@spectralogic.com])
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
 
@@ -9,7 +9,7 @@ AM_PROG_CC_C_O
 LT_INIT
 
 GLIB2_CHECK="glib-2.0 >= 2.34"
-LIBCURL_CHECK="libcurl >= 7.31"
+LIBCURL_CHECK="libcurl >= 7.29"
 LIBXML2_CHECK="libxml-2.0 >= 2.9"
 
 PKG_CHECK_MODULES([GLIB2], $GLIB2_CHECK)

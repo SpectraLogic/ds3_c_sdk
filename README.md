@@ -3,6 +3,11 @@ DS3 C SDK
 
 This project contains a C library for using the DS3 Deep Storage REST interface.
 
+Contact Us
+==========
+
+Join us at our [Google Groups](https://groups.google.com/d/forum/spectralogicds3-sdks) forum to ask questions, or see frequently asked questions.
+
 Windows
 =======
 
@@ -182,7 +187,7 @@ int main (int args, char * argv[]) {
 
     for (i = 0; i < response->num_buckets; i++) {
         ds3_bucket bucket = response->buckets[i];
-        printf("Bucket: (%s) created on %s\n", bucket.name, bucket.creation_date);
+        printf("Bucket: (%s) created on %s\n", bucket.name->value, bucket.creation_date->value);
     }
     
     ds3_free_service_response(response);
@@ -319,5 +324,6 @@ int main (int args, char * argv[]) {
 }
 ```
 
-The structure of the code is very similar to the previous examples.  Setup the client, setup the call, perform the call.  Every request follows this same pattern.  Things get a little more complicated with the bulk get/put cases.  The following bulk put will demonstrate some of those complexities
+The structure of the code is very similar to the previous examples.  Setup the client, setup the call, perform the call.  Every request follows this same pattern.
 
+Additional examples are available here: [samples](sample)
