@@ -93,7 +93,6 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
         }
     }
 	
-	//Doing Checksum Compare With Orignal File
 	
     for (i = 0; i < file_index; i++) {
         unlink(tmp_files[i]);
