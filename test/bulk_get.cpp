@@ -4,6 +4,8 @@
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
+#include "checksum.h"
+
 
 #define FILE_TEMPLATE "bulk-XXXXXX"
 
@@ -21,6 +23,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
     ds3_client* client = get_client();
     const char* bucket_name = "unit_test_bucket";
+    char* orignal_file_path [5];
 
     char** tmp_files;
 
@@ -76,6 +79,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
             request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
+            orignal_file_path[file_index] = current_obj.name->value;
             tmp_files[file_index] = (char*) calloc(12, sizeof(char));
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 11);
             w_file = fopen(tmp_files[file_index], "w+");
@@ -83,9 +87,14 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
             ds3_free_request(request);
             fclose(w_file);
             handle_error(error);
+            printf("------Performing Data Integrity Test-------\n");
+            compare_hash(orignal_file_path[file_index],tmp_files[file_index]);
+            printf("\n");
         }
     }
-
+	
+	//Doing Checksum Compare With Orignal File
+	
     for (i = 0; i < file_index; i++) {
         unlink(tmp_files[i]);
         free(tmp_files[i]);
