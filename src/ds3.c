@@ -449,7 +449,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 else {
                     curl_easy_setopt(handle, CURLOPT_POST, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                 }
                 break;
             }
@@ -460,7 +460,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 else {
                     curl_easy_setopt(handle, CURLOPT_PUT, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                 }
                 break;
             }
