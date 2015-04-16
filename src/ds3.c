@@ -314,7 +314,7 @@ static char* _net_compute_signature(const ds3_creds* creds, http_verb verb, char
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
 
     hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key->value, creds->secret_key->size);
-    g_hmac_update(hmac, signature_str, -1);
+    g_hmac_update(hmac, signature_str, strlen((const char*)signature_str));
     g_hmac_get_digest(hmac, buffer, &bufSize);
 
     signature = g_base64_encode(buffer, bufSize);
