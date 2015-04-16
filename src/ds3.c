@@ -714,9 +714,10 @@ ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* ob
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
+
+        sprintf(buff, "%llu" , offset);
+        _set_query_param((ds3_request*) request, "offset", buff);
     }
-    sprintf(buff, "%llu" , offset);
-    _set_query_param((ds3_request*) request, "offset", buff);
 
     return (ds3_request*) request;
 }
@@ -732,10 +733,10 @@ ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* ob
     request->length = length;
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
-    }
 
-    sprintf(buff, "%llu" , offset);
-    _set_query_param((ds3_request*) request, "offset", buff);
+        sprintf(buff, "%llu" , offset);
+        _set_query_param((ds3_request*) request, "offset", buff);
+    }
 
     return (ds3_request*) request;
 }
