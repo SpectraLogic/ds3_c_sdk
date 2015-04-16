@@ -370,7 +370,7 @@ static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, 
     g_free(escaped_str);
 
     hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key->value, creds->secret_key->size);
-    g_hmac_update(hmac, signature_str, -1);
+    g_hmac_update(hmac, signature_str, strlen((const char*)signature_str));
     g_hmac_get_digest(hmac, buffer, &bufSize);
 
     signature = g_base64_encode(buffer, bufSize);
@@ -545,7 +545,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 else {
                     curl_easy_setopt(handle, CURLOPT_POST, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                 }
                 break;
             }
@@ -556,7 +556,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 else {
                     curl_easy_setopt(handle, CURLOPT_PUT, 1L);
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                 }
                 break;
             }
@@ -816,9 +816,10 @@ ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* ob
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
+
+        sprintf(buff, "%llu" , offset);
+        _set_query_param((ds3_request*) request, "offset", buff);
     }
-    sprintf(buff, "%llu" , offset);
-    _set_query_param((ds3_request*) request, "offset", buff);
 
     return (ds3_request*) request;
 }
@@ -834,10 +835,10 @@ ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* ob
     request->length = length;
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
-    }
 
-    sprintf(buff, "%llu" , offset);
-    _set_query_param((ds3_request*) request, "offset", buff);
+        sprintf(buff, "%llu" , offset);
+        _set_query_param((ds3_request*) request, "offset", buff);
+    }
 
     return (ds3_request*) request;
 }
