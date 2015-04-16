@@ -539,25 +539,15 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         switch(request->verb) {
             case HTTP_POST: {
-                if (write_user_struct == NULL || write_handler_func == NULL) {
-                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
-                }
-                else {
-                    curl_easy_setopt(handle, CURLOPT_POST, 1L);
-                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
-                }
+                curl_easy_setopt(handle, CURLOPT_POST, 1L);
+                curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                 break;
             }
             case HTTP_PUT: {
-                if (write_user_struct == NULL || write_handler_func == NULL) {
-                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
-                }
-                else {
-                    curl_easy_setopt(handle, CURLOPT_PUT, 1L);
-                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
-                }
+                curl_easy_setopt(handle, CURLOPT_PUT, 1L);
+                curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                 break;
             }
             case HTTP_DELETE: {
