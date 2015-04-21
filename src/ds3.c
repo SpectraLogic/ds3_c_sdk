@@ -38,9 +38,10 @@
 
 //---------- Define opaque struct ----------//
 struct _ds3_request{
-    http_verb verb;
-    ds3_str* path;
-    uint64_t length;
+    http_verb   verb;
+    ds3_str*    path;
+    uint64_t    length;
+    ds3_str*    md5;
     GHashTable* headers;
     GHashTable* query_params;
 
@@ -363,6 +364,7 @@ static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, 
     gchar* signature;
     gsize bufSize = 256;
     guint8 buffer[256];
+
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
     char* escaped_str = g_strescape((char*) signature_str, NULL);
 
@@ -487,6 +489,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         struct curl_slist* headers;
         char* auth_header;
         char* query_params = _net_gen_query_params(request->query_params);
+        char* md5_value;
         ds3_response_data response_data;
         GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, _ds3_free_response_header);
 
@@ -566,7 +569,14 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
         date = _generate_date_string();
         date_header = g_strconcat("Date: ", date, NULL);
-        signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", "", "");
+
+        if (request->md5 == NULL) {
+            md5_value = "";
+        }
+        else {
+            md5_value = request->md5->value;
+        }
+        signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", md5_value, "");
         headers = NULL;
         auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
 
@@ -736,6 +746,12 @@ void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
 
 void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
    _set_header(_request, header_name, header_value);
+}
+
+void ds3_request_set_md5(ds3_request* _request, const char* md5) {
+  struct _ds3_request* request = (struct _ds3_request*) _request;
+  request->md5 = ds3_str_init(md5);
+  _set_header(_request, "Content-MD5", md5);
 }
 
 void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
@@ -2171,6 +2187,9 @@ void ds3_free_request(ds3_request* _request) {
     }
     if (request->query_params != NULL) {
         g_hash_table_destroy(request->query_params);
+    }
+    if (request->md5 != NULL) {
+        ds3_str_free(request->md5);
     }
     g_free(request);
 }
