@@ -38,9 +38,10 @@
 
 //---------- Define opaque struct ----------//
 struct _ds3_request{
-    http_verb verb;
-    ds3_str* path;
-    uint64_t length;
+    http_verb   verb;
+    ds3_str*    path;
+    uint64_t    length;
+    ds3_str*    md5;
     GHashTable* headers;
     GHashTable* query_params;
 
@@ -363,6 +364,7 @@ static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, 
     gchar* signature;
     gsize bufSize = 256;
     guint8 buffer[256];
+
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
     char* escaped_str = g_strescape((char*) signature_str, NULL);
 
@@ -370,7 +372,7 @@ static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, 
     g_free(escaped_str);
 
     hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key->value, creds->secret_key->size);
-    g_hmac_update(hmac, signature_str, -1);
+    g_hmac_update(hmac, signature_str, strlen((const char*)signature_str));
     g_hmac_get_digest(hmac, buffer, &bufSize);
 
     signature = g_base64_encode(buffer, bufSize);
@@ -476,166 +478,185 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
     CURLcode res;
 
     _init_curl();
-    handle = curl_easy_init();
+    char* url;
+    int retry_count = 0;
+    char* query_params = _net_gen_query_params(request->query_params);
 
-    if (handle) {
-        char* url;
-
-        char* date;
-        char* date_header;
-        char* signature;
-        struct curl_slist* headers;
-        char* auth_header;
-        char* query_params = _net_gen_query_params(request->query_params);
-        ds3_response_data response_data;
-        GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, _ds3_free_response_header);
-
-        LOG(client->log, DS3_DEBUG, "Preparing to send request");
-
-        memset(&response_data, 0, sizeof(ds3_response_data));
-        response_data.headers = response_headers;
-        response_data.body = g_byte_array_new();
-
-        if (query_params == NULL) {
-            url = g_strconcat(client->endpoint->value, request->path->value, NULL);
-        }
-        else {
-            url = g_strconcat(client->endpoint->value, request->path->value,"?",query_params, NULL);
-            g_free(query_params);
-        }
-
-        if (client->log != NULL) {
-            curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, ds3_curl_logger);
-            curl_easy_setopt(handle, CURLOPT_DEBUGDATA, client->log);
-            curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L); // turn on verbose logging
-        }
-
-        curl_easy_setopt(handle, CURLOPT_URL, url);
-        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L); //tell curl to follow redirects
-        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, client->num_redirects);
-
-        // Setup header collection
-        curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, _process_header_line);
-        curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response_data);
-
-        if(client->proxy != NULL) {
-          curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy->value);
-        }
-
-        // Register the read and write handlers if they are set
-        if(read_user_struct != NULL && read_handler_func != NULL) {
-            response_data.user_data = read_user_struct;
-            response_data.user_func = read_handler_func;
-        }
-
-        // We must always set this so we can collect the error message body
-        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, _process_response_body);
-        curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response_data);
-
-        if(write_user_struct != NULL && write_handler_func != NULL) {
-            curl_easy_setopt(handle, CURLOPT_READFUNCTION, write_handler_func);
-            curl_easy_setopt(handle, CURLOPT_READDATA, write_user_struct);
-        }
-
-        switch(request->verb) {
-            case HTTP_POST: {
-                if (write_user_struct == NULL || write_handler_func == NULL) {
-                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
-                }
-                else {
-                    curl_easy_setopt(handle, CURLOPT_POST, 1L);
-                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
-                }
-                break;
-            }
-            case HTTP_PUT: {
-                if (write_user_struct == NULL || write_handler_func == NULL) {
-                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "PUT");
-                }
-                else {
-                    curl_easy_setopt(handle, CURLOPT_PUT, 1L);
-                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
-                    curl_easy_setopt(handle, CURLOPT_INFILESIZE, request->length);
-                }
-                break;
-            }
-            case HTTP_DELETE: {
-                curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
-                break;
-            }
-            case HTTP_HEAD: {
-                curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
-                break;
-            }
-            case HTTP_GET: {
-                //Placeholder if we need to put anything here.
-                break;
-            }
-        }
-
-        date = _generate_date_string();
-        date_header = g_strconcat("Date: ", date, NULL);
-        signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", "", "");
-        headers = NULL;
-        auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
-
-        headers = curl_slist_append(headers, auth_header);
-        headers = curl_slist_append(headers, date_header);
-        headers = _append_headers(headers, request->headers);
-
-        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-
-        res = curl_easy_perform(handle);
-
-        g_free(url);
-        g_free(date);
-        g_free(date_header);
-        g_free(signature);
-        g_free(auth_header);
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(handle);
-
-        //process the response
-        if (res != CURLE_OK) {
-            char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
-            ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
-            g_byte_array_free(response_data.body, TRUE);
-            ds3_str_free(response_data.status_message);
-            g_hash_table_destroy(response_headers);
-            g_free(message);
-            return error;
-        }
-
-        LOG(client->log, DS3_DEBUG, "Request completed with status code of: %d", response_data.status_code);
-
-        if (response_data.status_code < 200 || response_data.status_code >= 300) {
-            ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
-            error->error = g_new0(ds3_error_response, 1);
-            error->error->status_code = response_data.status_code;
-            error->error->status_message = ds3_str_init(response_data.status_message->value);
-            if (response_data.body != NULL) {
-                error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
-                g_byte_array_free(response_data.body, TRUE);
-            }
-            else {
-                LOG(client->log, DS3_ERROR, "The response body for the error is empty");
-                error->error->error_body = NULL;
-            }
-            g_hash_table_destroy(response_headers);
-            ds3_str_free(response_data.status_message);
-            return error;
-        }
-        g_byte_array_free(response_data.body, TRUE);
-        ds3_str_free(response_data.status_message);
-        if (return_headers == NULL) {
-            g_hash_table_destroy(response_headers);
-        } else {
-            *return_headers = response_headers;
-        }
+    if (query_params == NULL) {
+        url = g_strconcat(client->endpoint->value, request->path->value, NULL);
     }
     else {
-        return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
+        url = g_strconcat(client->endpoint->value, request->path->value,"?",query_params, NULL);
+        g_free(query_params);
+    }
+
+    while (retry_count < client->num_redirects) {
+        handle = curl_easy_init();
+
+        if (handle) {
+            char* date;
+            char* date_header;
+            char* signature;
+            struct curl_slist* headers;
+            char* auth_header;
+            char* md5_value;
+            ds3_response_data response_data;
+            GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, _ds3_free_response_header);
+
+            LOG(client->log, DS3_DEBUG, "Preparing to send request");
+
+            memset(&response_data, 0, sizeof(ds3_response_data));
+            response_data.headers = response_headers;
+            response_data.body = g_byte_array_new();
+
+            if (client->log != NULL) {
+                curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, ds3_curl_logger);
+                curl_easy_setopt(handle, CURLOPT_DEBUGDATA, client->log);
+                curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L); // turn on verbose logging
+            }
+
+            curl_easy_setopt(handle, CURLOPT_URL, url);
+
+            // Setup header collection
+            curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, _process_header_line);
+            curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response_data);
+
+            if(client->proxy != NULL) {
+              curl_easy_setopt(handle, CURLOPT_PROXY, client->proxy->value);
+            }
+
+            // Register the read and write handlers if they are set
+            if(read_user_struct != NULL && read_handler_func != NULL) {
+                response_data.user_data = read_user_struct;
+                response_data.user_func = read_handler_func;
+            }
+
+            // We must always set this so we can collect the error message body
+            curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, _process_response_body);
+            curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response_data);
+
+            if(write_user_struct != NULL && write_handler_func != NULL) {
+                curl_easy_setopt(handle, CURLOPT_READFUNCTION, write_handler_func);
+                curl_easy_setopt(handle, CURLOPT_READDATA, write_user_struct);
+            }
+
+            switch(request->verb) {
+                case HTTP_POST: {
+                    curl_easy_setopt(handle, CURLOPT_POST, 1L);
+                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
+                    break;
+                }
+                case HTTP_PUT: {
+                    curl_easy_setopt(handle, CURLOPT_PUT, 1L);
+                    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
+                    curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
+                    break;
+                }
+                case HTTP_DELETE: {
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+                    break;
+                }
+                case HTTP_HEAD: {
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
+                    break;
+                }
+                case HTTP_GET: {
+                    //Placeholder if we need to put anything here.
+                    break;
+                }
+            }
+
+            date = _generate_date_string();
+            date_header = g_strconcat("Date: ", date, NULL);
+
+            if (request->md5 == NULL) {
+                md5_value = "";
+            }
+            else {
+                md5_value = request->md5->value;
+            }
+            signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", md5_value, "");
+            headers = NULL;
+            auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
+
+            headers = curl_slist_append(headers, auth_header);
+            headers = curl_slist_append(headers, date_header);
+            headers = _append_headers(headers, request->headers);
+
+            curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+            res = curl_easy_perform(handle);
+
+            g_free(date);
+            g_free(date_header);
+            g_free(signature);
+            g_free(auth_header);
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(handle);
+
+            //process the response
+            if (res != CURLE_OK) {
+                char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
+                ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
+                g_free(url);
+                g_byte_array_free(response_data.body, TRUE);
+                ds3_str_free(response_data.status_message);
+                g_hash_table_destroy(response_headers);
+                g_free(message);
+                return error;
+            }
+
+            LOG(client->log, DS3_DEBUG, "Request completed with status code of: %d", response_data.status_code);
+
+            if (response_data.status_code == 307) {
+                LOG(client->log, DS3_INFO, "Request encountered a 307 redirect");
+                ds3_str_free(response_data.status_message);
+
+                if (response_data.body != NULL) {
+                    g_byte_array_free(response_data.body, TRUE);
+                }
+                g_hash_table_destroy(response_headers);
+                retry_count++;
+                LOG(client->log, DS3_DEBUG, "Retry Attempt: %d | Max Retries: %d", retry_count, client->num_redirects);
+                continue;
+            }
+
+            if (response_data.status_code < 200 || response_data.status_code >= 300) {
+                ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
+                error->error = g_new0(ds3_error_response, 1);
+                error->error->status_code = response_data.status_code;
+                error->error->status_message = ds3_str_init(response_data.status_message->value);
+                if (response_data.body != NULL) {
+                    error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
+                    g_byte_array_free(response_data.body, TRUE);
+                }
+                else {
+                    LOG(client->log, DS3_ERROR, "The response body for the error is empty");
+                    error->error->error_body = NULL;
+                }
+                g_hash_table_destroy(response_headers);
+                ds3_str_free(response_data.status_message);
+                g_free(url);
+                return error;
+            }
+            g_byte_array_free(response_data.body, TRUE);
+            ds3_str_free(response_data.status_message);
+            if (return_headers == NULL) {
+                g_hash_table_destroy(response_headers);
+            } else {
+                *return_headers = response_headers;
+            }
+              break;
+        }
+        else {
+            return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
+        }
+    }
+    g_free(url);
+
+    if (retry_count == client->num_redirects) {
+      return _ds3_create_error(DS3_ERROR_TOO_MANY_REDIRECTS, "Encountered too many redirects while attempting to fullfil the request");
     }
     return NULL;
 }
@@ -748,6 +769,12 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
    _set_header(_request, header_name, header_value);
 }
 
+void ds3_request_set_md5(ds3_request* _request, const char* md5) {
+  struct _ds3_request* request = (struct _ds3_request*) _request;
+  request->md5 = ds3_str_init(md5);
+  _set_header(_request, "Content-MD5", md5);
+}
+
 void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
     _set_query_param(_request, "delimiter", delimiter);
 }
@@ -816,9 +843,10 @@ ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* ob
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
+
+        sprintf(buff, "%llu" , offset);
+        _set_query_param((ds3_request*) request, "offset", buff);
     }
-    sprintf(buff, "%llu" , offset);
-    _set_query_param((ds3_request*) request, "offset", buff);
 
     return (ds3_request*) request;
 }
@@ -834,10 +862,10 @@ ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* ob
     request->length = length;
     if (job_id != NULL) {
         _set_query_param((ds3_request*) request, "job", job_id);
-    }
 
-    sprintf(buff, "%llu" , offset);
-    _set_query_param((ds3_request*) request, "offset", buff);
+        sprintf(buff, "%llu" , offset);
+        _set_query_param((ds3_request*) request, "offset", buff);
+    }
 
     return (ds3_request*) request;
 }
@@ -2180,6 +2208,9 @@ void ds3_free_request(ds3_request* _request) {
     }
     if (request->query_params != NULL) {
         g_hash_table_destroy(request->query_params);
+    }
+    if (request->md5 != NULL) {
+        ds3_str_free(request->md5);
     }
     g_free(request);
 }

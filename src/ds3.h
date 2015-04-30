@@ -194,7 +194,8 @@ typedef struct {
 }ds3_get_physical_placement_response;
 
 typedef enum {
-  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_REQUEST_FAILED, DS3_ERROR_MISSING_ARGS, DS3_ERROR_BAD_STATUS_CODE
+  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_REQUEST_FAILED,
+  DS3_ERROR_MISSING_ARGS, DS3_ERROR_BAD_STATUS_CODE, DS3_ERROR_TOO_MANY_REDIRECTS
 }ds3_error_code;
 
 typedef struct {
@@ -249,6 +250,8 @@ LIBRARY_API void ds3_request_set_prefix(ds3_request* request, const char* prefix
 LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* delimiter);
 LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
 LIBRARY_API void ds3_request_set_max_keys(ds3_request* request, uint32_t max_keys);
+LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char* md5);
+
 
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
