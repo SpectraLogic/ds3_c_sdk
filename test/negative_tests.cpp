@@ -8,6 +8,8 @@
  * 6. Duplicate Object Creation
  * 7. Bulk Put With Empty Object List
  * 8. Duplicate Delete Job
+ * 9. Get Non Existing Get Job
+ * 10. Put Bad Checksum
 */
 
 #include <stdbool.h>
@@ -150,28 +152,59 @@ BOOST_AUTO_TEST_CASE( bad_bucket_name) {
     free_client(client);
 }
 
-//testing creation of duplicate object
-BOOST_AUTO_TEST_CASE( put_duplicate_object) {
-    printf("-----Testing Duplicate Object Creation-------\n");
+//testing creation of object list with duplicate objects
+BOOST_AUTO_TEST_CASE( put_duplicate_object_list){
+    printf("-----Testing Object List With Duplicate Objects Creation-------\n");
     ds3_client* client = get_client();
     const char* bucket_name = "test_bucket_duplicate_object";
+
     //Adding Duplicate Object to the Bucket List
     const char* books[] ={"resources/beowulf.txt","resources/sherlock_holmes.txt","resources/beowulf.txt"};
     ds3_bulk_object_list* obj_list;
     ds3_bulk_response* response;
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     ds3_error* error = ds3_put_bucket(client, request);
-
     ds3_free_request(request);
-
     handle_error(error);
-
     obj_list = ds3_convert_file_list(books, 3);
     request = ds3_init_put_bulk(bucket_name, obj_list);
     error = ds3_bulk(client, request, &response);
     ds3_free_request(request);
 
-    BOOST_REQUIRE(error != NULL);
+
+    BOOST_CHECK(error != NULL);
+    BOOST_CHECK(error->error->status_code == 409);
+    BOOST_CHECK(strcmp(error->error->status_message->value ,"Conflict")==0);
+    ds3_free_error(error);
+
+    ds3_free_bulk_object_list(obj_list);
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
+
+//testing creation of duplicate object
+BOOST_AUTO_TEST_CASE( put_duplicate_object){
+    printf("-----Testing Duplicate Object Creation -------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = "test_bucket_new";
+
+    //Pre populating few objects
+    populate_with_objects(client, bucket_name);
+
+    //Testing creation of preexisting objects
+    const char* books[] ={"resources/beowulf.txt","resources/sherlock_holmes.txt"};
+    ds3_bulk_object_list* obj_list;
+    ds3_bulk_response* response;
+    ds3_request* request;
+    ds3_error* error;
+
+    obj_list = ds3_convert_file_list(books,2);
+    request = ds3_init_put_bulk(bucket_name, obj_list);
+    error = ds3_bulk(client, request, &response);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error != NULL);
     BOOST_CHECK(error->error->status_code == 409);
     BOOST_CHECK(strcmp(error->error->status_message->value ,"Conflict")==0);
     ds3_free_error(error);
@@ -234,7 +267,6 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job){
 
 	ds3_free_request(request);
 	ds3_str_free(job_id);
-	ds3_str_free(job_id);
     clear_bucket(client, bucket_name);
     free_client(client);
 	
@@ -255,4 +287,67 @@ BOOST_AUTO_TEST_CASE(get_non_existing_job){
 	ds3_free_request(request);
 	ds3_free_bulk_response(bulk_response);
 	free_client(client);
+}
+
+BOOST_AUTO_TEST_CASE(bad_checksum)
+{
+    printf("-----Testing Request With Bad Checksum-------\n");
+    uint64_t i, n;
+    const char* bucket_name = "bucket_test_md5";
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    const char* books[] ={"resources/beowulf.txt"};
+    ds3_client* client = get_client();
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_bulk_object_list* obj_list;
+    ds3_bulk_response* response;
+    ds3_allocate_chunk_response* chunk_response;
+    ds3_free_request(request);
+    handle_error(error);
+
+    obj_list = ds3_convert_file_list(books, 1);
+    request = ds3_init_put_bulk(bucket_name, obj_list);
+    error = ds3_bulk(client, request, &response);
+
+    ds3_free_request(request);
+    handle_error(error);
+
+ 
+
+    for (n = 0; n < response->list_size; n ++) {
+
+      request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
+
+      error = ds3_allocate_chunk(client, request, &chunk_response);
+
+      ds3_free_request(request);
+
+      handle_error(error);
+
+      BOOST_REQUIRE(chunk_response->retry_after == 0);
+      BOOST_REQUIRE(chunk_response->objects != NULL);
+      for (i = 0; i < chunk_response->objects->size; i++) {
+          ds3_bulk_object bulk_object = chunk_response->objects->list[i];
+          FILE* file = fopen(bulk_object.name->value, "r");
+
+          request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
+          ds3_request_set_md5(request,"a%4sgh");
+         
+          if (bulk_object.offset > 0) {
+              fseek(file, bulk_object.offset, SEEK_SET);
+          }
+        
+          error = ds3_put_object(client, request, file, ds3_read_from_file);
+          ds3_free_request(request);
+          fclose(file);
+          BOOST_REQUIRE(error != NULL);         
+		  BOOST_CHECK(error->error->status_code == 403);
+		  BOOST_CHECK(strcmp(error->error->status_message->value ,"Forbidden")==0);
+          ds3_free_error(error);
+      }
+      ds3_free_allocate_chunk_response(chunk_response);
+    }
+    ds3_free_bulk_response(response);
+    ds3_free_bulk_object_list(obj_list);
+    clear_bucket(client, bucket_name);
+    free_client(client);
 }
