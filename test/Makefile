@@ -18,7 +18,7 @@ GDB=gdb
 endif
 
 CPP=g++
-LIBS=`$(PKG_CONFIG) --libs libds3`
+LIBS=`$(PKG_CONFIG) --libs libds3 glib-2.0`
 CFLAGS=`$(PKG_CONFIG) --cflags libds3`
 CFLAGS+= -g -Wall# Debug flags
 CFLAGS+= -DBOOST_TEST_DYN_LINK -lboost_unit_test_framework
@@ -37,7 +37,7 @@ run: test
 deps:
 	./build_local.sh
 
-test: test.o service_tests.o bucket_tests.o bulk_get.o get_physical_placement.o negative_tests.o
+test: test.o checksum.o service_tests.o bucket_tests.o job_tests.o bulk_get.o get_physical_placement.o negative_tests.o 
 	$(CPP) *.o $(CFLAGS) $(LIBS) -o test
 
 test.o: ../install/lib/pkgconfig/libds3.pc
@@ -49,6 +49,9 @@ service_tests.o:
 bucket_tests.o:
 	$(CPP) -c bucket_tests.cpp $(CFLAGS)
 
+job_tests.o:
+	$(CPP) -c job_tests.cpp $(CFLAGS)
+
 bulk_get.o:
 	$(CPP) -c bulk_get.cpp $(CFLAGS)
 
@@ -57,6 +60,9 @@ get_physical_placement.o:
 
 negative_tests.o:
 	$(CPP) -c negative_tests.cpp $(CFLAGS)
+
+checksum.o:
+	$(CPP) -c checksum.cpp $(CFLAGS)
 	
 ../install/lib/pkgconfig/libds3.pc:
 	$(error SDK not built. Please run make deps)

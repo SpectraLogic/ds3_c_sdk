@@ -88,6 +88,30 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
     ds3_str_free(job_id);
 }
 
+ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucket_name){
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_bulk_object_list* obj_list;
+    ds3_bulk_response* response;
+    ds3_str* job_id;
+    ds3_free_request(request);
+
+    handle_error(error);
+
+    obj_list = ds3_convert_file_list(books, 5);
+    request = ds3_init_put_bulk(bucket_name, obj_list);
+    error = ds3_bulk(client, request, &response);
+    ds3_free_request(request);
+    handle_error(error);
+    job_id = ds3_str_dup(response->job_id);
+  
+    ds3_free_bulk_response(response);
+    ds3_free_bulk_object_list(obj_list);
+    return job_id;
+}
+
+
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
     uint64_t i, n;
     ds3_request* request = ds3_init_put_bucket(bucket_name);
