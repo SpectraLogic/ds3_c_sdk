@@ -223,19 +223,19 @@ typedef struct {
 typedef struct {
     char*      name;
     ds3_str**  values;
-    uint64_t   num_values
+    uint64_t   num_values;
 }ds3_metadata_entry;
 
 typedef struct {
     ds3_str**  keys;
     uint64_t   num_keys;
-}ds3_metadata_keys;
+}ds3_metadata_keys_result;
 
 typedef struct _ds3_metadata ds3_metadata;
 
 LIBRARY_API ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name);
 LIBRARY_API uint64_t ds3_metadata_size(const ds3_metadata* metadata);
-LIBRARY_API ds3_metadata_keys* ds3_metadata_keys(const ds3_metadata* metadata);
+LIBRARY_API ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata);
 
 LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secret_key);
 LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);

@@ -50,6 +50,10 @@ struct _ds3_request{
     ds3_chunk_ordering chunk_ordering;
 };
 
+struct _ds3_metadata {
+  GHashTable* metadata;
+};
+
 typedef struct {
     char* buff;
     size_t size;
@@ -118,6 +122,22 @@ void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (
     log->log_lvl = log_lvl;
 
     client->log = log;
+}
+
+static ds3_metadata* _init_metadata() {
+
+}
+
+ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name) {
+
+}
+
+uint64_t ds3_metadata_size(const ds3_metadata* metadata) {
+
+}
+
+ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata) {
+
 }
 
 ds3_str* ds3_str_init(const char* string) {
@@ -838,6 +858,10 @@ ds3_request* ds3_init_get_bucket(const char* bucket_name) {
     return (ds3_request*) _common_request_init(HTTP_GET, _build_path("/", bucket_name, NULL));
 }
 
+ds3_request* ds3_init_head_object(const char* bucket_name, const char* object_name) {
+    return (ds3_request*) _common_request_init(HTTP_HEAD, _build_path("/", bucket_name, object_name));
+}
+
 ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, const char* job_id) {
     char buff[21];
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
@@ -1317,8 +1341,16 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     return NULL;
 }
 
+ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** metadata) {
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
+}
+
 ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
     return _internal_request_dispatcher(client, request, user_data, callback, NULL, NULL);
+}
+
+ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** metadata) {
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_put_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*)) {
@@ -2213,6 +2245,10 @@ void ds3_free_request(ds3_request* _request) {
         ds3_str_free(request->md5);
     }
     g_free(request);
+}
+
+void ds3_free_metadata(ds3_metadata* metadata) {
+
 }
 
 void ds3_free_error(ds3_error* error) {
