@@ -324,7 +324,7 @@ static size_t _process_response_body(void* buffer, size_t size, size_t nmemb, vo
     ds3_response_data* response_data = (ds3_response_data*) user_data;
 
     // If we got an error, collect the error body
-    if (response_data->status_code >= 400) {
+    if (response_data->status_code >= 300) {
         return load_buffer(buffer, size, nmemb, response_data->body);
     }
     else { // If we did not get an error, call the user's defined callbacks.
@@ -480,14 +480,16 @@ static char* _net_gen_query_params(GHashTable* query_params) {
 static struct curl_slist* _append_headers(struct curl_slist* header_list, GHashTable* headers_map) {
     GHashTableIter iter;
     gpointer key, value;
+    struct curl_slist* updated_list = header_list;
     g_hash_table_iter_init(&iter, headers_map);
 
     while (g_hash_table_iter_next(&iter, &key, &value)) {
         char* header_value = g_strconcat((char*)key, ": ", (char*)value, NULL);
-        header_list = curl_slist_append(header_list, header_value);
+        fprintf(stderr, "appending header: %s\n", header_value);
+        updated_list = curl_slist_append(updated_list, header_value);
         g_free(header_value);
     }
-    return header_list;
+    return updated_list;
 }
 
 static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t size, void* userp) {
@@ -565,6 +567,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
             curl_easy_setopt(handle, CURLOPT_URL, url);
 
+            curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 0); // explicitly disable
+
             // Setup header collection
             curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, _process_header_line);
             curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response_data);
@@ -617,15 +621,18 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
             date = _generate_date_string();
             date_header = g_strconcat("Date: ", date, NULL);
+            headers = NULL;
 
             if (request->md5 == NULL) {
                 md5_value = "";
             }
             else {
+                char* md5_header;
                 md5_value = request->md5->value;
+                md5_header = g_strconcat("Content-MD5:", md5_value, NULL);
+                headers = curl_slist_append(headers, md5_header);
             }
             signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", md5_value, "");
-            headers = NULL;
             auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
 
             headers = curl_slist_append(headers, auth_header);
@@ -820,7 +827,6 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
   struct _ds3_request* request = (struct _ds3_request*) _request;
   request->md5 = ds3_str_init(md5);
-  _set_header(_request, "Content-MD5", md5);
 }
 
 void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
