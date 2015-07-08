@@ -124,11 +124,34 @@ void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (
     client->log = log;
 }
 
-/*
-static ds3_metadata* _init_metadata() {
+static void _ds3_free_metadata_entry(gpointer pointer) {
+    int i;
+    ds3_str* value;
+    if (pointer == NULL) {
+        return; // do nothing
+    }
 
+    ds3_metadata_entry* entry = (ds3_metadata_entry*) pointer;
+    if (entry->name != NULL) {
+        ds3_str_free(entry->name);
+    }
+    if (entry->values != NULL) {
+        for (i = 0; i < entry->num_values; i++) {
+            value = entry->values[i];
+            if (value != NULL) {
+                ds3_str_free(value);
+            }
+        }
+        g_free(entry->values);
+    }
+    g_free(entry);
 }
 
+static ds3_metadata* _init_metadata(GHashTable* headers) {
+    struct _ds3_metadata* metadata = g_new0(struct _ds3_metadata, 1);
+    metadata->metadata = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_metadata_entry);
+    return (ds3_metadata*) metadata;
+}
 ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name) {
 
 }
@@ -140,7 +163,7 @@ uint64_t ds3_metadata_size(const ds3_metadata* metadata) {
 ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata) {
 
 }
-*/
+
 ds3_str* ds3_str_init(const char* string) {
     size_t size = strlen(string);
     return ds3_str_init_with_size(string, size);

@@ -221,7 +221,7 @@ typedef struct {
 }ds3_error;
 
 typedef struct {
-    char*      name;
+    ds3_str*      name;
     ds3_str**  values;
     uint64_t   num_values;
 }ds3_metadata_entry;
