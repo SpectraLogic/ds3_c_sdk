@@ -165,7 +165,7 @@ typedef struct {
 
 typedef struct {
     ds3_search_object* objects;
-    size_t      num_objects;
+    uint64_t      num_objects;
 }ds3_get_objects_response;
 
 typedef struct {
