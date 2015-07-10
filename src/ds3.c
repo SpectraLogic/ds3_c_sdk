@@ -1196,16 +1196,6 @@ static ds3_search_object* _parse_search_object(xmlDocPtr doc, xmlNodePtr content
     xmlChar* text;
     ds3_search_object* object = g_new0(ds3_search_object, 1);
 
-    object->bucket_id = NULL;
-    object->id = NULL;
-    object->name = NULL;
-    object->last_modified = NULL;
-    object->storage_class = NULL;
-    object->size = 0;
-    object->owner = NULL;
-    object->type = NULL;
-    object->version = NULL;
-
     for(child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "BucketId") == true) {
             text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
@@ -1481,7 +1471,7 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "S3Object") == true) {
-            ds3_search_object* object = _parse_search_object(doc, child_node);
+            ds3_search_object object = *_parse_search_object(doc, child_node);
             g_array_append_val(object_array, object);
         }
         else {

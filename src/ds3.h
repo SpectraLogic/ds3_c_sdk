@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
-#include <inttypes.h>
 
 #ifdef __cplusplus
 extern "C" {
