@@ -255,7 +255,7 @@ LIBRARY_API ds3_request* ds3_init_get_available_chunks(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
-LIBRARY_API ds3_request* ds3_init_get_objects(const char* bucket_name, const char* job_id);
+LIBRARY_API ds3_request* ds3_init_get_objects(const char* bucket_name);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order);
