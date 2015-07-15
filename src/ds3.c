@@ -152,6 +152,7 @@ static ds3_metadata* _init_metadata(GHashTable* headers) {
     metadata->metadata = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_metadata_entry);
     return (ds3_metadata*) metadata;
 }
+
 ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name) {
 
 }
@@ -822,6 +823,7 @@ static void _set_map_value(GHashTable* map, const char* key, const char* value) 
     gpointer escaped_key = (gpointer) _escape_url(key);
     gpointer escaped_value = (gpointer) _escape_url(value);
 
+    //TODO update this to handle multiple values being set for a header field
     g_hash_table_insert(map, escaped_key, escaped_value);
 }
 
@@ -841,6 +843,15 @@ void ds3_client_proxy(ds3_client* client, const char* proxy) {
 
 void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
     _set_query_param(_request, "prefix", prefix);
+}
+
+void ds3_request_set_metadata(ds3_request* _request, const char* name, const char* value) {
+
+    char* prefixed_name = g_strconcat("x-amz-meta-", name, NULL);
+
+    _set_header(_request, prefixed_name, value);
+
+    g_free(prefixed_name);
 }
 
 void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {

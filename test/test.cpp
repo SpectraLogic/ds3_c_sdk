@@ -105,7 +105,7 @@ ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucke
     ds3_free_request(request);
     handle_error(error);
     job_id = ds3_str_dup(response->job_id);
-  
+
     ds3_free_bulk_response(response);
     ds3_free_bulk_object_list(obj_list);
     return job_id;
