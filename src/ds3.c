@@ -546,15 +546,36 @@ static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t 
     return 0;
 }
 
+static char* _canonicalize_amz_headers(GHashTable* headers) {
+    GHashTable* amz_headers = g_hash_table_new(g_str_hash, g_str_equal);
+    GList* keys = g_hash_table_get_keys(headers);
+    GList* key = keys;
+    char* canonicalized_headers;
+
+    while(key != NULL) {
+        if(g_str_has_prefix((char*)key->data, "x-amz")){
+            char* header_key;
+
+        }
+        key = key->next;
+    }
+
+    g_hash_table_destroy(amz_headers);
+    g_list_free(keys);
+    return canonicalized_headers;
+}
+
 static ds3_error* _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*), GHashTable** return_headers) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
     CURL* handle;
     CURLcode res;
-
-    _init_curl();
     char* url;
     int retry_count = 0;
-    char* query_params = _net_gen_query_params(request->query_params);
+    char* query_params;
+
+    _init_curl();
+
+    query_params = _net_gen_query_params(request->query_params);
 
     if (query_params == NULL) {
         url = g_strconcat(client->endpoint->value, request->path->value, NULL);
@@ -568,6 +589,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
         handle = curl_easy_init();
 
         if (handle) {
+            char* amz_headers;
             char* date;
             char* date_header;
             char* signature;
@@ -656,7 +678,10 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 md5_header = g_strconcat("Content-MD5:", md5_value, NULL);
                 headers = curl_slist_append(headers, md5_header);
             }
-            signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", md5_value, "");
+            amz_headers = _canonicalize_amz_headers(request->headers);
+            signature = _net_compute_signature(client->log, client->creds, request->verb, request->path->value, date, "", md5_value, amz_headers);
+
+            g_free(amz_headers);
             auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
 
             headers = curl_slist_append(headers, auth_header);

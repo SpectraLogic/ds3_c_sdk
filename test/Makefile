@@ -64,9 +64,12 @@ get_physical_placement.o:
 negative_tests.o:
 	$(CPP) -c negative_tests.cpp $(CFLAGS)
 
+multimap_tests.o:
+	$(CPP) -c mulitmap_tests.cpp $(CFLAGS)
+
 checksum.o:
 	$(CPP) -c checksum.cpp $(CFLAGS)
-	
+
 ../install/lib/pkgconfig/libds3.pc:
 	$(error SDK not built. Please run make deps)
 
