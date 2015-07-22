@@ -59,6 +59,7 @@ typedef struct {
 typedef enum {
     BULK_PUT,
     BULK_GET,
+    BULK_DELETE,
     GET_PHYSICAL_PLACEMENT
 }object_list_type;
 
@@ -542,7 +543,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
             switch(request->verb) {
                 case HTTP_POST: {
-                    curl_easy_setopt(handle, CURLOPT_POST, 1L);
+                    curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "POST");
                     curl_easy_setopt(handle, CURLOPT_UPLOAD, 1L);
                     curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE, request->length);
                     break;
@@ -867,8 +868,8 @@ ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* ob
     return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name) {
-    return (ds3_request*) _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, object_name));
+ds3_request* ds3_init_delete_objects(const char* bucket_name) {
+    return (ds3_request*) _common_request_init(HTTP_POST, _build_path("/", bucket_name, NULL));
 }
 
 ds3_request* ds3_init_put_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, uint64_t length, const char* job_id) {
@@ -1420,10 +1421,6 @@ ds3_error* ds3_put_object(const ds3_client* client, const ds3_request* request, 
     return _internal_request_dispatcher(client, request, NULL, NULL, user_data, callback);
 }
 
-ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* request) {
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
-}
-
 ds3_error* ds3_put_bucket(const ds3_client* client, const ds3_request* request) {
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
@@ -1813,13 +1810,17 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
     int i;
     // Start creating the xml body to send to the server.
     doc = xmlNewDoc((xmlChar*)"1.0");
-    objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
+    if (list_type == BULK_DELETE) {
+        objects_node = xmlNewNode(NULL, (xmlChar*) "Delete");
+    } else {
+        objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
+    }
 
     if (list_type == BULK_GET) {
         xmlSetProp(objects_node, (xmlChar*) "ChunkClientProcessingOrderGuarantee", (xmlChar*) _get_chunk_order_str(order));
     }
 
-    for(i = 0; i < obj_list->size; i++) {
+    for (i = 0; i < obj_list->size; i++) {
         memset(&obj, 0, sizeof(ds3_bulk_object));
         memset(size_buff, 0, sizeof(char) * LENGTH_BUFF_SIZE);
 
@@ -1829,9 +1830,13 @@ static xmlDocPtr _generate_xml_objects_list(const ds3_bulk_object_list* obj_list
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
 
-        xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name->value);
-        if (list_type == BULK_PUT) {
-            xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff);
+        if (list_type == BULK_DELETE) {
+            xmlNewTextChild(object_node, NULL, (xmlChar*) "Key", (xmlChar*) obj.name->value);
+        } else {
+            xmlSetProp(object_node, (xmlChar*) "Name", (xmlChar*) obj.name->value);
+            if (list_type == BULK_PUT) {
+                xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff);
+            }
         }
     }
 
@@ -1848,6 +1853,56 @@ static object_list_type _bulk_request_type(const struct _ds3_request* request) {
         return BULK_GET;
     }
     return BULK_PUT;
+}
+
+ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _request, ds3_bulk_object_list *bulkObjList) {
+    ds3_error* error_response;
+    int buff_size;
+
+    struct _ds3_request* request;
+    ds3_bulk_object_list* obj_list;
+    ds3_xml_send_buff send_buff;
+
+    GByteArray* xml_blob;
+
+    xmlDocPtr doc;
+    xmlChar* xml_buff;
+
+    request = (struct _ds3_request*) _request;
+    request->object_list = bulkObjList;
+
+    if (request->object_list == NULL || request->object_list->size == 0) {
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
+    }
+
+    // Init the data structures declared above the null check
+    memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
+    obj_list = request->object_list;
+
+    // The chunk ordering is not used.  Just pass in NONE.
+    doc = _generate_xml_objects_list(obj_list, BULK_DELETE, NONE);
+
+    xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
+
+    send_buff.buff = (char*) xml_buff;
+    send_buff.size = strlen(send_buff.buff);
+
+    request->length = send_buff.size; // make sure to set the size of the request.
+
+    xml_blob = g_byte_array_new();
+    char* pathConcat = g_strconcat(request->path->value, "/?delete", NULL);
+    ds3_str* newPath = ds3_str_init(pathConcat);
+    g_free(request->path);
+    request->path = newPath;
+    error_response = _net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    g_free(pathConcat);
+    // Cleanup the data sent to the server.
+    xmlFreeDoc(doc);
+    xmlFree(xml_buff);
+
+    g_byte_array_free(xml_blob, TRUE);
+    return error_response;
 }
 
 ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* _request, ds3_get_physical_placement_response** _response){
