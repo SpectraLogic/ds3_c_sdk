@@ -37,7 +37,7 @@ run: test
 deps:
 	./build_local.sh
 
-test: test.o checksum.o service_tests.o bucket_tests.o job_tests.o bulk_get.o get_physical_placement.o negative_tests.o 
+test: test.o checksum.o service_tests.o bucket_tests.o job_tests.o bulk_get.o get_physical_placement.o negative_tests.o search_tests.o
 	$(CPP) *.o $(CFLAGS) $(LIBS) -o test
 
 test.o: ../install/lib/pkgconfig/libds3.pc
@@ -46,6 +46,9 @@ test.o: ../install/lib/pkgconfig/libds3.pc
 service_tests.o:
 	$(CPP) -c service_tests.cpp $(CFLAGS)
 
+search_tests.o:
+	$(CPP) -c search_tests.cpp $(CFLAGS)
+	
 bucket_tests.o:
 	$(CPP) -c bucket_tests.cpp $(CFLAGS)
 
