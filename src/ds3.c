@@ -546,23 +546,45 @@ static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t 
     return 0;
 }
 
+static gint _gstring_sort(gconstpointer a, gconstpointer b) {
+    GString* val1 = (GString*)a;
+    GString* val2 = (GString*)b;
+
+    return g_strcmp0(val1->str, val2->str);
+}
+
 static char* _canonicalize_amz_headers(GHashTable* headers) {
-    GHashTable* amz_headers = g_hash_table_new(g_str_hash, g_str_equal);
     GList* keys = g_hash_table_get_keys(headers);
     GList* key = keys;
-    char* canonicalized_headers;
+    GString* canonicalized_headers = g_string_new("");
+    GArray *signing_strings = g_array_new(TRUE, TRUE, sizeof(char*));
+    GString* header_signing_value;
+    char* signing_value;
+    int i;
 
     while(key != NULL) {
         if(g_str_has_prefix((char*)key->data, "x-amz")){
-            char* header_key;
+            header_signing_value = g_string_new(key->data);
+            header_signing_value = g_string_append(g_string_ascii_down(header_signing_value), ":");
+            header_signing_value = g_string_append(header_signing_value, g_hash_table_lookup(headers, key->data));
 
+            signing_value = g_string_free(header_signing_value, FALSE);
+            g_array_append_val(signing_strings, signing_value);
         }
         key = key->next;
     }
 
-    g_hash_table_destroy(amz_headers);
+    g_array_sort(signing_strings, _gstring_sort);
+
+    for (i = 0; i < signing_strings->len; i++) {
+        g_string_append(canonicalized_headers, g_array_index(signing_strings, char*, i));
+        g_string_append(canonicalized_headers, "\n");
+    }
+
     g_list_free(keys);
-    return canonicalized_headers;
+    g_array_free(signing_strings, TRUE);
+
+    return g_string_free(canonicalized_headers, FALSE);
 }
 
 static ds3_error* _net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*), GHashTable** return_headers) {
