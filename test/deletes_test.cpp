@@ -32,6 +32,26 @@ BOOST_AUTO_TEST_CASE( delete_objects ) {
     free_client(client);
 }
 
+BOOST_AUTO_TEST_CASE( delete_non_existant_object ) {
+    ds3_client* client = get_client();
+    const char* bucket_name = "delete_objects_test";
+    populate_with_objects(client, bucket_name);
+    ds3_request* request = ds3_init_delete_objects(bucket_name);
+    ds3_bulk_object_list* bulkList = ds3_init_bulk_object_list(1);
+    ds3_bulk_object* bulkObj;
+
+    bulkObj = &bulkList->list[0];
+    bulkObj->name = ds3_str_init("resources/frankenstein.txt");
+
+    ds3_error* error = ds3_delete_objects(client, request, bulkList);
+    clear_bucket(client, bucket_name);
+
+    handle_error(error);
+
+    ds3_free_request(request);
+    free_client(client);
+}
+
 BOOST_AUTO_TEST_CASE( delete_folder ) {
     ds3_client* client = get_client();
     const char* bucket_name = "delete_folder_test";
@@ -44,5 +64,22 @@ BOOST_AUTO_TEST_CASE( delete_folder ) {
     handle_error(error);
 
     ds3_free_request(request);
+    free_client(client);
+}
+
+BOOST_AUTO_TEST_CASE( delete_non_existant_folder ) {
+    ds3_client* client = get_client();
+    const char* bucket_name = "delete_folder_test";
+    populate_with_objects(client, bucket_name);
+    ds3_request* request = ds3_init_delete_folder(bucket_name, "fakeFolder");
+
+    ds3_error* error = ds3_delete_folder(client, request);
+    clear_bucket(client, bucket_name);
+
+    BOOST_CHECK(error!=NULL);
+    BOOST_CHECK(error->error->status_code == 404);
+
+    ds3_free_request(request);
+    ds3_free_error(error);
     free_client(client);
 }
