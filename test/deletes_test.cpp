@@ -28,6 +28,7 @@ BOOST_AUTO_TEST_CASE( delete_objects ) {
 
     handle_error(error);
 
+    ds3_free_bulk_object_list(bulkList);
     ds3_free_request(request);
     free_client(client);
 }
@@ -48,6 +49,7 @@ BOOST_AUTO_TEST_CASE( delete_non_existant_object ) {
 
     handle_error(error);
 
+    ds3_free_bulk_object_list(bulkList);
     ds3_free_request(request);
     free_client(client);
 }

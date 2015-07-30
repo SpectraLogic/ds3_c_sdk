@@ -122,7 +122,7 @@ void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (
 }
 
 ds3_str* ds3_str_init(const char* string) {
-    size_t size = strlen(string);
+    size_t size = strlen(string)+1;
     return ds3_str_init_with_size(string, size);
 }
 
@@ -762,7 +762,7 @@ static void _set_map_value(GHashTable* map, const char* key, const char* value) 
     if(value != NULL) {
         escaped_value = (gpointer) _escape_url(value);
     } else {
-        escaped_value = (gpointer) value;
+        escaped_value = NULL;
     }
     g_hash_table_insert(map, escaped_key, escaped_value);
 
@@ -855,8 +855,8 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
 
     path = ds3_str_init(full_path);
 
-    g_free(full_path);
     g_free(joined_path);
+    g_free(full_path);
 
     if (escaped_bucket_name != NULL) {
         g_free(escaped_bucket_name);
@@ -1496,12 +1496,12 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
         return error;
     }
 
-    object_array = g_array_new(FALSE, TRUE, sizeof(ds3_search_object));
+    object_array = g_array_new(FALSE, TRUE, sizeof(ds3_search_object*));
     response = g_new0(ds3_get_objects_response, 1);
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "S3Object") == true) {
-            ds3_search_object object = *_parse_search_object(doc, child_node);
+            ds3_search_object* object = _parse_search_object(doc, child_node);
             g_array_append_val(object_array, object);
         }
         else {
@@ -1509,9 +1509,10 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
         }
     }
 
-    response->objects = (ds3_search_object*) object_array->data;
+    response->objects = (ds3_search_object**) object_array->data;
     response->num_objects = object_array->len;
     xmlFreeDoc(doc);
+
     g_array_free(object_array, FALSE);
     g_byte_array_free(xml_blob, TRUE);
     *_response = response;
@@ -1907,7 +1908,9 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 
     request = (struct _ds3_request*) _request;
     request->object_list = bulkObjList;
-    request->path = ds3_str_init(g_strconcat(request->path->value, "/", NULL));
+    char* path = g_strconcat(request->path->value, "/", NULL);
+    request->path = ds3_str_init(path);
+    g_free(path);
 
     if (request->object_list == NULL || request->object_list->size == 0) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
@@ -1942,7 +1945,9 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 ds3_error* ds3_delete_folder(const ds3_client* client, const ds3_request* _request) {
     struct _ds3_request* request;
     request = (struct _ds3_request*) _request;
-    request->path = ds3_str_init(g_strconcat(request->path->value, "/", NULL));
+    char* path = g_strconcat(request->path->value, "/", NULL);
+    request->path = ds3_str_init(path);
+    g_free(path);
     return _net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
@@ -2330,17 +2335,18 @@ void ds3_free_objects_response(ds3_get_objects_response* response){
     }
 
     num_objects = response->num_objects;
-
+    ds3_search_object* object;
     for(i = 0; i < num_objects; i++) {
-        ds3_search_object object = response->objects[i];
-        ds3_str_free(object.bucket_id);
-        ds3_str_free(object.id);
-        ds3_str_free(object.name);
-        ds3_str_free(object.storage_class);
-        ds3_str_free(object.last_modified);
-        ds3_str_free(object.type);
-        ds3_str_free(object.version);
-        ds3_free_owner(object.owner);
+        object = response->objects[i];
+        ds3_str_free(object->bucket_id);
+        ds3_str_free(object->id);
+        ds3_str_free(object->name);
+        ds3_str_free(object->storage_class);
+        ds3_str_free(object->last_modified);
+        ds3_str_free(object->type);
+        ds3_str_free(object->version);
+        ds3_free_owner(object->owner);
+        g_free(object);
     }
 
     g_free(response->objects);

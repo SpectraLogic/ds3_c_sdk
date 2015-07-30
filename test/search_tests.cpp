@@ -15,14 +15,14 @@ BOOST_AUTO_TEST_CASE( get_objects ) {
     ds3_request_set_name(request, "%txt%");
 
     ds3_error* error = ds3_get_objects(client, request, &response);
+    clear_bucket(client, bucket_name);
 
     handle_error(error);
     num_objs = response->num_objects;
-	
+    
     BOOST_CHECK_EQUAL(num_objs, 5);
 
     ds3_free_request(request);
     ds3_free_objects_response(response);
-    clear_bucket(client, bucket_name);
     free_client(client);
 }

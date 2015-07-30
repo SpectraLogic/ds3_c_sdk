@@ -163,7 +163,7 @@ typedef struct {
 }ds3_get_bucket_response;
 
 typedef struct {
-    ds3_search_object* objects;
+    ds3_search_object** objects;
     uint64_t      num_objects;
 }ds3_get_objects_response;
 
