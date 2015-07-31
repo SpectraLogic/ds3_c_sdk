@@ -74,14 +74,14 @@ BOOST_AUTO_TEST_CASE( delete_non_existant_folder ) {
     const char* bucket_name = "delete_folder_test";
     populate_with_objects(client, bucket_name);
     ds3_request* request = ds3_init_delete_folder(bucket_name, "fakeFolder");
-
+    
     ds3_error* error = ds3_delete_folder(client, request);
     clear_bucket(client, bucket_name);
 
+    ds3_free_request(request);
+    free_client(client);
+
     BOOST_CHECK(error!=NULL);
     BOOST_CHECK(error->error->status_code == 404);
-
-    ds3_free_request(request);
     ds3_free_error(error);
-    free_client(client);
 }

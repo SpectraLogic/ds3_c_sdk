@@ -899,7 +899,8 @@ ds3_request* ds3_init_delete_objects(const char* bucket_name) {
 }
 
 ds3_request* ds3_init_delete_folder(const char* bucket_name, const char* folder_name) {
-    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/", "folder", folder_name));
+    char* folder = "folder";
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/", folder, folder_name));
     _set_query_param(request, "recursive", NULL);
     _set_query_param(request, "bucketId", bucket_name);
     return (ds3_request*) request;
@@ -997,7 +998,7 @@ ds3_request* ds3_init_delete_job(const char* job_id) {
 }
 
 ds3_request* ds3_init_get_objects(const char* bucket_name) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object/", NULL, NULL));
+    struct _ds3_request* request = _common_request_init(HTTP_GET, ds3_str_init("/_rest_/object/"));
 
     _set_query_param((ds3_request*) request, "bucket_id", bucket_name);
 
