@@ -78,6 +78,10 @@ typedef enum {
     CANCELED
 }ds3_job_status;
 
+typedef enum {
+  DATA, NO_TYPE
+}object_type;
+
 LIBRARY_API ds3_str* ds3_str_init(const char* string);
 LIBRARY_API ds3_str* ds3_str_init_with_size(const char* string, size_t size);
 LIBRARY_API char* ds3_str_value(const ds3_str* string);
@@ -271,7 +275,7 @@ LIBRARY_API void ds3_request_set_max_keys(ds3_request* request, uint32_t max_key
 LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char* md5);
 LIBRARY_API void ds3_request_set_name(ds3_request* request, const char* name);
 LIBRARY_API void ds3_request_set_id(ds3_request* request, const char* id);
-LIBRARY_API void ds3_request_set_type(ds3_request* request, const char* type);
+LIBRARY_API void ds3_request_set_type(ds3_request* request, object_type type);
 LIBRARY_API void ds3_request_set_version(ds3_request* request, const char* version);
 
 
