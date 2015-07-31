@@ -759,7 +759,7 @@ ds3_error* ds3_create_client_from_env(ds3_client** client) {
 static void _set_map_value(GHashTable* map, const char* key, const char* value) {
     gpointer escaped_key = (gpointer) _escape_url(key);
     gpointer escaped_value;
-    if(value != NULL) {
+    if (value != NULL) {
         escaped_value = (gpointer) _escape_url(value);
     } else {
         escaped_value = NULL;
