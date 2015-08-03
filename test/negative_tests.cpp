@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum)
 {
     printf("-----Testing Request With Bad Checksum-------\n");
     uint64_t i, n;
-    const char* bucket_name = "bucket_test_md5";
+    const char* bucket_name = "bucket_test_bad_md5";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     const char* books[] ={"resources/beowulf.txt"};
     ds3_client* client = get_client();

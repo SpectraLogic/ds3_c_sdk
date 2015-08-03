@@ -855,6 +855,7 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
 
     path = ds3_str_init(full_path);
 
+    g_free(full_path);
     g_free(joined_path);
 
     if (escaped_bucket_name != NULL) {
@@ -1908,9 +1909,6 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 
     request = (struct _ds3_request*) _request;
     request->object_list = bulkObjList;
-    char* path = g_strconcat(request->path->value, "/", NULL);
-    request->path = ds3_str_init(path);
-    g_free(path);
 
     if (request->object_list == NULL || request->object_list->size == 0) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");

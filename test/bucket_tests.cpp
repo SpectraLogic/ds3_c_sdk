@@ -111,10 +111,8 @@ BOOST_AUTO_TEST_CASE(marker){
 	
 	ds3_free_bucket_response(response);
 
-    clear_bucket(client, bucket_name);
-    free_client(client);
-	
-	
+  clear_bucket(client, bucket_name);
+  free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE(max_keys)
@@ -208,8 +206,3 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-
-
-
-
-
