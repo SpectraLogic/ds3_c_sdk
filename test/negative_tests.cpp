@@ -289,6 +289,8 @@ BOOST_AUTO_TEST_CASE(get_non_existing_job) {
     free_client(client);
 }
 
+/* TODO uncomment this when using the latest simulator
+
 BOOST_AUTO_TEST_CASE(bad_checksum) {
     printf("-----Testing Request With Bad Checksum-------\n");
     uint64_t i, n;
@@ -348,3 +350,5 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
+
+*/

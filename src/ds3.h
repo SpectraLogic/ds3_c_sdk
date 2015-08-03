@@ -221,9 +221,9 @@ typedef struct {
 }ds3_error;
 
 typedef struct {
-    ds3_str*      name;
-    ds3_str**  values;
-    uint64_t   num_values;
+    ds3_str*    name;
+    ds3_str**   values;
+    uint64_t    num_values;
 }ds3_metadata_entry;
 
 typedef struct {
@@ -234,7 +234,7 @@ typedef struct {
 typedef struct _ds3_metadata ds3_metadata;
 
 LIBRARY_API ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name);
-LIBRARY_API uint64_t ds3_metadata_size(const ds3_metadata* metadata);
+LIBRARY_API unsigned int ds3_metadata_size(const ds3_metadata* metadata);
 LIBRARY_API ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata);
 
 LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secret_key);
@@ -301,6 +301,7 @@ LIBRARY_API void ds3_free_creds(ds3_creds* client);
 LIBRARY_API void ds3_free_client(ds3_client* client);
 LIBRARY_API void ds3_free_request(ds3_request* request);
 LIBRARY_API void ds3_free_metadata(ds3_metadata* metadata);
+LIBRARY_API void ds3_free_metadata_entry(ds3_metadata_entry* metadata_entry);
 LIBRARY_API void ds3_cleanup(void);
 
 LIBRARY_API void ds3_print_request(const ds3_request* request);

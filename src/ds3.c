@@ -81,7 +81,7 @@ typedef struct {
 
 typedef struct {
     ds3_str* key;
-    GPtrArray* values;
+    GPtrArray* values; // A ds3_str list of the header values
 }ds3_response_header;
 
 static void LOG(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...) {
@@ -125,44 +125,137 @@ void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (
 }
 
 static void _ds3_free_metadata_entry(gpointer pointer) {
-    int i;
-    ds3_str* value;
+    ds3_metadata_entry* entry;
     if (pointer == NULL) {
         return; // do nothing
     }
 
-    ds3_metadata_entry* entry = (ds3_metadata_entry*) pointer;
-    if (entry->name != NULL) {
-        ds3_str_free(entry->name);
-    }
-    if (entry->values != NULL) {
-        for (i = 0; i < entry->num_values; i++) {
-            value = entry->values[i];
-            if (value != NULL) {
-                ds3_str_free(value);
-            }
-        }
-        g_free(entry->values);
-    }
-    g_free(entry);
+    entry = (ds3_metadata_entry*) pointer;
+
+    ds3_free_metadata_entry(entry);
 }
 
-static ds3_metadata* _init_metadata(GHashTable* headers) {
+/*
+ * This copies all the header values in the ds3_response_header struct so that they may be safely returned to the user
+ * without having to worry about if the data is freed internally.
+ */
+static ds3_metadata_entry* ds3_metadata_entry_init(ds3_response_header* header) {
+    uint i;
+    ds3_str* header_value;
+    GPtrArray* values = g_ptr_array_new();
+    ds3_str* key_name;
+    ds3_metadata_entry* response = g_new0(ds3_metadata_entry, 1);
+
+    for (i = 0; i < header->values->len; i++) {
+        header_value = g_ptr_array_index(header->values, i);
+        g_ptr_array_add(values, ds3_str_dup(header_value));
+    }
+
+    key_name = ds3_str_init(header->key->value + 11);
+
+    response->num_values = values->len;
+    response->name = key_name;
+    response->values = (ds3_str**) g_ptr_array_free(values, FALSE);
+    fprintf(stderr, "creating metadata entry of: %s\n", key_name->value);
+    return response;
+}
+
+/* The headers hash table contains all the response headers which have the following types:
+ * Key - char*
+ * Value - ds3_response_header
+ *
+ * All values should be copied from the struct to avoid memory issues
+ */
+static ds3_metadata* _init_metadata(GHashTable* response_headers) {
     struct _ds3_metadata* metadata = g_new0(struct _ds3_metadata, 1);
+    GHashTableIter iter;
+    gpointer _key, _value;
+    char* key;
+    ds3_response_header* header;
+    ds3_metadata_entry* entry;
     metadata->metadata = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_metadata_entry);
+
+    if (response_headers == NULL) {
+        fprintf(stderr, "response headers was null\n");
+    }
+
+    g_hash_table_iter_init(&iter, response_headers);
+
+    while(g_hash_table_iter_next(&iter, &_key, &_value)) {
+        key = (char*) _key;
+        header = (ds3_response_header*) _value;
+        if (g_str_has_prefix(key, "x-amz-meta-")) {
+            entry = ds3_metadata_entry_init(header);
+            g_hash_table_insert(metadata->metadata, g_strdup(entry->name->value), entry);
+        }
+    }
+
     return (ds3_metadata*) metadata;
 }
 
-ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name) {
+ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* _metadata, const char* name) {
+    ds3_metadata_entry* copy;
+    ds3_metadata_entry* orig;
+    ds3_str** metadata_copy;
+    uint64_t i;
+    struct _ds3_metadata* metadata = (struct _ds3_metadata*) _metadata;
 
+    if (_metadata == NULL) {
+        return NULL;
+    }
+
+    orig = (ds3_metadata_entry*) g_hash_table_lookup(metadata->metadata, name);
+    if (orig == NULL) {
+        return NULL;
+    }
+    copy = g_new0(ds3_metadata_entry, 1);
+    metadata_copy = g_new0(ds3_str*, orig->num_values);
+
+    for(i = 0; i < orig->num_values; i++) {
+        metadata_copy[i] = ds3_str_dup(orig->values[i]);
+    }
+
+    copy->num_values = orig->num_values;
+    copy->name = ds3_str_dup(orig->name);
+    copy->values = metadata_copy;
+
+    return copy;
 }
 
-uint64_t ds3_metadata_size(const ds3_metadata* metadata) {
-
+unsigned int ds3_metadata_size(const ds3_metadata* _metadata) {
+    struct _ds3_metadata* metadata = (struct _ds3_metadata*) _metadata;
+    if (metadata == NULL) {
+        return 0;
+    }
+    return g_hash_table_size(metadata->metadata);
 }
 
-ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata) {
+ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* _metadata) {
+    GPtrArray* return_keys;
+    ds3_metadata_keys_result* result;
+    struct _ds3_metadata* metadata;
+    GList* keys;
+    GList* tmp_key;
 
+    if (_metadata == NULL) {
+        return NULL;
+    }
+
+    return_keys = g_ptr_array_new();
+    result = g_new0(ds3_metadata_keys_result, 1);
+    metadata = (struct _ds3_metadata*) _metadata;
+    keys = g_hash_table_get_keys(metadata->metadata);
+    tmp_key = keys;
+
+    while(tmp_key != NULL) {
+        g_ptr_array_add(return_keys, ds3_str_init(tmp_key->data));
+        tmp_key = tmp_key->next;
+    }
+
+    g_list_free(keys);
+    result->num_keys = return_keys->len;
+    result->keys = (ds3_str**) g_ptr_array_free(return_keys, FALSE);
+    return result;
 }
 
 ds3_str* ds3_str_init(const char* string) {
@@ -234,7 +327,7 @@ static void _insert_header(GHashTable* headers, const ds3_str* key, const ds3_st
 
     if (header == NULL) {
         header = _ds3_init_response_header(key);
-        g_hash_table_insert(headers, key->value, header);
+        g_hash_table_insert(headers, g_strdup(key->value), header);
     }
 
     g_ptr_array_add(header->values, ds3_str_dup(value));
@@ -509,7 +602,6 @@ static struct curl_slist* _append_headers(struct curl_slist* header_list, GHashT
 
     while (g_hash_table_iter_next(&iter, &key, &value)) {
         char* header_value = g_strconcat((char*)key, ": ", (char*)value, NULL);
-        fprintf(stderr, "appending header: %s\n", header_value);
         updated_list = curl_slist_append(updated_list, header_value);
         g_free(header_value);
     }
@@ -619,7 +711,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             char* auth_header;
             char* md5_value;
             ds3_response_data response_data;
-            GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, _ds3_free_response_header);
+            GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_response_header);
 
             LOG(client->log, DS3_DEBUG, "Preparing to send request");
 
@@ -679,6 +771,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 }
                 case HTTP_HEAD: {
                     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
+                    curl_easy_setopt(handle, CURLOPT_NOBODY, 1L);
                     break;
                 }
                 case HTTP_GET: {
@@ -1456,8 +1549,21 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     return NULL;
 }
 
-ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** metadata) {
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
+ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
+    ds3_error* error;
+    GHashTable* return_headers;
+    ds3_metadata* metadata;
+
+    error = _net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
+
+    if (error == NULL) {
+        fprintf(stderr, "Head object completed successfully\n");
+        metadata = _init_metadata(return_headers);
+        *_metadata = metadata;
+        g_hash_table_destroy(return_headers);
+    }
+
+    return error;
 }
 
 ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
@@ -2357,8 +2463,17 @@ void ds3_free_request(ds3_request* _request) {
     g_free(request);
 }
 
-void ds3_free_metadata(ds3_metadata* metadata) {
+void ds3_free_metadata(ds3_metadata* _metadata) {
+    struct _ds3_metadata* metadata;
+    if (_metadata == NULL) return;
 
+    metadata = (struct _ds3_metadata*) _metadata;
+
+    if (metadata->metadata == NULL) return;
+
+    g_hash_table_destroy(metadata->metadata);
+
+    g_free(metadata);
 }
 
 void ds3_free_error(ds3_error* error) {
@@ -2533,4 +2648,22 @@ void ds3_free_available_chunks_response(ds3_get_available_chunks_response* respo
     }
 
     g_free(response);
+}
+
+void ds3_free_metadata_entry(ds3_metadata_entry* entry) {
+  int i;
+  ds3_str* value;
+    if (entry->name != NULL) {
+        ds3_str_free(entry->name);
+    }
+    if (entry->values != NULL) {
+        for (i = 0; i < entry->num_values; i++) {
+            value = entry->values[i];
+            if (value != NULL) {
+                ds3_str_free(value);
+            }
+        }
+        g_free(entry->values);
+    }
+    g_free(entry);
 }
