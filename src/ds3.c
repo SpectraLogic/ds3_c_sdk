@@ -809,7 +809,9 @@ void ds3_request_set_id(ds3_request* _request, const char* id) {
 
 void ds3_request_set_type(ds3_request* _request, object_type type) {
     char* type_as_string = _get_object_type(type);
-    _set_query_param(_request, "type", type_as_string);
+    if(type_as_string != NULL) {
+        _set_query_param(_request, "type", type_as_string);
+    }
     g_free(type_as_string);
 }
 
