@@ -1479,12 +1479,12 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
         return error;
     }
 
-    object_array = g_array_new(FALSE, TRUE, sizeof(ds3_search_object));
+    object_array = g_array_new(FALSE, TRUE, sizeof(ds3_search_object*));
     response = g_new0(ds3_get_objects_response, 1);
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "S3Object") == true) {
-            ds3_search_object object = *_parse_search_object(doc, child_node);
+            ds3_search_object* object = _parse_search_object(doc, child_node);
             g_array_append_val(object_array, object);
         }
         else {
@@ -1492,7 +1492,7 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
         }
     }
 
-    response->objects = (ds3_search_object*) object_array->data;
+    response->objects = (ds3_search_object**) object_array->data;
     response->num_objects = object_array->len;
     xmlFreeDoc(doc);
     g_array_free(object_array, FALSE);
@@ -2249,15 +2249,16 @@ void ds3_free_objects_response(ds3_get_objects_response* response){
     num_objects = response->num_objects;
 
     for(i = 0; i < num_objects; i++) {
-        ds3_search_object object = response->objects[i];
-        ds3_str_free(object.bucket_id);
-        ds3_str_free(object.id);
-        ds3_str_free(object.name);
-        ds3_str_free(object.storage_class);
-        ds3_str_free(object.last_modified);
-        ds3_str_free(object.type);
-        ds3_str_free(object.version);
-        ds3_free_owner(object.owner);
+        ds3_search_object* object = response->objects[i];
+        ds3_str_free(object->bucket_id);
+        ds3_str_free(object->id);
+        ds3_str_free(object->name);
+        ds3_str_free(object->storage_class);
+        ds3_str_free(object->last_modified);
+        ds3_str_free(object->type);
+        ds3_str_free(object->version);
+        ds3_free_owner(object->owner);
+        g_free(object);
     }
 
     g_free(response->objects);
