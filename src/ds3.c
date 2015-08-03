@@ -122,7 +122,7 @@ void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (
 }
 
 ds3_str* ds3_str_init(const char* string) {
-    size_t size = strlen(string)+1;
+    size_t size = strlen(string);
     return ds3_str_init_with_size(string, size);
 }
 
@@ -856,7 +856,6 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     path = ds3_str_init(full_path);
 
     g_free(joined_path);
-    g_free(full_path);
 
     if (escaped_bucket_name != NULL) {
         g_free(escaped_bucket_name);
@@ -1946,9 +1945,6 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 ds3_error* ds3_delete_folder(const ds3_client* client, const ds3_request* _request) {
     struct _ds3_request* request;
     request = (struct _ds3_request*) _request;
-    char* path = g_strconcat(request->path->value, "/", NULL);
-    request->path = ds3_str_init(path);
-    g_free(path);
     return _net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
