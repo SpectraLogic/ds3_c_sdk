@@ -102,7 +102,6 @@ BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     ds3_request* request = ds3_init_get_objects(bucket_name);
     ds3_request_set_name(request, "%resources%");
     ds3_error* error = ds3_get_objects(client, request, &response);
-    clear_bucket(client, bucket_name);
 
     handle_error(error);
     num_objs = response->num_objects;

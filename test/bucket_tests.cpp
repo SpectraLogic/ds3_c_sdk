@@ -169,8 +169,6 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
     ds3_free_request(request);
     handle_error(error);
 
- 
-
     for (n = 0; n < response->list_size; n ++) {
 
       request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
