@@ -309,6 +309,15 @@ static char* _net_get_verb(http_verb verb) {
     return NULL;
 }
 
+static char* _get_object_type(object_type type) {
+    switch(type) {
+        case DATA: return "DATA";
+        case NO_TYPE: return NULL;
+    }
+
+    return NULL;
+}
+
 // curl_easy_escape'd strings must be freed using curl_free.  Copy
 // the escaped string, using glib, since users of this function will
 // eventually wind up freeing it with g_free.
@@ -819,8 +828,12 @@ void ds3_request_set_id(ds3_request* _request, const char* id) {
     _set_query_param(_request, "id", id);
 }
 
-void ds3_request_set_type(ds3_request* _request, const char* type) {
-    _set_query_param(_request, "type", type);
+void ds3_request_set_type(ds3_request* _request, object_type type) {
+    char* type_as_string = _get_object_type(type);
+    if(type_as_string != NULL) {
+        _set_query_param(_request, "type", type_as_string);
+    }
+    g_free(type_as_string);
 }
 
 void ds3_request_set_version(ds3_request* _request, const char* version) {
@@ -1502,6 +1515,7 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "S3Object") == true) {
+
             ds3_search_object* object = _parse_search_object(doc, child_node);
             g_array_append_val(object_array, object);
         }
