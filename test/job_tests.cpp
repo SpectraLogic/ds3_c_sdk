@@ -52,26 +52,26 @@ BOOST_AUTO_TEST_CASE(get_job){
 }
 
 BOOST_AUTO_TEST_CASE(delete_job){
-	ds3_request* request;
-	ds3_error* error;
-	ds3_bulk_response* bulk_response = NULL;
-	ds3_client* client = get_client();
+    ds3_request* request;
+    ds3_error* error;
+    ds3_bulk_response* bulk_response = NULL;
+    ds3_client* client = get_client();
 
-	const char* bucket_name = "bucket_test_delete_job";
+    const char* bucket_name = "bucket_test_delete_job";
 
-	ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
-	request = ds3_init_delete_job(job_id->value);
-	error = ds3_delete_job(client,request);
-	handle_error(error);
+    ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
+    request = ds3_init_delete_job(job_id->value);
+    error = ds3_delete_job(client,request);
+    handle_error(error);
     ds3_free_request(request);
 
-	request = ds3_init_get_job(job_id->value);
+    request = ds3_init_get_job(job_id->value);
     error = ds3_get_job(client, request, &bulk_response);
-	handle_error(error);
+    handle_error(error);
 
-	BOOST_CHECK(bulk_response->status==CANCELED);
-	ds3_free_request(request);
-	ds3_free_bulk_response(bulk_response);
+    BOOST_CHECK(bulk_response->status==CANCELED);
+    ds3_free_request(request);
+    ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
     ds3_str_free(job_id);
