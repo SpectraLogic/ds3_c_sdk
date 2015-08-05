@@ -2035,6 +2035,13 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
                 else if(attribute_equal(attribute, "CachedSizeInBytes") == true) {
                     job.cached_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
                 }
+                else if(attribute_equal(attribute, "ChunkClientProcessingOrderGuarantee") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.chunk_order = _match_chunk_order(log, text);
+                }
                 else if(attribute_equal(attribute, "CompletedSizeInBytes") == true) {
                     job.completed_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
                 }
@@ -2105,6 +2112,14 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
                     job.user_name = ds3_str_init((const char*) text);
                     xmlFree(text);
                 }
+                else if(attribute_equal(attribute, "WriteOptimization") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.write_optimization = _match_write_optimization(log, text);
+                    xmlFree(text);
+                }
                 else {
                     LOG(log, DS3_ERROR, "Unknown attribute: (%s)", attribute->name);
                 }
@@ -2143,6 +2158,8 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
         return error;
     }
 
+    printf("%s", xml_blob->data);
+    
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (doc == NULL) {

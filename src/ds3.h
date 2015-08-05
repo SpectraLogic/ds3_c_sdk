@@ -169,6 +169,7 @@ typedef struct {
 typedef struct {
     ds3_str*                bucket_name;
     uint64_t                cached_size_in_bytes;
+    ds3_chunk_ordering      chunk_order;
     uint64_t                completed_size_in_bytes;
     ds3_str*                job_id;
     uint64_t                original_size_in_bytes;
@@ -179,6 +180,7 @@ typedef struct {
     ds3_job_status          status;
     ds3_str*                user_id;
     ds3_str*                user_name;
+    ds3_write_optimization  write_optimization;
 }ds3_job;
 
 typedef struct {
