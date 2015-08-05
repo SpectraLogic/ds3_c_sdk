@@ -111,10 +111,8 @@ BOOST_AUTO_TEST_CASE(marker){
 	
 	ds3_free_bucket_response(response);
 
-    clear_bucket(client, bucket_name);
-    free_client(client);
-	
-	
+  clear_bucket(client, bucket_name);
+  free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE(max_keys)
@@ -171,8 +169,6 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
     ds3_free_request(request);
     handle_error(error);
 
- 
-
     for (n = 0; n < response->list_size; n ++) {
 
       request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
@@ -208,8 +204,3 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-
-
-
-
-

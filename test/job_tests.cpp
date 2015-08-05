@@ -6,18 +6,18 @@
 
 
 BOOST_AUTO_TEST_CASE(get_job){
-	ds3_request* request;
-	ds3_error* error;
-	ds3_get_bucket_response* response = NULL;
-	ds3_bulk_response* bulk_response = NULL;
-	ds3_bulk_response* response_get = NULL;
-	ds3_client* client = get_client();
-	ds3_bulk_object_list* object_list = NULL;
-	const char* bucket_name = "bucket_test_get_job";
-	
-	populate_with_objects(client, bucket_name);
-	
-	request = ds3_init_get_bucket(bucket_name);
+    ds3_request* request;
+    ds3_error* error;
+    ds3_get_bucket_response* response = NULL;
+    ds3_bulk_response* bulk_response = NULL;
+    ds3_bulk_response* response_get = NULL;
+    ds3_client* client = get_client();
+    ds3_bulk_object_list* object_list = NULL;
+    const char* bucket_name = "bucket_test_get_job";
+    
+    populate_with_objects(client, bucket_name);
+    
+    request = ds3_init_get_bucket(bucket_name);
     error = ds3_get_bucket(client, request, &response);
 
     ds3_free_request(request);
