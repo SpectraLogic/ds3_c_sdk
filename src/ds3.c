@@ -919,6 +919,13 @@ ds3_request* ds3_init_get_available_chunks(const char* job_id) {
     return (ds3_request*) request;
 }
 
+ds3_request* ds3_init_get_jobs(void){
+    ds3_str* path_str = ds3_str_init("/_rest_/job");
+    struct _ds3_request* request = _common_request_init(HTTP_GET, path_str);
+
+    return (ds3_request*) request;
+}
+
 ds3_request* ds3_init_get_job(const char* job_id) {
     char* path = g_strconcat("/_rest_/job/", job_id, NULL);
     ds3_str* path_str = ds3_str_init(path);
@@ -1988,6 +1995,170 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
         g_hash_table_destroy(response_headers);
     }
     *response = ds3_response;
+    return NULL;
+}
+
+static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jobs_response** _response){
+    struct _xmlAttr* attribute;
+    xmlChar* text;
+    xmlNodePtr root, child_node;
+    ds3_get_jobs_response* response;
+    GArray* jobs_array = g_array_new(FALSE, TRUE, sizeof(ds3_job));
+
+    root = xmlDocGetRootElement(doc);
+
+    if(element_equal(root, "Jobs") == false) {
+        char* message = g_strconcat("Expected the root element to be 'Jobs'.  The actual response is: ", root->name, NULL);
+        xmlFreeDoc(doc);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    response = g_new0(ds3_get_jobs_response, 1);
+
+
+    for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if(element_equal(child_node, "Job") == true) {
+            ds3_job job;
+            memset(&job, 0, sizeof(ds3_job));
+
+            for(attribute = child_node->properties; attribute != NULL; attribute = attribute->next) {
+                if(attribute_equal(attribute, "BucketName") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.bucket_name = ds3_str_init((const char*) text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "CachedSizeInBytes") == true) {
+                    job.cached_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+                }
+                else if(attribute_equal(attribute, "CompletedSizeInBytes") == true) {
+                    job.completed_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+                }
+                else if(attribute_equal(attribute, "JobId") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.job_id = ds3_str_init((const char*) text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "OriginalSizeInBytes") == true) {
+                    job.original_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+                }
+                else if(attribute_equal(attribute, "Priority") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.priority = _match_priority(log, text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "ProcessChunksInOrder") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.process_chunks_in_order = xml_get_bool_from_attribute(log, doc, attribute);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "RequestType") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.request_type = _match_request_type(log, text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "StartDate") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.start_date = ds3_str_init((const char*) text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "Status") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.status = _match_job_status(log, text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "UserId") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.user_id = ds3_str_init((const char*) text);
+                    xmlFree(text);
+                }
+                else if(attribute_equal(attribute, "UserName") == true) {
+                    text = xmlNodeListGetString(doc, attribute->children, 1);
+                    if(text == NULL) {
+                        continue;
+                    }
+                    job.user_name = ds3_str_init((const char*) text);
+                    xmlFree(text);
+                }
+                else {
+                    LOG(log, DS3_ERROR, "Unknown attribute: (%s)", attribute->name);
+                }
+            }
+
+            g_array_append_val(jobs_array, response->jobs);
+        }
+        else{
+            // Invalid XML block
+            LOG(log, DS3_ERROR, "Unknown child node: (%s)", child_node->name);
+        }
+    }
+
+    response->num_jobs = jobs_array->len;
+    response->jobs = (ds3_job*)jobs_array->data;
+    g_array_free(jobs_array, FALSE);
+
+    *_response = response;
+    return NULL;
+}
+
+ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds3_get_jobs_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
+    ds3_get_jobs_response* get_jobs_response;
+    GHashTable* response_headers = NULL;
+    xmlDocPtr doc;
+
+    error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+
+    if (error != NULL) {
+        if (response_headers != NULL) {
+            g_hash_table_destroy(response_headers);
+        }
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    // Start processing the data that was received back.
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        g_hash_table_destroy(response_headers);
+        return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "Unexpected empty response body.");
+    }
+
+    _parse_jobs_list(client->log, doc, &get_jobs_response);
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    if (response_headers != NULL) {
+        g_hash_table_destroy(response_headers);
+    }
+    *response = get_jobs_response;
     return NULL;
 }
 

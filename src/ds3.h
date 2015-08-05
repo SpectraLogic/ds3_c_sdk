@@ -169,6 +169,26 @@ typedef struct {
 typedef struct {
     ds3_str*                bucket_name;
     uint64_t                cached_size_in_bytes;
+    uint64_t                completed_size_in_bytes;
+    ds3_str*                job_id;
+    uint64_t                original_size_in_bytes;
+    ds3_job_priority        priority;
+    ds3_bool                process_chunks_in_order;
+    ds3_job_request_type    request_type;
+    ds3_str*                start_date;
+    ds3_job_status          status;
+    ds3_str*                user_id;
+    ds3_str*                user_name;
+}ds3_job;
+
+typedef struct {
+    ds3_job* jobs;
+    size_t   num_jobs;
+}ds3_get_jobs_response;
+
+typedef struct {
+    ds3_str*                bucket_name;
+    uint64_t                cached_size_in_bytes;
     ds3_chunk_ordering      chunk_order;
     uint64_t                completed_size_in_bytes;
     ds3_str*                job_id;
@@ -234,6 +254,7 @@ LIBRARY_API ds3_request* ds3_init_delete_bucket(const char* bucket_name);
 LIBRARY_API ds3_request* ds3_init_delete_object(const char* bucket_name, const char* object_name);
 LIBRARY_API ds3_request* ds3_init_allocate_chunk(const char* chunk_id);
 LIBRARY_API ds3_request* ds3_init_get_available_chunks(const char* job_id);
+LIBRARY_API ds3_request* ds3_init_get_jobs(void);
 LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
@@ -264,6 +285,7 @@ LIBRARY_API ds3_error* ds3_delete_bucket(const ds3_client* client, const ds3_req
 LIBRARY_API ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*));
 LIBRARY_API ds3_error* ds3_put_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*));
 LIBRARY_API ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* request);
+LIBRARY_API ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds3_get_jobs_response** response);
 LIBRARY_API ds3_error* ds3_get_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
 LIBRARY_API ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
 LIBRARY_API ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request);
