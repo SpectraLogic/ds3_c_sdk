@@ -143,8 +143,6 @@ BOOST_AUTO_TEST_CASE(max_keys) {
     free_client(client);
 }
 
-/* TODO uncomment with latest sim
-
 BOOST_AUTO_TEST_CASE(md5_checksum) {
   	uint64_t i, n;
 	  const char* bucket_name = "bucket_test_md5";
@@ -203,5 +201,3 @@ BOOST_AUTO_TEST_CASE(md5_checksum) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-
-*/
