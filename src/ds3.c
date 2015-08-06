@@ -295,6 +295,8 @@ void ds3_str_free(ds3_str* string) {
     g_free(string);
 }
 
+/* This is used to free the entires in the values ptr array in the ds3_response_header
+ */
 static void _ds3_internal_str_free(gpointer data) {
     ds3_str_free((ds3_str*)data);
 }
@@ -307,7 +309,7 @@ static void _ds3_free_response_header(gpointer data) {
 
     header = (ds3_response_header*) data;
     ds3_str_free(header->key);
-    g_ptr_array_unref(header->values);
+    g_ptr_array_free(header->values, TRUE);
     g_free(data);
 }
 
@@ -431,6 +433,8 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
 
         _insert_header(headers, header_key, header_value);
 
+        ds3_str_free(header_key);
+        ds3_str_free(header_value);
         g_strfreev(split_result);
     }
     response_data->header_count++;
@@ -652,17 +656,17 @@ static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t 
 }
 
 static gint _gstring_sort(gconstpointer a, gconstpointer b) {
-    GString* val1 = (GString*)a;
-    GString* val2 = (GString*)b;
+    char* val1 = (char*)a;
+    char* val2 = (char*)b;
 
-    return g_strcmp0(val1->str, val2->str);
+    return g_strcmp0(val1, val2);
 }
 
 static char* _canonicalize_amz_headers(GHashTable* headers) {
     GList* keys = g_hash_table_get_keys(headers);
     GList* key = keys;
     GString* canonicalized_headers = g_string_new("");
-    GArray *signing_strings = g_array_new(TRUE, TRUE, sizeof(char*));
+    GPtrArray *signing_strings = g_ptr_array_new_with_free_func(_ds3_internal_str_free);
     GString* header_signing_value;
     char* signing_value;
     int i;
@@ -674,20 +678,20 @@ static char* _canonicalize_amz_headers(GHashTable* headers) {
             header_signing_value = g_string_append(header_signing_value, g_hash_table_lookup(headers, key->data));
 
             signing_value = g_string_free(header_signing_value, FALSE);
-            g_array_append_val(signing_strings, signing_value);
+            g_ptr_array_add(signing_strings, signing_value);
         }
         key = key->next;
     }
 
-    g_array_sort(signing_strings, _gstring_sort);
+    g_ptr_array_sort(signing_strings, _gstring_sort);
 
     for (i = 0; i < signing_strings->len; i++) {
-        g_string_append(canonicalized_headers, g_array_index(signing_strings, char*, i));
+        g_string_append(canonicalized_headers, g_ptr_array_index(signing_strings, i));
         g_string_append(canonicalized_headers, "\n");
     }
 
     g_list_free(keys);
-    g_array_free(signing_strings, TRUE);
+    g_ptr_array_free(signing_strings, TRUE);
 
     return g_string_free(canonicalized_headers, FALSE);
 }
@@ -814,15 +818,15 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 md5_value = request->md5->value;
                 md5_header = g_strconcat("Content-MD5:", md5_value, NULL);
                 headers = curl_slist_append(headers, md5_header);
+                g_free(md5_header);
             }
             amz_headers = _canonicalize_amz_headers(request->headers);
             canonicalized_resource = _canonicalized_resource(request->path, request->query_params);
-            signature = _net_compute_signature(client->log, client->creds, request->verb, canonicalized_resource, date, "", md5_value, amz_headers); 
+            signature = _net_compute_signature(client->log, client->creds, request->verb, canonicalized_resource, date, "", md5_value, amz_headers);
 
             g_free(amz_headers);
             g_free(canonicalized_resource);
 
-            headers = NULL;
             auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
 
             headers = curl_slist_append(headers, auth_header);

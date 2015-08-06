@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(md5_checksum) {
           FILE* file = fopen(bulk_object.name->value, "r");
 
           request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
-          ds3_request_set_md5(request,"0bfc07b888d354413cfb662651a0ad8d");
+          ds3_request_set_md5(request,"rCu751L6xhB5zyL+soa3fg==");
 
           if (bulk_object.offset > 0) {
               fseek(file, bulk_object.offset, SEEK_SET);
