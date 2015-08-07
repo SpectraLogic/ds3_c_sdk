@@ -1338,12 +1338,10 @@ ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* reques
 }
 
 ds3_error* ds3_put_bucket(const ds3_client* client, const ds3_request* request) {
-    printf("PUT bucket [%s] \n", (char*)request->path->value);
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_delete_bucket(const ds3_client* client, const ds3_request* request) {
-    printf("DELETE bucket [%s] \n", (char*)request->path->value);
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
