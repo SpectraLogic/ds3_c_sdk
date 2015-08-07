@@ -269,7 +269,6 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job){
 	ds3_str_free(job_id);
     clear_bucket(client, bucket_name);
     free_client(client);
-	
 }
 
 BOOST_AUTO_TEST_CASE(get_non_existing_job){
@@ -289,11 +288,12 @@ BOOST_AUTO_TEST_CASE(get_non_existing_job){
 	free_client(client);
 }
 
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES( bad_checksum, 1 )
 BOOST_AUTO_TEST_CASE(bad_checksum)
 {
     printf("-----Testing Request With Bad Checksum-------\n");
     uint64_t i, n;
-    const char* bucket_name = "bucket_test_md5";
+    const char* bucket_name = "bucket_negative_test_md5";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     const char* books[] ={"resources/beowulf.txt"};
     ds3_client* client = get_client();
@@ -311,16 +311,11 @@ BOOST_AUTO_TEST_CASE(bad_checksum)
     ds3_free_request(request);
     handle_error(error);
 
- 
 
     for (n = 0; n < response->list_size; n ++) {
-
       request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
-
       error = ds3_allocate_chunk(client, request, &chunk_response);
-
       ds3_free_request(request);
-
       handle_error(error);
 
       BOOST_REQUIRE(chunk_response->retry_after == 0);
@@ -331,15 +326,15 @@ BOOST_AUTO_TEST_CASE(bad_checksum)
 
           request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
           ds3_request_set_md5(request,"a%4sgh");
-         
+
           if (bulk_object.offset > 0) {
               fseek(file, bulk_object.offset, SEEK_SET);
           }
-        
+
           error = ds3_put_object(client, request, file, ds3_read_from_file);
           ds3_free_request(request);
           fclose(file);
-          BOOST_REQUIRE(error != NULL);         
+          BOOST_REQUIRE(error != NULL);
 		  BOOST_CHECK(error->error->status_code == 403);
 		  BOOST_CHECK(strcmp(error->error->status_message->value ,"Forbidden")==0);
           ds3_free_error(error);

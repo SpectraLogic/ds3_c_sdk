@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "ds3.h"
+#include "../src/ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     num_tapes = get_physical_placement_response->num_tapes;
     BOOST_CHECK_EQUAL(num_tapes, 0);
 
-    ds3_free_get_phsyical_placement_response(get_physical_placement_response);
+    ds3_free_get_physical_placement_response(get_physical_placement_response);
     clear_bucket(client, bucket_name);
     free_client(client);
 }

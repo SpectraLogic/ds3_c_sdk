@@ -174,28 +174,6 @@ typedef struct {
     ds3_str*                job_id;
     uint64_t                original_size_in_bytes;
     ds3_job_priority        priority;
-    ds3_bool                process_chunks_in_order;
-    ds3_job_request_type    request_type;
-    ds3_str*                start_date;
-    ds3_job_status          status;
-    ds3_str*                user_id;
-    ds3_str*                user_name;
-    ds3_write_optimization  write_optimization;
-}ds3_job;
-
-typedef struct {
-    ds3_job* jobs;
-    size_t   num_jobs;
-}ds3_get_jobs_response;
-
-typedef struct {
-    ds3_str*                bucket_name;
-    uint64_t                cached_size_in_bytes;
-    ds3_chunk_ordering      chunk_order;
-    uint64_t                completed_size_in_bytes;
-    ds3_str*                job_id;
-    uint64_t                original_size_in_bytes;
-    ds3_job_priority        priority;
     ds3_job_request_type    request_type;
     ds3_str*                start_date;
     ds3_str*                user_id;
@@ -205,6 +183,11 @@ typedef struct {
     size_t                  list_size;
     ds3_job_status          status;
 }ds3_bulk_response;
+
+typedef struct {
+    ds3_bulk_response* jobs;
+    size_t   jobs_size;
+}ds3_get_jobs_response;
 
 typedef struct {
     ds3_str* barcode;
@@ -299,7 +282,7 @@ LIBRARY_API void ds3_free_bulk_response(ds3_bulk_response* response);
 LIBRARY_API void ds3_free_error(ds3_error* error);
 LIBRARY_API void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response);
 LIBRARY_API void ds3_free_available_chunks_response(ds3_get_available_chunks_response* response);
-LIBRARY_API void ds3_free_get_phsyical_placement_response(ds3_get_physical_placement_response* response);
+LIBRARY_API void ds3_free_get_physical_placement_response(ds3_get_physical_placement_response* response);
 LIBRARY_API void ds3_free_owner(ds3_owner* owner);
 LIBRARY_API void ds3_free_creds(ds3_creds* client);
 LIBRARY_API void ds3_free_client(ds3_client* client);

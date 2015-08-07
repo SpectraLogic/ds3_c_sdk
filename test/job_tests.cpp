@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "ds3.h"
+#include "../src/ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
@@ -14,6 +14,8 @@ BOOST_AUTO_TEST_CASE(get_job){
     ds3_client* client = get_client();
     ds3_bulk_object_list* object_list = NULL;
     const char* bucket_name = "bucket_test_get_job";
+
+	  printf("-----Testing Get Job-------\n");
 
     populate_with_objects(client, bucket_name);
 
@@ -59,6 +61,8 @@ BOOST_AUTO_TEST_CASE(delete_job){
 
     const char* bucket_name = "bucket_test_delete_job";
 
+	  printf("-----Testing Delete Job-------\n");
+
     ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
     request = ds3_init_delete_job(job_id->value);
     error = ds3_delete_job(client,request);
@@ -85,8 +89,6 @@ BOOST_AUTO_TEST_CASE(get_jobs){
 
     ds3_get_bucket_response* get_bucket_response = NULL;
     ds3_bulk_response* bulk_response = NULL;
-    ds3_bulk_response* create_get_bucket1_job_response = NULL;
-    ds3_bulk_response* create_get_bucket2_job_response = NULL;
     ds3_get_jobs_response* get_jobs_response = NULL;
 
     const char* bucket1_name = "bucket_test_get_job1";
@@ -94,13 +96,14 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     const char* bucket2_name = "bucket_test_get_job2";
     ds3_bulk_object_list* bucket2_object_list = NULL;
 
+	  printf("-----Testing Get Jobs-------\n");
 
     /* create bucket1 with objects */
     populate_with_objects(client, bucket1_name);
     request = ds3_init_get_bucket(bucket1_name);
     error = ds3_get_bucket(client, request, &get_bucket_response);
     ds3_free_request(request);
-    BOOST_REQUIRE(NULL == error);
+    handle_error(error);
 
     // retain object_list for ds3_init_get_bulk
     bucket1_object_list = ds3_convert_object_list(get_bucket_response->objects, get_bucket_response->num_objects);
@@ -111,7 +114,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     request = ds3_init_get_bucket(bucket2_name);
     error = ds3_get_bucket(client, request, &get_bucket_response);
     ds3_free_request(request);
-    BOOST_REQUIRE(NULL == error);
+    handle_error(error);
 
     // retain object_list for ds3_init_get_bulk
     bucket2_object_list = ds3_convert_object_list(get_bucket_response->objects, get_bucket_response->num_objects);
@@ -121,20 +124,8 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     /* init bulk get bucket1 */
     request = ds3_init_get_bulk(bucket1_name, bucket1_object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
-
     ds3_free_request(request);
     ds3_free_bulk_object_list(bucket1_object_list);
-
-    /* bulk GET bucket1 */
-    request = ds3_init_get_job(bulk_response->job_id->value);
-    error = ds3_get_job(client, request, &create_get_bucket1_job_response);
-    ds3_free_bulk_response(bulk_response);
-    handle_error(error);
-
-    BOOST_CHECK(NULL != create_get_bucket1_job_response);
-    BOOST_CHECK(IN_PROGRESS == create_get_bucket1_job_response->status);
-    ds3_free_request(request);
-    ds3_free_bulk_response(create_get_bucket1_job_response);
 
 
     /* init bulk get bucket2 */
@@ -143,25 +134,17 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     ds3_free_request(request);
     ds3_free_bulk_object_list(bucket2_object_list);
 
-    /* bulk GET bucket2 */
-    request = ds3_init_get_job(bulk_response->job_id->value);
-    error = ds3_get_job(client, request, &create_get_bucket2_job_response);
-    ds3_free_bulk_response(bulk_response);
-    handle_error(error);
-
-    BOOST_CHECK(NULL != create_get_bucket1_job_response);
-    BOOST_CHECK(IN_PROGRESS == create_get_bucket1_job_response->status);
-    ds3_free_request(request);
-    ds3_free_bulk_response(create_get_bucket1_job_response);
-
     /* GET jobs */
     request = ds3_init_get_jobs();
     error = ds3_get_jobs(client, request, &get_jobs_response);
+    handle_error(error);
+    ds3_free_request(request);
+    /*** ASSERT get_jobs_response ***/
+
 
     /* teardown */
     clear_bucket(client, bucket1_name);
     clear_bucket(client, bucket2_name);
     free_client(client);
 }
-
 
