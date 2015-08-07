@@ -326,8 +326,8 @@ static char* _escape_url_object_name(const char* url) {
     gchar* escaped_ptr;
     for (ptr = split; *ptr; ptr++) {
         escaped_ptr = _escape_url(*ptr);
-	g_free(*ptr);
-	*ptr = escaped_ptr;
+  g_free(*ptr);
+  *ptr = escaped_ptr;
     }
     escaped_ptr = g_strjoinv("/", split);
     g_strfreev(split);
@@ -1338,10 +1338,12 @@ ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* reques
 }
 
 ds3_error* ds3_put_bucket(const ds3_client* client, const ds3_request* request) {
+    printf("PUT bucket [%s] \n", (char*)request->path->value);
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_delete_bucket(const ds3_client* client, const ds3_request* request) {
+    printf("DELETE bucket [%s] \n", (char*)request->path->value);
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
@@ -1517,7 +1519,7 @@ static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text)
 }
 
 
-static ds3_error* _parse_bulk_response_element(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
+static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
     struct _xmlAttr* attribute;
     xmlChar* text;
 
@@ -1636,7 +1638,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
 
     response = g_new0(ds3_bulk_response, 1);
 
-    _parse_bulk_response_element(log, doc, root, response);
+    _parse_bulk_response_attributes(log, doc, root, response);
 
     objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
 
@@ -1886,8 +1888,8 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if(doc == NULL) {
-      // Bulk put with just empty folder objects will return a 204 and thus
-	    // not have a body.
+        // Bulk put with just empty folder objects will return a 204 and thus
+        // not have a body.
         g_byte_array_free(xml_blob, TRUE);
         return NULL;
     }
@@ -2028,7 +2030,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Job") == true) {
             job = g_new0(ds3_bulk_response, 1);
-            error = _parse_bulk_response_element(log, doc, child_node, job);
+            error = _parse_bulk_response_attributes(log, doc, child_node, job);
             if( error )
             {
               LOG(log, DS3_ERROR, "Error parsing bulk_response element");
