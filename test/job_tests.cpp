@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(delete_job){
 
     const char* bucket_name = "bucket_test_delete_job";
 
-      printf("-----Testing Delete Job-------\n");
+    printf("-----Testing Delete Job-------\n");
 
     ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
     request = ds3_init_delete_job(job_id->value);
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     const char* bucket2_name = "bucket_test_get_job2";
     ds3_bulk_object_list* bucket2_object_list = NULL;
 
-      printf("-----Testing Get Jobs-------\n");
+    printf("-----Testing Get Jobs-------\n");
 
     /* create bucket1 with objects */
     populate_with_objects(client, bucket1_name);

@@ -167,8 +167,8 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
 
     printf("-----Testing MD5 Checksum-------\n");
 
-    ds3_request* request = ds3_init_put_bucket(bucket_name);
-    ds3_error* error = ds3_put_bucket(client, request);
+    request = ds3_init_put_bucket(bucket_name);
+    error = ds3_put_bucket(client, request);
     ds3_free_request(request);
     handle_error(error);
 
@@ -178,7 +178,6 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
 
     ds3_free_request(request);
     handle_error(error);
-
 
     for (n = 0; n < response->list_size; n ++) {
         request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
@@ -194,7 +193,7 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
             FILE* file = fopen(bulk_object.name->value, "r");
 
             request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
-            ds3_request_set_md5(request,"rCu751L6xhB5zyL+soa3fg==");
+            ds3_request_set_md5(request,"0bfc07b888d354413cfb662651a0ad8d");
 
             if (bulk_object.offset > 0) {
                 fseek(file, bulk_object.offset, SEEK_SET);
