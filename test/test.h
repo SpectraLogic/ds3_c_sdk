@@ -4,6 +4,7 @@
 #define __DS3_TEST__
 
 ds3_client* get_client();
+ds3_client* get_client_at_loglvl(ds3_log_lvl lvl);
 void clear_bucket(const ds3_client* client, const char* bucket_name);
 void populate_with_objects(const ds3_client* client, const char* bucket_name);
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name);

@@ -659,14 +659,14 @@ static gint _gstring_sort(gconstpointer a, gconstpointer b) {
     char* val1 = (char*)a;
     char* val2 = (char*)b;
 
-    return g_strcmp0(val1, val2);
+    return g_strcmp0(val2, val1);
 }
 
 static char* _canonicalize_amz_headers(GHashTable* headers) {
     GList* keys = g_hash_table_get_keys(headers);
     GList* key = keys;
     GString* canonicalized_headers = g_string_new("");
-    GPtrArray *signing_strings = g_ptr_array_new_with_free_func(_ds3_internal_str_free);
+    GPtrArray *signing_strings = g_ptr_array_new_with_free_func(g_free);  // stores char*
     GString* header_signing_value;
     char* signing_value;
     int i;
