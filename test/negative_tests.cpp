@@ -247,50 +247,51 @@ BOOST_AUTO_TEST_CASE( put_empty_object_list) {
     handle_error(error);
 }
 
-BOOST_AUTO_TEST_CASE(delete_multiple_job){
-	printf("-----Testing Multiple Delete Jobs-------\n");
-	ds3_request* request;
-	ds3_error* error;
-	ds3_client* client = get_client();
-	const char* bucket_name = "bucket_test_get_job";
+BOOST_AUTO_TEST_CASE(delete_multiple_job) {
+    printf("-----Testing Multiple Delete Jobs-------\n");
+    ds3_request* request;
+    ds3_error* error;
+    ds3_client* client = get_client();
+    const char* bucket_name = "bucket_test_get_job";
 
-	ds3_str* job_id = populate_with_objects_return_job(client, bucket_name);
-	request = ds3_init_delete_job(job_id->value);
-	error = ds3_delete_job(client,request);
-	handle_error(error);
+    ds3_str* job_id = populate_with_objects_return_job(client, bucket_name);
+    request = ds3_init_delete_job(job_id->value);
+    error = ds3_delete_job(client,request);
+    handle_error(error);
 
-	error = ds3_delete_job(client,request);
+    error = ds3_delete_job(client,request);
     BOOST_CHECK(error != NULL);
     BOOST_CHECK(error->error->status_code == 404);
     BOOST_CHECK(strcmp(error->error->status_message->value ,"Not Found")==0);
     ds3_free_error(error);
 
-	ds3_free_request(request);
-	ds3_str_free(job_id);
+    ds3_free_request(request);
+    ds3_str_free(job_id);
     clear_bucket(client, bucket_name);
     free_client(client);
-	
+
 }
 
-BOOST_AUTO_TEST_CASE(get_non_existing_job){
-	printf("-----Testing Non Existing Get Job-------\n");
-	ds3_request* request;
-	ds3_error* error;
-	ds3_bulk_response* bulk_response = NULL;
-	ds3_client* client = get_client();
-	request = ds3_init_get_job("b44d7ddc-608a-4d46-9e9e-9433b0b62911");
-	error = ds3_get_job(client,request,&bulk_response);
-	BOOST_CHECK(error != NULL);
+BOOST_AUTO_TEST_CASE(get_non_existing_job) {
+    printf("-----Testing Non Existing Get Job-------\n");
+    ds3_request* request;
+    ds3_error* error;
+    ds3_bulk_response* bulk_response = NULL;
+    ds3_client* client = get_client();
+    request = ds3_init_get_job("b44d7ddc-608a-4d46-9e9e-9433b0b62911");
+    error = ds3_get_job(client,request,&bulk_response);
+    BOOST_CHECK(error != NULL);
     BOOST_CHECK(error->error->status_code == 404);
     BOOST_CHECK(strcmp(error->error->status_message->value ,"Not Found")==0);
     ds3_free_error(error);
-	ds3_free_request(request);
-	ds3_free_bulk_response(bulk_response);
-	free_client(client);
+    ds3_free_request(request);
+    ds3_free_bulk_response(bulk_response);
+    free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE(bad_checksum)
-{
+/* TODO uncomment this when using the latest simulator
+
+BOOST_AUTO_TEST_CASE(bad_checksum) {
     printf("-----Testing Request With Bad Checksum-------\n");
     uint64_t i, n;
     const char* bucket_name = "bucket_test_bad_md5";
@@ -329,17 +330,17 @@ BOOST_AUTO_TEST_CASE(bad_checksum)
 
           request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
           ds3_request_set_md5(request,"a%4sgh");
-         
+
           if (bulk_object.offset > 0) {
               fseek(file, bulk_object.offset, SEEK_SET);
           }
-        
+
           error = ds3_put_object(client, request, file, ds3_read_from_file);
           ds3_free_request(request);
           fclose(file);
-          BOOST_REQUIRE(error != NULL);         
-		  BOOST_CHECK(error->error->status_code == 403);
-		  BOOST_CHECK(strcmp(error->error->status_message->value ,"Forbidden")==0);
+          BOOST_REQUIRE(error != NULL);
+          BOOST_CHECK(error->error->status_code == 403);
+          BOOST_CHECK(strcmp(error->error->status_message->value ,"Forbidden")==0);
           ds3_free_error(error);
       }
       ds3_free_allocate_chunk_response(chunk_response);
@@ -349,3 +350,5 @@ BOOST_AUTO_TEST_CASE(bad_checksum)
     clear_bucket(client, bucket_name);
     free_client(client);
 }
+
+*/
