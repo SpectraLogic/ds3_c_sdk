@@ -656,10 +656,10 @@ static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t 
 }
 
 static gint _gstring_sort(gconstpointer a, gconstpointer b) {
-    char* val1 = (char*)a;
-    char* val2 = (char*)b;
+    char** val1 = (char**)a;
+    char** val2 = (char**)b;
 
-    return g_strcmp0(val2, val1);
+    return g_strcmp0(*val1, *val2);
 }
 
 static char* _canonicalize_amz_headers(GHashTable* headers) {
