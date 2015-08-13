@@ -87,29 +87,29 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
 }
 
 BOOST_AUTO_TEST_CASE(marker) {
-	  ds3_request* request;
-	  ds3_error* error;
-	  ds3_get_bucket_response* response;
-	  ds3_client* client = get_client();
-	  const char* bucket_name = "bucket_test_marker";
-	  uint64_t num_objs;
+    ds3_request* request;
+    ds3_error* error;
+    ds3_get_bucket_response* response;
+    ds3_client* client = get_client();
+    const char* bucket_name = "bucket_test_marker";
+    uint64_t num_objs;
 
-	  populate_with_objects(client,bucket_name);
+    populate_with_objects(client,bucket_name);
 
-	  request = ds3_init_get_bucket(bucket_name);
-	  ds3_request_set_marker(request,"resources/sherlock_holmes.txt");
-	  error = ds3_get_bucket(client,request,&response);
-	  ds3_free_request(request);
+    request = ds3_init_get_bucket(bucket_name);
+    ds3_request_set_marker(request,"resources/sherlock_holmes.txt");
+    error = ds3_get_bucket(client,request,&response);
+    ds3_free_request(request);
 
-	  handle_error(error);
-	  num_objs = response->num_objects;
+    handle_error(error);
+    num_objs = response->num_objects;
 
-	  BOOST_CHECK_EQUAL(num_objs, 3);
-	  BOOST_CHECK(contains_object(response->objects, num_objs, "resources/tale_of_two_cities.txt"));
-	  BOOST_CHECK(contains_object(response->objects, num_objs, "resources/ulysses.txt"));
-	  BOOST_CHECK(contains_object(response->objects, num_objs, "resources/ulysses_large.txt"));
+    BOOST_CHECK_EQUAL(num_objs, 3);
+    BOOST_CHECK(contains_object(response->objects, num_objs, "resources/tale_of_two_cities.txt"));
+    BOOST_CHECK(contains_object(response->objects, num_objs, "resources/ulysses.txt"));
+    BOOST_CHECK(contains_object(response->objects, num_objs, "resources/ulysses_large.txt"));
 
-	  ds3_free_bucket_response(response);
+    ds3_free_bucket_response(response);
 
     clear_bucket(client, bucket_name);
     free_client(client);
@@ -117,35 +117,35 @@ BOOST_AUTO_TEST_CASE(marker) {
 
 BOOST_AUTO_TEST_CASE(max_keys) {
     ds3_request* request;
-	  ds3_error* error;
-	  ds3_get_bucket_response* response;
-	  ds3_client* client = get_client();
-	  const char* bucket_name = "bucket_test_max_keys";
-	  uint64_t num_objs;
+    ds3_error* error;
+    ds3_get_bucket_response* response;
+    ds3_client* client = get_client();
+    const char* bucket_name = "bucket_test_max_keys";
+    uint64_t num_objs;
 
-	  populate_with_objects(client,bucket_name);
+    populate_with_objects(client,bucket_name);
 
-	  request = ds3_init_get_bucket(bucket_name);
-	  ds3_request_set_max_keys(request,2);
+    request = ds3_init_get_bucket(bucket_name);
+    ds3_request_set_max_keys(request,2);
 
-	  error = ds3_get_bucket(client,request,&response);
-	  ds3_free_request(request);
+    error = ds3_get_bucket(client,request,&response);
+    ds3_free_request(request);
 
-	  handle_error(error);
-	  num_objs = response->num_objects;
+    handle_error(error);
+    num_objs = response->num_objects;
 
-	  BOOST_CHECK_EQUAL(num_objs, 2);
-	  BOOST_CHECK(contains_object(response->objects, num_objs, "resources/beowulf.txt"));
-	  BOOST_CHECK(contains_object(response->objects, num_objs, "resources/sherlock_holmes.txt"));
-	  ds3_free_bucket_response(response);
+    BOOST_CHECK_EQUAL(num_objs, 2);
+    BOOST_CHECK(contains_object(response->objects, num_objs, "resources/beowulf.txt"));
+    BOOST_CHECK(contains_object(response->objects, num_objs, "resources/sherlock_holmes.txt"));
+    ds3_free_bucket_response(response);
 
     clear_bucket(client, bucket_name);
     free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE(md5_checksum) {
-  	uint64_t i, n;
-	  const char* bucket_name = "bucket_test_md5";
+    uint64_t i, n;
+    const char* bucket_name = "bucket_test_md5";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     const char* books[] ={"resources/beowulf.txt"};
     ds3_client* client = get_client();
