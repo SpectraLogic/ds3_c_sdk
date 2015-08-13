@@ -2956,8 +2956,8 @@ void ds3_free_available_chunks_response(ds3_get_available_chunks_response* respo
 }
 
 void ds3_free_metadata_entry(ds3_metadata_entry* entry) {
-  int i;
-  ds3_str* value;
+    int i;
+    ds3_str* value;
     if (entry->name != NULL) {
         ds3_str_free(entry->name);
     }
@@ -2971,4 +2971,23 @@ void ds3_free_metadata_entry(ds3_metadata_entry* entry) {
         g_free(entry->values);
     }
     g_free(entry);
+}
+
+void ds3_free_metadata_keys(ds3_metadata_keys_result* metadata_keys) {
+    uint64_t i;
+    ds3_str* value;
+    if (metadata_keys == NULL) {
+        return;
+    }
+
+    if (metadata_keys->keys != NULL) {
+        for (i = 0; i < metadata_keys->num_keys; i++) {
+            value = metadata_keys->keys[i];
+            if (value != NULL) {
+                ds3_str_free(value);
+            }
+        }
+        g_free(metadata_keys->keys);
+    }
+    g_free(metadata_keys);
 }

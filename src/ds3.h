@@ -333,6 +333,7 @@ LIBRARY_API void ds3_free_client(ds3_client* client);
 LIBRARY_API void ds3_free_request(ds3_request* request);
 LIBRARY_API void ds3_free_metadata(ds3_metadata* metadata);
 LIBRARY_API void ds3_free_metadata_entry(ds3_metadata_entry* metadata_entry);
+LIBRARY_API void ds3_free_metadata_keys(ds3_metadata_keys_result* metadata_keys);
 LIBRARY_API void ds3_free_objects_response(ds3_get_objects_response* response);
 LIBRARY_API void ds3_cleanup(void);
 
