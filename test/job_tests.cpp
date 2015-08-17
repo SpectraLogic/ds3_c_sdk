@@ -138,12 +138,54 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     error = ds3_get_jobs(client, request, &get_jobs_response);
     handle_error(error);
     ds3_free_request(request);
-    /*** ASSERT get_jobs_response ***/
+    BOOST_CHECK(get_jobs_response != NULL);
+/*
+typedef struct{
+    char* value;
+    size_t size;
+}ds3_str;
 
+typedef struct {
+    ds3_str*                bucket_name;
+    uint64_t                cached_size_in_bytes;
+    ds3_chunk_ordering      chunk_order;
+    uint64_t                completed_size_in_bytes;
+    ds3_str*                job_id;
+    uint64_t                original_size_in_bytes;
+    ds3_job_priority        priority;
+    ds3_job_request_type    request_type;
+    ds3_str*                start_date;
+    ds3_str*                user_id;
+    ds3_str*                user_name;
+    ds3_write_optimization  write_optimization;
+    ds3_bulk_object_list**  list;
+    size_t                  list_size;
+    ds3_job_status          status;
+}ds3_bulk_response;
+
+typedef struct {
+    ds3_bulk_response** jobs;
+    size_t   jobs_size;
+}ds3_get_jobs_response;
+*/
+    uint8_t job_index;
+    printf("\n\n  get_jobs_response->jobs_size[%lu]\n", get_jobs_response->jobs_size );
+
+    for( job_index = 0; job_index < get_jobs_response->jobs_size; job_index++ ) {
+        bulk_response = get_jobs_response->jobs[job_index];
+        printf( "  job_index[%u]\n", job_index );
+        printf( "  bucket_name[%s]\n", bulk_response->bucket_name->value );
+        printf( "  job_id[%s]\n", bulk_response->job_id->value );
+        printf( "  start_date[%s]\n", bulk_response->start_date->value );
+        printf( "  user_id[%s]\n", bulk_response->user_id->value );
+        printf( "  user_name[%s]\n", bulk_response->user_name->value );
+    }
+//    BOOST_CHECK(get_jobs_response->jobs_size == 2);
 
     /* teardown */
     clear_bucket(client, bucket1_name);
     clear_bucket(client, bucket2_name);
     free_client(client);
+    ds3_free_get_jobs_response( get_jobs_response );
 }
 

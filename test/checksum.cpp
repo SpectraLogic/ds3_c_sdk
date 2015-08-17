@@ -11,7 +11,6 @@
 gchar* result_1;
 gchar* result_2;
 
-
 // Get the size of the file by its file descriptor
 unsigned long get_size_by_fd(int fd) {
     struct stat statbuf;
@@ -20,8 +19,7 @@ unsigned long get_size_by_fd(int fd) {
 }
 
 // Function which compares checksums of the files passed
-void compare_hash(char* filename_1, char* filename_2)
-{
+void compare_hash(char* filename_1, char* filename_2) {
     int file_descript_1;
     int file_descript_2;
     unsigned long file_size_1,file_size_2;
@@ -29,8 +27,8 @@ void compare_hash(char* filename_1, char* filename_2)
     char* file_buffer_2;
 
     if(!filename_1 || !filename_2) {
-            printf("Must specify two files to be compared\n");
-            exit(-1);
+        printf("Must specify two files to be compared\n");
+        exit(-1);
     }
     printf("Orignal file:\t%s\n", filename_1);
     printf("File to be checked:\t%s\n", filename_2);
@@ -43,7 +41,6 @@ void compare_hash(char* filename_1, char* filename_2)
 
     file_size_1 = get_size_by_fd(file_descript_1);
     file_size_2 = get_size_by_fd(file_descript_2);
-
 
     file_buffer_1 = static_cast<char*>(mmap(0, file_size_1, PROT_READ, MAP_SHARED, file_descript_1, 0));
     result_1 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_1,file_size_1);

@@ -20,8 +20,8 @@ void test_log(const char* message, void* user_data) {
     fprintf(stderr, "Log Message: %s\n", message);
 }
 
-ds3_client* get_client() {
-    ds3_client* client;
+ds3_client* get_client_at_loglvl(ds3_log_lvl log_lvl) {
+  ds3_client* client;
 
     ds3_error* error = ds3_create_client_from_env(&client);
 
@@ -31,9 +31,13 @@ ds3_client* get_client() {
         BOOST_FAIL("Failed to setup client.");
     }
 
-    ds3_client_register_logging(client, DS3_INFO, test_log, NULL);
+    ds3_client_register_logging(client, log_lvl, test_log, NULL);
 
     return client;
+}
+
+ds3_client* get_client() {
+    return get_client_at_loglvl(DS3_INFO);
 }
 
 void print_error(const ds3_error* error) {
@@ -105,7 +109,7 @@ ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucke
     ds3_free_request(request);
     handle_error(error);
     job_id = ds3_str_dup(response->job_id);
-  
+
     ds3_free_bulk_response(response);
     ds3_free_bulk_object_list(obj_list);
     return job_id;

@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE(marker){
+BOOST_AUTO_TEST_CASE(marker) {
     ds3_request* request;
     ds3_error* error;
     ds3_get_bucket_response* response;
@@ -122,8 +122,7 @@ BOOST_AUTO_TEST_CASE(marker){
     free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE(max_keys)
-{
+BOOST_AUTO_TEST_CASE(max_keys) {
     ds3_request* request;
     ds3_error* error;
     ds3_get_bucket_response* response;
@@ -153,11 +152,10 @@ BOOST_AUTO_TEST_CASE(max_keys)
     free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE(md5_checksum)
-{
+BOOST_AUTO_TEST_CASE(md5_checksum) {
     uint64_t i, n;
     const char* bucket_name = "bucket_test_md5";
-    ds3_request* request;
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
     const char* books[] ={"resources/beowulf.txt"};
     ds3_client* client = get_client();
     ds3_error* error;
@@ -180,31 +178,29 @@ BOOST_AUTO_TEST_CASE(md5_checksum)
     handle_error(error);
 
     for (n = 0; n < response->list_size; n ++) {
-        request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
-        error = ds3_allocate_chunk(client, request, &chunk_response);
-        ds3_free_request(request);
-        handle_error(error);
+      request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
+      error = ds3_allocate_chunk(client, request, &chunk_response);
+      ds3_free_request(request);
+      handle_error(error);
+      BOOST_REQUIRE(chunk_response->retry_after == 0);
+      BOOST_REQUIRE(chunk_response->objects != NULL);
 
-        BOOST_REQUIRE(chunk_response->retry_after == 0);
-        BOOST_REQUIRE(chunk_response->objects != NULL);
+      for (i = 0; i < chunk_response->objects->size; i++) {
+          ds3_bulk_object bulk_object = chunk_response->objects->list[i];
+          FILE* file = fopen(bulk_object.name->value, "r");
 
-        for (i = 0; i < chunk_response->objects->size; i++) {
-            ds3_bulk_object bulk_object = chunk_response->objects->list[i];
-            FILE* file = fopen(bulk_object.name->value, "r");
+          request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
+          ds3_request_set_md5(request,"rCu751L6xhB5zyL+soa3fg==");
 
-            request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
-            ds3_request_set_md5(request,"0bfc07b888d354413cfb662651a0ad8d");
-
-            if (bulk_object.offset > 0) {
-                fseek(file, bulk_object.offset, SEEK_SET);
-            }
-            error = ds3_put_object(client, request, file, ds3_read_from_file);
-            ds3_free_request(request);
-            fclose(file);
-            handle_error(error);
-        }
-
-        ds3_free_allocate_chunk_response(chunk_response);
+          if (bulk_object.offset > 0) {
+              fseek(file, bulk_object.offset, SEEK_SET);
+          }
+          error = ds3_put_object(client, request, file, ds3_read_from_file);
+          ds3_free_request(request);
+          fclose(file);
+          handle_error(error);
+      }
+     ds3_free_allocate_chunk_response(chunk_response);
     }
 
     ds3_free_bulk_response(response);
