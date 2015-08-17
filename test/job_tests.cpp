@@ -119,68 +119,39 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     bucket2_object_list = ds3_convert_object_list(get_bucket_response->objects, get_bucket_response->num_objects);
     ds3_free_bucket_response(get_bucket_response);
 
-
     /* init bulk get bucket1 */
     request = ds3_init_get_bulk(bucket1_name, bucket1_object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
-    ds3_free_request(request);
     ds3_free_bulk_object_list(bucket1_object_list);
-
+    ds3_free_bulk_response(bulk_response);
+    ds3_free_request(request);
+    handle_error(error);
 
     /* init bulk get bucket2 */
     request = ds3_init_get_bulk(bucket2_name, bucket2_object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
-    ds3_free_request(request);
     ds3_free_bulk_object_list(bucket2_object_list);
+    ds3_free_bulk_response(bulk_response);
+    ds3_free_request(request);
+    handle_error(error);
 
     /* GET jobs */
     request = ds3_init_get_jobs();
     error = ds3_get_jobs(client, request, &get_jobs_response);
-    handle_error(error);
     ds3_free_request(request);
+    handle_error(error);
+
+    /* Assert valid response contents */
     BOOST_CHECK(get_jobs_response != NULL);
-/*
-typedef struct{
-    char* value;
-    size_t size;
-}ds3_str;
-
-typedef struct {
-    ds3_str*                bucket_name;
-    uint64_t                cached_size_in_bytes;
-    ds3_chunk_ordering      chunk_order;
-    uint64_t                completed_size_in_bytes;
-    ds3_str*                job_id;
-    uint64_t                original_size_in_bytes;
-    ds3_job_priority        priority;
-    ds3_job_request_type    request_type;
-    ds3_str*                start_date;
-    ds3_str*                user_id;
-    ds3_str*                user_name;
-    ds3_write_optimization  write_optimization;
-    ds3_bulk_object_list**  list;
-    size_t                  list_size;
-    ds3_job_status          status;
-}ds3_bulk_response;
-
-typedef struct {
-    ds3_bulk_response** jobs;
-    size_t   jobs_size;
-}ds3_get_jobs_response;
-*/
     uint8_t job_index;
-    printf("\n\n  get_jobs_response->jobs_size[%lu]\n", get_jobs_response->jobs_size );
-
     for( job_index = 0; job_index < get_jobs_response->jobs_size; job_index++ ) {
         bulk_response = get_jobs_response->jobs[job_index];
-        printf( "  job_index[%u]\n", job_index );
-        printf( "  bucket_name[%s]\n", bulk_response->bucket_name->value );
-        printf( "  job_id[%s]\n", bulk_response->job_id->value );
-        printf( "  start_date[%s]\n", bulk_response->start_date->value );
-        printf( "  user_id[%s]\n", bulk_response->user_id->value );
-        printf( "  user_name[%s]\n", bulk_response->user_name->value );
+        BOOST_CHECK( bulk_response->bucket_name->value != NULL);
+        BOOST_CHECK( bulk_response->job_id->value != NULL);
+        BOOST_CHECK( bulk_response->start_date->value != NULL);
+        BOOST_CHECK( bulk_response->user_id->value != NULL);
+        BOOST_CHECK( bulk_response->user_name->value != NULL);
     }
-//    BOOST_CHECK(get_jobs_response->jobs_size == 2);
 
     /* teardown */
     clear_bucket(client, bucket1_name);

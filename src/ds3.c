@@ -2543,7 +2543,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jobs_response** _response){
     ds3_get_jobs_response* response;
     xmlNodePtr root, child_node;
-    GArray* jobs_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_response*));
+    GPtrArray* jobs_array = g_ptr_array_new();
     ds3_bulk_response* job;
     ds3_error* error;
 
@@ -2567,7 +2567,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
             {
               LOG(log, DS3_ERROR, "Error parsing bulk_response element");
             }
-            g_array_append_val(jobs_array, job);
+            g_ptr_array_add(jobs_array, job);
         }
         else{
             // Invalid XML block
@@ -2576,8 +2576,8 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
     }
 
     response->jobs_size = jobs_array->len;
-    response->jobs = (ds3_bulk_response**) jobs_array->data;
-    g_array_free(jobs_array, FALSE);
+    response->jobs = (ds3_bulk_response**) jobs_array->pdata;
+    g_ptr_array_free(jobs_array, FALSE);
 
     *_response = response;
     return NULL;
@@ -2807,6 +2807,7 @@ void ds3_free_get_jobs_response(ds3_get_jobs_response* response) {
         for (job_index = 0; job_index < response->jobs_size; job_index++) {
             ds3_free_bulk_response(response->jobs[job_index]);
         }
+        g_free(response->jobs);
     }
 
     g_free(response);
