@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../src/ds3.h"
+#include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
@@ -158,15 +158,13 @@ BOOST_AUTO_TEST_CASE(md5_checksum) {
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     const char* books[] ={"resources/beowulf.txt"};
     ds3_client* client = get_client();
-    ds3_error* error;
+    ds3_error* error = ds3_put_bucket(client, request);
     ds3_bulk_object_list* obj_list;
     ds3_bulk_response* response;
     ds3_allocate_chunk_response* chunk_response;
 
     printf("-----Testing MD5 Checksum-------\n");
 
-    request = ds3_init_put_bucket(bucket_name);
-    error = ds3_put_bucket(client, request);
     ds3_free_request(request);
     handle_error(error);
 

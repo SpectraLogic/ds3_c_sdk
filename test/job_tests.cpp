@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../src/ds3.h"
+#include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 

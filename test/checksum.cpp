@@ -52,10 +52,9 @@ void compare_hash(char* filename_1, char* filename_2) {
     printf("%s(checksum):",filename_2);
     printf("%s\n",result_2);
 
-    if(strcmp(reinterpret_cast<char*>(result_1),reinterpret_cast<char*>(result_2))==0){
+    if(strcmp(reinterpret_cast<char*>(result_1),reinterpret_cast<char*>(result_2))==0) {
         printf("Data Integrity Test Passed...MD5 Checksum is Same for Both Files\n");
-    }
-    else{
+    } else {
         printf("Data Integrity Test Failed...MD5 Checksum is Not Same for Both Files\n");
     }
 
