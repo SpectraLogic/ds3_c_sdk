@@ -92,8 +92,12 @@ BOOST_AUTO_TEST_CASE(get_jobs){
 
     const char* bucket1_name = "bucket_test_get_job1";
     ds3_bulk_object_list* bucket1_object_list = NULL;
+    ds3_str* bucket1_job_id = NULL;
+    ds3_bool found_bucket1_job = False;
     const char* bucket2_name = "bucket_test_get_job2";
     ds3_bulk_object_list* bucket2_object_list = NULL;
+    ds3_str* bucket2_job_id = NULL;
+    ds3_bool found_bucket2_job = False;
 
     printf("-----Testing Get Jobs-------\n");
 
@@ -122,6 +126,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     /* init bulk get bucket1 */
     request = ds3_init_get_bulk(bucket1_name, bucket1_object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
+    bucket1_job_id = ds3_str_dup(bulk_response->job_id);
     ds3_free_bulk_object_list(bucket1_object_list);
     ds3_free_bulk_response(bulk_response);
     ds3_free_request(request);
@@ -130,6 +135,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     /* init bulk get bucket2 */
     request = ds3_init_get_bulk(bucket2_name, bucket2_object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
+    bucket2_job_id = ds3_str_dup(bulk_response->job_id);
     ds3_free_bulk_object_list(bucket2_object_list);
     ds3_free_bulk_response(bulk_response);
     ds3_free_request(request);
@@ -151,12 +157,21 @@ BOOST_AUTO_TEST_CASE(get_jobs){
         BOOST_CHECK( bulk_response->start_date->value != NULL);
         BOOST_CHECK( bulk_response->user_id->value != NULL);
         BOOST_CHECK( bulk_response->user_name->value != NULL);
+        if(0 == strcmp(bulk_response->job_id->value, bucket1_job_id->value)) {
+            found_bucket1_job = True;
+        } else if(0 == strcmp(bulk_response->job_id->value, bucket2_job_id->value)) {
+            found_bucket2_job = True;
+        }
     }
 
     /* teardown */
     clear_bucket(client, bucket1_name);
     clear_bucket(client, bucket2_name);
     free_client(client);
+    ds3_str_free(bucket1_job_id);
+    ds3_str_free(bucket2_job_id);
     ds3_free_get_jobs_response( get_jobs_response );
+    BOOST_REQUIRE(True == found_bucket1_job);
+    BOOST_REQUIRE(True == found_bucket2_job);
 }
 

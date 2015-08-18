@@ -882,6 +882,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 g_free(url);
                 return error;
             }
+
             g_byte_array_free(response_data.body, TRUE);
             ds3_str_free(response_data.status_message);
             if (return_headers == NULL) {
@@ -889,7 +890,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             } else {
                 *return_headers = response_headers;
             }
-              break;
+
+            break;
         } else {
             return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
         }
@@ -2364,9 +2366,6 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
-        if (response_headers != NULL) {
-            g_hash_table_destroy(response_headers);
-        }
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
@@ -2456,14 +2455,13 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 }
 
 static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jobs_response** _response){
-    ds3_get_jobs_response* response;
+    ds3_get_jobs_response* response = NULL;
     xmlNodePtr root, child_node;
-    GPtrArray* jobs_array = g_ptr_array_new();
-    ds3_bulk_response* job;
-    ds3_error* error;
+    GPtrArray* jobs_array = NULL;
+    ds3_bulk_response* job = NULL;
+    ds3_error* error = NULL;
 
     root = xmlDocGetRootElement(doc);
-
     if(element_equal(root, "Jobs") == false) {
         char* message = g_strconcat("Expected the root element to be 'Jobs'.  The actual response is: ", root->name, NULL);
         xmlFreeDoc(doc);
@@ -2472,6 +2470,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
         return error;
     }
 
+    jobs_array = g_ptr_array_new();
     response = g_new0(ds3_get_jobs_response, 1);
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
@@ -2480,9 +2479,13 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
             error = _parse_bulk_response_attributes(log, doc, child_node, job);
             if( error )
             {
+              g_ptr_array_free(jobs_array, TRUE);
               LOG(log, DS3_ERROR, "Error parsing bulk_response element");
+              ds3_free_get_jobs_response(response);
+              return error;
+            } else {
+              g_ptr_array_add(jobs_array, job);
             }
-            g_ptr_array_add(jobs_array, job);
         } else{
             // Invalid XML block
             LOG(log, DS3_ERROR, "Unknown child node: (%s)", child_node->name);
@@ -2505,11 +2508,7 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     xmlDocPtr doc;
 
     error = _net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
-
     if (error != NULL) {
-        if (response_headers != NULL) {
-            g_hash_table_destroy(response_headers);
-        }
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
@@ -2517,7 +2516,6 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
-        g_hash_table_destroy(response_headers);
         return _ds3_create_error(DS3_ERROR_REQUEST_FAILED, "Unexpected empty response body.");
     }
 
