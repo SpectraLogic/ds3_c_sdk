@@ -100,7 +100,23 @@ typedef enum {
     EJECT_TO_EE_IN_PROGRESS,
     EJECT_FROM_EE_PENDING,
     EJECTED
-}ds3_tape_status;
+}ds3_tape_state;
+
+typedef enum {
+    LTO5,
+    LTO6,
+    LTO7,
+    LTO_CLEANING_TAPE,
+    TS_JC,
+    TS_JY,
+    TS_JK,
+    TS_JD,
+    TS_JZ,
+    TS_JL,
+    TS_CLEANING_TAPE,
+    UNKNOWN,
+    FORBIDDEN
+}ds3_tape_type;
 
 typedef enum {
   DATA, NO_TYPE
@@ -234,32 +250,6 @@ typedef struct {
     size_t   jobs_size;
 }ds3_get_jobs_response;
 
-/*
-        <Tape>
-          <AssignedToBucket>false</AssignedToBucket>
-          <AvailableRawCapacity>10000</AvailableRawCapacity>
-          <BarCode>t2</BarCode>
-          <BucketId />
-          <DescriptionForIdentification />
-          <EjectDate />
-          <EjectLabel />
-          <EjectLocation />
-          <EjectPending />
-          <FullOfData>false</FullOfData>
-          <Id>39b736e5-f7cf-4476-942b-a15a24ae929d</Id>
-          <LastAccessed />
-          <LastCheckpoint />
-          <LastModified />
-          <LastVerified />
-          <PartitionId>5e0bcbca-7cd6-4aea-abdf-d3d6e3dc9eac</PartitionId>
-          <PreviousState />
-          <SerialNumber />
-          <State>PENDING_INSPECTION</State>
-          <TotalRawCapacity>20000</TotalRawCapacity>
-          <Type>LTO5</Type>
-          <WriteProtected>false</WriteProtected>
-        </Tape>
- */
 typedef struct {
     ds3_bool assigned_to_bucket;
     uint64_t available_raw_capacity;
@@ -274,8 +264,13 @@ typedef struct {
     ds3_str* id;
     ds3_str* last_accessed;
     ds3_str* last_checkpoint;
+    ds3_str* last_modified;
     ds3_str* last_verified;
     ds3_str* partition_id;
+    ds3_tape_state previous_state;
+    ds3_str* serial_number;
+    ds3_tape_state state;
+    uint64_t total_raw_capacity;
 }ds3_tape;
 
 typedef struct {

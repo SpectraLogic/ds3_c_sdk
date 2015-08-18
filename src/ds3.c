@@ -1300,10 +1300,10 @@ static uint64_t xml_get_uint64_from_attribute(xmlDocPtr doc, struct _xmlAttr* at
     return xml_get_uint64(doc, (xmlNodePtr) attribute);
 }
 
-static ds3_bool xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
+static ds3_bool xml_get_bool(const ds3_log* log, xmlDocPtr doc, const xmlNodePtr xml_node) {
     xmlChar* text;
     ds3_bool result;
-    text = xmlNodeListGetString(doc, attribute->xmlChildrenNode, 1);
+    text = xmlNodeListGetString(doc, xml_node->xmlChildrenNode, 1);
     if (xmlStrcmp(text, (xmlChar*)"true") == 0) {
         result = True;
     } else if (xmlStrcmp(text, (xmlChar*)"false") == 0) {
@@ -1314,6 +1314,10 @@ static ds3_bool xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, s
     }
     xmlFree(text);
     return result;
+}
+
+static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
+    return xml_get_bool(log, doc, (xmlNodePtr) attribute);
 }
 
 static void _parse_buckets(const ds3_log* log, xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
@@ -1920,7 +1924,7 @@ static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text)
     }
 }
 
-static ds3_tape_status _match_tape_status(const ds3_log* log, const xmlChar* text) {
+static ds3_tape_state _match_tape_state(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
         return NORMAL;
     } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
@@ -1969,6 +1973,16 @@ static ds3_tape_status _match_tape_status(const ds3_log* log, const xmlChar* tex
     }
 }
 
+static ds3_tape_type _match_tape_type(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
+        return NORMAL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
+        return OFFLINE;
+    } else {
+        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning UNKNOWN for safety.\n", text);
+        return UNKNOWN;
+    }
+}
 static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
     struct _xmlAttr* attribute;
     xmlChar* text;
@@ -2226,7 +2240,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     ds3_bulk_object_list* obj_list;
     ds3_xml_send_buff send_buff;
 
-    xmlNodePtr cur, child_node, tape_attr;
+    xmlNodePtr cur, child_node, tape_node;
 
     GByteArray* xml_blob;
 
@@ -2311,49 +2325,66 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
         response = g_new0(ds3_get_physical_placement_response, 1);
 
 /*
-<Data>
-  <Object Length="10" Name="o3" Offset="0">
-    <PhysicalPlacement>
-      <Tapes>
-        <Tape>
-          <AssignedToBucket>false</AssignedToBucket>
-          <AvailableRawCapacity>10000</AvailableRawCapacity>
-          <BarCode>t2</BarCode>
-          <BucketId />
-          <DescriptionForIdentification />
-          <EjectDate />
-          <EjectLabel />
-          <EjectLocation />
-          <EjectPending />
-          <FullOfData>false</FullOfData>
-          <Id>39b736e5-f7cf-4476-942b-a15a24ae929d</Id>
-          <LastAccessed />
-          <LastCheckpoint />
-          <LastModified />
-          <LastVerified />
-          <PartitionId>5e0bcbca-7cd6-4aea-abdf-d3d6e3dc9eac</PartitionId>
-          <PreviousState />
-          <SerialNumber />
-          <State>PENDING_INSPECTION</State>
-          <TotalRawCapacity>20000</TotalRawCapacity>
-          <Type>LTO5</Type>
-          <WriteProtected>false</WriteProtected>
-        </Tape>
-      </Tapes>
-    </PhysicalPlacement>
-  </Object>
-</Data>
+typedef struct {
+    ds3_bool assigned_to_bucket;
+    uint64_t available_raw_capacity;
+    ds3_str* barcode;
+    ds3_str* bucket_id;
+    ds3_str* description;
+    ds3_str* eject_date;
+    ds3_str* eject_label;
+    ds3_str* eject_location;
+    ds3_str* eject_pending; // date that eject was requested
+    ds3_bool full_of_data;
+    ds3_str* id;
+    ds3_str* last_accessed;
+    ds3_str* last_checkpoint;
+    ds3_str* last_modified;
+    ds3_str* last_verified;
+    ds3_str* partition_id;
+    ds3_tape_state previous_state;
+    ds3_str* serial_number;
+    ds3_tape_state state;
+    uint64_t total_raw_capacity;
+}ds3_tape;
  */
         for (child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
             if (element_equal(child_node, "Tape") == true) {
                 memset(&tape, 0, sizeof(ds3_tape));
-                for (tape_attr = child_node->xmlChildrenNode; tape_attr != NULL; tape_attr = tape_attr->next){
-                    if (element_equal(tape_attr, "BarCode") == true) {
-                      tape.barcode = xml_get_string(doc, tape_attr);
+                for (tape_node = child_node->xmlChildrenNode; tape_node != NULL; tape_node = tape_node->next){
+                    if (element_equal(tape_node, "AssignedToBucket") == true) {
+                        tape.assigned_to_bucket = xml_get_bool(client->log, doc, tape_node);
+                    } else if (element_equal(tape_node, "AvailableRawCapacity") == true) {
+                        tape.available_raw_capacity = xml_get_uint64(doc, tape_node);
+                    } else if (element_equal(tape_node, "BarCode") == true) {
+                        tape.barcode = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "BucketId") == true) {
+                        tape.bucket_id = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "DescriptionForIdentification") == true) {
+                        tape.description = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectDate") == true) {
+                        tape.eject_date = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectLabel") == true) {
+                        tape.eject_label = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectLocation") == true) {
+                        tape.eject_location = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectPending") == true) {
+                        tape.eject_pending = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "FullOfData") == true) {
+                        tape.full_of_data = xml_get_bool(client->log, doc, tape_node);
+                    } else if (element_equal(tape_node, "Id") == true) {
+                        tape.id = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastAccessed") == true) {
+                        tape.last_accessed = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastCheckpoint") == true) {
+                        tape.last_checkpoint = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastModified") == true) {
+                        tape.last_checkpoint = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastVerified") == true) {
+                        tape.last_checkpoint = xml_get_string(doc, tape_node);
                     }
-                }
                 g_array_append_val(tape_array, tape);
-          }
+            }
         }
         response->num_tapes = tape_array->len;
         response->tapes = (ds3_tape*)tape_array->data;
