@@ -1192,6 +1192,12 @@ ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_o
     return (ds3_request*) request;
 }
 
+ds3_request* ds3_init_get_physical_placement_full_details(const char* bucket_name, ds3_bulk_object_list* object_list) {
+  struct _ds3_request* request = ds3_init_get_physical_placement(bucket_name, object_list);
+  _set_query_param((ds3_request*) request, "full_details", NULL);
+  return (ds3_request*) request;
+}
+
 ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
     char* path = g_strconcat("/_rest_/job_chunk/", chunk_id, NULL);
     ds3_str* path_str = ds3_str_init(path);
@@ -1914,6 +1920,54 @@ static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text)
     }
 }
 
+static ds3_tape_status _match_tape_status(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
+        return NORMAL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
+        return OFFLINE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ONLINE_PENDING") == 0) {
+        return ONLINE_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ONLINE_IN_PROGRESS") == 0) {
+        return ONLINE_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "PENDING_INSPECTION") == 0) {
+        return PENDING_INSPECTION;
+    } else if (xmlStrcmp(text, (const xmlChar*) "UNKNOWN") == 0) {
+        return UNKNOWN;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_FAILURE") == 0) {
+        return DATA_CHECKPOINT_FAILURE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_MISSING") == 0) {
+        return DATA_CHECKPOINT_MISSING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTFS_WITH_FOREIGN_DATA") == 0) {
+        return LTFS_WITH_FOREIGN_DATA;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FOREIGN") == 0) {
+        return FOREIGN;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_PENDING") == 0) {
+        return IMPORT_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_IN_PROGRESS") == 0) {
+        return IMPORT_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LOST") == 0) {
+        return LOST;
+    } else if (xmlStrcmp(text, (const xmlChar*) "BAD") == 0) {
+        return BAD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "SERIAL_NUMBER_MISMATCH") == 0) {
+        return SERIAL_NUMBER_MISMATCH;
+    } else if (xmlStrcmp(text, (const xmlChar*) "BAD_CODE_MISSING") == 0) {
+        return BAD_CODE_MISSING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_PENDING") == 0) {
+        return FORMAT_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_IN_PROGRESS") == 0) {
+        return FORMAT_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EJECT_TO_EE_IN_PROGRESS") == 0) {
+        return EJECT_TO_EE_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EJECT_FROM_EE_PENDING") == 0) {
+        return EJECT_FROM_EE_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EJECTED") == 0) {
+        return EJECTED;
+    } else {
+        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning UNKNOWN for safety.\n", text);
+        return UNKNOWN;
+    }
+}
 
 static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
     struct _xmlAttr* attribute;
@@ -2256,6 +2310,40 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
 
         response = g_new0(ds3_get_physical_placement_response, 1);
 
+/*
+<Data>
+  <Object Length="10" Name="o3" Offset="0">
+    <PhysicalPlacement>
+      <Tapes>
+        <Tape>
+          <AssignedToBucket>false</AssignedToBucket>
+          <AvailableRawCapacity>10000</AvailableRawCapacity>
+          <BarCode>t2</BarCode>
+          <BucketId />
+          <DescriptionForIdentification />
+          <EjectDate />
+          <EjectLabel />
+          <EjectLocation />
+          <EjectPending />
+          <FullOfData>false</FullOfData>
+          <Id>39b736e5-f7cf-4476-942b-a15a24ae929d</Id>
+          <LastAccessed />
+          <LastCheckpoint />
+          <LastModified />
+          <LastVerified />
+          <PartitionId>5e0bcbca-7cd6-4aea-abdf-d3d6e3dc9eac</PartitionId>
+          <PreviousState />
+          <SerialNumber />
+          <State>PENDING_INSPECTION</State>
+          <TotalRawCapacity>20000</TotalRawCapacity>
+          <Type>LTO5</Type>
+          <WriteProtected>false</WriteProtected>
+        </Tape>
+      </Tapes>
+    </PhysicalPlacement>
+  </Object>
+</Data>
+ */
         for (child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
             if (element_equal(child_node, "Tape") == true) {
                 memset(&tape, 0, sizeof(ds3_tape));

@@ -79,6 +79,30 @@ typedef enum {
 }ds3_job_status;
 
 typedef enum {
+    NORMAL,
+    OFFLINE,
+    ONLINE_PENDING,
+    ONLINE_IN_PROGRESS,
+    PENDING_INSPECTION,
+    UNKNOWN,
+    DATA_CHECKPOINT_FAILURE,
+    DATA_CHECKPOINT_MISSING,
+    LTFS_WITH_FOREIGN_DATA,
+    FOREIGN,
+    IMPORT_PENDING,
+    IMPORT_IN_PROGRESS,
+    LOST,
+    BAD,
+    SERIAL_NUMBER_MISMATCH,
+    BAD_CODE_MISSING,
+    FORMAT_PENDING,
+    FORMAT_IN_PROGRESS,
+    EJECT_TO_EE_IN_PROGRESS,
+    EJECT_FROM_EE_PENDING,
+    EJECTED
+}ds3_tape_status;
+
+typedef enum {
   DATA, NO_TYPE
 }object_type;
 
@@ -210,8 +234,48 @@ typedef struct {
     size_t   jobs_size;
 }ds3_get_jobs_response;
 
+/*
+        <Tape>
+          <AssignedToBucket>false</AssignedToBucket>
+          <AvailableRawCapacity>10000</AvailableRawCapacity>
+          <BarCode>t2</BarCode>
+          <BucketId />
+          <DescriptionForIdentification />
+          <EjectDate />
+          <EjectLabel />
+          <EjectLocation />
+          <EjectPending />
+          <FullOfData>false</FullOfData>
+          <Id>39b736e5-f7cf-4476-942b-a15a24ae929d</Id>
+          <LastAccessed />
+          <LastCheckpoint />
+          <LastModified />
+          <LastVerified />
+          <PartitionId>5e0bcbca-7cd6-4aea-abdf-d3d6e3dc9eac</PartitionId>
+          <PreviousState />
+          <SerialNumber />
+          <State>PENDING_INSPECTION</State>
+          <TotalRawCapacity>20000</TotalRawCapacity>
+          <Type>LTO5</Type>
+          <WriteProtected>false</WriteProtected>
+        </Tape>
+ */
 typedef struct {
+    ds3_bool assigned_to_bucket;
+    uint64_t available_raw_capacity;
     ds3_str* barcode;
+    ds3_str* bucket_id;
+    ds3_str* description;
+    ds3_str* eject_date;
+    ds3_str* eject_label;
+    ds3_str* eject_location;
+    ds3_str* eject_pending; // date that eject was requested
+    ds3_bool full_of_data;
+    ds3_str* id;
+    ds3_str* last_accessed;
+    ds3_str* last_checkpoint;
+    ds3_str* last_verified;
+    ds3_str* partition_id;
 }ds3_tape;
 
 typedef struct {
@@ -290,6 +354,7 @@ LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_obj
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order);
 
 LIBRARY_API ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_object_list* object_list);
+LIBRARY_API ds3_request* ds3_init_get_physical_placement_full_details(const char* bucket_name, ds3_bulk_object_list* object_list);
 
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
