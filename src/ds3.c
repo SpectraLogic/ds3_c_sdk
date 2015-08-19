@@ -142,14 +142,14 @@ static void _ds3_free_metadata_entry(gpointer pointer) {
  * without having to worry about if the data is freed internally.
  */
 static ds3_metadata_entry* ds3_metadata_entry_init(ds3_response_header* header) {
-    uint i;
+    guint i;
     ds3_str* header_value;
     GPtrArray* values = g_ptr_array_new();
     ds3_str* key_name;
     ds3_metadata_entry* response = g_new0(ds3_metadata_entry, 1);
 
     for (i = 0; i < header->values->len; i++) {
-        header_value = g_ptr_array_index(header->values, i);
+        header_value = (ds3_str*)g_ptr_array_index(header->values, i);
         g_ptr_array_add(values, ds3_str_dup(header_value));
     }
 
@@ -250,7 +250,7 @@ ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* _metadata) {
     tmp_key = keys;
 
     while(tmp_key != NULL) {
-        g_ptr_array_add(return_keys, ds3_str_init(tmp_key->data));
+        g_ptr_array_add(return_keys, ds3_str_init((char*)tmp_key->data));
         tmp_key = tmp_key->next;
     }
 
@@ -315,7 +315,7 @@ static void _ds3_free_response_header(gpointer data) {
 }
 
 static ds3_str* _ds3_response_header_get_first(const ds3_response_header* header) {
-    return g_ptr_array_index(header->values, 0);
+    return (ds3_str*)g_ptr_array_index(header->values, 0);
 }
 
 static ds3_response_header* _ds3_init_response_header(const ds3_str* key) {
@@ -327,7 +327,7 @@ static ds3_response_header* _ds3_init_response_header(const ds3_str* key) {
 
 // caller frees all passed in values
 static void _insert_header(GHashTable* headers, const ds3_str* key, const ds3_str* value) {
-    ds3_response_header* header = g_hash_table_lookup(headers, key->value);
+    ds3_response_header* header = (ds3_response_header*)g_hash_table_lookup(headers, key->value);
 
     if (header == NULL) {
         header = _ds3_init_response_header(key);
@@ -669,9 +669,9 @@ static char* _canonicalize_amz_headers(GHashTable* headers) {
 
     while(key != NULL) {
         if(g_str_has_prefix((char*)key->data, "x-amz")){
-            header_signing_value = g_string_new(key->data);
+            header_signing_value = g_string_new((gchar*)key->data);
             header_signing_value = g_string_append(g_string_ascii_down(header_signing_value), ":");
-            header_signing_value = g_string_append(header_signing_value, g_hash_table_lookup(headers, key->data));
+            header_signing_value = g_string_append(header_signing_value, (gchar*)g_hash_table_lookup(headers, key->data));
 
             signing_value = g_string_free(header_signing_value, FALSE);
             g_ptr_array_add(signing_strings, signing_value);
@@ -682,7 +682,7 @@ static char* _canonicalize_amz_headers(GHashTable* headers) {
     g_ptr_array_sort(signing_strings, _gstring_sort);
 
     for (i = 0; i < signing_strings->len; i++) {
-        g_string_append(canonicalized_headers, g_ptr_array_index(signing_strings, i));
+        g_string_append(canonicalized_headers, (gchar*)g_ptr_array_index(signing_strings, i));
         g_string_append(canonicalized_headers, "\n");
     }
 
