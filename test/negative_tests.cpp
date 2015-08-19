@@ -269,7 +269,6 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job) {
     ds3_str_free(job_id);
     clear_bucket(client, bucket_name);
     free_client(client);
-
 }
 
 BOOST_AUTO_TEST_CASE(get_non_existing_job) {
@@ -313,13 +312,9 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
     handle_error(error);
 
     for (n = 0; n < response->list_size; n ++) {
-
       request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
-
       error = ds3_allocate_chunk(client, request, &chunk_response);
-
       ds3_free_request(request);
-
       handle_error(error);
 
       BOOST_REQUIRE(chunk_response->retry_after == 0);

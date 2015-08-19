@@ -40,7 +40,6 @@ void compare_hash(char* filename_1, char* filename_2) {
     if(file_descript_2 < 0) exit(-1);
 
     file_size_1 = get_size_by_fd(file_descript_1);
-
     file_size_2 = get_size_by_fd(file_descript_2);
 
     file_buffer_1 = static_cast<char*>(mmap(0, file_size_1, PROT_READ, MAP_SHARED, file_descript_1, 0));
@@ -62,3 +61,4 @@ void compare_hash(char* filename_1, char* filename_2) {
     g_free(result_1);
     g_free(result_2);
 }
+

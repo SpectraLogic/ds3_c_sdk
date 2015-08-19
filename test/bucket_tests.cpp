@@ -11,6 +11,8 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
 
+    printf("-----Testing Bulk PUT-------\n");
+
     populate_with_objects(client, bucket_name);
 
     request = ds3_init_get_bucket(bucket_name);
@@ -38,6 +40,8 @@ BOOST_AUTO_TEST_CASE( prefix ) {
     const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
 
+    printf("-----Testing Prefix-------\n");
+
     populate_with_objects(client, bucket_name);
 
     request = ds3_init_get_bucket(bucket_name);
@@ -54,7 +58,6 @@ BOOST_AUTO_TEST_CASE( prefix ) {
     ds3_free_bucket_response(response);
 
     clear_bucket(client, bucket_name);
-
     free_client(client);
 }
 
@@ -65,6 +68,8 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     ds3_client* client = get_client();
     const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
+
+    printf("-----Testing Delimiter-------\n");
 
     populate_with_objects(client, bucket_name);
 
@@ -94,6 +99,8 @@ BOOST_AUTO_TEST_CASE(marker) {
     const char* bucket_name = "bucket_test_marker";
     uint64_t num_objs;
 
+    printf("-----Testing Marker-------\n");
+
     populate_with_objects(client,bucket_name);
 
     request = ds3_init_get_bucket(bucket_name);
@@ -122,6 +129,8 @@ BOOST_AUTO_TEST_CASE(max_keys) {
     ds3_client* client = get_client();
     const char* bucket_name = "bucket_test_max_keys";
     uint64_t num_objs;
+
+    printf("-----Testing Max-Keys-------\n");
 
     populate_with_objects(client,bucket_name);
 
@@ -154,9 +163,9 @@ BOOST_AUTO_TEST_CASE(md5_checksum) {
     ds3_bulk_response* response;
     ds3_allocate_chunk_response* chunk_response;
 
+    printf("-----Testing MD5 Checksum-------\n");
 
     ds3_free_request(request);
-
     handle_error(error);
 
     obj_list = ds3_convert_file_list(books, 1);
@@ -167,17 +176,13 @@ BOOST_AUTO_TEST_CASE(md5_checksum) {
     handle_error(error);
 
     for (n = 0; n < response->list_size; n ++) {
-
       request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
-
       error = ds3_allocate_chunk(client, request, &chunk_response);
-
       ds3_free_request(request);
-
       handle_error(error);
-
       BOOST_REQUIRE(chunk_response->retry_after == 0);
       BOOST_REQUIRE(chunk_response->objects != NULL);
+
       for (i = 0; i < chunk_response->objects->size; i++) {
           ds3_bulk_object bulk_object = chunk_response->objects->list[i];
           FILE* file = fopen(bulk_object.name->value, "r");
@@ -201,3 +206,4 @@ BOOST_AUTO_TEST_CASE(md5_checksum) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
+
