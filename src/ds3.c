@@ -1926,61 +1926,83 @@ static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text)
 
 static ds3_tape_state _match_tape_state(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
-        return NORMAL;
+        return TAPE_STATE_NORMAL;
     } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
-        return OFFLINE;
+        return TAPE_STATE_OFFLINE;
     } else if (xmlStrcmp(text, (const xmlChar*) "ONLINE_PENDING") == 0) {
-        return ONLINE_PENDING;
+        return TAPE_STATE_ONLINE_PENDING;
     } else if (xmlStrcmp(text, (const xmlChar*) "ONLINE_IN_PROGRESS") == 0) {
-        return ONLINE_IN_PROGRESS;
+        return TAPE_STATE_ONLINE_IN_PROGRESS;
     } else if (xmlStrcmp(text, (const xmlChar*) "PENDING_INSPECTION") == 0) {
-        return PENDING_INSPECTION;
+        return TAPE_STATE_PENDING_INSPECTION;
     } else if (xmlStrcmp(text, (const xmlChar*) "UNKNOWN") == 0) {
-        return UNKNOWN;
+        return TAPE_STATE_UNKNOWN;
     } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_FAILURE") == 0) {
-        return DATA_CHECKPOINT_FAILURE;
+        return TAPE_STATE_DATA_CHECKPOINT_FAILURE;
     } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_MISSING") == 0) {
-        return DATA_CHECKPOINT_MISSING;
+        return TAPE_STATE_DATA_CHECKPOINT_MISSING;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTFS_WITH_FOREIGN_DATA") == 0) {
-        return LTFS_WITH_FOREIGN_DATA;
+        return TAPE_STATE_LTFS_WITH_FOREIGN_DATA;
     } else if (xmlStrcmp(text, (const xmlChar*) "FOREIGN") == 0) {
-        return FOREIGN;
+        return TAPE_STATE_FOREIGN;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_PENDING") == 0) {
-        return IMPORT_PENDING;
+        return TAPE_STATE_IMPORT_PENDING;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_IN_PROGRESS") == 0) {
-        return IMPORT_IN_PROGRESS;
+        return TAPE_STATE_IMPORT_IN_PROGRESS;
     } else if (xmlStrcmp(text, (const xmlChar*) "LOST") == 0) {
-        return LOST;
+        return TAPE_STATE_LOST;
     } else if (xmlStrcmp(text, (const xmlChar*) "BAD") == 0) {
-        return BAD;
+        return TAPE_STATE_BAD;
     } else if (xmlStrcmp(text, (const xmlChar*) "SERIAL_NUMBER_MISMATCH") == 0) {
-        return SERIAL_NUMBER_MISMATCH;
+        return TAPE_STATE_SERIAL_NUMBER_MISMATCH;
     } else if (xmlStrcmp(text, (const xmlChar*) "BAD_CODE_MISSING") == 0) {
-        return BAD_CODE_MISSING;
+        return TAPE_STATE_BAD_CODE_MISSING;
     } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_PENDING") == 0) {
-        return FORMAT_PENDING;
+        return TAPE_STATE_FORMAT_PENDING;
     } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_IN_PROGRESS") == 0) {
-        return FORMAT_IN_PROGRESS;
+        return TAPE_STATE_FORMAT_IN_PROGRESS;
     } else if (xmlStrcmp(text, (const xmlChar*) "EJECT_TO_EE_IN_PROGRESS") == 0) {
-        return EJECT_TO_EE_IN_PROGRESS;
+        return TAPE_STATE_EJECT_TO_EE_IN_PROGRESS;
     } else if (xmlStrcmp(text, (const xmlChar*) "EJECT_FROM_EE_PENDING") == 0) {
-        return EJECT_FROM_EE_PENDING;
+        return TAPE_STATE_EJECT_FROM_EE_PENDING;
     } else if (xmlStrcmp(text, (const xmlChar*) "EJECTED") == 0) {
-        return EJECTED;
+        return TAPE_STATE_EJECTED;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning UNKNOWN for safety.\n", text);
-        return UNKNOWN;
+        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_STATE_UNKNOWN for safety.\n", text);
+        return TAPE_STATE_UNKNOWN;
     }
 }
 
 static ds3_tape_type _match_tape_type(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
-        return NORMAL;
-    } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
-        return OFFLINE;
+    if (xmlStrcmp(text, (const xmlChar*) "LTO5") == 0) {
+        return TAPE_TYPE_LTO5;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO6") == 0) {
+        return TAPE_TYPE_LTO6;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO7") == 0) {
+        return TAPE_TYPE_LTO7;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO_CLEANING_TAPE") == 0) {
+        return TAPE_TYPE_LTO_CLEANING_TAPE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JC") == 0) {
+        return TAPE_TYPE_TS_JC;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JY") == 0) {
+        return TAPE_TYPE_TS_JY;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JK") == 0) {
+        return TAPE_TYPE_TS_JK;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JD") == 0) {
+        return TAPE_TYPE_TS_JD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JZ") == 0) {
+        return TAPE_TYPE_TS_JZ;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JL") == 0) {
+        return TAPE_TYPE_TS_JL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_CLEANING_TAPE") == 0) {
+        return TAPE_TYPE_TS_CLEANING_TAPE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "UNKNOWN") == 0) {
+        return TAPE_TYPE_UNKNOWN;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FORBIDDEN") == 0) {
+        return TAPE_TYPE_FORBIDDEN;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning UNKNOWN for safety.\n", text);
-        return UNKNOWN;
+        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_TYPE_UNKNOWN for safety.\n", text);
+        return TAPE_TYPE_UNKNOWN;
     }
 }
 static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
