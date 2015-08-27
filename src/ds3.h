@@ -271,6 +271,8 @@ typedef struct {
     ds3_str* serial_number;
     ds3_tape_state state;
     uint64_t total_raw_capacity;
+    ds3_tape_type type;
+    ds3_bool write_protected;
 }ds3_tape;
 
 typedef struct {

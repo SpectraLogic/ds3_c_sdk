@@ -6,6 +6,9 @@
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE( get_physical_placment ){
+
+    printf("-----Testing GetPhysicalPlacement -------\n");
+
     /* For this test to actually work, we would need to wait until the object
      * actually gets put onto tape (which could take minutes).
      * The response for an object that doesn't exist is the same as that
@@ -20,7 +23,8 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     uint64_t num_tapes;
 
     ds3_client* client = get_client();
-    const char* bucket_name = "unit_test_bucket";
+    //const char* bucket_name = "unit_test_bucket";
+    const char* bucket_name = "Spectra_BlackPearl_Backup";
 
     populate_with_objects(client, bucket_name);
 
@@ -28,7 +32,8 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
 
     ds3_bulk_object obj;
     memset(&obj, 0, sizeof(ds3_bulk_object));
-    obj.name = ds3_str_init("resources/not-beowulf.txt");
+    //obj.name = ds3_str_init("resources/not-beowulf.txt");
+    obj.name = ds3_str_init("full_backup_2015-08-24_03-00-00.tar.gz");
     object_list->list[0] = obj;
 
     request = ds3_init_get_physical_placement(bucket_name, object_list);
@@ -45,6 +50,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     }
 
     num_tapes = get_physical_placement_response->num_tapes;
+    printf("Found %lu tapes.", num_tapes);
     BOOST_CHECK_EQUAL(num_tapes, 0);
 
     ds3_free_get_physical_placement_response(get_physical_placement_response);
