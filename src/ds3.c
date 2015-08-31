@@ -1291,9 +1291,12 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
     ds3_str* result;
     text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-    result = ds3_str_init((const char*) text);
-    xmlFree(text);
-    return result;
+    if (NULL != text){
+        result = ds3_str_init((const char*) text);
+        xmlFree(text);
+        return result;
+    }
+    return NULL;
 }
 
 /*
@@ -2365,7 +2368,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
                     } else if (element_equal(tape_node, "BucketId") == true) {
                         tape.bucket_id = xml_get_string(doc, tape_node);
                     } else if (element_equal(tape_node, "DescriptionForIdentification") == true) {
-                        tape.description = xml_get_string(doc, tape_node);
+                       tape.description = xml_get_string(doc, tape_node);
                     } else if (element_equal(tape_node, "EjectDate") == true) {
                         tape.eject_date = xml_get_string(doc, tape_node);
                     } else if (element_equal(tape_node, "EjectLabel") == true) {
