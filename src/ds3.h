@@ -79,6 +79,46 @@ typedef enum {
 }ds3_job_status;
 
 typedef enum {
+    TAPE_STATE_NORMAL,
+    TAPE_STATE_OFFLINE,
+    TAPE_STATE_ONLINE_PENDING,
+    TAPE_STATE_ONLINE_IN_PROGRESS,
+    TAPE_STATE_PENDING_INSPECTION,
+    TAPE_STATE_UNKNOWN,
+    TAPE_STATE_DATA_CHECKPOINT_FAILURE,
+    TAPE_STATE_DATA_CHECKPOINT_MISSING,
+    TAPE_STATE_LTFS_WITH_FOREIGN_DATA,
+    TAPE_STATE_FOREIGN,
+    TAPE_STATE_IMPORT_PENDING,
+    TAPE_STATE_IMPORT_IN_PROGRESS,
+    TAPE_STATE_LOST,
+    TAPE_STATE_BAD,
+    TAPE_STATE_SERIAL_NUMBER_MISMATCH,
+    TAPE_STATE_BAD_CODE_MISSING,
+    TAPE_STATE_FORMAT_PENDING,
+    TAPE_STATE_FORMAT_IN_PROGRESS,
+    TAPE_STATE_EJECT_TO_EE_IN_PROGRESS,
+    TAPE_STATE_EJECT_FROM_EE_PENDING,
+    TAPE_STATE_EJECTED
+}ds3_tape_state;
+
+typedef enum {
+    TAPE_TYPE_LTO5,
+    TAPE_TYPE_LTO6,
+    TAPE_TYPE_LTO7,
+    TAPE_TYPE_LTO_CLEANING_TAPE,
+    TAPE_TYPE_TS_JC,
+    TAPE_TYPE_TS_JY,
+    TAPE_TYPE_TS_JK,
+    TAPE_TYPE_TS_JD,
+    TAPE_TYPE_TS_JZ,
+    TAPE_TYPE_TS_JL,
+    TAPE_TYPE_TS_CLEANING_TAPE,
+    TAPE_TYPE_UNKNOWN,
+    TAPE_TYPE_FORBIDDEN
+}ds3_tape_type;
+
+typedef enum {
   DATA, NO_TYPE
 }object_type;
 
@@ -211,7 +251,28 @@ typedef struct {
 }ds3_get_jobs_response;
 
 typedef struct {
+    ds3_bool assigned_to_bucket;
+    uint64_t available_raw_capacity;
     ds3_str* barcode;
+    ds3_str* bucket_id;
+    ds3_str* description;
+    ds3_str* eject_date;
+    ds3_str* eject_label;
+    ds3_str* eject_location;
+    ds3_str* eject_pending; // date that eject was requested
+    ds3_bool full_of_data;
+    ds3_str* id;
+    ds3_str* last_accessed;
+    ds3_str* last_checkpoint;
+    ds3_str* last_modified;
+    ds3_str* last_verified;
+    ds3_str* partition_id;
+    ds3_tape_state previous_state;
+    ds3_str* serial_number;
+    ds3_tape_state state;
+    uint64_t total_raw_capacity;
+    ds3_tape_type type;
+    ds3_bool write_protected;
 }ds3_tape;
 
 typedef struct {
@@ -290,6 +351,7 @@ LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_obj
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order);
 
 LIBRARY_API ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_object_list* object_list);
+LIBRARY_API ds3_request* ds3_init_get_physical_placement_full_details(const char* bucket_name, ds3_bulk_object_list* object_list);
 
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 

@@ -1194,6 +1194,12 @@ ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_o
     return (ds3_request*) request;
 }
 
+ds3_request* ds3_init_get_physical_placement_full_details(const char* bucket_name, ds3_bulk_object_list* object_list) {
+  struct _ds3_request* request = ds3_init_get_physical_placement(bucket_name, object_list);
+  _set_query_param((ds3_request*) request, "full_details", NULL);
+  return (ds3_request*) request;
+}
+
 ds3_request* ds3_init_allocate_chunk(const char* chunk_id) {
     char* path = g_strconcat("/_rest_/job_chunk/", chunk_id, NULL);
     ds3_str* path_str = ds3_str_init(path);
@@ -1287,19 +1293,28 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
     ds3_str* result;
     text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-    result = ds3_str_init((const char*) text);
-    xmlFree(text);
-    return result;
+    if (NULL != text){
+        result = ds3_str_init((const char*) text);
+        xmlFree(text);
+        return result;
+    }
+    return NULL;
 }
+
+/*
+static ds3_str* xml_get_string_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
+    return xml_get_string(doc, (xmlNodePtr) attribute);
+}
+*/
 
 static uint64_t xml_get_uint64_from_attribute(xmlDocPtr doc, struct _xmlAttr* attribute) {
     return xml_get_uint64(doc, (xmlNodePtr) attribute);
 }
 
-static ds3_bool xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
+static ds3_bool xml_get_bool(const ds3_log* log, xmlDocPtr doc, const xmlNodePtr xml_node) {
     xmlChar* text;
     ds3_bool result;
-    text = xmlNodeListGetString(doc, attribute->xmlChildrenNode, 1);
+    text = xmlNodeListGetString(doc, xml_node->xmlChildrenNode, 1);
     if (xmlStrcmp(text, (xmlChar*)"true") == 0) {
         result = True;
     } else if (xmlStrcmp(text, (xmlChar*)"false") == 0) {
@@ -1310,6 +1325,10 @@ static ds3_bool xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, s
     }
     xmlFree(text);
     return result;
+}
+
+static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
+    return xml_get_bool(log, doc, (xmlNodePtr) attribute);
 }
 
 static void _parse_buckets(const ds3_log* log, xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
@@ -1916,7 +1935,87 @@ static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text)
     }
 }
 
+static ds3_tape_state _match_tape_state(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
+        return TAPE_STATE_NORMAL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
+        return TAPE_STATE_OFFLINE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ONLINE_PENDING") == 0) {
+        return TAPE_STATE_ONLINE_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ONLINE_IN_PROGRESS") == 0) {
+        return TAPE_STATE_ONLINE_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "PENDING_INSPECTION") == 0) {
+        return TAPE_STATE_PENDING_INSPECTION;
+    } else if (xmlStrcmp(text, (const xmlChar*) "UNKNOWN") == 0) {
+        return TAPE_STATE_UNKNOWN;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_FAILURE") == 0) {
+        return TAPE_STATE_DATA_CHECKPOINT_FAILURE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_MISSING") == 0) {
+        return TAPE_STATE_DATA_CHECKPOINT_MISSING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTFS_WITH_FOREIGN_DATA") == 0) {
+        return TAPE_STATE_LTFS_WITH_FOREIGN_DATA;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FOREIGN") == 0) {
+        return TAPE_STATE_FOREIGN;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_PENDING") == 0) {
+        return TAPE_STATE_IMPORT_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_IN_PROGRESS") == 0) {
+        return TAPE_STATE_IMPORT_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LOST") == 0) {
+        return TAPE_STATE_LOST;
+    } else if (xmlStrcmp(text, (const xmlChar*) "BAD") == 0) {
+        return TAPE_STATE_BAD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "SERIAL_NUMBER_MISMATCH") == 0) {
+        return TAPE_STATE_SERIAL_NUMBER_MISMATCH;
+    } else if (xmlStrcmp(text, (const xmlChar*) "BAD_CODE_MISSING") == 0) {
+        return TAPE_STATE_BAD_CODE_MISSING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_PENDING") == 0) {
+        return TAPE_STATE_FORMAT_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_IN_PROGRESS") == 0) {
+        return TAPE_STATE_FORMAT_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EJECT_TO_EE_IN_PROGRESS") == 0) {
+        return TAPE_STATE_EJECT_TO_EE_IN_PROGRESS;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EJECT_FROM_EE_PENDING") == 0) {
+        return TAPE_STATE_EJECT_FROM_EE_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EJECTED") == 0) {
+        return TAPE_STATE_EJECTED;
+    } else {
+        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_STATE_UNKNOWN for safety.\n", text);
+        return TAPE_STATE_UNKNOWN;
+    }
+}
 
+static ds3_tape_type _match_tape_type(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "LTO5") == 0) {
+        return TAPE_TYPE_LTO5;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO6") == 0) {
+        return TAPE_TYPE_LTO6;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO7") == 0) {
+        return TAPE_TYPE_LTO7;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO_CLEANING_TAPE") == 0) {
+        return TAPE_TYPE_LTO_CLEANING_TAPE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JC") == 0) {
+        return TAPE_TYPE_TS_JC;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JY") == 0) {
+        return TAPE_TYPE_TS_JY;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JK") == 0) {
+        return TAPE_TYPE_TS_JK;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JD") == 0) {
+        return TAPE_TYPE_TS_JD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JZ") == 0) {
+        return TAPE_TYPE_TS_JZ;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JL") == 0) {
+        return TAPE_TYPE_TS_JL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_CLEANING_TAPE") == 0) {
+        return TAPE_TYPE_TS_CLEANING_TAPE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "UNKNOWN") == 0) {
+        return TAPE_TYPE_UNKNOWN;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FORBIDDEN") == 0) {
+        return TAPE_TYPE_FORBIDDEN;
+    } else {
+        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_TYPE_UNKNOWN for safety.\n", text);
+        return TAPE_TYPE_UNKNOWN;
+    }
+}
 static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
     struct _xmlAttr* attribute;
     xmlChar* text;
@@ -2174,7 +2273,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     ds3_bulk_object_list* obj_list;
     ds3_xml_send_buff send_buff;
 
-    xmlNodePtr cur, child_node, tape_attr;
+    xmlNodePtr cur, child_node, tape_node;
 
     GByteArray* xml_blob;
 
@@ -2261,13 +2360,67 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
         for (child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
             if (element_equal(child_node, "Tape") == true) {
                 memset(&tape, 0, sizeof(ds3_tape));
-                for (tape_attr = child_node->xmlChildrenNode; tape_attr != NULL; tape_attr = tape_attr->next){
-                    if (element_equal(tape_attr, "BarCode") == true) {
-                      tape.barcode = xml_get_string(doc, tape_attr);
+                for (tape_node = child_node->xmlChildrenNode; tape_node != NULL; tape_node = tape_node->next){
+                    if (element_equal(tape_node, "AssignedToBucket") == true) {
+                        tape.assigned_to_bucket = xml_get_bool(client->log, doc, tape_node);
+                    } else if (element_equal(tape_node, "AvailableRawCapacity") == true) {
+                        tape.available_raw_capacity = xml_get_uint64(doc, tape_node);
+                    } else if (element_equal(tape_node, "BarCode") == true) {
+                        tape.barcode = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "BucketId") == true) {
+                        tape.bucket_id = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "DescriptionForIdentification") == true) {
+                       tape.description = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectDate") == true) {
+                        tape.eject_date = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectLabel") == true) {
+                        tape.eject_label = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectLocation") == true) {
+                        tape.eject_location = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "EjectPending") == true) {
+                        tape.eject_pending = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "FullOfData") == true) {
+                        tape.full_of_data = xml_get_bool(client->log, doc, tape_node);
+                    } else if (element_equal(tape_node, "Id") == true) {
+                        tape.id = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastAccessed") == true) {
+                        tape.last_accessed = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastCheckpoint") == true) {
+                        tape.last_checkpoint = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastModified") == true) {
+                        tape.last_modified = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "LastVerified") == true) {
+                        tape.last_verified = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "PartitionId") == true) {
+                        tape.partition_id = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "PreviousState") == true) {
+                        xmlChar* text = xmlNodeListGetString(doc, tape_node, 1);
+                        if (text == NULL) {
+                            continue;
+                        }
+                        tape.previous_state = _match_tape_state(client->log, text);
+                    } else if (element_equal(tape_node, "SerialNumber") == true) {
+                        tape.serial_number = xml_get_string(doc, tape_node);
+                    } else if (element_equal(tape_node, "State") == true) {
+                        xmlChar* text = xmlNodeListGetString(doc, tape_node, 1);
+                        if (text == NULL) {
+                            continue;
+                        }
+                        tape.state = _match_tape_state(client->log, text);
+                    } else if (element_equal(tape_node, "TotalRawCapacity") == true) {
+                        tape.total_raw_capacity = xml_get_uint64(doc, tape_node);
+                    } else if (element_equal(tape_node, "Type") == true) {
+                        xmlChar* text = xmlNodeListGetString(doc, tape_node, 1);
+                        if (text == NULL) {
+                            continue;
+                        }
+                        tape.type = _match_tape_type(client->log, text);
+                    } else if (element_equal(tape_node, "WriteProtected") == true) {
+                        tape.write_protected = xml_get_bool(client->log, doc, tape_node);
                     }
                 }
                 g_array_append_val(tape_array, tape);
-          }
+            }
         }
         response->num_tapes = tape_array->len;
         response->tapes = (ds3_tape*)tape_array->data;
@@ -2279,7 +2432,6 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
 
     *_response = response;
     return NULL;
-
 }
 
 ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_bulk_response** response) {
@@ -2640,14 +2792,27 @@ void ds3_free_get_physical_placement_response(ds3_get_physical_placement_respons
     if (response == NULL) {
         return;
     }
-    num_tapes = response->num_tapes;
 
+    num_tapes = response->num_tapes;
     for (i = 0; i < num_tapes; i++) {
         ds3_tape tape = response->tapes[i];
         ds3_str_free(tape.barcode);
+        ds3_str_free(tape.bucket_id);
+        ds3_str_free(tape.description);
+        ds3_str_free(tape.eject_date);
+        ds3_str_free(tape.eject_label);
+        ds3_str_free(tape.eject_location);
+        ds3_str_free(tape.eject_pending);
+        ds3_str_free(tape.id);
+        ds3_str_free(tape.last_accessed);
+        ds3_str_free(tape.last_checkpoint);
+        ds3_str_free(tape.last_modified);
+        ds3_str_free(tape.last_verified);
+        ds3_str_free(tape.partition_id);
+        ds3_str_free(tape.serial_number);
     }
-    g_free(response->tapes);
 
+    g_free(response->tapes);
     g_free(response);
 }
 
