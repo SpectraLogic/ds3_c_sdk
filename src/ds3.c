@@ -1302,12 +1302,6 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     return result;
 }
 
-/*
-static ds3_str* xml_get_string_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
-    return xml_get_string(doc, (xmlNodePtr) attribute);
-}
-*/
-
 static uint64_t xml_get_uint64_from_attribute(xmlDocPtr doc, struct _xmlAttr* attribute) {
     return xml_get_uint64(doc, (xmlNodePtr) attribute);
 }
