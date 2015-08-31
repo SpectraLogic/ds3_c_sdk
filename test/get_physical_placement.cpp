@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     uint64_t num_tapes;
 
     ds3_client* client = get_client();
-    const char* bucket_name = "unit_test_bucket";
+    const char* bucket_name = "get_physical_placement_test_bucket";
     populate_with_objects(client, bucket_name);
 
     ds3_bulk_object_list* object_list = ds3_init_bulk_object_list(1);
@@ -57,9 +57,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
 // For this test to actually work, we need an object to be already written to tape.
 /*
 BOOST_AUTO_TEST_CASE( get_physical_placment_full_details ){
-
     printf("-----Testing GetPhysicalPlacement with full_details -------\n");
-
 
     ds3_request* request = NULL;
     ds3_error* error = NULL;
@@ -67,13 +65,13 @@ BOOST_AUTO_TEST_CASE( get_physical_placment_full_details ){
     uint64_t num_tapes;
 
     ds3_client* client = get_client();
-    const char* bucket_name = "test_bucket";
+    const char* bucket_name = "Spectra-BlackPearl-Backup";
 
     ds3_bulk_object_list* object_list = ds3_init_bulk_object_list(1);
 
     ds3_bulk_object obj;
     memset(&obj, 0, sizeof(ds3_bulk_object));
-    obj.name = ds3_str_init("ideaIC-14.1.4.exe");
+    obj.name = ds3_str_init("full_backup_2015-08-31_03-00-00.tar.gz");
     object_list->list[0] = obj;
 
     request = ds3_init_get_physical_placement(bucket_name, object_list);
@@ -90,11 +88,10 @@ BOOST_AUTO_TEST_CASE( get_physical_placment_full_details ){
     }
 
     num_tapes = get_physical_placement_response->num_tapes;
-    printf("\n\nFound %lu tapes.\n\n", num_tapes);
     BOOST_CHECK(num_tapes > 0);
 
     BOOST_CHECK_EQUAL(get_physical_placement_response->tapes[0].assigned_to_bucket, True);
-    BOOST_CHECK(get_physical_placement_response->tapes[0].available_raw_capacity != NULL);
+    BOOST_CHECK(get_physical_placement_response->tapes[0].available_raw_capacity > 0);
     BOOST_CHECK(get_physical_placement_response->tapes[0].barcode != NULL);
     BOOST_CHECK(get_physical_placement_response->tapes[0].bucket_id != NULL);
     BOOST_CHECK(get_physical_placement_response->tapes[0].id != NULL);
@@ -103,7 +100,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment_full_details ){
     BOOST_CHECK(get_physical_placement_response->tapes[0].last_modified != NULL);
     BOOST_CHECK(get_physical_placement_response->tapes[0].partition_id != NULL);
     BOOST_CHECK(get_physical_placement_response->tapes[0].serial_number != NULL);
-    BOOST_CHECK(get_physical_placement_response->tapes[0].total_raw_capacity != NULL);
+    BOOST_CHECK(get_physical_placement_response->tapes[0].total_raw_capacity > 0);
 
     ds3_free_get_physical_placement_response(get_physical_placement_response);
     free_client(client);

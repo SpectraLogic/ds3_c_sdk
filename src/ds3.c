@@ -1293,12 +1293,13 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
     ds3_str* result;
     text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-    if (NULL != text){
-        result = ds3_str_init((const char*) text);
-        xmlFree(text);
-        return result;
+    if (NULL == text){
+        // Element is found, but is empty: <name />
+        return NULL;
     }
-    return NULL;
+    result = ds3_str_init((const char*) text);
+    xmlFree(text);
+    return result;
 }
 
 /*
