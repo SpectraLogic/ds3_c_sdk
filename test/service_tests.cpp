@@ -75,6 +75,11 @@ BOOST_AUTO_TEST_CASE( get_system_information ) {
     BOOST_CHECK(response->api_version != NULL);
     BOOST_CHECK(response->serial_number != NULL);
 
+    BOOST_CHECK(response->build_information != NULL);
+    BOOST_CHECK(response->build_information->branch != NULL);
+    BOOST_CHECK(response->build_information->revision != NULL);
+    BOOST_CHECK(response->build_information->version != NULL);
+
     ds3_free_request(request);
     ds3_free_get_system_information(response);
     free_client(client);
