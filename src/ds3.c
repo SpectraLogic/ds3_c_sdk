@@ -1388,7 +1388,7 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
             _parse_build_information(client->log, doc, sys_info_node, &response->build_information);
         } else if (element_equal(sys_info_node, "ApiVersion")) {
             response->api_version = xml_get_string(doc, sys_info_node);
-        } else if (element_equal(sys_info_node, "SerailNumber")) {
+        } else if (element_equal(sys_info_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, sys_info_node);
         } else {
             LOG(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", sys_info_node->name);
