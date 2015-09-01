@@ -9,6 +9,8 @@ BOOST_AUTO_TEST_CASE( get_service ) {
     ds3_request* request = ds3_init_get_service();
     ds3_get_service_response* response;
 
+    printf("-----Testing GET service-------\n");
+
     ds3_error* error = ds3_get_service(client, request, &response);
 
     BOOST_CHECK(error == NULL);
@@ -25,6 +27,8 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
     const char* bucket_name = "unit_test_bucket";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     ds3_get_service_response* response;
+
+    printf("-----Testing GET service after PUT bucket-------\n");
 
     ds3_error* error = ds3_put_bucket(client, request);
 
@@ -56,4 +60,22 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
 
     free_client(client);
     BOOST_CHECK(error == NULL);
+}
+
+BOOST_AUTO_TEST_CASE( get_system_information ) {
+    ds3_client* client = get_client();
+    ds3_request* request = ds3_init_get_system_information();
+    ds3_get_system_information_response* response;
+
+    printf("-----Testing GET system_information-------\n");
+
+    ds3_error* error = ds3_get_system_information(client, request, &response);
+    BOOST_CHECK(error == NULL);
+
+    BOOST_CHECK(response->api_version != NULL);
+    BOOST_CHECK(response->serial_number != NULL);
+
+    ds3_free_request(request);
+    ds3_free_get_system_information(response);
+    free_client(client);
 }

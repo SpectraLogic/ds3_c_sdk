@@ -1106,6 +1106,10 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     return path;
 }
 
+ds3_request* ds3_init_get_system_information(void) {
+    return (ds3_request*) _common_request_init(HTTP_GET, _build_path( "/_rest_/SYSTEM_INFORMATION", NULL, NULL));
+}
+
 ds3_request* ds3_init_get_service(void) {
     return (ds3_request*) _common_request_init(HTTP_GET, _build_path( "/", NULL, NULL));
 }
@@ -1324,6 +1328,77 @@ static ds3_bool xml_get_bool(const ds3_log* log, xmlDocPtr doc, const xmlNodePtr
 
 static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
     return xml_get_bool(log, doc, (xmlNodePtr) attribute);
+}
+
+static void _parse_build_information(const ds3_log* log, xmlDocPtr doc, xmlNodePtr build_info_node, ds3_build_information** _build_info_response) {
+    ds3_build_information* build_info_response;
+    xmlNodePtr build_element;
+    build_info_response = g_new0(ds3_build_information, 1);
+
+    for (build_element = build_info_node->xmlChildrenNode; build_element != NULL; build_element = build_element->next) {
+        if (element_equal(build_element, "Branch") == true) {
+            build_info_response->branch = xml_get_string(doc, build_element);
+        } else if (element_equal(build_element, "Revision")) {
+            build_info_response->revision = xml_get_string(doc, build_element);
+        } else if (element_equal(build_element, "Version")) {
+            build_info_response->version = xml_get_string(doc, build_element);
+        } else {
+            LOG(log, DS3_ERROR, "Unknown element: (%s)\n", build_element->name);
+        }
+    }
+    *_build_info_response = build_info_response;
+}
+
+ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** _response) {
+    ds3_get_system_information_response* response;
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr sys_info_node;
+    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
+
+    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    root = xmlDocGetRootElement(doc);
+    if (element_equal(root, "Data") == false) {
+        char* message = g_strconcat("Expected the root element to be 'Data'.  The actual response is: ", xml_blob->data, NULL);
+        xmlFreeDoc(doc);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    response = g_new0(ds3_get_system_information_response, 1);
+    for (sys_info_node = root->xmlChildrenNode; sys_info_node != NULL; sys_info_node = sys_info_node->next) {
+        if (element_equal(sys_info_node, "BuildInformation") == true) {
+            _parse_build_information(client->log, doc, sys_info_node, &response->build_information);
+        } else if (element_equal(sys_info_node, "ApiVersion")) {
+            response->api_version = xml_get_string(doc, sys_info_node);
+        } else if (element_equal(sys_info_node, "SerailNumber")) {
+            response->serial_number = xml_get_string(doc, sys_info_node);
+        } else {
+            LOG(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", sys_info_node->name);
+        }
+    }
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
+    *_response = response;
+    return NULL;
 }
 
 static void _parse_buckets(const ds3_log* log, xmlDocPtr doc, xmlNodePtr buckets_node, ds3_get_service_response* response) {
@@ -3170,4 +3245,38 @@ void ds3_free_metadata_keys(ds3_metadata_keys_result* metadata_keys) {
         g_free(metadata_keys->keys);
     }
     g_free(metadata_keys);
+}
+
+void ds3_free_build_information(ds3_build_information* build_info) {
+    if (build_info == NULL) {
+        return;
+    }
+
+    if (build_info->branch != NULL) {
+        ds3_str_free(build_info->branch);
+    }
+    if (build_info->revision != NULL) {
+        ds3_str_free(build_info->revision);
+    }
+    if (build_info->version != NULL) {
+        ds3_str_free(build_info->version);
+    }
+    g_free(build_info);
+}
+
+void ds3_free_get_system_information(ds3_get_system_information_response* system_info) {
+    if (system_info == NULL) {
+        return;
+    }
+
+    if (system_info->api_version != NULL) {
+        ds3_str_free(system_info->api_version);
+    }
+    if (system_info->serial_number != NULL) {
+        ds3_str_free(system_info->serial_number);
+    }
+    if (system_info->build_information != NULL) {
+        ds3_free_build_information(system_info->build_information);
+    }
+    g_free(system_info);
 }

@@ -320,6 +320,19 @@ typedef struct {
 
 typedef struct _ds3_metadata ds3_metadata;
 
+typedef struct {
+    ds3_str*  branch;
+    ds3_str*  revision;
+    ds3_str*  version;
+}ds3_build_information;
+
+typedef struct {
+    ds3_str* api_version;
+    ds3_str* serial_number;
+    ds3_build_information* build_information;
+}ds3_get_system_information_response;
+
+
 LIBRARY_API ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name);
 LIBRARY_API unsigned int ds3_metadata_size(const ds3_metadata* metadata);
 LIBRARY_API ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata);
@@ -329,6 +342,7 @@ LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
 
+LIBRARY_API ds3_request* ds3_init_get_system_information(void);
 LIBRARY_API ds3_request* ds3_init_get_service(void);
 LIBRARY_API ds3_request* ds3_init_get_bucket(const char* bucket_name);
 LIBRARY_API ds3_request* ds3_init_head_object(const char* bucket_name, const char* object_name);
@@ -367,6 +381,7 @@ LIBRARY_API void ds3_request_set_id(ds3_request* request, const char* id);
 LIBRARY_API void ds3_request_set_type(ds3_request* request, object_type type);
 LIBRARY_API void ds3_request_set_version(ds3_request* request, const char* version);
 
+LIBRARY_API ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** response);
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
 LIBRARY_API ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
@@ -405,6 +420,8 @@ LIBRARY_API void ds3_free_metadata_entry(ds3_metadata_entry* metadata_entry);
 LIBRARY_API void ds3_free_metadata_keys(ds3_metadata_keys_result* metadata_keys);
 LIBRARY_API void ds3_free_objects_response(ds3_get_objects_response* response);
 LIBRARY_API void ds3_free_get_jobs_response(ds3_get_jobs_response* response);
+LIBRARY_API void ds3_free_build_information(ds3_build_information* build_info);
+LIBRARY_API void ds3_free_get_system_information(ds3_get_system_information_response* system_info);
 LIBRARY_API void ds3_cleanup(void);
 
 LIBRARY_API void ds3_print_request(const ds3_request* request);
