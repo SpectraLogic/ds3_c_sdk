@@ -26,7 +26,7 @@ void handle_error(ds3_error* error) {
 
 int main(void) {
     const char* bucket_name = "put_sample";
-    const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
+    const char* books[4] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt"};
 
     // Get a client instance which uses the environment variables to get the endpoint and credentials
     ds3_client* client;
@@ -51,7 +51,7 @@ int main(void) {
     handle_error(error);
 
     // Create the bulk put request
-    obj_list = ds3_convert_file_list(books, 5);
+    obj_list = ds3_convert_file_list(books, 4);
     request = ds3_init_put_bulk(bucket_name, obj_list);
 
     // Initialize the bulk put
