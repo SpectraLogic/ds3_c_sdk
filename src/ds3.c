@@ -2844,15 +2844,14 @@ ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request) 
 
 void ds3_free_bucket_response(ds3_get_bucket_response* response){
     size_t num_objects;
-    int i;
+    int index;
     if (response == NULL) {
         return;
     }
 
     num_objects = response->num_objects;
-
-    for (i = 0; i < num_objects; i++) {
-        ds3_object object = response->objects[i];
+    for (index = 0; index < num_objects; index++) {
+        ds3_object object = response->objects[index];
         ds3_str_free(object.name);
         ds3_str_free(object.etag);
         ds3_str_free(object.storage_class);
@@ -2869,8 +2868,8 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
     ds3_str_free(response->prefix);
 
     if (response->common_prefixes != NULL) {
-        for (i = 0; i < response->num_common_prefixes; i++) {
-            ds3_str_free(response->common_prefixes[i]);
+        for (index = 0; index < response->num_common_prefixes; index++) {
+            ds3_str_free(response->common_prefixes[index]);
         }
         g_free(response->common_prefixes);
     }
@@ -2880,15 +2879,15 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
 
 void ds3_free_objects_response(ds3_get_objects_response* response){
     size_t num_objects;
-    int i;
+    int object_index;
     if (response == NULL) {
         return;
     }
 
     num_objects = response->num_objects;
     ds3_search_object* object;
-    for (i = 0; i < num_objects; i++) {
-        object = response->objects[i];
+    for (object_index = 0; object_index < num_objects; object_index++) {
+        object = response->objects[object_index];
         ds3_str_free(object->bucket_id);
         ds3_str_free(object->id);
         ds3_str_free(object->name);
@@ -2901,20 +2900,19 @@ void ds3_free_objects_response(ds3_get_objects_response* response){
     }
 
     g_free(response->objects);
-
     g_free(response);
 }
 
 void ds3_free_get_physical_placement_response(ds3_get_physical_placement_response* response){
     size_t num_tapes;
-    int i;
+    int tape_index;
     if (response == NULL) {
         return;
     }
 
     num_tapes = response->num_tapes;
-    for (i = 0; i < num_tapes; i++) {
-        ds3_tape tape = response->tapes[i];
+    for (tape_index = 0; tape_index < num_tapes; tape_index++) {
+        ds3_tape tape = response->tapes[tape_index];
         ds3_str_free(tape.barcode);
         ds3_str_free(tape.bucket_id);
         ds3_str_free(tape.description);
@@ -2937,7 +2935,7 @@ void ds3_free_get_physical_placement_response(ds3_get_physical_placement_respons
 
 void ds3_free_service_response(ds3_get_service_response* response){
     size_t num_buckets;
-    int i;
+    int bucket_index;
 
     if (response == NULL) {
         return;
@@ -2945,8 +2943,8 @@ void ds3_free_service_response(ds3_get_service_response* response){
 
     num_buckets = response->num_buckets;
 
-    for (i = 0; i<num_buckets; i++) {
-        ds3_bucket bucket = response->buckets[i];
+    for (bucket_index = 0; bucket_index < num_buckets; bucket_index++) {
+        ds3_bucket bucket = response->buckets[bucket_index];
         ds3_str_free(bucket.name);
         ds3_str_free(bucket.creation_date);
     }
@@ -2962,25 +2960,11 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
         return;
     }
 
-    if (response->job_id != NULL) {
-        ds3_str_free(response->job_id);
-    }
-
-    if (response->bucket_name != NULL) {
-        ds3_str_free(response->bucket_name);
-    }
-
-    if (response->start_date != NULL) {
-        ds3_str_free(response->start_date);
-    }
-
-    if (response->user_id != NULL) {
-        ds3_str_free(response->user_id);
-    }
-
-    if (response->user_name != NULL) {
-        ds3_str_free(response->user_name);
-    }
+    ds3_str_free(response->job_id);
+    ds3_str_free(response->bucket_name);
+    ds3_str_free(response->start_date);
+    ds3_str_free(response->user_id);
+    ds3_str_free(response->user_name);
 
     if (response->list != NULL ) {
         for (i = 0; i < response->list_size; i++) {
@@ -3013,12 +2997,9 @@ void ds3_free_owner(ds3_owner* owner) {
     if (owner == NULL) {
         return;
     }
-    if (owner->name != NULL) {
-        ds3_str_free(owner->name);
-    }
-    if (owner->id != NULL) {
-        ds3_str_free(owner->id);
-    }
+
+    ds3_str_free(owner->name);
+    ds3_str_free(owner->id);
     g_free(owner);
 }
 
@@ -3027,13 +3008,8 @@ void ds3_free_creds(ds3_creds* creds) {
         return;
     }
 
-    if (creds->access_id != NULL) {
-        ds3_str_free(creds->access_id);
-    }
-
-    if (creds->secret_key != NULL) {
-        ds3_str_free(creds->secret_key);
-    }
+    ds3_str_free(creds->access_id);
+    ds3_str_free(creds->secret_key);
     g_free(creds);
 }
 
@@ -3041,12 +3017,9 @@ void ds3_free_client(ds3_client* client) {
     if (client == NULL) {
       return;
     }
-    if (client->endpoint != NULL) {
-        ds3_str_free(client->endpoint);
-    }
-    if (client->proxy != NULL) {
-        ds3_str_free(client->proxy);
-    }
+
+    ds3_str_free(client->endpoint);
+    ds3_str_free(client->proxy);
     if (client->log != NULL) {
         g_free(client->log);
     }
@@ -3058,19 +3031,16 @@ void ds3_free_request(ds3_request* _request) {
     if (_request == NULL) {
         return;
     }
+
     request = (struct _ds3_request*) _request;
-    if (request->path != NULL) {
-        ds3_str_free(request->path);
-    }
     if (request->headers != NULL) {
         g_hash_table_destroy(request->headers);
     }
     if (request->query_params != NULL) {
         g_hash_table_destroy(request->query_params);
     }
-    if (request->md5 != NULL) {
-        ds3_str_free(request->md5);
-    }
+    ds3_str_free(request->path);
+    ds3_str_free(request->md5);
     g_free(request);
 }
 
@@ -3092,20 +3062,13 @@ void ds3_free_error(ds3_error* error) {
         return;
     }
 
-    if (error->message != NULL) {
-        ds3_str_free(error->message);
-    }
+    ds3_str_free(error->message);
 
     if (error->error != NULL) {
         ds3_error_response* error_response = error->error;
 
-        if (error_response->status_message != NULL) {
-            ds3_str_free(error_response->status_message);
-        }
-
-        if (error_response->error_body != NULL) {
-            ds3_str_free(error_response->error_body);
-        }
+        ds3_str_free(error_response->status_message);
+        ds3_str_free(error_response->error_body);
 
         g_free(error_response);
     }
@@ -3173,25 +3136,25 @@ ds3_bulk_object_list* ds3_convert_file_list(const char** file_list, uint64_t num
 }
 
 ds3_bulk_object_list* ds3_convert_file_list_with_basepath(const char** file_list, uint64_t num_files, const char* base_path) {
-    uint64_t i;
+    uint64_t file_index;
     ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_files);
 
-    for (i = 0; i < num_files; i++) {
-        obj_list->list[i] = _ds3_bulk_object_from_file(file_list[i], base_path);
+    for (file_index = 0; file_index < num_files; file_index++) {
+        obj_list->list[file_index] = _ds3_bulk_object_from_file(file_list[file_index], base_path);
     }
 
     return obj_list;
 }
 
 ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_t num_objects) {
-    uint64_t i;
+    uint64_t object_index;
     ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_objects);
 
-    for (i = 0; i < num_objects; i++) {
+    for (object_index = 0; object_index < num_objects; object_index++) {
         ds3_bulk_object obj;
         memset(&obj, 0, sizeof(ds3_bulk_object));
-        obj.name = ds3_str_dup(objects[i].name);
-        obj_list->list[i] = obj;
+        obj.name = ds3_str_dup(objects[object_index].name);
+        obj_list->list[object_index] = obj;
     }
 
     return obj_list;
@@ -3206,30 +3169,19 @@ ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files) {
 }
 
 void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
-    uint64_t i, count;
+    uint64_t list_index, count;
     if (object_list == NULL) {
         return;
     }
+
     count = object_list->size;
-    for (i = 0; i < count; i++) {
-        ds3_str* file_name = object_list->list[i].name;
-        if (file_name == NULL) {
-            continue;
-        }
-        ds3_str_free(file_name);
+    for (list_index = 0; list_index < count; list_index++) {
+        ds3_str_free(object_list->list[list_index].name);
     }
 
-    if (object_list->server_id != NULL) {
-        ds3_str_free(object_list->server_id);
-    }
-
-    if (object_list->node_id != NULL) {
-        ds3_str_free(object_list->node_id);
-    }
-
-    if (object_list->chunk_id != NULL) {
-        ds3_str_free(object_list->chunk_id);
-    }
+    ds3_str_free(object_list->server_id);
+    ds3_str_free(object_list->node_id);
+    ds3_str_free(object_list->chunk_id);
 
     g_free(object_list->list);
     g_free(object_list);
@@ -3260,17 +3212,15 @@ void ds3_free_available_chunks_response(ds3_get_available_chunks_response* respo
 }
 
 void ds3_free_metadata_entry(ds3_metadata_entry* entry) {
-    int i;
+    int value_index;
     ds3_str* value;
     if (entry->name != NULL) {
         ds3_str_free(entry->name);
     }
     if (entry->values != NULL) {
-        for (i = 0; i < entry->num_values; i++) {
-            value = entry->values[i];
-            if (value != NULL) {
-                ds3_str_free(value);
-            }
+        for (value_index = 0; value_index < entry->num_values; value_index++) {
+            value = entry->values[value_index];
+            ds3_str_free(value);
         }
         g_free(entry->values);
     }
@@ -3278,18 +3228,14 @@ void ds3_free_metadata_entry(ds3_metadata_entry* entry) {
 }
 
 void ds3_free_metadata_keys(ds3_metadata_keys_result* metadata_keys) {
-    uint64_t i;
-    ds3_str* value;
+    uint64_t key_index;
     if (metadata_keys == NULL) {
         return;
     }
 
     if (metadata_keys->keys != NULL) {
-        for (i = 0; i < metadata_keys->num_keys; i++) {
-            value = metadata_keys->keys[i];
-            if (value != NULL) {
-                ds3_str_free(value);
-            }
+        for (key_index = 0; key_index < metadata_keys->num_keys; key_index++) {
+            ds3_str_free(metadata_keys->keys[key_index]);
         }
         g_free(metadata_keys->keys);
     }
@@ -3301,15 +3247,10 @@ void ds3_free_build_information(ds3_build_information* build_info) {
         return;
     }
 
-    if (build_info->branch != NULL) {
-        ds3_str_free(build_info->branch);
-    }
-    if (build_info->revision != NULL) {
-        ds3_str_free(build_info->revision);
-    }
-    if (build_info->version != NULL) {
-        ds3_str_free(build_info->version);
-    }
+    ds3_str_free(build_info->branch);
+    ds3_str_free(build_info->revision);
+    ds3_str_free(build_info->version);
+
     g_free(build_info);
 }
 
@@ -3318,14 +3259,9 @@ void ds3_free_get_system_information(ds3_get_system_information_response* system
         return;
     }
 
-    if (system_info->api_version != NULL) {
-        ds3_str_free(system_info->api_version);
-    }
-    if (system_info->serial_number != NULL) {
-        ds3_str_free(system_info->serial_number);
-    }
-    if (system_info->build_information != NULL) {
-        ds3_free_build_information(system_info->build_information);
-    }
+    ds3_str_free(system_info->api_version);
+    ds3_str_free(system_info->serial_number);
+    ds3_free_build_information(system_info->build_information);
+
     g_free(system_info);
 }
