@@ -1110,6 +1110,10 @@ ds3_request* ds3_init_get_system_information(void) {
     return (ds3_request*) _common_request_init(HTTP_GET, _build_path( "/_rest_/SYSTEM_INFORMATION", NULL, NULL));
 }
 
+ds3_request* ds3_init_verify_system_health(void) {
+    return (ds3_request*) _common_request_init(HTTP_GET, _build_path( "/_rest_/SYSTEM_HEALTH", NULL, NULL));
+}
+
 ds3_request* ds3_init_get_service(void) {
     return (ds3_request*) _common_request_init(HTTP_GET, _build_path( "/", NULL, NULL));
 }
@@ -1398,6 +1402,51 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
     *_response = response;
+    return NULL;
+}
+
+ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request* request, uint64_t* ms_required_to_verify_data_planner_health) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
+
+    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    root = xmlDocGetRootElement(doc);
+    if (element_equal(root, "Data") == false) {
+        char* message = g_strconcat("Expected the root element to be 'Data'.  The actual response is: ", xml_blob->data, NULL);
+        xmlFreeDoc(doc);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "MsRequiredToVerifyDataPlannerHealth") == true) {
+            *ms_required_to_verify_data_planner_health = xml_get_uint64(doc, child_node);
+        } else {
+            LOG(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
+        }
+    }
+
+    xmlFreeDoc(doc);
+    g_byte_array_free(xml_blob, TRUE);
     return NULL;
 }
 
