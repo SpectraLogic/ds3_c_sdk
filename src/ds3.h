@@ -332,7 +332,6 @@ typedef struct {
     ds3_build_information* build_information;
 }ds3_get_system_information_response;
 
-
 LIBRARY_API ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name);
 LIBRARY_API unsigned int ds3_metadata_size(const ds3_metadata* metadata);
 LIBRARY_API ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata);
@@ -360,6 +359,7 @@ LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_get_objects(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_verify_system_health(void);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order);
@@ -382,6 +382,7 @@ LIBRARY_API void ds3_request_set_type(ds3_request* request, object_type type);
 LIBRARY_API void ds3_request_set_version(ds3_request* request, const char* version);
 
 LIBRARY_API ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** response);
+LIBRARY_API ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request* request, uint64_t* ms_required_to_verify_data_planner_health);
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
 LIBRARY_API ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
