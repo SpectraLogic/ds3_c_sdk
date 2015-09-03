@@ -44,18 +44,18 @@ int main(void) {
     handle_error(error);
 
     // Create a bucket where our files will be stored
-    request = ds3_init_put_bucket(bucket_name);
-
-    error = ds3_put_bucket(client, request);
+    request = ds3_init_put_bucket(bucket_name); // We need to create the request
+    
+    error = ds3_put_bucket(client, request); // This will send the request
     ds3_free_request(request);
     handle_error(error);
 
     // Create the bulk put request
-    obj_list = ds3_convert_file_list(books, 4);
-    request = ds3_init_put_bulk(bucket_name, obj_list);
+    obj_list = ds3_convert_file_list(books, 4); // This takes a list of files and creates ds3 object structs
+    request = ds3_init_put_bulk(bucket_name, obj_list); // Creating the request that will be the bulk put
 
     // Initialize the bulk put
-    error = ds3_bulk(client, request, &response);
+    error = ds3_bulk(client, request, &response); // Sends the bulk put request to the server
     ds3_free_request(request);
     handle_error(error);
 
