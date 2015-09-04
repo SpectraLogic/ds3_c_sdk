@@ -1683,19 +1683,10 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
     return error;
 }
 
-ds3_error* ds3_head_bucket(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
+ds3_error* ds3_head_bucket(const ds3_client* client, const ds3_request* request) {
     ds3_error* error;
-    GHashTable* return_headers;
-    ds3_metadata* metadata;
 
-    error = _net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
-
-    if (error == NULL) {
-        fprintf(stderr, "Head bucket completed successfully\n");
-        metadata = _init_metadata(return_headers);
-        *_metadata = metadata;
-        g_hash_table_destroy(return_headers);
-    }
+    error = _net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
 
     return error;
 }
