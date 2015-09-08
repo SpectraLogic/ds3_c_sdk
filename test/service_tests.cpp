@@ -9,6 +9,8 @@ BOOST_AUTO_TEST_CASE( get_service ) {
     ds3_request* request = ds3_init_get_service();
     ds3_get_service_response* response;
 
+    printf("-----Testing GET service-------\n");
+
     ds3_error* error = ds3_get_service(client, request, &response);
 
     BOOST_CHECK(error == NULL);
@@ -25,6 +27,8 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
     const char* bucket_name = "unit_test_bucket";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     ds3_get_service_response* response;
+
+    printf("-----Testing GET service after PUT bucket-------\n");
 
     ds3_error* error = ds3_put_bucket(client, request);
 
@@ -54,6 +58,48 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
     error = ds3_delete_bucket(client, request);
     ds3_free_request(request);
 
+    free_client(client);
+    BOOST_CHECK(error == NULL);
+}
+
+BOOST_AUTO_TEST_CASE( get_system_information ) {
+    ds3_client* client = get_client();
+    ds3_request* request = ds3_init_get_system_information();
+    ds3_get_system_information_response* response;
+
+    printf("-----Testing GET system_information-------\n");
+
+    ds3_error* error = ds3_get_system_information(client, request, &response);
+    BOOST_CHECK(error == NULL);
+
+    BOOST_CHECK(response->api_version != NULL);
+    BOOST_CHECK(response->serial_number != NULL);
+
+    BOOST_CHECK(response->build_information != NULL);
+    BOOST_CHECK(response->build_information->branch != NULL);
+    BOOST_CHECK(response->build_information->revision != NULL);
+    BOOST_CHECK(response->build_information->version != NULL);
+
+    ds3_free_request(request);
+    ds3_free_get_system_information(response);
+    free_client(client);
+}
+
+BOOST_AUTO_TEST_CASE( verify_system_health ) {
+    ds3_client* client = get_client();
+    uint64_t response_time_ms = -42;
+    ds3_request* request = ds3_init_verify_system_health();
+
+    printf("-----Testing VerifySystemHealth-------\n");
+
+    ds3_free_request(request);
+    request = ds3_init_verify_system_health();
+
+    ds3_error* error = ds3_verify_system_health(client, request, &response_time_ms);
+    BOOST_CHECK(error == NULL);
+    BOOST_CHECK(response_time_ms >= 0);
+
+    ds3_free_request(request);
     free_client(client);
     BOOST_CHECK(error == NULL);
 }

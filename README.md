@@ -12,7 +12,7 @@ Windows
 =======
 
 For Windows we release a binary version of the SDK for your convenience. See
-[win32/README.dm](win32/README.md) for more information about building from
+[win32/README.md](win32/README.md) for more information about building from
 source in Windows.
 
 Release Zip

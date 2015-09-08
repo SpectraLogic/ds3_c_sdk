@@ -79,6 +79,46 @@ typedef enum {
 }ds3_job_status;
 
 typedef enum {
+    TAPE_STATE_NORMAL,
+    TAPE_STATE_OFFLINE,
+    TAPE_STATE_ONLINE_PENDING,
+    TAPE_STATE_ONLINE_IN_PROGRESS,
+    TAPE_STATE_PENDING_INSPECTION,
+    TAPE_STATE_UNKNOWN,
+    TAPE_STATE_DATA_CHECKPOINT_FAILURE,
+    TAPE_STATE_DATA_CHECKPOINT_MISSING,
+    TAPE_STATE_LTFS_WITH_FOREIGN_DATA,
+    TAPE_STATE_FOREIGN,
+    TAPE_STATE_IMPORT_PENDING,
+    TAPE_STATE_IMPORT_IN_PROGRESS,
+    TAPE_STATE_LOST,
+    TAPE_STATE_BAD,
+    TAPE_STATE_SERIAL_NUMBER_MISMATCH,
+    TAPE_STATE_BAD_CODE_MISSING,
+    TAPE_STATE_FORMAT_PENDING,
+    TAPE_STATE_FORMAT_IN_PROGRESS,
+    TAPE_STATE_EJECT_TO_EE_IN_PROGRESS,
+    TAPE_STATE_EJECT_FROM_EE_PENDING,
+    TAPE_STATE_EJECTED
+}ds3_tape_state;
+
+typedef enum {
+    TAPE_TYPE_LTO5,
+    TAPE_TYPE_LTO6,
+    TAPE_TYPE_LTO7,
+    TAPE_TYPE_LTO_CLEANING_TAPE,
+    TAPE_TYPE_TS_JC,
+    TAPE_TYPE_TS_JY,
+    TAPE_TYPE_TS_JK,
+    TAPE_TYPE_TS_JD,
+    TAPE_TYPE_TS_JZ,
+    TAPE_TYPE_TS_JL,
+    TAPE_TYPE_TS_CLEANING_TAPE,
+    TAPE_TYPE_UNKNOWN,
+    TAPE_TYPE_FORBIDDEN
+}ds3_tape_type;
+
+typedef enum {
   DATA, NO_TYPE
 }object_type;
 
@@ -211,7 +251,28 @@ typedef struct {
 }ds3_get_jobs_response;
 
 typedef struct {
+    ds3_bool assigned_to_bucket;
+    uint64_t available_raw_capacity;
     ds3_str* barcode;
+    ds3_str* bucket_id;
+    ds3_str* description;
+    ds3_str* eject_date;
+    ds3_str* eject_label;
+    ds3_str* eject_location;
+    ds3_str* eject_pending; // date that eject was requested
+    ds3_bool full_of_data;
+    ds3_str* id;
+    ds3_str* last_accessed;
+    ds3_str* last_checkpoint;
+    ds3_str* last_modified;
+    ds3_str* last_verified;
+    ds3_str* partition_id;
+    ds3_tape_state previous_state;
+    ds3_str* serial_number;
+    ds3_tape_state state;
+    uint64_t total_raw_capacity;
+    ds3_tape_type type;
+    ds3_bool write_protected;
 }ds3_tape;
 
 typedef struct {
@@ -259,6 +320,18 @@ typedef struct {
 
 typedef struct _ds3_metadata ds3_metadata;
 
+typedef struct {
+    ds3_str*  branch;
+    ds3_str*  revision;
+    ds3_str*  version;
+}ds3_build_information;
+
+typedef struct {
+    ds3_str* api_version;
+    ds3_str* serial_number;
+    ds3_build_information* build_information;
+}ds3_get_system_information_response;
+
 LIBRARY_API ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* metadata, const char* name);
 LIBRARY_API unsigned int ds3_metadata_size(const ds3_metadata* metadata);
 LIBRARY_API ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* metadata);
@@ -268,6 +341,7 @@ LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
 
+LIBRARY_API ds3_request* ds3_init_get_system_information(void);
 LIBRARY_API ds3_request* ds3_init_get_service(void);
 LIBRARY_API ds3_request* ds3_init_get_bucket(const char* bucket_name);
 LIBRARY_API ds3_request* ds3_init_head_object(const char* bucket_name, const char* object_name);
@@ -286,11 +360,13 @@ LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_get_objects(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_verify_system_health(void);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
 LIBRARY_API ds3_request* ds3_init_get_bulk(const char* bucket_name, ds3_bulk_object_list* object_list, ds3_chunk_ordering order);
 
 LIBRARY_API ds3_request* ds3_init_get_physical_placement(const char* bucket_name, ds3_bulk_object_list* object_list);
+LIBRARY_API ds3_request* ds3_init_get_physical_placement_full_details(const char* bucket_name, ds3_bulk_object_list* object_list);
 
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
@@ -306,6 +382,8 @@ LIBRARY_API void ds3_request_set_id(ds3_request* request, const char* id);
 LIBRARY_API void ds3_request_set_type(ds3_request* request, object_type type);
 LIBRARY_API void ds3_request_set_version(ds3_request* request, const char* version);
 
+LIBRARY_API ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** response);
+LIBRARY_API ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request* request, uint64_t* ms_required_to_verify_data_planner_health);
 LIBRARY_API ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response);
 LIBRARY_API ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, ds3_get_bucket_response** response);
 LIBRARY_API ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* request, ds3_bulk_response** response);
@@ -345,6 +423,8 @@ LIBRARY_API void ds3_free_metadata_entry(ds3_metadata_entry* metadata_entry);
 LIBRARY_API void ds3_free_metadata_keys(ds3_metadata_keys_result* metadata_keys);
 LIBRARY_API void ds3_free_objects_response(ds3_get_objects_response* response);
 LIBRARY_API void ds3_free_get_jobs_response(ds3_get_jobs_response* response);
+LIBRARY_API void ds3_free_build_information(ds3_build_information* build_info);
+LIBRARY_API void ds3_free_get_system_information(ds3_get_system_information_response* system_info);
 LIBRARY_API void ds3_cleanup(void);
 
 LIBRARY_API void ds3_print_request(const ds3_request* request);
