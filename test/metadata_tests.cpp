@@ -77,7 +77,6 @@ BOOST_AUTO_TEST_CASE( head_bucket ) {
     error = ds3_head_bucket(client, request);
     ds3_free_request(request);
     handle_error(error);
-    //BOOST_REQUIRE(metadata_result != NULL);
     clear_bucket(client, bucket_name);
     free_client(client);
 }
