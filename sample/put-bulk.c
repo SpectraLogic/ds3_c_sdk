@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include "ds3.h"
 
+/*
+* Prints the contents of an error to stdout
+*/
 void print_error(const ds3_error* error) {
       printf("ds3_error_message: %s\n", error->message->value);
       if (error->error != NULL) {
@@ -16,21 +19,27 @@ void print_error(const ds3_error* error) {
       }
 }
 
+/*
+* Prints an error if it is not null and exits the process with return code 1
+*/ 
 void handle_error(ds3_error* error) {
     if (error != NULL) {
         print_error(error);
         ds3_free_error(error);
-        exit(-1);
+        exit(1);
     }
 }
 
 int main(void) {
+      
+    // The bucket the files will be stored in      
     const char* bucket_name = "put_sample";
+    
+    // A list of files to bulk put
     const char* books[4] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt"};
 
     // Get a client instance which uses the environment variables to get the endpoint and credentials
     ds3_client* client;
-    ds3_error* error = ds3_create_client_from_env(&client);
     ds3_request* request;
     ds3_bulk_object_list* obj_list;
     ds3_get_available_chunks_response* chunks_response;
@@ -40,7 +49,9 @@ int main(void) {
     uint64_t chunk_count, current_chunk_count = 0;
     uint64_t chunk_index, obj_index;
     FILE* obj_file;
-
+    
+    // Create a client from environment variables
+    ds3_error* error = ds3_create_client_from_env(&client);
     handle_error(error);
 
     // Create a bucket where our files will be stored
@@ -51,7 +62,9 @@ int main(void) {
     handle_error(error);
 
     // Create the bulk put request
-    obj_list = ds3_convert_file_list(books, 4); // This takes a list of files and creates ds3 object structs
+    obj_list = ds3_convert_file_list(books, 4); // This takes a list of files and creates ds3 object structs.  The files
+                                                // must exist as is so that the call can get their sizes.  If the files have their
+                                                // names translated as objects, this call must be performed manually
     request = ds3_init_put_bulk(bucket_name, obj_list); // Creating the request that will be the bulk put
 
     // Initialize the bulk put
@@ -61,17 +74,23 @@ int main(void) {
 
     chunk_count = response->list_size;
 
-    // We need to transfer all the chunks
+    // Bulk jobs are split into multiple chunks which then need to be transferred
     while (current_chunk_count < chunk_count) {
+        
+        // Get the chunks that the server can receive.  The server may not be able to receive everything, so not all chunks will necessarily be returned 
         request = ds3_init_get_available_chunks(response->job_id->value);
-
         error = ds3_get_available_chunks(client, request, &chunks_response);
         ds3_free_request(request);
         handle_error(error);
 
+        // Check to see if any chunks can be processed
         if (chunks_response->object_list->list_size > 0) {
+            // Loop through all the chunks that are avaiable for processing, and send the files that are contained in them
             for (chunk_index = 0; chunk_index < chunks_response->object_list->list_size; chunk_index++) {
                 bulk_obj_list = chunks_response->object_list->list[chunk_index];
+                
+                // Check to make sure that we have not already processed this chunk.  It's possible that the 
+                // get_available_chunk api call will return the same chunk on subsequent calls. 
                 if (bulk_obj_list->chunk_number < current_chunk_count) {
                     continue;  // do not process a chunk we've already processed
                 }
@@ -88,7 +107,7 @@ int main(void) {
             }
         }
         else {
-            // When no chunks are returned we need to sleep for a while to free up cache space
+            // When no chunks are returned we need to sleep to allow for cache space to be freed
             sleep(chunks_response->retry_after);
         }
     }
