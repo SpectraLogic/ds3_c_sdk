@@ -1126,6 +1126,10 @@ ds3_request* ds3_init_head_object(const char* bucket_name, const char* object_na
     return (ds3_request*) _common_request_init(HTTP_HEAD, _build_path("/", bucket_name, object_name));
 }
 
+ds3_request* ds3_init_head_bucket(const char* bucket_name) {
+    return (ds3_request*) _common_request_init(HTTP_HEAD, _build_path("/", bucket_name, NULL));
+}
+
 ds3_request* ds3_init_get_object_for_job(const char* bucket_name, const char* object_name, uint64_t offset, const char* job_id) {
     char buff[21];
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
@@ -1776,6 +1780,14 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
         *_metadata = metadata;
         g_hash_table_destroy(return_headers);
     }
+
+    return error;
+}
+
+ds3_error* ds3_head_bucket(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+
+    error = _net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
 
     return error;
 }
