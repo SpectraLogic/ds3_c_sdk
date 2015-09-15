@@ -87,19 +87,20 @@ BOOST_AUTO_TEST_CASE( get_system_information ) {
 
 BOOST_AUTO_TEST_CASE( verify_system_health ) {
     ds3_client* client = get_client();
-    uint64_t response_time_ms = -42;
     ds3_request* request = ds3_init_verify_system_health();
+    ds3_verify_system_health_response* response = NULL;
 
     printf("-----Testing VerifySystemHealth-------\n");
 
     ds3_free_request(request);
     request = ds3_init_verify_system_health();
 
-    ds3_error* error = ds3_verify_system_health(client, request, &response_time_ms);
+    ds3_error* error = ds3_verify_system_health(client, request, &response);
     BOOST_CHECK(error == NULL);
-    BOOST_CHECK(response_time_ms >= 0);
+    BOOST_CHECK(response->ms_required_to_verify_data_planner_health >= 0);
 
     ds3_free_request(request);
     free_client(client);
+    ds3_free_verify_system_health(response);
     BOOST_CHECK(error == NULL);
 }
