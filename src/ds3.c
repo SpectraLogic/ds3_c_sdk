@@ -1695,6 +1695,14 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     ds3_error* error;
     GArray* object_array;
     GArray* common_prefix_array;
+
+    if ( 0 == g_strcmp0(request->path->value, "/") ){
+        char* message = g_strconcat("Bucket name parameter is required: ", NULL);
+        ds3_error* error = _ds3_create_error(DS3_ERROR_MISSING_ARGS, message);
+        g_free(message);
+        return error;
+    }
+
     GByteArray* xml_blob = g_byte_array_new();
     error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
     if (error != NULL) {

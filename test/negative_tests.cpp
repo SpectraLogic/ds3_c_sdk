@@ -12,6 +12,7 @@
  * 10. Put Bad Checksum
 */
 
+#include <glib.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "ds3.h"
@@ -21,7 +22,7 @@
 //Testing a Duplicate Bucket Put
 
 BOOST_AUTO_TEST_CASE( put_duplicate_bucket) {
-    printf("-----Testing Duplicate Bucket Creation-------\n");
+    printf("-----Negative Testing Duplicate Bucket Creation-------\n");
     ds3_client* client = get_client();
     uint64_t i;
     bool found = false;
@@ -71,7 +72,7 @@ BOOST_AUTO_TEST_CASE( put_duplicate_bucket) {
 
 //testing Deletion of non existing bucket
 BOOST_AUTO_TEST_CASE( delete_non_existing_bucket){
-    printf("-----Testing Non Existing Bucket Deletion-------\n");
+    printf("-----Negative Testing Non Existing Bucket Deletion-------\n");
     ds3_client* client = get_client();
     ds3_request* request ;
     ds3_error* error ;
@@ -87,9 +88,47 @@ BOOST_AUTO_TEST_CASE( delete_non_existing_bucket){
 }
 
 
+//testing get_bucket with empty parameter for bucket_name
+BOOST_AUTO_TEST_CASE( get_bucket_with_empty_bucket_name){
+    printf("-----Negative Testing get_bucket with empty bucket_name parameter-------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = "";
+    ds3_request* request = ds3_init_get_bucket(bucket_name);
+    ds3_error* error;
+    ds3_get_bucket_response* response;
+    error = ds3_get_bucket(client, request, &response);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error != NULL);
+    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "Bucket name parameter is required"));
+    BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+
+    ds3_free_error(error);
+    free_client(client);
+}
+
+//testing get_bucket with null parameter for bucket_name
+BOOST_AUTO_TEST_CASE( get_bucket_with_null_bucket_name){
+    printf("-----Negative Testing get_bucket with empty bucket_name parameter-------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = NULL;
+    ds3_request* request = ds3_init_get_bucket(bucket_name);
+    ds3_error* error;
+    ds3_get_bucket_response* response;
+    error = ds3_get_bucket(client, request, &response);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error != NULL);
+    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "Bucket name parameter is required"));
+    BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+
+    ds3_free_error(error);
+    free_client(client);
+}
+
 //testing Deletion of non existing object
 BOOST_AUTO_TEST_CASE( delete_non_existing_object) {
-    printf("-----Testing Non Existing Object Deletion-------\n");
+    printf("-----Negative Testing Non Existing Object Deletion-------\n");
     //First Creating a Bucket
     ds3_client* client = get_client();
     uint64_t i;
@@ -138,7 +177,7 @@ BOOST_AUTO_TEST_CASE( delete_non_existing_object) {
 
 //testing Bad Bucket Name Creation
 BOOST_AUTO_TEST_CASE( bad_bucket_name) {
-    printf("-----Testing Bad Bucket Name creation-------\n");
+    printf("-----Negative Testing Bad Bucket Name creation-------\n");
     ds3_client* client = get_client();
     const char* bucket_name = "bad:bucket";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
@@ -154,7 +193,7 @@ BOOST_AUTO_TEST_CASE( bad_bucket_name) {
 
 //testing creation of object list with duplicate objects
 BOOST_AUTO_TEST_CASE( put_duplicate_object_list){
-    printf("-----Testing Object List With Duplicate Objects Creation-------\n");
+    printf("-----Negative Testing Object List With Duplicate Objects Creation-------\n");
     ds3_client* client = get_client();
     const char* bucket_name = "test_bucket_duplicate_object";
 
@@ -185,7 +224,7 @@ BOOST_AUTO_TEST_CASE( put_duplicate_object_list){
 
 //testing creation of duplicate object
 BOOST_AUTO_TEST_CASE( put_duplicate_object){
-    printf("-----Testing Duplicate Object Creation -------\n");
+    printf("-----Negative Testing Duplicate Object Creation -------\n");
     ds3_client* client = get_client();
     const char* bucket_name = "test_bucket_new";
 
@@ -218,7 +257,7 @@ BOOST_AUTO_TEST_CASE( put_duplicate_object){
 
 //testing Bulk Put with empty object list
 BOOST_AUTO_TEST_CASE( put_empty_object_list) {
-    printf("-----Testing Put Empty Object List-------\n");
+    printf("-----Negative Testing Put Empty Object List-------\n");
     ds3_client* client = get_client();
     ds3_bulk_object_list* obj_list = NULL;
     obj_list = ds3_init_bulk_object_list(0);
@@ -248,7 +287,7 @@ BOOST_AUTO_TEST_CASE( put_empty_object_list) {
 }
 
 BOOST_AUTO_TEST_CASE(delete_multiple_job) {
-    printf("-----Testing Multiple Delete Jobs-------\n");
+    printf("-----Negative Testing Multiple Delete Jobs-------\n");
     ds3_request* request;
     ds3_error* error;
     ds3_client* client = get_client();
@@ -272,7 +311,7 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job) {
 }
 
 BOOST_AUTO_TEST_CASE(get_non_existing_job) {
-    printf("-----Testing Non Existing Get Job-------\n");
+    printf("-----Negative Testing Non Existing Get Job-------\n");
     ds3_request* request;
     ds3_error* error;
     ds3_bulk_response* bulk_response = NULL;
