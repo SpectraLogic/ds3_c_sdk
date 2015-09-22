@@ -489,9 +489,14 @@ static char* _get_object_type(const object_type type) {
 // eventually wind up freeing it with g_free.
 static char* _escape_url(const char* url) {
     char* curl_escaped_url = curl_easy_escape(NULL, url, 0);
-    char* escaped_url = g_strdup(curl_escaped_url);
+    char* sanitized_url = NULL;
+    if( TRUE == g_str_has_suffix(curl_escaped_url, "/")) {
+        sanitized_url = g_strndup(curl_escaped_url, strlen(curl_escaped_url)-1);
+    } else {
+        sanitized_url = g_strdup(curl_escaped_url);
+    }
     curl_free(curl_escaped_url);
-    return escaped_url;
+    return sanitized_url;
 }
 
 // Like _escape_url but don't encode "/".
@@ -506,7 +511,16 @@ static char* _escape_url_object_name(const char* url) {
     }
     escaped_ptr = g_strjoinv("/", split);
     g_strfreev(split);
-    return escaped_ptr;
+
+    char* sanitized_url = NULL;
+    if( TRUE == g_str_has_suffix(escaped_ptr, "/")) {
+        sanitized_url = g_strndup(escaped_ptr, strlen(escaped_ptr)-1);
+    } else {
+        sanitized_url = g_strdup(escaped_ptr);
+    }
+
+    g_free(escaped_ptr);
+    return sanitized_url;
 }
 
 static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
@@ -1697,10 +1711,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     GArray* common_prefix_array;
 
     if ( 0 == g_strcmp0(request->path->value, "/") ){
-        char* message = g_strconcat("Bucket name parameter is required: ", NULL);
-        ds3_error* error = _ds3_create_error(DS3_ERROR_MISSING_ARGS, message);
-        g_free(message);
-        return error;
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
     GByteArray* xml_blob = g_byte_array_new();
@@ -1778,6 +1789,12 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
     ds3_error* error;
     GHashTable* return_headers;
     ds3_metadata* metadata;
+
+    printf("head_object Path[%s]\n", request->path->value);
+
+    if ( TRUE == g_str_has_suffix(request->path->value, "/") ){
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
+    }
 
     error = _net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
 

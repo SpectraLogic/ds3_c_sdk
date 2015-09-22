@@ -20,7 +20,6 @@
 #include <boost/test/unit_test.hpp>
 
 //Testing a Duplicate Bucket Put
-
 BOOST_AUTO_TEST_CASE( put_duplicate_bucket) {
     printf("-----Negative Testing Duplicate Bucket Creation-------\n");
     ds3_client* client = get_client();
@@ -69,7 +68,6 @@ BOOST_AUTO_TEST_CASE( put_duplicate_bucket) {
     handle_error(error);
 }
 
-
 //testing Deletion of non existing bucket
 BOOST_AUTO_TEST_CASE( delete_non_existing_bucket){
     printf("-----Negative Testing Non Existing Bucket Deletion-------\n");
@@ -87,7 +85,6 @@ BOOST_AUTO_TEST_CASE( delete_non_existing_bucket){
     free_client(client);
 }
 
-
 //testing get_bucket with empty parameter for bucket_name
 BOOST_AUTO_TEST_CASE( get_bucket_with_empty_bucket_name){
     printf("-----Negative Testing get_bucket with empty bucket_name parameter-------\n");
@@ -100,7 +97,7 @@ BOOST_AUTO_TEST_CASE( get_bucket_with_empty_bucket_name){
     ds3_free_request(request);
 
     BOOST_CHECK(error != NULL);
-    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "Bucket name parameter is required"));
+    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
 
     ds3_free_error(error);
@@ -109,7 +106,7 @@ BOOST_AUTO_TEST_CASE( get_bucket_with_empty_bucket_name){
 
 //testing get_bucket with null parameter for bucket_name
 BOOST_AUTO_TEST_CASE( get_bucket_with_null_bucket_name){
-    printf("-----Negative Testing get_bucket with empty bucket_name parameter-------\n");
+    printf("-----Negative Testing get_bucket with null bucket_name parameter-------\n");
     ds3_client* client = get_client();
     const char* bucket_name = NULL;
     ds3_request* request = ds3_init_get_bucket(bucket_name);
@@ -119,9 +116,41 @@ BOOST_AUTO_TEST_CASE( get_bucket_with_null_bucket_name){
     ds3_free_request(request);
 
     BOOST_CHECK(error != NULL);
-    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "Bucket name parameter is required"));
+    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
 
+    ds3_free_error(error);
+    free_client(client);
+}
+
+//testing head_object with empty parameter for object_name
+BOOST_AUTO_TEST_CASE( head_object_with_empty_object_name){
+    printf("-----Negative Testing head_object with empty object_name parameter-------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = "test_bucket";
+
+    ds3_request* put_request = ds3_init_put_bucket(bucket_name);
+    ds3_error* error = ds3_put_bucket(client, put_request);
+    ds3_free_request(put_request);
+    handle_error(error);
+
+    ds3_request* request = ds3_init_head_object(bucket_name,"");
+    ds3_metadata* response;
+    error = ds3_head_object(client, request, &response);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error != NULL);
+    if( error ) {
+        printf("error code:%d\n", error->code);
+        BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+
+        if( error->message ) {
+            printf("error:%s\n", error->message->value);
+            BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The object name parameter is required"));
+        }
+    }
+
+    clear_bucket(client, bucket_name);
     ds3_free_error(error);
     free_client(client);
 }
@@ -274,13 +303,10 @@ BOOST_AUTO_TEST_CASE( put_empty_object_list) {
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(strcmp(error->message->value ,"The bulk command requires a list of objects to process")==0);
     ds3_free_error(error);
-
     ds3_free_bulk_object_list(obj_list);
 
     //Deleting Created Bucket
-    request = ds3_init_delete_bucket(bucket_name);
-    error = ds3_delete_bucket(client, request);
-    ds3_free_request(request);
+    clear_bucket(client, bucket_name);
 
     free_client(client);
     handle_error(error);
