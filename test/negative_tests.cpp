@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE( get_bucket_with_null_bucket_name){
 BOOST_AUTO_TEST_CASE( head_object_with_empty_object_name){
     printf("-----Negative Testing head_object with empty object_name parameter-------\n");
     ds3_client* client = get_client();
-    const char* bucket_name = "test_bucket";
+    const char* bucket_name = "test_head_object_with_empty_object_name";
 
     ds3_request* put_request = ds3_init_put_bucket(bucket_name);
     ds3_error* error = ds3_put_bucket(client, put_request);
@@ -135,23 +135,54 @@ BOOST_AUTO_TEST_CASE( head_object_with_empty_object_name){
     handle_error(error);
 
     ds3_request* request = ds3_init_head_object(bucket_name,"");
-    ds3_metadata* response;
+    ds3_metadata* response = NULL;
     error = ds3_head_object(client, request, &response);
     ds3_free_request(request);
 
     BOOST_CHECK(error != NULL);
-    if( error ) {
-        printf("error code:%d\n", error->code);
+    if (error) {
         BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
 
         if( error->message ) {
-            printf("error:%s\n", error->message->value);
             BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The object name parameter is required"));
         }
+        ds3_free_error(error);
     }
 
     clear_bucket(client, bucket_name);
-    ds3_free_error(error);
+    ds3_free_metadata(response);
+
+    free_client(client);
+}
+
+//testing head_object with null parameter for object_name
+BOOST_AUTO_TEST_CASE( head_object_with_null_object_name){
+    printf("-----Negative Testing head_object with null object_name parameter-------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = "test_head_object_with_null_object_name";
+
+    ds3_request* put_request = ds3_init_put_bucket(bucket_name);
+    ds3_error* error = ds3_put_bucket(client, put_request);
+    ds3_free_request(put_request);
+    handle_error(error);
+
+    ds3_request* request = ds3_init_head_object(bucket_name, NULL);
+    ds3_metadata* response = NULL;
+    error = ds3_head_object(client, request, &response);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error != NULL);
+    if (error) {
+        BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+
+        if (error->message) {
+            BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The object name parameter is required"));
+        }
+        ds3_free_error(error);
+    }
+
+    clear_bucket(client, bucket_name);
+    ds3_free_metadata(response);
     free_client(client);
 }
 
@@ -307,9 +338,7 @@ BOOST_AUTO_TEST_CASE( put_empty_object_list) {
 
     //Deleting Created Bucket
     clear_bucket(client, bucket_name);
-
     free_client(client);
-    handle_error(error);
 }
 
 BOOST_AUTO_TEST_CASE(delete_multiple_job) {

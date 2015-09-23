@@ -489,12 +489,7 @@ static char* _get_object_type(const object_type type) {
 // eventually wind up freeing it with g_free.
 static char* _escape_url(const char* url) {
     char* curl_escaped_url = curl_easy_escape(NULL, url, 0);
-    char* sanitized_url = NULL;
-    if( TRUE == g_str_has_suffix(curl_escaped_url, "/")) {
-        sanitized_url = g_strndup(curl_escaped_url, strlen(curl_escaped_url)-1);
-    } else {
-        sanitized_url = g_strdup(curl_escaped_url);
-    }
+    char* sanitized_url = g_strdup(curl_escaped_url);
     curl_free(curl_escaped_url);
     return sanitized_url;
 }
@@ -512,12 +507,7 @@ static char* _escape_url_object_name(const char* url) {
     escaped_ptr = g_strjoinv("/", split);
     g_strfreev(split);
 
-    char* sanitized_url = NULL;
-    if( TRUE == g_str_has_suffix(escaped_ptr, "/")) {
-        sanitized_url = g_strndup(escaped_ptr, strlen(escaped_ptr)-1);
-    } else {
-        sanitized_url = g_strdup(escaped_ptr);
-    }
+    char* sanitized_url = g_strdup(escaped_ptr);
 
     g_free(escaped_ptr);
     return sanitized_url;
@@ -1104,12 +1094,18 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    full_path = g_strconcat(path_prefix, joined_path, NULL);
+    // full_path = g_strconcat(path_prefix, joined_path, NULL);
+    if( TRUE == g_str_has_suffix(joined_path, "/")) {
+        char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
+        full_path = g_strconcat(path_prefix, chomp_path, NULL);
+        g_free(chomp_path);
+    } else {
+        full_path = g_strconcat(path_prefix, joined_path, NULL);
+    }
+    g_free(joined_path);
 
     path = ds3_str_init(full_path);
-
     g_free(full_path);
-    g_free(joined_path);
 
     if (escaped_bucket_name != NULL) {
         g_free(escaped_bucket_name);
@@ -1117,6 +1113,7 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     if (escaped_object_name != NULL) {
         g_free(escaped_object_name);
     }
+
     return path;
 }
 
@@ -1785,14 +1782,25 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     return NULL;
 }
 
+static int num_chars_in_ds3_str( ds3_str* str, char ch) {
+    int num_matches = 0;
+    int index;
+
+    for (index = 0; index < str->size; index++) {
+        if ( str->value[index] == '/') {
+            num_matches++;
+        }
+    }
+
+    return num_matches;
+}
+
 ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
     ds3_error* error;
     GHashTable* return_headers;
-    ds3_metadata* metadata;
+    ds3_metadata* metadata = NULL;
 
-    printf("head_object Path[%s]\n", request->path->value);
-
-    if ( TRUE == g_str_has_suffix(request->path->value, "/") ){
+    if (num_chars_in_ds3_str(request->path, '/') < 2){
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
     }
 
@@ -1813,7 +1821,7 @@ ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, 
 }
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
-  ds3_error* error;
+    ds3_error* error;
     GHashTable* return_headers;
     ds3_metadata* metadata;
 
