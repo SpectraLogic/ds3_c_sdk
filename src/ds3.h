@@ -228,6 +228,18 @@ typedef struct {
 }ds3_bulk_object_list;
 
 typedef struct {
+    ds3_str*    endpoint;
+    ds3_str*    id;
+    uint64_t    http_port;
+    uint64_t    https_port;
+}ds3_node;
+
+typedef struct {
+    ds3_node*    list;
+    uint64_t     size;
+}ds3_nodes_list;
+
+typedef struct {
     ds3_str*                bucket_name;
     uint64_t                cached_size_in_bytes;
     ds3_chunk_ordering      chunk_order;
@@ -240,6 +252,7 @@ typedef struct {
     ds3_str*                user_id;
     ds3_str*                user_name;
     ds3_write_optimization  write_optimization;
+    ds3_nodes_list*         nodes;
     ds3_bulk_object_list**  list;
     size_t                  list_size;
     ds3_job_status          status;
@@ -428,6 +441,7 @@ LIBRARY_API void ds3_free_get_jobs_response(ds3_get_jobs_response* response);
 LIBRARY_API void ds3_free_build_information(ds3_build_information* build_info);
 LIBRARY_API void ds3_free_get_system_information(ds3_get_system_information_response* system_info);
 LIBRARY_API void ds3_free_verify_system_health(ds3_verify_system_health_response* response);
+LIBRARY_API void ds3_free_nodes_list(ds3_nodes_list* nodes_list);
 LIBRARY_API void ds3_cleanup(void);
 
 LIBRARY_API void ds3_print_request(const ds3_request* request);

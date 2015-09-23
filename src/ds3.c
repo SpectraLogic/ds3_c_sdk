@@ -1964,6 +1964,55 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
     return response;
 }
 
+static ds3_node _parse_node(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node) {
+    xmlNodePtr child_node;
+    struct _xmlAttr* attribute;
+
+    ds3_node response;
+    memset(&response, 0, sizeof(ds3_node));
+
+    for (attribute = node->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "EndPoint") == true) {
+            response.endpoint = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "Id") == true) {
+            response.id = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "HttpPort") == true) {
+            response.http_port = xml_get_uint64_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "HttpsPort") == true) {
+            response.https_port = xml_get_uint64_from_attribute(doc, attribute);
+        } else {
+            LOG(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
+        }
+    }
+
+    for (child_node = node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+    }
+
+    return response;
+}
+
+static ds3_nodes_list* _parse_nodes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr nodes_node) {
+    xmlNodePtr child_node;
+
+    ds3_nodes_list* response = g_new0(ds3_nodes_list, 1);
+    GArray* nodes_array = g_array_new(FALSE, TRUE, sizeof(ds3_node));
+
+    for (child_node = nodes_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Node") == true) {
+            ds3_node node = _parse_node(log, doc, child_node);
+            g_array_append_val(nodes_array, node);
+        } else {
+            LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+        }
+    }
+
+    response->list = (ds3_node*) nodes_array->data;
+    response->size = nodes_array->len;
+    g_array_free(nodes_array, FALSE);
+    return response;
+}
+
 static ds3_job_priority _match_priority(const ds3_log* log, const xmlChar* priority_str) {
     if (xmlStrcmp(priority_str, (const xmlChar*) "CRITICAL") == 0) {
         return CRITICAL;
@@ -2179,6 +2228,7 @@ static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr 
 
 static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, ds3_bulk_response** _response){
     GArray* objects_array;
+    GArray* nodes_array;
     xmlNodePtr root, child_node;
     ds3_bulk_response* response;
 
@@ -2197,20 +2247,25 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
     _parse_bulk_response_attributes(log, doc, root, response);
 
     objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
+    nodes_array = g_array_new(FALSE, TRUE, sizeof(ds3_nodes_list));
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if(element_equal(child_node, "Objects")  == true) {
             ds3_bulk_object_list* obj_list = _parse_bulk_objects(log, doc, child_node);
             g_array_append_val(objects_array, obj_list);
+        } else if(element_equal(child_node, "Nodes")  == true) {
+            ds3_nodes_list* nodes_list = _parse_nodes(log, doc, child_node);
+            g_array_append_val(nodes_array, nodes_list);
         } else {
-            //TODO add Node xml handling
             LOG(log, DS3_ERROR, "Unknown element: (%s)", child_node->name);
         }
     }
 
     response->list = (ds3_bulk_object_list**) objects_array->data;
     response->list_size = objects_array->len;
+    response->nodes = (ds3_nodes_list*) nodes_array->data;
     g_array_free(objects_array, FALSE);
+    g_array_free(nodes_array, FALSE);
 
     *_response = response;
     return NULL;
@@ -2908,7 +2963,7 @@ void ds3_free_service_response(ds3_get_service_response* response){
 }
 
 void ds3_free_bulk_response(ds3_bulk_response* response) {
-    int i;
+    int list_index;
     if (response == NULL) {
         return;
     }
@@ -2920,10 +2975,13 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
     ds3_str_free(response->user_name);
 
     if (response->list != NULL ) {
-        for (i = 0; i < response->list_size; i++) {
-            ds3_free_bulk_object_list(response->list[i]);
+        for (list_index = 0; list_index < response->list_size; list_index++) {
+            ds3_free_bulk_object_list(response->list[list_index]);
         }
         g_free(response->list);
+    }
+    if (response->nodes != NULL ) {
+        ds3_free_nodes_list(response->nodes);
     }
 
     g_free(response);
@@ -3138,6 +3196,22 @@ void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
 
     g_free(object_list->list);
     g_free(object_list);
+}
+
+void ds3_free_nodes_list(ds3_nodes_list* nodes_list) {
+    uint64_t list_index, count;
+    if (nodes_list == NULL || nodes_list->list == NULL) {
+        return;
+    }
+
+    count = nodes_list->size;
+    for (list_index = 0; list_index < count; list_index++) {
+        ds3_str_free(nodes_list->list[list_index].endpoint);
+        ds3_str_free(nodes_list->list[list_index].id);
+    }
+
+    g_free(nodes_list->list);
+    g_free(nodes_list);
 }
 
 void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response) {
