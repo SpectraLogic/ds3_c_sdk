@@ -97,10 +97,14 @@ BOOST_AUTO_TEST_CASE( get_bucket_with_empty_bucket_name){
     ds3_free_request(request);
 
     BOOST_CHECK(error != NULL);
-    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
-    BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+    if (error) {
+        BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
+        if( error->message ) {
+            BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+        }
+        ds3_free_error(error);
+    }
 
-    ds3_free_error(error);
     free_client(client);
 }
 
@@ -116,10 +120,14 @@ BOOST_AUTO_TEST_CASE( get_bucket_with_null_bucket_name){
     ds3_free_request(request);
 
     BOOST_CHECK(error != NULL);
-    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
-    BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+    if (error) {
+        BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
+        if( error->message ) {
+            BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
+        }
+        ds3_free_error(error);
+    }
 
-    ds3_free_error(error);
     free_client(client);
 }
 
@@ -142,7 +150,6 @@ BOOST_AUTO_TEST_CASE( head_object_with_empty_object_name){
     BOOST_CHECK(error != NULL);
     if (error) {
         BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
-
         if( error->message ) {
             BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The object name parameter is required"));
         }
@@ -151,7 +158,6 @@ BOOST_AUTO_TEST_CASE( head_object_with_empty_object_name){
 
     clear_bucket(client, bucket_name);
     ds3_free_metadata(response);
-
     free_client(client);
 }
 
@@ -174,7 +180,6 @@ BOOST_AUTO_TEST_CASE( head_object_with_null_object_name){
     BOOST_CHECK(error != NULL);
     if (error) {
         BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
-
         if (error->message) {
             BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The object name parameter is required"));
         }
