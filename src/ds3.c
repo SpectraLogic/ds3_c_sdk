@@ -1090,7 +1090,6 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    // full_path = g_strconcat(path_prefix, joined_path, NULL);
     if( TRUE == g_str_has_suffix(joined_path, "/")) {
         char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
         full_path = g_strconcat(path_prefix, chomp_path, NULL);
