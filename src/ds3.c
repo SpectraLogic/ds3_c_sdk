@@ -489,9 +489,9 @@ static char* _get_object_type(const object_type type) {
 // eventually wind up freeing it with g_free.
 static char* _escape_url(const char* url) {
     char* curl_escaped_url = curl_easy_escape(NULL, url, 0);
-    char* sanitized_url = g_strdup(curl_escaped_url);
+    char* escaped_url = g_strdup(curl_escaped_url);
     curl_free(curl_escaped_url);
-    return sanitized_url;
+    return escaped_url;
 }
 
 // Like _escape_url but don't encode "/".
@@ -506,11 +506,7 @@ static char* _escape_url_object_name(const char* url) {
     }
     escaped_ptr = g_strjoinv("/", split);
     g_strfreev(split);
-
-    char* sanitized_url = g_strdup(escaped_ptr);
-
-    g_free(escaped_ptr);
-    return sanitized_url;
+    return escaped_ptr;
 }
 
 static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
