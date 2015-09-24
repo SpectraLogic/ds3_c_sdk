@@ -2,6 +2,7 @@
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
+#include <glib.h>
 
 BOOST_AUTO_TEST_CASE( bulk_put ) {
     ds3_request* request;
@@ -147,6 +148,33 @@ BOOST_AUTO_TEST_CASE(max_keys) {
     BOOST_CHECK(contains_object(response->objects, num_objs, "resources/beowulf.txt"));
     BOOST_CHECK(contains_object(response->objects, num_objs, "resources/sherlock_holmes.txt"));
     ds3_free_bucket_response(response);
+
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
+
+//testing get_bucket with bucket_name/ with trailing slash
+BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
+    printf("-----Testing get_bucket with bucket_name/ with trailing slash-------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = "trailing_slash/";
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_free_request(request);
+    BOOST_CHECK(error == NULL);
+    handle_error(error);
+
+    request = ds3_init_get_bucket(bucket_name);
+    ds3_get_bucket_response* response;
+    error = ds3_get_bucket(client, request, &response);
+    printf("bucket_name[%s]\n", response->name->value);
+    ds3_free_request(request);
+
+    BOOST_CHECK(error == NULL);
+    BOOST_CHECK_EQUAL( g_strcmp0(response->name->value, "trailing_slash"), 0);
+    ds3_free_bucket_response(response);
+    handle_error(error);
 
     clear_bucket(client, bucket_name);
     free_client(client);
