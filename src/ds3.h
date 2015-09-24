@@ -230,12 +230,12 @@ typedef struct {
 typedef struct {
     ds3_str*    endpoint;
     ds3_str*    id;
-    uint64_t    http_port;
-    uint64_t    https_port;
+    uint16_t    http_port;
+    uint16_t    https_port;
 }ds3_node;
 
 typedef struct {
-    ds3_node*    list;
+    ds3_node**   list;
     uint64_t     size;
 }ds3_nodes_list;
 
