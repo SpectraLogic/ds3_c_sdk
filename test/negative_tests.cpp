@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(head_object_with_null_object_name){
 }
 
 //testing Head bucket of non existing bucket
-BOOST_AUTO_TEST_CASE( head_bucket_non_existing_bucket){
+BOOST_AUTO_TEST_CASE(head_bucket_non_existing_bucket){
     printf("-----Testing Non Existing Head Bucket-------\n");
     ds3_error* error;
     ds3_client* client = get_client();
