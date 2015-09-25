@@ -1702,7 +1702,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     GArray* object_array;
     GArray* common_prefix_array;
 
-    if ( 0 == g_strcmp0(request->path->value, "/") ){
+    if (g_strcmp0(request->path->value, "/") == 0){
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
@@ -1777,12 +1777,12 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     return NULL;
 }
 
-static int num_chars_in_ds3_str( ds3_str* str, char ch) {
+static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
     int num_matches = 0;
     int index;
 
     for (index = 0; index < str->size; index++) {
-        if ( str->value[index] == '/') {
+        if (str->value[index] == '/') {
             num_matches++;
         }
     }
