@@ -24,5 +24,6 @@ if (GLIB2_FOUND)
   target_link_libraries (ds3 ${GLIB2_LIBRARIES})
 endif(GLIB2_FOUND)
 
+install(FILES "ds3.h" DESTINATION "/usr/local/include")
 endif(WIN32)
 install(TARGETS ds3 DESTINATION lib)
