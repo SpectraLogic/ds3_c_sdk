@@ -2261,7 +2261,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
 
     root = xmlDocGetRootElement(doc);
 
-    if(element_equal(root, "MasterObjectList") == false) {
+    if (element_equal(root, "MasterObjectList") == false) {
         char* message = g_strconcat("Expected the root element to be 'MasterObjectList'.  The actual response is: ", root->name, NULL);
         xmlFreeDoc(doc);
         ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
@@ -2276,10 +2276,10 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
     objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(element_equal(child_node, "Objects")  == true) {
+        if (element_equal(child_node, "Objects")  == true) {
             ds3_bulk_object_list* obj_list = _parse_bulk_objects(log, doc, child_node);
             g_array_append_val(objects_array, obj_list);
-        } else if(element_equal(child_node, "Nodes")  == true) {
+        } else if (element_equal(child_node, "Nodes")  == true) {
             response->nodes = _parse_nodes(log, doc, child_node);
         } else {
             LOG(log, DS3_ERROR, "Unknown element: (%s)", child_node->name);
