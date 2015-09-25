@@ -1027,6 +1027,10 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
    _set_header(_request, header_name, header_value);
 }
 
+void ds3_request_set_bucket_name(ds3_request* _request, const char* bucket_name) {
+    _set_query_param(_request, "bucket_id", bucket_name);
+}
+
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
   struct _ds3_request* request = (struct _ds3_request*) _request;
   request->md5 = ds3_str_init(md5);
@@ -1265,10 +1269,8 @@ ds3_request* ds3_init_delete_job(const char* job_id) {
     return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_get_objects(const char* bucket_name) {
+ds3_request* ds3_init_get_objects() {
     struct _ds3_request* request = _common_request_init(HTTP_GET, ds3_str_init("/_rest_/object/"));
-
-    _set_query_param((ds3_request*) request, "bucket_id", bucket_name);
 
     return (ds3_request*) request;
 }
