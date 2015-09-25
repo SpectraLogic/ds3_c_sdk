@@ -1090,7 +1090,7 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    if(g_str_has_suffix(joined_path, "/") == TRUE) {
+    if (g_str_has_suffix(joined_path, "/") == TRUE) {
         char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
         full_path = g_strconcat(path_prefix, chomp_path, NULL);
         g_free(chomp_path);
@@ -1331,7 +1331,7 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
     ds3_str* result;
     text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-    if (NULL == text){
+    if (text == NULL){
         // Element is found, but is empty: <name />
         return NULL;
     }
@@ -1797,12 +1797,12 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     return NULL;
 }
 
-static int num_chars_in_ds3_str( ds3_str* str, char ch) {
+static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
     int num_matches = 0;
     int index;
 
     for (index = 0; index < str->size; index++) {
-        if ( str->value[index] == '/') {
+        if (str->value[index] == '/') {
             num_matches++;
         }
     }
