@@ -11,7 +11,8 @@ BOOST_AUTO_TEST_CASE( get_all_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects(bucket_name);
+    ds3_request* request = ds3_init_get_objects();
+    ds3_request_set_bucket_name(request, bucket_name);
     ds3_request_set_name(request, "%txt%");
     ds3_error* error = ds3_get_objects(client, request, &response);
 
@@ -33,7 +34,8 @@ BOOST_AUTO_TEST_CASE( get_no_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects(bucket_name);
+    ds3_request* request = ds3_init_get_objects();
+    ds3_request_set_bucket_name(request, bucket_name);
     ds3_request_set_name(request, "%frankenstein.txt%");
     ds3_error* error = ds3_get_objects(client, request, &response);
 
@@ -55,7 +57,8 @@ BOOST_AUTO_TEST_CASE( get_two_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects(bucket_name);
+    ds3_request* request = ds3_init_get_objects();
+    ds3_request_set_bucket_name(request, bucket_name);
     ds3_request_set_name(request, "%ulysses%");
     ds3_error* error = ds3_get_objects(client, request, &response);
 
@@ -77,7 +80,8 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects(bucket_name);
+    ds3_request* request = ds3_init_get_objects();
+    ds3_request_set_bucket_name(request, bucket_name);
     ds3_request_set_name(request, "%ulysses.txt%");
     ds3_error* error = ds3_get_objects(client, request, &response);
 
@@ -99,7 +103,8 @@ BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects(bucket_name);
+    ds3_request* request = ds3_init_get_objects();
+    ds3_request_set_bucket_name(request, bucket_name);
     ds3_request_set_name(request, "%resources%");
     ds3_error* error = ds3_get_objects(client, request, &response);
 
@@ -120,7 +125,8 @@ BOOST_AUTO_TEST_CASE( get_incorrect_bucket_name ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects("fake_bucket");
+    ds3_request* request = ds3_init_get_objects();
+    ds3_request_set_bucket_name(request, "fake_bucket");
     ds3_request_set_name(request, "%resources%");
     ds3_error* error = ds3_get_objects(client, request, &response);
 
