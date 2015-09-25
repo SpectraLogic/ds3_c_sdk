@@ -1031,6 +1031,10 @@ void ds3_request_set_bucket_name(ds3_request* _request, const char* bucket_name)
     _set_query_param(_request, "bucket_id", bucket_name);
 }
 
+void ds3_request_set_creation_date(ds3_request* _request, const char* creation_date) {
+    _set_query_param(_request, "creation_date", creation_date);
+}
+
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
   struct _ds3_request* request = (struct _ds3_request*) _request;
   request->md5 = ds3_str_init(md5);
@@ -1064,6 +1068,14 @@ void ds3_request_set_type(ds3_request* _request, object_type type) {
     if(type_as_string != NULL) {
         _set_query_param(_request, "type", type_as_string);
     }
+}
+
+void ds3_request_set_page_length(ds3_request* _request, const char* page_length) {
+    _set_query_param(_request, "page_length", page_length);
+}
+
+void ds3_request_set_page_offset(ds3_request* _request, const char* page_offset) {
+    _set_query_param(_request, "page_offset", page_offset);
 }
 
 void ds3_request_set_version(ds3_request* _request, const char* version) {
