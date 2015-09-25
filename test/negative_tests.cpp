@@ -191,6 +191,24 @@ BOOST_AUTO_TEST_CASE( head_object_with_null_object_name){
     free_client(client);
 }
 
+//testing Head bucket of non existing bucket
+BOOST_AUTO_TEST_CASE( head_bucket_non_existing_bucket){
+    printf("-----Testing Non Existing Head Bucket-------\n");
+    ds3_error* error;
+    ds3_client* client = get_client();
+    const char* bucket_name = "metadata_test";
+    ds3_request* request;
+    request = ds3_init_head_bucket(bucket_name);
+    error = ds3_head_bucket(client, request);
+    ds3_free_request(request);
+    BOOST_CHECK(error != NULL);
+    BOOST_CHECK(error->error->status_code == 404);
+    BOOST_CHECK(strcmp(error->error->status_message->value ,"Not Found")==0);
+    ds3_free_error(error);
+    free_client(client);
+}
+
+
 //testing Deletion of non existing object
 BOOST_AUTO_TEST_CASE( delete_non_existing_object) {
     printf("-----Negative Testing Non Existing Object Deletion-------\n");

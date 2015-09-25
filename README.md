@@ -12,7 +12,7 @@ Windows
 =======
 
 For Windows we release a binary version of the SDK for your convenience. See
-[win32/README.dm](win32/README.md) for more information about building from
+[win32/README.md](win32/README.md) for more information about building from
 source in Windows.
 
 Release Zip
@@ -159,11 +159,11 @@ int main (int args, char * argv[]) {
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -224,11 +224,11 @@ int main (int args, char * argv[]) {
     
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -283,11 +283,11 @@ int main (int args, char * argv[]) {
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -312,7 +312,7 @@ int main (int args, char * argv[]) {
 
     for (i = 0; i < response->num_objects; i++) {
         ds3_object object = response->objects[i];
-        printf("Object: (%s) created on %s\n", object.name, object.last_modified);
+        printf("Object: (%s) created on %s\n", object.name->value, object.last_modified->value);
     }
 
     ds3_free_bucket_response(response);
