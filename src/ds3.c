@@ -2986,13 +2986,13 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
     ds3_str_free(response->user_id);
     ds3_str_free(response->user_name);
 
-    if (response->list != NULL ) {
+    if (response->list != NULL) {
         for (list_index = 0; list_index < response->list_size; list_index++) {
             ds3_free_bulk_object_list(response->list[list_index]);
         }
         g_free(response->list);
     }
-    if (response->nodes != NULL ) {
+    if (response->nodes != NULL) {
         ds3_free_nodes_list(response->nodes);
     }
 
@@ -3006,7 +3006,7 @@ void ds3_free_get_jobs_response(ds3_get_jobs_response* response) {
         return;
     }
 
-    if (response->jobs != NULL ) {
+    if (response->jobs != NULL) {
         for (job_index = 0; job_index < response->jobs_size; job_index++) {
             ds3_free_bulk_response(response->jobs[job_index]);
         }

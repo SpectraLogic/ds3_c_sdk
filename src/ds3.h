@@ -252,10 +252,10 @@ typedef struct {
     ds3_str*                user_id;
     ds3_str*                user_name;
     ds3_write_optimization  write_optimization;
-    ds3_nodes_list*         nodes;
     ds3_bulk_object_list**  list;
     size_t                  list_size;
     ds3_job_status          status;
+    ds3_nodes_list*         nodes;
 }ds3_bulk_response;
 
 typedef struct {
