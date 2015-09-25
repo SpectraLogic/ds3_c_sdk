@@ -1090,7 +1090,7 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    if( TRUE == g_str_has_suffix(joined_path, "/")) {
+    if(g_str_has_suffix(joined_path, "/") == TRUE) {
         char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
         full_path = g_strconcat(path_prefix, chomp_path, NULL);
         g_free(chomp_path);
@@ -1722,7 +1722,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     GArray* object_array;
     GArray* common_prefix_array;
 
-    if ( 0 == g_strcmp0(request->path->value, "/") ){
+    if (g_strcmp0(request->path->value, "/") == 0){
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
