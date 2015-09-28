@@ -1,7 +1,7 @@
-DS3 C SDK
-=========
+Spectra S3 C SDK
+================
 
-This project contains a C library for using the DS3 Deep Storage REST interface.
+This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
 ==========
@@ -119,7 +119,7 @@ To run it, just use `make run`.
 Code Samples
 ------------
 
-The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from DS3:
+The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from Spectra S3:
 
 ```c
 
