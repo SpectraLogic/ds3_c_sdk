@@ -77,6 +77,7 @@ terminal window.
     $ cd directory/containing/release/tarball
     $ tar zxf ds3_c_sdk-{version}.tgz
     $ cd ds3_c_sdk-{version}
+    $ autoreconf --install
     $ ./configure
     $ make
     $ su
