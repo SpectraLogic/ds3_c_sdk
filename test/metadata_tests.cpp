@@ -16,6 +16,9 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
     ds3_client* client = get_client();
     const char* bucket_name = "metadata_test";
     FILE* file;
+
+    printf("-----Testing put_metadata-------\n");
+
     ds3_request* request = ds3_init_put_bucket(bucket_name);
 
     error = ds3_put_bucket(client, request);
@@ -92,6 +95,9 @@ BOOST_AUTO_TEST_CASE( put_multiple_metadata_items ) {
     ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
     const char* bucket_name = "multi_metadata_test";
     FILE* file;
+
+    printf("-----Testing put_multiple_metadata_items-------\n");
+
     ds3_request* request = ds3_init_put_bucket(bucket_name);
 
     error = ds3_put_bucket(client, request);
@@ -167,6 +173,9 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
     ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
     const char* bucket_name = "key_metadata_test";
     FILE* file;
+
+    printf("-----Testing metadata_keys-------\n");
+
     ds3_request* request = ds3_init_put_bucket(bucket_name);
 
     error = ds3_put_bucket(client, request);
@@ -227,6 +236,9 @@ BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
     ds3_client* client = get_client();
     const char* bucket_name = "get_object_metadata_test";
     FILE* file;
+
+    printf("-----Testing put_metadata_using_get_object_retrieval-------\n");
+
     ds3_request* request = ds3_init_put_bucket(bucket_name);
 
     error = ds3_put_bucket(client, request);

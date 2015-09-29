@@ -1027,6 +1027,14 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
    _set_header(_request, header_name, header_value);
 }
 
+void ds3_request_set_bucket_name(ds3_request* _request, const char* bucket_name) {
+    _set_query_param(_request, "bucket_id", bucket_name);
+}
+
+void ds3_request_set_creation_date(ds3_request* _request, const char* creation_date) {
+    _set_query_param(_request, "creation_date", creation_date);
+}
+
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
   struct _ds3_request* request = (struct _ds3_request*) _request;
   request->md5 = ds3_str_init(md5);
@@ -1062,6 +1070,14 @@ void ds3_request_set_type(ds3_request* _request, object_type type) {
     }
 }
 
+void ds3_request_set_page_length(ds3_request* _request, const char* page_length) {
+    _set_query_param(_request, "page_length", page_length);
+}
+
+void ds3_request_set_page_offset(ds3_request* _request, const char* page_offset) {
+    _set_query_param(_request, "page_offset", page_offset);
+}
+
 void ds3_request_set_version(ds3_request* _request, const char* version) {
     _set_query_param(_request, "version", version);
 }
@@ -1090,12 +1106,17 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    full_path = g_strconcat(path_prefix, joined_path, NULL);
+    if (g_str_has_suffix(joined_path, "/") == TRUE) {
+        char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
+        full_path = g_strconcat(path_prefix, chomp_path, NULL);
+        g_free(chomp_path);
+    } else {
+        full_path = g_strconcat(path_prefix, joined_path, NULL);
+    }
+    g_free(joined_path);
 
     path = ds3_str_init(full_path);
-
     g_free(full_path);
-    g_free(joined_path);
 
     if (escaped_bucket_name != NULL) {
         g_free(escaped_bucket_name);
@@ -1103,6 +1124,7 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     if (escaped_object_name != NULL) {
         g_free(escaped_object_name);
     }
+
     return path;
 }
 
@@ -1265,10 +1287,8 @@ ds3_request* ds3_init_delete_job(const char* job_id) {
     return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_get_objects(const char* bucket_name) {
+ds3_request* ds3_init_get_objects() {
     struct _ds3_request* request = _common_request_init(HTTP_GET, ds3_str_init("/_rest_/object/"));
-
-    _set_query_param((ds3_request*) request, "bucket_id", bucket_name);
 
     return (ds3_request*) request;
 }
@@ -1287,6 +1307,22 @@ static bool attribute_equal(const struct _xmlAttr* attribute, const char* attrib
 
 static bool element_equal(const xmlNodePtr xml_node, const char* element_name){
     return xmlStrcmp(xml_node->name, (const xmlChar*) element_name) == 0;
+}
+
+static uint16_t xml_get_uint16(xmlDocPtr doc, xmlNodePtr child_node) {
+    xmlChar* text;
+    uint16_t size;
+    text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
+    if (text == NULL) {
+        return 0;
+    }
+    size = atoi((char*)text);
+    xmlFree(text);
+    return size;
+}
+
+static uint64_t xml_get_uint16_from_attribute(xmlDocPtr doc, struct _xmlAttr* attribute) {
+    return xml_get_uint16(doc, (xmlNodePtr) attribute);
 }
 
 static uint64_t xml_get_uint64(xmlDocPtr doc, xmlNodePtr child_node) {
@@ -1309,7 +1345,7 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
     ds3_str* result;
     text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-    if (NULL == text){
+    if (text == NULL){
         // Element is found, but is empty: <name />
         return NULL;
     }
@@ -1699,6 +1735,11 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     ds3_error* error;
     GArray* object_array;
     GArray* common_prefix_array;
+
+    if (g_strcmp0(request->path->value, "/") == 0){
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
+    }
+
     GByteArray* xml_blob = g_byte_array_new();
     error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
     if (error != NULL) {
@@ -1770,10 +1811,27 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     return NULL;
 }
 
+static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
+    int num_matches = 0;
+    int index;
+
+    for (index = 0; index < str->size; index++) {
+        if (str->value[index] == '/') {
+            num_matches++;
+        }
+    }
+
+    return num_matches;
+}
+
 ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
     ds3_error* error;
     GHashTable* return_headers;
-    ds3_metadata* metadata;
+    ds3_metadata* metadata = NULL;
+
+    if (num_chars_in_ds3_str(request->path, '/') < 2){
+        return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
+    }
 
     error = _net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
 
@@ -1800,7 +1858,7 @@ ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, 
 }
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
-  ds3_error* error;
+    ds3_error* error;
     GHashTable* return_headers;
     ds3_metadata* metadata;
 
@@ -1945,6 +2003,55 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
     response->list = (ds3_bulk_object*) object_array->data;
     response->size = object_array->len;
     g_array_free(object_array, FALSE);
+    return response;
+}
+
+static ds3_node* _parse_node(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node) {
+    xmlNodePtr child_node;
+    struct _xmlAttr* attribute;
+
+    ds3_node* response = g_new0(ds3_node, 1);
+
+    for (attribute = node->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "EndPoint") == true) {
+            response->endpoint = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "Id") == true) {
+            response->id = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "HttpPort") == true) {
+            response->http_port = xml_get_uint16_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "HttpsPort") == true) {
+            response->https_port = xml_get_uint16_from_attribute(doc, attribute);
+        } else {
+            LOG(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
+        }
+    }
+
+    for (child_node = node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+    }
+
+    return response;
+}
+
+static ds3_nodes_list* _parse_nodes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr nodes_node) {
+    xmlNodePtr child_node;
+
+    ds3_nodes_list* response = g_new0(ds3_nodes_list, 1);
+    GPtrArray* nodes_array = g_ptr_array_new();
+
+    for (child_node = nodes_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Node") == true) {
+            ds3_node* node = _parse_node(log, doc, child_node);
+            g_ptr_array_add(nodes_array, node);
+        } else {
+            LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+        }
+    }
+
+    response->list = (ds3_node**) nodes_array->pdata;
+    response->size = nodes_array->len;
+
+    g_ptr_array_free(nodes_array, FALSE);
     return response;
 }
 
@@ -2168,7 +2275,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
 
     root = xmlDocGetRootElement(doc);
 
-    if(element_equal(root, "MasterObjectList") == false) {
+    if (element_equal(root, "MasterObjectList") == false) {
         char* message = g_strconcat("Expected the root element to be 'MasterObjectList'.  The actual response is: ", root->name, NULL);
         xmlFreeDoc(doc);
         ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
@@ -2183,17 +2290,19 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
     objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
 
     for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(element_equal(child_node, "Objects")  == true) {
+        if (element_equal(child_node, "Objects")  == true) {
             ds3_bulk_object_list* obj_list = _parse_bulk_objects(log, doc, child_node);
             g_array_append_val(objects_array, obj_list);
+        } else if (element_equal(child_node, "Nodes")  == true) {
+            response->nodes = _parse_nodes(log, doc, child_node);
         } else {
-            //TODO add Node xml handling
             LOG(log, DS3_ERROR, "Unknown element: (%s)", child_node->name);
         }
     }
 
     response->list = (ds3_bulk_object_list**) objects_array->data;
     response->list_size = objects_array->len;
+
     g_array_free(objects_array, FALSE);
 
     *_response = response;
@@ -2892,7 +3001,7 @@ void ds3_free_service_response(ds3_get_service_response* response){
 }
 
 void ds3_free_bulk_response(ds3_bulk_response* response) {
-    int i;
+    int list_index;
     if (response == NULL) {
         return;
     }
@@ -2903,11 +3012,14 @@ void ds3_free_bulk_response(ds3_bulk_response* response) {
     ds3_str_free(response->user_id);
     ds3_str_free(response->user_name);
 
-    if (response->list != NULL ) {
-        for (i = 0; i < response->list_size; i++) {
-            ds3_free_bulk_object_list(response->list[i]);
+    if (response->list != NULL) {
+        for (list_index = 0; list_index < response->list_size; list_index++) {
+            ds3_free_bulk_object_list(response->list[list_index]);
         }
         g_free(response->list);
+    }
+    if (response->nodes != NULL) {
+        ds3_free_nodes_list(response->nodes);
     }
 
     g_free(response);
@@ -2920,7 +3032,7 @@ void ds3_free_get_jobs_response(ds3_get_jobs_response* response) {
         return;
     }
 
-    if (response->jobs != NULL ) {
+    if (response->jobs != NULL) {
         for (job_index = 0; job_index < response->jobs_size; job_index++) {
             ds3_free_bulk_response(response->jobs[job_index]);
         }
@@ -3122,6 +3234,24 @@ void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list) {
 
     g_free(object_list->list);
     g_free(object_list);
+}
+
+void ds3_free_nodes_list(ds3_nodes_list* nodes_list) {
+    uint64_t list_index;
+    if (nodes_list == NULL || nodes_list->list == NULL) {
+        return;
+    }
+
+    for (list_index = 0; list_index < nodes_list->size; list_index++) {
+        ds3_node* current_node = nodes_list->list[list_index];
+
+        ds3_str_free(current_node->endpoint);
+        ds3_str_free(current_node->id);
+        g_free(current_node);
+    }
+
+    g_free(nodes_list->list);
+    g_free(nodes_list);
 }
 
 void ds3_free_allocate_chunk_response(ds3_allocate_chunk_response* response) {

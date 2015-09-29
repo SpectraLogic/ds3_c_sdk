@@ -41,7 +41,9 @@ ds3_client* get_client() {
 }
 
 void print_error(const ds3_error* error) {
-      printf("ds3_error_message: %s\n", error->message->value);
+      if (NULL != error->message) {
+        printf("ds3_error_message: %s\n", error->message->value);
+      }
       if (error->error != NULL) {
           printf("ds3_status_code: %lu\n", error->error->status_code);
           printf("ds3_status_message: %s\n", error->error->status_message->value);

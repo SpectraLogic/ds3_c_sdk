@@ -228,6 +228,18 @@ typedef struct {
 }ds3_bulk_object_list;
 
 typedef struct {
+    ds3_str*    endpoint;
+    ds3_str*    id;
+    uint16_t    http_port;
+    uint16_t    https_port;
+}ds3_node;
+
+typedef struct {
+    ds3_node**   list;
+    uint64_t     size;
+}ds3_nodes_list;
+
+typedef struct {
     ds3_str*                bucket_name;
     uint64_t                cached_size_in_bytes;
     ds3_chunk_ordering      chunk_order;
@@ -243,6 +255,7 @@ typedef struct {
     ds3_bulk_object_list**  list;
     size_t                  list_size;
     ds3_job_status          status;
+    ds3_nodes_list*         nodes;
 }ds3_bulk_response;
 
 typedef struct {
@@ -363,7 +376,7 @@ LIBRARY_API ds3_request* ds3_init_get_jobs(void);
 LIBRARY_API ds3_request* ds3_init_get_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_put_job(const char* job_id);
 LIBRARY_API ds3_request* ds3_init_delete_job(const char* job_id);
-LIBRARY_API ds3_request* ds3_init_get_objects(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_get_objects();
 LIBRARY_API ds3_request* ds3_init_verify_system_health(void);
 
 LIBRARY_API ds3_request* ds3_init_put_bulk(const char* bucket_name, ds3_bulk_object_list* object_list);
@@ -375,6 +388,7 @@ LIBRARY_API ds3_request* ds3_init_get_physical_placement_full_details(const char
 LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
 
 LIBRARY_API void ds3_request_set_custom_header(ds3_request* request, const char* header_name, const char* header_value);
+LIBRARY_API void ds3_request_set_bucket_name(ds3_request* request, const char* bucket_name);
 LIBRARY_API void ds3_request_set_prefix(ds3_request* request, const char* prefix);
 LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* delimiter);
 LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
@@ -430,6 +444,7 @@ LIBRARY_API void ds3_free_get_jobs_response(ds3_get_jobs_response* response);
 LIBRARY_API void ds3_free_build_information(ds3_build_information* build_info);
 LIBRARY_API void ds3_free_get_system_information(ds3_get_system_information_response* system_info);
 LIBRARY_API void ds3_free_verify_system_health(ds3_verify_system_health_response* response);
+LIBRARY_API void ds3_free_nodes_list(ds3_nodes_list* nodes_list);
 LIBRARY_API void ds3_cleanup(void);
 
 LIBRARY_API void ds3_print_request(const ds3_request* request);

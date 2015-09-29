@@ -1,7 +1,7 @@
-DS3 C SDK
-=========
+Spectra S3 C SDK
+================
 
-This project contains a C library for using the DS3 Deep Storage REST interface.
+This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
 ==========
@@ -41,7 +41,13 @@ Unix/Linux
 ==========
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
-contain a simple build script that should work on most Unix/Linux systems.
+contain a simple build script that should work on most Unix/Linux systems.  The
+build system is currently autotools.  To install autotools on ubuntu use apt-get 
+and install the following:
+
+    $ sudo apt-get install build-essential
+    $ sudo apt-get install autoconf
+    $ sudo apt-get install libtool
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
@@ -51,6 +57,16 @@ dependencies are:
 * libxml2
 * libcurl
 * libglib-2.0
+
+On Ubuntu you can install them with apt-get:
+
+    $ sudo apt-get install libxml2-dev
+    $ sudo apt-get install libcurl4-openssl-dev
+    $ sudo apt-get install libglib2.0-dev 
+
+For testing you will need the boost unit test library as well.  On ubuntu this can be installed with:
+
+    $ sudo apt-get install libboost-test-dev
 
 Release Tarball
 ---------------
@@ -119,7 +135,7 @@ To run it, just use `make run`.
 Code Samples
 ------------
 
-The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from DS3:
+The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from Spectra S3:
 
 ```c
 
