@@ -42,16 +42,21 @@ Unix/Linux
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
 contain a simple build script that should work on most Unix/Linux systems.  The
-build system is currently autotools.  To install autotools on ubuntu use apt-get 
-and install the following:
+build system is currently autotools.  
+
+To install autotools on Ubuntu use apt-get and install the following:
 
     $ sudo apt-get install build-essential
     $ sudo apt-get install autoconf
     $ sudo apt-get install libtool
+    
+To install autotools on CentOS use yum and install the following:
+    $ sudo yum install autoconf
+    $ sudo yum install libtool
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
-example, Linux systems often provide lib\*-dev or lib\*-devel packages. The DS3
+example, Linux systems often provide lib\*-dev or lib\*-devel packages. The Spectra S3
 dependencies are:
 
 * libxml2
@@ -63,11 +68,23 @@ On Ubuntu you can install them with apt-get:
     $ sudo apt-get install libxml2-dev
     $ sudo apt-get install libcurl4-openssl-dev
     $ sudo apt-get install libglib2.0-dev 
+    
+On CentOS you can install them with yum:
 
-For testing you will need the boost unit test library as well.  On ubuntu this can be installed with:
+    $ sudo yum install libxml2-devel
+    $ sudo yum install libcurl-devel
+    $ sudo yum install glib2-devel 
+    
+For testing you will need the boost unit test library as well.  
+
+On Ubuntu this can be installed with:
 
     $ sudo apt-get install libboost-test-dev
 
+On CentOS this can be installed with:
+
+    $ sudo yum install boost-test
+    
 Release Tarball
 ---------------
 
