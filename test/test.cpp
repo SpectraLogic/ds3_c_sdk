@@ -7,24 +7,45 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
-ds3_client * get_client() {
+struct TestCleanup {
+    TestCleanup() {}
+    ~TestCleanup() {
+        ds3_cleanup();
+    }
+};
 
-    ds3_client* client;
+BOOST_GLOBAL_FIXTURE( TestCleanup );
+
+void test_log(const char* message, void* user_data) {
+    fprintf(stderr, "Log Message: %s\n", message);
+}
+
+ds3_client* get_client_at_loglvl(ds3_log_lvl log_lvl) {
+  ds3_client* client;
 
     ds3_error* error = ds3_create_client_from_env(&client);
 
     if (error != NULL) {
         fprintf(stderr, "Failed to construct ds3_client from enviornment variables: %s\n", error->message->value);
-        exit(1);
+        ds3_free_error(error);
+        BOOST_FAIL("Failed to setup client.");
     }
+
+    ds3_client_register_logging(client, log_lvl, test_log, NULL);
 
     return client;
 }
 
+ds3_client* get_client() {
+    return get_client_at_loglvl(DS3_INFO);
+}
+
 void print_error(const ds3_error* error) {
-      printf("ds3_error_message: %s\n", error->message->value);
+      if (NULL != error->message) {
+        printf("ds3_error_message: %s\n", error->message->value);
+      }
       if (error->error != NULL) {
-          printf("ds3_status_code: %llu\n", error->error->status_code);
+          printf("ds3_status_code: %lu\n", error->error->status_code);
           printf("ds3_status_message: %s\n", error->error->status_message->value);
           printf("ds3_error_body: %s\n", error->error->error_body->value);
       }
@@ -33,8 +54,8 @@ void print_error(const ds3_error* error) {
 void handle_error(ds3_error* error) {
     if (error != NULL) {
         print_error(error);
-        BOOST_FAIL("Test failed with a ds3_error");
         ds3_free_error(error);
+        BOOST_FAIL("Test failed with a ds3_error");
     }
 }
 
@@ -64,11 +85,40 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     request = ds3_init_delete_bucket(bucket_name);
     error = ds3_delete_bucket(client, request);
     ds3_free_request(request);
-
+    ds3_free_bucket_response(bucket_response);
     handle_error(error);
 }
 
 void populate_with_objects(const ds3_client* client, const char* bucket_name) {
+    ds3_str* job_id = populate_with_objects_return_job(client, bucket_name);
+    ds3_str_free(job_id);
+}
+
+ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucket_name){
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_bulk_object_list* obj_list;
+    ds3_bulk_response* response;
+    ds3_str* job_id;
+    ds3_free_request(request);
+
+    handle_error(error);
+
+    obj_list = ds3_convert_file_list(books, 5);
+    request = ds3_init_put_bulk(bucket_name, obj_list);
+    error = ds3_bulk(client, request, &response);
+    ds3_free_request(request);
+    handle_error(error);
+    job_id = ds3_str_dup(response->job_id);
+
+    ds3_free_bulk_response(response);
+    ds3_free_bulk_object_list(obj_list);
+    return job_id;
+}
+
+
+ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
     uint64_t i, n;
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
@@ -76,6 +126,7 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
     ds3_bulk_object_list* obj_list;
     ds3_bulk_response* response;
     ds3_allocate_chunk_response* chunk_response;
+    ds3_str* job_id;
 
     ds3_free_request(request);
 
@@ -87,6 +138,8 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
 
     ds3_free_request(request);
     handle_error(error);
+
+    job_id = ds3_str_dup(response->job_id);
 
     for (n = 0; n < response->list_size; n ++) {
 
@@ -112,15 +165,13 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
           ds3_free_request(request);
 
           fclose(file);
-          if (error != NULL) {
-              print_error(error);
-              ds3_free_error(error);
-          }
+          handle_error(error);
       }
       ds3_free_allocate_chunk_response(chunk_response);
     }
     ds3_free_bulk_response(response);
     ds3_free_bulk_object_list(obj_list);
+    return job_id;
 }
 
 bool contains_object(const ds3_object* objects, uint64_t num_objects, const char* obj) {
@@ -131,5 +182,10 @@ bool contains_object(const ds3_object* objects, uint64_t num_objects, const char
         }
     }
     return false;
+}
+
+void free_client(ds3_client* client) {
+    ds3_free_creds(client->creds);
+    ds3_free_client(client);
 }
 

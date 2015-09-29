@@ -1,7 +1,7 @@
-DS3 C SDK
-=========
+Spectra S3 C SDK
+================
 
-This project contains a C library for using the DS3 Deep Storage REST interface.
+This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
 ==========
@@ -12,7 +12,7 @@ Windows
 =======
 
 For Windows we release a binary version of the SDK for your convenience. See
-[win32/README.dm](win32/README.md) for more information about building from
+[win32/README.md](win32/README.md) for more information about building from
 source in Windows.
 
 Release Zip
@@ -41,7 +41,13 @@ Unix/Linux
 ==========
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
-contain a simple build script that should work on most Unix/Linux systems.
+contain a simple build script that should work on most Unix/Linux systems.  The
+build system is currently autotools.  To install autotools on ubuntu use apt-get 
+and install the following:
+
+    $ sudo apt-get install build-essential
+    $ sudo apt-get install autoconf
+    $ sudo apt-get install libtool
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
@@ -51,6 +57,16 @@ dependencies are:
 * libxml2
 * libcurl
 * libglib-2.0
+
+On Ubuntu you can install them with apt-get:
+
+    $ sudo apt-get install libxml2-dev
+    $ sudo apt-get install libcurl4-openssl-dev
+    $ sudo apt-get install libglib2.0-dev 
+
+For testing you will need the boost unit test library as well.  On ubuntu this can be installed with:
+
+    $ sudo apt-get install libboost-test-dev
 
 Release Tarball
 ---------------
@@ -119,7 +135,7 @@ To run it, just use `make run`.
 Code Samples
 ------------
 
-The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from DS3:
+The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from Spectra S3:
 
 ```c
 
@@ -159,11 +175,11 @@ int main (int args, char * argv[]) {
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -187,7 +203,7 @@ int main (int args, char * argv[]) {
 
     for (i = 0; i < response->num_buckets; i++) {
         ds3_bucket bucket = response->buckets[i];
-        printf("Bucket: (%s) created on %s\n", bucket.name, bucket.creation_date);
+        printf("Bucket: (%s) created on %s\n", bucket.name->value, bucket.creation_date->value);
     }
     
     ds3_free_service_response(response);
@@ -224,11 +240,11 @@ int main (int args, char * argv[]) {
     
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -283,11 +299,11 @@ int main (int args, char * argv[]) {
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -312,7 +328,7 @@ int main (int args, char * argv[]) {
 
     for (i = 0; i < response->num_objects; i++) {
         ds3_object object = response->objects[i];
-        printf("Object: (%s) created on %s\n", object.name, object.last_modified);
+        printf("Object: (%s) created on %s\n", object.name->value, object.last_modified->value);
     }
 
     ds3_free_bucket_response(response);
