@@ -18,16 +18,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <curl/curl.h>
+
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 
 #ifdef _WIN32
 #include <io.h>
 #else
+#include <stdbool.h>
 #include <unistd.h>
 #endif
 
@@ -1896,7 +1897,7 @@ static ds3_bulk_object _parse_bulk_object(const ds3_log* log, xmlDocPtr doc, xml
         if (attribute_equal(attribute, "Name") == true) {
             response.name = xml_get_string_from_attribute(doc, attribute);
         } else if (attribute_equal(attribute, "InCache") == true) {
-            response.in_cache = xml_get_bool_from_attribute(log, doc, attribute);
+            response.in_cache = (ds3_bool)xml_get_bool_from_attribute(log, doc, attribute);
         } else if (attribute_equal(attribute, "Length") == true) {
             response.length = xml_get_uint64_from_attribute(doc, attribute);
         } else if (attribute_equal(attribute, "Offset") == true) {
