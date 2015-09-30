@@ -475,10 +475,10 @@ static char* _net_get_verb(http_verb verb) {
     return NULL;
 }
 
-static char* _get_object_type(const object_type type) {
+static char* _get_ds3_object_type(const ds3_object_type type) {
     switch(type) {
         case DATA: return "DATA";
-        case NO_TYPE: return NULL;
+        case FOLDER: return "FOLDER";
     }
 
     return NULL;
@@ -1063,8 +1063,8 @@ void ds3_request_set_id(ds3_request* _request, const char* id) {
     _set_query_param(_request, "id", id);
 }
 
-void ds3_request_set_type(ds3_request* _request, object_type type) {
-    const char* type_as_string = _get_object_type(type);
+void ds3_request_set_type(ds3_request* _request, ds3_object_type type) {
+    const char* type_as_string = _get_ds3_object_type(type);
     if(type_as_string != NULL) {
         _set_query_param(_request, "type", type_as_string);
     }
