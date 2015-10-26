@@ -297,33 +297,8 @@ void ds3_str_free(ds3_str* string) {
     g_free(string);
 }
 
-/* This is used to free the entires in the values ptr array in the ds3_response_header
- */
-static void _ds3_internal_str_free(gpointer data) {
-    ds3_str_free((ds3_str*)data);
-}
-
 static ds3_str* _ds3_response_header_get_first(const ds3_response_header* header) {
     return (ds3_str*)g_ptr_array_index(header->values, 0);
-}
-
-static ds3_response_header* _ds3_init_response_header(const ds3_str* key) {
-    ds3_response_header* header = g_new0(ds3_response_header, 1);
-    header->key = ds3_str_dup(key);
-    header->values = g_ptr_array_new_with_free_func(_ds3_internal_str_free);
-    return header;
-}
-
-// caller frees all passed in values
-static void _insert_header(GHashTable* headers, const ds3_str* key, const ds3_str* value) {
-    ds3_response_header* header = (ds3_response_header*)g_hash_table_lookup(headers, key->value);
-
-    if (header == NULL) {
-        header = _ds3_init_response_header(key);
-        g_hash_table_insert(headers, g_strdup(key->value), header);
-    }
-
-    g_ptr_array_add(header->values, ds3_str_dup(value));
 }
 
 static ds3_error* _ds3_create_error(ds3_error_code code, const char * message) {
