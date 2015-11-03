@@ -380,8 +380,6 @@ BOOST_AUTO_TEST_CASE(get_non_existing_job) {
     ds3_free_error(error);
 }
 
-/* TODO uncomment this when using the latest simulator
-
 BOOST_AUTO_TEST_CASE(bad_checksum) {
     uint64_t i, n, checksums;
     const char* bucket_name = "bucket_test_md5";
@@ -449,8 +447,8 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
 		ds3_free_request(request);
 		fclose(file);
 		BOOST_REQUIRE(error != NULL);
-		BOOST_CHECK(error->error->status_code == 403);
-		BOOST_CHECK(strcmp(error->error->status_message->value ,"Forbidden")==0);
+		BOOST_CHECK(error->error->status_code == 400);
+		BOOST_CHECK(strcmp(error->error->status_message->value, "Bad Request")==0);
 	    }
 	    ds3_free_allocate_chunk_response(chunk_response);
 	}
@@ -462,4 +460,3 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
     ds3_free_bulk_object_list(obj_list);
     free_client(client);
 }
-*/
