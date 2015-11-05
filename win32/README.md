@@ -2,7 +2,7 @@ Overview
 --------
 
 This directory contains all of the files needed to build under Windows.
-Currently we build using Microsoft's nmake and MSVC 9 and above.
+Currently we build using Microsoft's nmake and MSVC 2012 and above.
 
 Prerequesites
 -------------
@@ -18,7 +18,7 @@ Basic Build
 -----------
 
 To create a release package, run `/win32/package.bat`. Note that this script
-executes the Visual Studio 2008 Command Prompt environment script, so if you're
+executes the Visual Studio 2012 Command Prompt environment script, so if you're
 using a different version of Visual Studio you'll have to modify the Visual
 Studio install path inside of `/win32/package.bat`.
 
@@ -46,7 +46,7 @@ To re-build the dependencies, follow the following procedure:
      the glib package must be extracted to `/win32/deps/build/prebuilt`.
 3. The Windows batch file `/win32/deps/install.bat` compiles and installs the
    dependencies into the `/win32/deps/install` directory. It executes the
-   Visual Studio 2008 Command Prompt environment script, so if you're using a
+   Visual Studio 2012 Command Prompt environment script, so if you're using a
    different version you'll have to modify the Visual Studio install path inside
    of `install.bat`.
 
