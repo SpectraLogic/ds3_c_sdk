@@ -16,6 +16,7 @@
 #ifndef __DS3_HEADER__
 #define __DS3_HEADER__
 
+#include <glib.h>
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
@@ -344,6 +345,10 @@ LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secr
 LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
+LIBRARY_API void        LOG(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...);
+
+LIBRARY_API size_t       load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data);
+LIBRARY_API ds3_error*   ds3_create_error(ds3_error_code code, const char * message);
 
 LIBRARY_API ds3_request* ds3_init_get_system_information(void);
 LIBRARY_API ds3_request* ds3_init_get_service(void);

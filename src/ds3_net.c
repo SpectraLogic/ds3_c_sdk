@@ -13,6 +13,7 @@
  * ****************************************************************************
  */
 
+#include "ds3_request.h"
 #include "ds3.h"
 #include "ds3_net.h"
 
@@ -42,7 +43,7 @@ static char* _net_get_verb(http_verb verb) {
 // curl_easy_escape'd strings must be freed using curl_free.  Copy
 // the escaped string, using glib, since users of this function will
 // eventually wind up freeing it with g_free.
-static char* escape_url(const char* url) {
+char* escape_url(const char* url) {
     char* curl_escaped_url = curl_easy_escape(NULL, url, 0);
     char* escaped_url = g_strdup(curl_escaped_url);
     curl_free(curl_escaped_url);
@@ -50,7 +51,7 @@ static char* escape_url(const char* url) {
 }
 
 // Like escape_url but don't encode "/".
-static char* escape_url_object_name(const char* url) {
+char* escape_url_object_name(const char* url) {
     gchar** split = g_strsplit(url, "/", 0);
     gchar** ptr;
     gchar* escaped_ptr;
@@ -513,7 +514,7 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
             //process the response
             if (res != CURLE_OK) {
                 char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
-                ds3_error* error = _ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
+                ds3_error* error = ds3_create_error(DS3_ERROR_REQUEST_FAILED, message);
                 g_free(url);
                 g_byte_array_free(response_data.body, TRUE);
                 ds3_str_free(response_data.status_message);
@@ -538,7 +539,7 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
             }
 
             if (response_data.status_code < 200 || response_data.status_code >= 300) {
-                ds3_error* error = _ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
+                ds3_error* error = ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
                 error->error = g_new0(ds3_error_response, 1);
                 error->error->status_code = response_data.status_code;
                 error->error->status_message = ds3_str_init(response_data.status_message->value);
@@ -565,22 +566,18 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
 
             break;
         } else {
-            return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
+            return ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
         }
     }
     g_free(url);
 
     if (retry_count == client->num_redirects) {
-      return _ds3_create_error(DS3_ERROR_TOO_MANY_REDIRECTS, "Encountered too many redirects while attempting to fullfil the request");
+      return ds3_create_error(DS3_ERROR_TOO_MANY_REDIRECTS, "Encountered too many redirects while attempting to fullfil the request");
     }
     return NULL;
 }
 
 void net_cleanup(void) {
     curl_global_cleanup();
-}
-
-static void _cleanup_hash_value(gpointer value) {
-    g_free(value);
 }
 
