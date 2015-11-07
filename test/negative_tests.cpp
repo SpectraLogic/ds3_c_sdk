@@ -397,64 +397,64 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
 
     for(checksums = 0; checksums < 5; checksums ++){
         request = ds3_init_put_bucket(bucket_name);
-	error = ds3_put_bucket(client, request);
-	ds3_free_request(request);
-	handle_error(error);
+        error = ds3_put_bucket(client, request);
+        ds3_free_request(request);
+        handle_error(error);
 
       
-	request = ds3_init_put_bulk(bucket_name, obj_list);
-	error = ds3_bulk(client, request, &response);
+        request = ds3_init_put_bulk(bucket_name, obj_list);
+        error = ds3_bulk(client, request, &response);
 
-	ds3_free_request(request);
-	handle_error(error);
+        ds3_free_request(request);
+        handle_error(error);
 
-	for (n = 0; n < response->list_size; n ++) {
-  	    request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
-	    error = ds3_allocate_chunk(client, request, &chunk_response);
-	    ds3_free_request(request);
-	    handle_error(error);
-	    BOOST_REQUIRE(chunk_response->retry_after == 0);
-	    BOOST_REQUIRE(chunk_response->objects != NULL);
+        for (n = 0; n < response->list_size; n ++) {
+            request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
+            error = ds3_allocate_chunk(client, request, &chunk_response);
+            ds3_free_request(request);
+            handle_error(error);
+            BOOST_REQUIRE(chunk_response->retry_after == 0);
+            BOOST_REQUIRE(chunk_response->objects != NULL);
 
-	    for (i = 0; i < chunk_response->objects->size; i++) {
-	        ds3_bulk_object bulk_object = chunk_response->objects->list[i];
-		FILE* file = fopen(bulk_object.name->value, "r");
+            for (i = 0; i < chunk_response->objects->size; i++) {
+                ds3_bulk_object bulk_object = chunk_response->objects->list[i];
+                FILE* file = fopen(bulk_object.name->value, "r");
 
-		request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
+                request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
 
-		switch(checksums) {
-		    case 0:
-		        ds3_request_set_md5(request,"ra3fg==");
-			break;
-		    case 1:
-		        ds3_request_set_sha256(request,"SbGH1ZtYIqOjO+E=");
-			break;
-		    case 2:
-		        ds3_request_set_sha512(request,"qNLwiDVNQ3YCBjY6YowRE8Hsqw+iwP9KOKM0Xvw==");
-			break;
-		    case 3:
-		        ds3_request_set_crc32(request,"b==");
-			break;
-		    case 4:
-		        ds3_request_set_crc32c(request, "+Z==");
-			break;
-		}
+                switch(checksums) {
+                    case 0:
+                        ds3_request_set_md5(request,"ra3fg==");
+                        break;
+                    case 1:
+                        ds3_request_set_sha256(request,"SbGH1ZtYIqOjO+E=");
+                        break;
+                    case 2:
+                        ds3_request_set_sha512(request,"qNLwiDVNQ3YCBjY6YowRE8Hsqw+iwP9KOKM0Xvw==");
+                        break;
+                    case 3:
+                        ds3_request_set_crc32(request,"b==");
+                        break;
+                    case 4:
+                        ds3_request_set_crc32c(request, "+Z==");
+                        break;
+                }
 
-		if (bulk_object.offset > 0) {
-		    fseek(file, bulk_object.offset, SEEK_SET);
-		}
-		error = ds3_put_object(client, request, file, ds3_read_from_file);
-		ds3_free_request(request);
-		fclose(file);
-		BOOST_REQUIRE(error != NULL);
-		BOOST_CHECK(error->error->status_code == 400);
-		BOOST_CHECK(strcmp(error->error->status_message->value, "Bad Request")==0);
-	    }
-	    ds3_free_allocate_chunk_response(chunk_response);
-	}
-	
-	ds3_free_bulk_response(response);
-	clear_bucket(client, bucket_name);
+                if (bulk_object.offset > 0) {
+                    fseek(file, bulk_object.offset, SEEK_SET);
+                }
+                error = ds3_put_object(client, request, file, ds3_read_from_file);
+                ds3_free_request(request);
+                fclose(file);
+                BOOST_REQUIRE(error != NULL);
+                BOOST_CHECK(error->error->status_code == 400);
+                BOOST_CHECK(strcmp(error->error->status_message->value, "Bad Request")==0);
+            }
+            ds3_free_allocate_chunk_response(chunk_response);
+        }
+        
+        ds3_free_bulk_response(response);
+        clear_bucket(client, bucket_name);
     }
     
     ds3_free_bulk_object_list(obj_list);

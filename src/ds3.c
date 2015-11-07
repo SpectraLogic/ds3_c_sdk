@@ -827,14 +827,14 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             headers = NULL;
 
             if (request->checksum == NULL) {
-	        checksum_value = "";
-	    }else{
+                checksum_value = "";
+            }else{
                 char* checksum_header;
                 checksum_value = request->checksum->value;
                 checksum_header = g_strconcat(_get_checksum_type_header(request->checksum_type), checksum_value, NULL);
                 headers = curl_slist_append(headers, checksum_header);
                 g_free(checksum_header);
-	    }
+            }
             amz_headers = _canonicalize_amz_headers(request->headers);
             canonicalized_resource = _canonicalized_resource(request->path, request->query_params);
             signature = _net_compute_signature(client->log, client->creds, request->verb, canonicalized_resource, date, "", checksum_value, amz_headers);
