@@ -38,11 +38,11 @@
 #include "ds3.h"
 
 typedef enum {
-  MD5,
-  SHA256,
-  SHA512,
-  CRC32,
-  CRC32C
+    MD5,
+    SHA256,
+    SHA512,
+    CRC32,
+    CRC32C
 }ds3_checksum_type;
 
 //---------- Define opaque struct ----------//
@@ -1057,33 +1057,33 @@ void ds3_request_set_creation_date(ds3_request* _request, const char* creation_d
 }
 
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
-  struct _ds3_request* request = (struct _ds3_request*) _request;
-  request->checksum_type = MD5;
-  request->checksum = ds3_str_init(md5);
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = MD5;
+    request->checksum = ds3_str_init(md5);
 }
 
 void ds3_request_set_sha256(ds3_request* _request, const char* sha256) {
-  struct _ds3_request* request = (struct _ds3_request*) _request;
-  request->checksum_type = SHA256;
-  request->checksum = ds3_str_init(sha256);
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = SHA256;
+    request->checksum = ds3_str_init(sha256);
 }
 
 void ds3_request_set_sha512(ds3_request* _request, const char* sha512) {
-  struct _ds3_request* request = (struct _ds3_request*) _request;
-  request->checksum_type = SHA512;
-  request->checksum = ds3_str_init(sha512);
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = SHA512;
+    request->checksum = ds3_str_init(sha512);
 }
 
 void ds3_request_set_crc32(ds3_request* _request, const char* crc32) {
-  struct _ds3_request* request = (struct _ds3_request*) _request;
-  request->checksum_type = CRC32;
-  request->checksum = ds3_str_init(crc32);
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = CRC32;
+    request->checksum = ds3_str_init(crc32);
 }
 
 void ds3_request_set_crc32c(ds3_request* _request, const char* crc32c) {
-  struct _ds3_request* request = (struct _ds3_request*) _request;
-  request->checksum_type = CRC32C;
-  request->checksum = ds3_str_init(crc32c);
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = CRC32C;
+    request->checksum = ds3_str_init(crc32c);
 }
 
 void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
