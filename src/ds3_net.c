@@ -13,6 +13,8 @@
  * ****************************************************************************
  */
 
+#include <curl/curl.h>
+
 #include "ds3_request.h"
 #include "ds3.h"
 #include "ds3_net.h"

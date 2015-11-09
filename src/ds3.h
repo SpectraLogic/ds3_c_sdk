@@ -16,10 +16,8 @@
 #ifndef __DS3_HEADER__
 #define __DS3_HEADER__
 
-#include <glib.h>
 #include <stdint.h>
 #include <string.h>
-#include <curl/curl.h>
 
 #ifdef __cplusplus
 extern "C" {
