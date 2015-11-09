@@ -18,6 +18,7 @@
 #include "ds3_request.h"
 #include "ds3.h"
 #include "ds3_net.h"
+#include "ds3_utils.h"
 
 static void _init_curl(void) {
     static ds3_bool initialized = False;
@@ -102,7 +103,7 @@ static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, 
     unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
     char* escaped_str = g_strescape((char*) signature_str, NULL);
 
-    LOG(log, DS3_DEBUG, "signature string: %s", escaped_str);
+    ds3_log_message(log, DS3_DEBUG, "signature string: %s", escaped_str);
     g_free(escaped_str);
 
     hmac = g_hmac_new(G_CHECKSUM_SHA1, (unsigned char*) creds->secret_key->value, creds->secret_key->size);
@@ -203,7 +204,7 @@ static int ds3_curl_logger(CURL *handle, curl_infotype type, char* data, size_t 
 
     message = g_strndup(data, size);
 
-    LOG(log, DS3_TRACE, "%s: %s", text, g_strchomp(message));
+    ds3_log_message(log, DS3_TRACE, "%s: %s", text, g_strchomp(message));
 
     g_free(message);
     return 0;
@@ -369,7 +370,7 @@ static size_t _process_response_body(void* buffer, size_t size, size_t nmemb, vo
 
     // If we got an error, collect the error body
     if (response_data->status_code >= 300) {
-        return load_buffer(buffer, size, nmemb, response_data->body);
+        return ds3_load_buffer(buffer, size, nmemb, response_data->body);
     } else { // If we did not get an error, call the user's defined callbacks.
         return response_data->user_func(buffer, size, nmemb, response_data->user_data);
     }
@@ -409,7 +410,7 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
             ds3_response_data response_data;
             GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_response_header);
 
-            LOG(client->log, DS3_DEBUG, "Preparing to send request");
+            ds3_log_message(client->log, DS3_DEBUG, "Preparing to send request");
 
             memset(&response_data, 0, sizeof(ds3_response_data));
             response_data.headers = response_headers;
@@ -525,10 +526,10 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
                 return error;
             }
 
-            LOG(client->log, DS3_DEBUG, "Request completed with status code of: %d", response_data.status_code);
+            ds3_log_message(client->log, DS3_DEBUG, "Request completed with status code of: %d", response_data.status_code);
 
             if (response_data.status_code == 307) {
-                LOG(client->log, DS3_INFO, "Request encountered a 307 redirect");
+                ds3_log_message(client->log, DS3_INFO, "Request encountered a 307 redirect");
                 ds3_str_free(response_data.status_message);
 
                 if (response_data.body != NULL) {
@@ -536,7 +537,7 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
                 }
                 g_hash_table_destroy(response_headers);
                 retry_count++;
-                LOG(client->log, DS3_DEBUG, "Retry Attempt: %d | Max Retries: %d", retry_count, client->num_redirects);
+                ds3_log_message(client->log, DS3_DEBUG, "Retry Attempt: %d | Max Retries: %d", retry_count, client->num_redirects);
                 continue;
             }
 
@@ -549,7 +550,7 @@ ds3_error* net_process_request(const ds3_client* client, const ds3_request* _req
                     error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
                     g_byte_array_free(response_data.body, TRUE);
                 } else {
-                    LOG(client->log, DS3_ERROR, "The response body for the error is empty");
+                    ds3_log_message(client->log, DS3_ERROR, "The response body for the error is empty");
                     error->error->error_body = NULL;
                 }
                 g_hash_table_destroy(response_headers);

@@ -27,6 +27,7 @@
 
 #include "ds3_request.h"
 #include "ds3_net.h"
+#include "ds3_utils.h"
 #include "ds3.h"
 
 #ifdef _WIN32
@@ -57,7 +58,7 @@ typedef enum {
     GET_PHYSICAL_PLACEMENT
 }object_list_type;
 
-void LOG(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...) {
+void ds3_log_message(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...) {
     if (log == NULL) {
         return;
     }
@@ -297,7 +298,7 @@ static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* 
     return to_read;
 }
 
-size_t load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data) {
+size_t ds3_load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data) {
     size_t realsize = size * nmemb;
     GByteArray* blob = (GByteArray*) user_data;
 
@@ -772,7 +773,7 @@ static ds3_bool xml_get_bool(const ds3_log* log, xmlDocPtr doc, const xmlNodePtr
     } else if (xmlStrcmp(text, (xmlChar*)"false") == 0) {
         result = False;
     } else {
-        LOG(log, DS3_ERROR, "Unknown boolean value");
+        ds3_log_message(log, DS3_ERROR, "Unknown boolean value");
         result = False;
     }
     xmlFree(text);
@@ -796,7 +797,7 @@ static void _parse_build_information(const ds3_log* log, xmlDocPtr doc, xmlNodeP
         } else if (element_equal(build_element, "Version")) {
             build_info_response->version = xml_get_string(doc, build_element);
         } else {
-            LOG(log, DS3_ERROR, "Unknown element: (%s)\n", build_element->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", build_element->name);
         }
     }
     *_build_info_response = build_info_response;
@@ -810,7 +811,7 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
 
-    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -844,7 +845,7 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
         } else if (element_equal(sys_info_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, sys_info_node);
         } else {
-            LOG(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", sys_info_node->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", sys_info_node->name);
         }
     }
 
@@ -862,7 +863,7 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
 
-    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -892,7 +893,7 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
         if (element_equal(child_node, "MsRequiredToVerifyDataPlannerHealth") == true) {
             response->ms_required_to_verify_data_planner_health = xml_get_uint64(doc, child_node);
         } else {
-            LOG(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
         }
     }
 
@@ -917,7 +918,7 @@ static void _parse_buckets(const ds3_log* log, xmlDocPtr doc, xmlNodePtr buckets
             } else if (element_equal(data_ptr, "Name")) {
                 bucket.name = xml_get_string(doc, data_ptr);
             } else {
-                LOG(log, DS3_ERROR, "Unknown element: (%s)\n", data_ptr->name);
+                ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", data_ptr->name);
             }
         }
         g_array_append_val(array, bucket);
@@ -958,7 +959,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
 
-    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
 
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
@@ -997,7 +998,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
             ds3_owner * owner = _parse_owner(doc, child_node);
             response->owner = owner;
         } else {
-            LOG(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
         }
     }
 
@@ -1120,12 +1121,12 @@ static ds3_str* _parse_common_prefixes(const ds3_log* log, xmlDocPtr doc, xmlNod
     for (child_node = contents_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "Prefix") == true) {
             if (prefix) {
-                LOG(log, DS3_WARN, "More than one Prefix found in CommonPrefixes\n");
+                ds3_log_message(log, DS3_WARN, "More than one Prefix found in CommonPrefixes\n");
             } else {
                 prefix = xml_get_string(doc, child_node);
             }
         } else {
-            LOG(log, DS3_ERROR, "Unknown xml element: %s\n", child_node->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown xml element: %s\n", child_node->name);
         }
     }
 
@@ -1146,7 +1147,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     }
 
     GByteArray* xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -1200,7 +1201,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
             ds3_str* prefix = _parse_common_prefixes(client->log, doc, child_node);
             g_array_append_val(common_prefix_array, prefix);
         } else {
-            LOG(client->log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
@@ -1301,7 +1302,7 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
     ds3_error* error;
     GArray* object_array;
     GByteArray* xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -1336,7 +1337,7 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
             ds3_search_object* object = _parse_search_object(doc, child_node);
             g_array_append_val(object_array, object);
         } else {
-            LOG(client->log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
@@ -1367,12 +1368,12 @@ static ds3_bulk_object _parse_bulk_object(const ds3_log* log, xmlDocPtr doc, xml
         } else if (attribute_equal(attribute, "Offset") == true) {
             response.offset = xml_get_uint64_from_attribute(doc, attribute);
         } else {
-            LOG(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
         }
     }
 
     for (child_node = object_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+        ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
     }
 
     return response;
@@ -1393,7 +1394,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
         } else if (attribute_equal(attribute, "ChunkNumber") == true) {
             response->chunk_number = xml_get_uint64_from_attribute(doc, attribute);
         } else {
-            LOG(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
         }
 
     }
@@ -1403,7 +1404,7 @@ static ds3_bulk_object_list* _parse_bulk_objects(const ds3_log* log, xmlDocPtr d
             ds3_bulk_object object = _parse_bulk_object(log, doc, child_node);
             g_array_append_val(object_array, object);
         } else {
-            LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
@@ -1429,12 +1430,12 @@ static ds3_node* _parse_node(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node)
         } else if (attribute_equal(attribute, "HttpsPort") == true) {
             response->https_port = xml_get_uint16_from_attribute(doc, attribute);
         } else {
-            LOG(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown attribute: (%s)\n", attribute->name);
         }
     }
 
     for (child_node = node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+        ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
     }
 
     return response;
@@ -1451,7 +1452,7 @@ static ds3_nodes_list* _parse_nodes(const ds3_log* log, xmlDocPtr doc, xmlNodePt
             ds3_node* node = _parse_node(log, doc, child_node);
             g_ptr_array_add(nodes_array, node);
         } else {
-            LOG(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
@@ -1478,7 +1479,7 @@ static ds3_job_priority _match_priority(const ds3_log* log, const xmlChar* prior
     } else if (xmlStrcmp(priority_str, (const xmlChar*) "MINIMIZED_DUE_TO_TOO_MANY_RETRIES") == 0) {
         return MINIMIZED_DUE_TO_TOO_MANY_RETRIES;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown priority type of '%s'.  Returning LOW to be safe.\n", priority_str);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown priority type of '%s'.  Returning LOW to be safe.\n", priority_str);
         return LOW;
     }
 }
@@ -1489,7 +1490,7 @@ static ds3_job_request_type _match_request_type(const ds3_log* log, const xmlCha
     } else if (xmlStrcmp(request_type, (const xmlChar*) "GET") == 0) {
         return GET;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown request type of '%s'.  Returning GET for safety.\n", request_type);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown request type of '%s'.  Returning GET for safety.\n", request_type);
         return GET;
     }
 }
@@ -1500,7 +1501,7 @@ static ds3_write_optimization _match_write_optimization(const ds3_log* log, cons
     } else if (xmlStrcmp(text, (const xmlChar*) "PERFORMANCE") == 0) {
         return PERFORMANCE;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown write optimization of '%s'.  Returning CAPACITY for safety.\n", text);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown write optimization of '%s'.  Returning CAPACITY for safety.\n", text);
         return CAPACITY;
     }
 }
@@ -1511,7 +1512,7 @@ static ds3_chunk_ordering _match_chunk_order(const ds3_log* log, const xmlChar* 
     } else if (xmlStrcmp(text, (const xmlChar*) "NONE") == 0) {
         return NONE;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown chunk processing order guaruntee value of '%s'.  Returning IN_ORDER for safety.\n", text);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown chunk processing order guaruntee value of '%s'.  Returning IN_ORDER for safety.\n", text);
         return NONE;
     }
 }
@@ -1524,7 +1525,7 @@ static ds3_job_status _match_job_status(const ds3_log* log, const xmlChar* text)
     } else if (xmlStrcmp(text, (const xmlChar*) "CANCELED") == 0) {
         return CANCELED;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown job status value of '%s'.  Returning IN_PROGRESS for safety.\n", text);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown job status value of '%s'.  Returning IN_PROGRESS for safety.\n", text);
         return IN_PROGRESS;
     }
 }
@@ -1573,7 +1574,7 @@ static ds3_tape_state _match_tape_state(const ds3_log* log, const xmlChar* text)
     } else if (xmlStrcmp(text, (const xmlChar*) "EJECTED") == 0) {
         return TAPE_STATE_EJECTED;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_STATE_UNKNOWN for safety.\n", text);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_STATE_UNKNOWN for safety.\n", text);
         return TAPE_STATE_UNKNOWN;
     }
 }
@@ -1606,7 +1607,7 @@ static ds3_tape_type _match_tape_type(const ds3_log* log, const xmlChar* text) {
     } else if (xmlStrcmp(text, (const xmlChar*) "FORBIDDEN") == 0) {
         return TAPE_TYPE_FORBIDDEN;
     } else {
-        LOG(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_TYPE_UNKNOWN for safety.\n", text);
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown tape status value of '%s'.  Returning TAPE_TYPE_UNKNOWN for safety.\n", text);
         return TAPE_TYPE_UNKNOWN;
     }
 }
@@ -1668,7 +1669,7 @@ static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr 
             response->status = _match_job_status(log, text);
             xmlFree(text);
         } else {
-            LOG(log, DS3_ERROR, "Unknown attribute: (%s)", attribute->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown attribute: (%s)", attribute->name);
         }
     }
 
@@ -1703,7 +1704,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
         } else if (element_equal(child_node, "Nodes")  == true) {
             response->nodes = _parse_nodes(log, doc, child_node);
         } else {
-            LOG(log, DS3_ERROR, "Unknown element: (%s)", child_node->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)", child_node->name);
         }
     }
 
@@ -1822,7 +1823,7 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 
     xml_blob = g_byte_array_new();
 
-    error_response = net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error_response = net_process_request(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -1885,7 +1886,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     request->length = send_buff.size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
-    error_response = net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error_response = net_process_request(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -2048,7 +2049,7 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     request->length = send_buff.size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
-    error_response = net_process_request(client, request, xml_blob, load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error_response = net_process_request(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -2090,7 +2091,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     xmlDocPtr doc;
     xmlNodePtr root;
 
-    error = net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
@@ -2147,7 +2148,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     ds3_response_header* retry_after_header;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
         if (response_headers != NULL) {
@@ -2207,7 +2208,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
             if( error )
             {
               g_ptr_array_free(jobs_array, TRUE);
-              LOG(log, DS3_ERROR, "Error parsing bulk_response element");
+              ds3_log_message(log, DS3_ERROR, "Error parsing bulk_response element");
               ds3_free_get_jobs_response(response);
               return error;
             } else {
@@ -2215,7 +2216,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
             }
         } else{
             // Invalid XML block
-            LOG(log, DS3_ERROR, "Unknown child node: (%s)", child_node->name);
+            ds3_log_message(log, DS3_ERROR, "Unknown child node: (%s)", child_node->name);
         }
     }
 
@@ -2234,7 +2235,7 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     GHashTable* response_headers = NULL;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, &response_headers);
+    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -2263,7 +2264,7 @@ static ds3_error* _common_job(const ds3_client* client, const ds3_request* reque
     ds3_bulk_response* bulk_response;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, load_buffer, NULL, NULL, NULL);
+    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
 
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
