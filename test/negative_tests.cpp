@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
 
     obj_list = ds3_convert_file_list(books, 1);
 
-    for(checksums = 0; checksums < 5; checksums ++){
+    for (checksums = 0; checksums < 5; checksums ++) {
         request = ds3_init_put_bucket(bucket_name);
         error = ds3_put_bucket(client, request);
         ds3_free_request(request);
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
 
                 request = ds3_init_put_object_for_job(bucket_name, bulk_object.name->value, bulk_object.offset,  bulk_object.length, response->job_id->value);
 
-                switch(checksums) {
+                switch (checksums) {
                     case 0:
                         ds3_request_set_md5(request,"ra3fg==");
                         break;
