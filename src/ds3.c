@@ -1023,6 +1023,16 @@ void ds3_request_set_metadata(ds3_request* _request, const char* name, const cha
     g_free(prefixed_name);
 }
 
+void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd) {
+    char* range_value;
+
+    range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
+
+    _set_header(_request, "Range", range_value);
+
+    g_free(range_value);
+}
+
 void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
    _set_header(_request, header_name, header_value);
 }
