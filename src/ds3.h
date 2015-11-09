@@ -394,6 +394,10 @@ LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* del
 LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
 LIBRARY_API void ds3_request_set_max_keys(ds3_request* request, uint32_t max_keys);
 LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char* md5);
+LIBRARY_API void ds3_request_set_sha256(ds3_request* request, const char* sha256);
+LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char* sha512);
+LIBRARY_API void ds3_request_set_crc32(ds3_request* request, const char* crc32);
+LIBRARY_API void ds3_request_set_crc32c(ds3_request* request, const char* crc32c);
 LIBRARY_API void ds3_request_set_metadata(ds3_request* request, const char* name, const char* value);
 LIBRARY_API void ds3_request_set_name(ds3_request* request, const char* name);
 LIBRARY_API void ds3_request_set_id(ds3_request* request, const char* id);

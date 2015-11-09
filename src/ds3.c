@@ -37,12 +37,21 @@
 
 #include "ds3.h"
 
+typedef enum {
+    MD5,
+    SHA256,
+    SHA512,
+    CRC32,
+    CRC32C
+}ds3_checksum_type;
+
 //---------- Define opaque struct ----------//
 struct _ds3_request{
     http_verb   verb;
     ds3_str*    path;
     uint64_t    length;
-    ds3_str*    md5;
+    ds3_checksum_type checksum_type;
+    ds3_str*    checksum;
     GHashTable* headers;
     GHashTable* query_params;
 
@@ -213,7 +222,7 @@ ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* _metadata, const 
     copy = g_new0(ds3_metadata_entry, 1);
     metadata_copy = g_new0(ds3_str*, orig->num_values);
 
-    for(i = 0; i < orig->num_values; i++) {
+    for (i = 0; i < orig->num_values; i++) {
         metadata_copy[i] = ds3_str_dup(orig->values[i]);
     }
 
@@ -283,7 +292,7 @@ char* ds3_str_value(const ds3_str* string) {
     return string->value;
 }
 
-size_t ds3_str_size(const ds3_str* string){
+size_t ds3_str_size(const ds3_str* string) {
     return string->size;
 }
 
@@ -484,6 +493,18 @@ static char* _get_ds3_object_type(const ds3_object_type type) {
     return NULL;
 }
 
+static char* _get_checksum_type_header(const ds3_checksum_type type) {
+    switch(type) {
+        case MD5: return "Content-MD5:";
+        case SHA256: return "Content-SHA256:";
+        case SHA512: return "Content-SHA512:";
+        case CRC32: return "Content-CRC32:";
+        case CRC32C: return "Content-CRC32C:";
+    }
+
+    return NULL;
+}
+
 // curl_easy_escape'd strings must be freed using curl_free.  Copy
 // the escaped string, using glib, since users of this function will
 // eventually wind up freeing it with g_free.
@@ -510,7 +531,7 @@ static char* _escape_url_object_name(const char* url) {
 }
 
 static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
-                               char* content_type, char* md5, char* amz_headers) {
+                               char* content_type, char* checksum_value, char* amz_headers) {
     char* verb_str;
     if (resource_name == NULL) {
         fprintf(stderr, "resource_name is required\n");
@@ -522,7 +543,7 @@ static unsigned char* _generate_signature_str(http_verb verb, char* resource_nam
     }
     verb_str = _net_get_verb(verb);
 
-    return (unsigned char*) g_strconcat(verb_str, "\n", md5, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
+    return (unsigned char*) g_strconcat(verb_str, "\n", checksum_value, "\n", content_type, "\n", date, "\n", amz_headers, resource_name, NULL);
 }
 
 static char* _generate_date_string(void) {
@@ -535,13 +556,13 @@ static char* _generate_date_string(void) {
 }
 
 static char* _net_compute_signature(const ds3_log* log, const ds3_creds* creds, http_verb verb, char* resource_name,
-                             char* date, char* content_type, char* md5, char* amz_headers) {
+                             char* date, char* content_type, char* checksum_value, char* amz_headers) {
     GHmac* hmac;
     gchar* signature;
     gsize bufSize = 256;
     guint8 buffer[256];
 
-    unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, md5, amz_headers);
+    unsigned char* signature_str = _generate_signature_str(verb, resource_name, date, content_type, checksum_value, amz_headers);
     char* escaped_str = g_strescape((char*) signature_str, NULL);
 
     LOG(log, DS3_DEBUG, "signature string: %s", escaped_str);
@@ -668,7 +689,7 @@ static char* _canonicalize_amz_headers(GHashTable* headers) {
     int i;
 
     while(key != NULL) {
-        if(g_str_has_prefix((char*)key->data, "x-amz")){
+        if (g_str_has_prefix((char*)key->data, "x-amz")) {
             header_signing_value = g_string_new((gchar*)key->data);
             header_signing_value = g_string_append(g_string_ascii_down(header_signing_value), ":");
             header_signing_value = g_string_append(header_signing_value, (gchar*)g_hash_table_lookup(headers, key->data));
@@ -730,7 +751,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             char* signature;
             struct curl_slist* headers;
             char* auth_header;
-            char* md5_value;
+            char* checksum_value;
             ds3_response_data response_data;
             GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_response_header);
 
@@ -805,18 +826,18 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             date_header = g_strconcat("Date: ", date, NULL);
             headers = NULL;
 
-            if (request->md5 == NULL) {
-                md5_value = "";
+            if (request->checksum == NULL) {
+                checksum_value = "";
             } else {
-                char* md5_header;
-                md5_value = request->md5->value;
-                md5_header = g_strconcat("Content-MD5:", md5_value, NULL);
-                headers = curl_slist_append(headers, md5_header);
-                g_free(md5_header);
+                char* checksum_header;
+                checksum_value = request->checksum->value;
+                checksum_header = g_strconcat(_get_checksum_type_header(request->checksum_type), checksum_value, NULL);
+                headers = curl_slist_append(headers, checksum_header);
+                g_free(checksum_header);
             }
             amz_headers = _canonicalize_amz_headers(request->headers);
             canonicalized_resource = _canonicalized_resource(request->path, request->query_params);
-            signature = _net_compute_signature(client->log, client->creds, request->verb, canonicalized_resource, date, "", md5_value, amz_headers);
+            signature = _net_compute_signature(client->log, client->creds, request->verb, canonicalized_resource, date, "", checksum_value, amz_headers);
 
             g_free(amz_headers);
             g_free(canonicalized_resource);
@@ -1036,8 +1057,33 @@ void ds3_request_set_creation_date(ds3_request* _request, const char* creation_d
 }
 
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
-  struct _ds3_request* request = (struct _ds3_request*) _request;
-  request->md5 = ds3_str_init(md5);
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = MD5;
+    request->checksum = ds3_str_init(md5);
+}
+
+void ds3_request_set_sha256(ds3_request* _request, const char* sha256) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = SHA256;
+    request->checksum = ds3_str_init(sha256);
+}
+
+void ds3_request_set_sha512(ds3_request* _request, const char* sha512) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = SHA512;
+    request->checksum = ds3_str_init(sha512);
+}
+
+void ds3_request_set_crc32(ds3_request* _request, const char* crc32) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = CRC32;
+    request->checksum = ds3_str_init(crc32);
+}
+
+void ds3_request_set_crc32c(ds3_request* _request, const char* crc32c) {
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->checksum_type = CRC32C;
+    request->checksum = ds3_str_init(crc32c);
 }
 
 void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
@@ -1065,7 +1111,7 @@ void ds3_request_set_id(ds3_request* _request, const char* id) {
 
 void ds3_request_set_type(ds3_request* _request, ds3_object_type type) {
     const char* type_as_string = _get_ds3_object_type(type);
-    if(type_as_string != NULL) {
+    if (type_as_string != NULL) {
         _set_query_param(_request, "type", type_as_string);
     }
 }
@@ -1253,7 +1299,7 @@ ds3_request* ds3_init_get_available_chunks(const char* job_id) {
     return (ds3_request*) request;
 }
 
-ds3_request* ds3_init_get_jobs(void){
+ds3_request* ds3_init_get_jobs(void) {
     ds3_str* path_str = ds3_str_init("/_rest_/job");
     struct _ds3_request* request = _common_request_init(HTTP_GET, path_str);
 
@@ -1301,11 +1347,11 @@ static ds3_error* _internal_request_dispatcher(const ds3_client* client, const d
     return _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, NULL);
 }
 
-static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name){
+static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name) {
     return xmlStrcmp(attribute->name, (const xmlChar*) attribute_name) == 0;
 }
 
-static bool element_equal(const xmlNodePtr xml_node, const char* element_name){
+static bool element_equal(const xmlNodePtr xml_node, const char* element_name) {
     return xmlStrcmp(xml_node->name, (const xmlChar*) element_name) == 0;
 }
 
@@ -1345,7 +1391,7 @@ static ds3_str* xml_get_string(xmlDocPtr doc, xmlNodePtr child_node) {
     xmlChar* text;
     ds3_str* result;
     text = xmlNodeListGetString(doc, child_node->xmlChildrenNode, 1);
-    if (text == NULL){
+    if (text == NULL) {
         // Element is found, but is empty: <name />
         return NULL;
     }
@@ -1736,7 +1782,7 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     GArray* object_array;
     GArray* common_prefix_array;
 
-    if (g_strcmp0(request->path->value, "/") == 0){
+    if (g_strcmp0(request->path->value, "/") == 0) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
@@ -1829,9 +1875,9 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
     GHashTable* return_headers;
     ds3_metadata* metadata = NULL;
 
-    if (num_chars_in_ds3_str(request->path, '/') < 2){
+    if (num_chars_in_ds3_str(request->path, '/') < 2) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
-    }else if(g_ascii_strncasecmp(request->path->value, "//", 2) == 0){
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
@@ -2060,7 +2106,7 @@ static ds3_nodes_list* _parse_nodes(const ds3_log* log, xmlDocPtr doc, xmlNodePt
 static ds3_job_priority _match_priority(const ds3_log* log, const xmlChar* priority_str) {
     if (xmlStrcmp(priority_str, (const xmlChar*) "CRITICAL") == 0) {
         return CRITICAL;
-    }else if (xmlStrcmp(priority_str, (const xmlChar*) "VERY_HIGH") == 0) {
+    } else if (xmlStrcmp(priority_str, (const xmlChar*) "VERY_HIGH") == 0) {
         return VERY_HIGH;
     } else if (xmlStrcmp(priority_str, (const xmlChar*) "HIGH") == 0) {
         return HIGH;
@@ -2206,12 +2252,12 @@ static ds3_tape_type _match_tape_type(const ds3_log* log, const xmlChar* text) {
     }
 }
 
-static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response){
+static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr doc, xmlNodePtr node, ds3_bulk_response* response) {
     struct _xmlAttr* attribute;
     xmlChar* text;
 
-    for(attribute = node->properties; attribute != NULL; attribute = attribute->next) {
-        if(attribute_equal(attribute, "JobId") == true) {
+    for (attribute = node->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "JobId") == true) {
             response->job_id = xml_get_string_from_attribute(doc, attribute);
         } else if (attribute_equal(attribute, "BucketName") == true) {
             response->bucket_name = xml_get_string_from_attribute(doc, attribute);
@@ -2270,7 +2316,7 @@ static ds3_error* _parse_bulk_response_attributes(const ds3_log* log, xmlDocPtr 
     return NULL;
 }
 
-static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, ds3_bulk_response** _response){
+static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, ds3_bulk_response** _response) {
     GArray* objects_array;
     xmlNodePtr root, child_node;
     ds3_bulk_response* response;
@@ -2291,7 +2337,7 @@ static ds3_error* _parse_master_object_list(const ds3_log* log, xmlDocPtr doc, d
 
     objects_array = g_array_new(FALSE, TRUE, sizeof(ds3_bulk_object_list*));
 
-    for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "Objects")  == true) {
             ds3_bulk_object_list* obj_list = _parse_bulk_objects(log, doc, child_node);
             g_array_append_val(objects_array, obj_list);
@@ -2375,7 +2421,7 @@ static object_list_type _bulk_request_type(const struct _ds3_request* request) {
 }
 
 ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* request) {
-    if(g_ascii_strncasecmp(request->path->value, "//", 2) == 0){
+    if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
@@ -2433,7 +2479,7 @@ ds3_error* ds3_delete_folder(const ds3_client* client, const ds3_request* _reque
     return _net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
-ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* _request, ds3_get_physical_placement_response** _response){
+ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* _request, ds3_get_physical_placement_response** _response) {
     ds3_error* error_response;
     ds3_get_physical_placement_response* response = NULL;
 
@@ -2530,7 +2576,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
         for (child_node = cur->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
             if (element_equal(child_node, "Tape") == true) {
                 memset(&tape, 0, sizeof(ds3_tape));
-                for (tape_node = child_node->xmlChildrenNode; tape_node != NULL; tape_node = tape_node->next){
+                for (tape_node = child_node->xmlChildrenNode; tape_node != NULL; tape_node = tape_node->next) {
                     if (element_equal(tape_node, "AssignedToBucket") == true) {
                         tape.assigned_to_bucket = xml_get_bool(client->log, doc, tape_node);
                     } else if (element_equal(tape_node, "AvailableRawCapacity") == true) {
@@ -2656,7 +2702,7 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
 
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if(doc == NULL) {
+    if (doc == NULL) {
         // Bulk put with just empty folder objects will return a 204 and thus
         // not have a body.
         g_byte_array_free(xml_blob, TRUE);
@@ -2776,7 +2822,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     return NULL;
 }
 
-static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jobs_response** _response){
+static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jobs_response** _response) {
     ds3_get_jobs_response* response = NULL;
     xmlNodePtr root, child_node;
     GPtrArray* jobs_array = NULL;
@@ -2784,7 +2830,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
     ds3_error* error = NULL;
 
     root = xmlDocGetRootElement(doc);
-    if(element_equal(root, "Jobs") == false) {
+    if (element_equal(root, "Jobs") == false) {
         char* message = g_strconcat("Expected the root element to be 'Jobs'.  The actual response is: ", root->name, NULL);
         xmlFreeDoc(doc);
         ds3_error* error = _ds3_create_error(DS3_ERROR_INVALID_XML, message);
@@ -2795,11 +2841,11 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
     jobs_array = g_ptr_array_new();
     response = g_new0(ds3_get_jobs_response, 1);
 
-    for(child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if(element_equal(child_node, "Job") == true) {
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Job") == true) {
             job = g_new0(ds3_bulk_response, 1);
             error = _parse_bulk_response_attributes(log, doc, child_node, job);
-            if( error )
+            if ( error )
             {
               g_ptr_array_free(jobs_array, TRUE);
               LOG(log, DS3_ERROR, "Error parsing bulk_response element");
@@ -2808,7 +2854,7 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, ds3_get_jo
             } else {
               g_ptr_array_add(jobs_array, job);
             }
-        } else{
+        } else {
             // Invalid XML block
             LOG(log, DS3_ERROR, "Unknown child node: (%s)", child_node->name);
         }
@@ -2893,7 +2939,7 @@ ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request) 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
 }
 
-void ds3_free_bucket_response(ds3_get_bucket_response* response){
+void ds3_free_bucket_response(ds3_get_bucket_response* response) {
     size_t num_objects;
     int index;
     if (response == NULL) {
@@ -2928,7 +2974,7 @@ void ds3_free_bucket_response(ds3_get_bucket_response* response){
     g_free(response);
 }
 
-void ds3_free_objects_response(ds3_get_objects_response* response){
+void ds3_free_objects_response(ds3_get_objects_response* response) {
     size_t num_objects;
     int object_index;
     if (response == NULL) {
@@ -2954,7 +3000,7 @@ void ds3_free_objects_response(ds3_get_objects_response* response){
     g_free(response);
 }
 
-void ds3_free_get_physical_placement_response(ds3_get_physical_placement_response* response){
+void ds3_free_get_physical_placement_response(ds3_get_physical_placement_response* response) {
     size_t num_tapes;
     int tape_index;
     if (response == NULL) {
@@ -2984,7 +3030,7 @@ void ds3_free_get_physical_placement_response(ds3_get_physical_placement_respons
     g_free(response);
 }
 
-void ds3_free_service_response(ds3_get_service_response* response){
+void ds3_free_service_response(ds3_get_service_response* response) {
     size_t num_buckets;
     int bucket_index;
 
@@ -3094,7 +3140,7 @@ void ds3_free_request(ds3_request* _request) {
         g_hash_table_destroy(request->query_params);
     }
     ds3_str_free(request->path);
-    ds3_str_free(request->md5);
+    ds3_str_free(request->checksum);
     g_free(request);
 }
 
