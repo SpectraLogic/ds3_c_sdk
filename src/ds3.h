@@ -18,7 +18,6 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <curl/curl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +43,14 @@ typedef enum {
 typedef enum {
   HTTP_GET, HTTP_PUT, HTTP_POST, HTTP_DELETE, HTTP_HEAD
 }http_verb;
+
+typedef enum {
+    MD5,
+    SHA256,
+    SHA512,
+    CRC32,
+    CRC32C
+}ds3_checksum_type;
 
 typedef enum {
     CRITICAL,

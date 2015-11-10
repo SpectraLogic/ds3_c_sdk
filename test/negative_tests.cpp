@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
         ds3_free_request(request);
         handle_error(error);
 
-      
+
         request = ds3_init_put_bulk(bucket_name, obj_list);
         error = ds3_bulk(client, request, &response);
 
@@ -449,14 +449,15 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
                 BOOST_REQUIRE(error != NULL);
                 BOOST_CHECK(error->error->status_code == 400);
                 BOOST_CHECK(strcmp(error->error->status_message->value, "Bad Request")==0);
+		ds3_free_error(error);
             }
             ds3_free_allocate_chunk_response(chunk_response);
         }
-        
+
         ds3_free_bulk_response(response);
         clear_bucket(client, bucket_name);
     }
-    
+
     ds3_free_bulk_object_list(obj_list);
     free_client(client);
 }

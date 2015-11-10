@@ -168,7 +168,6 @@ BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
     request = ds3_init_get_bucket(bucket_name);
     ds3_get_bucket_response* response;
     error = ds3_get_bucket(client, request, &response);
-    printf("bucket_name[%s]\n", response->name->value);
     ds3_free_request(request);
 
     BOOST_CHECK(error == NULL);
