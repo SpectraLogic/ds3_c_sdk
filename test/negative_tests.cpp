@@ -449,7 +449,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
                 BOOST_REQUIRE(error != NULL);
                 BOOST_CHECK(error->error->status_code == 400);
                 BOOST_CHECK(strcmp(error->error->status_message->value, "Bad Request")==0);
-		ds3_free_error(error);
+                ds3_free_error(error);
             }
             ds3_free_allocate_chunk_response(chunk_response);
         }
