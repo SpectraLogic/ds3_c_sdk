@@ -179,9 +179,9 @@ BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
     free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE(md5_checksum) {
+BOOST_AUTO_TEST_CASE(checksum) {
     uint64_t i, n, checksums;
-    const char* bucket_name = "bucket_test_md5";
+    const char* bucket_name = "bucket_test";
     ds3_request* request;
     const char* books[] ={"resources/beowulf.txt"};
     ds3_client* client = get_client();

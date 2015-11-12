@@ -46,12 +46,12 @@ typedef enum {
 }http_verb;
 
 typedef enum {
-    MD5,
-    SHA256,
-    SHA512,
-    CRC32,
-    CRC32C
-}ds3_checksum_type;
+    DS3_MD5,
+    DS3_SHA256,
+    DS3_SHA512,
+    DS3_CRC32,
+    DS3_CRC32C
+} ds3_checksum_type;
 
 typedef enum {
     CRITICAL,

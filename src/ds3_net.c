@@ -45,11 +45,11 @@ static char* _net_get_verb(http_verb verb) {
 
 static char* _get_checksum_type_header(const ds3_checksum_type type) {
     switch(type) {
-        case MD5: return "Content-MD5:";
-        case SHA256: return "Content-SHA256:";
-        case SHA512: return "Content-SHA512:";
-        case CRC32: return "Content-CRC32:";
-        case CRC32C: return "Content-CRC32C:";
+        case DS3_MD5: return "Content-MD5:";
+        case DS3_SHA256: return "Content-SHA256:";
+        case DS3_SHA512: return "Content-SHA512:";
+        case DS3_CRC32: return "Content-CRC32:";
+        case DS3_CRC32C: return "Content-CRC32C:";
     }
 
     return NULL;
