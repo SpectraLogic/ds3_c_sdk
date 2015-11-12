@@ -33,6 +33,58 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     free_client(client);
 }
 
+size_t fake_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return size*nmemb;
+}
+
+BOOST_AUTO_TEST_CASE( put_folder ) {
+    ds3_client* client = get_client();
+    const char* bucket_name = "unit_test_bucket";
+    uint64_t num_objs;
+
+    printf("-----Testing Bulk PUT-------\n");
+
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    //const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
+    const char* books[3] ={"resources/", "folder2/", "folder2/folder3"};
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_bulk_object_list* obj_list;
+    ds3_bulk_response* response;
+    ds3_get_bucket_response* bucket_response;
+    ds3_free_request(request);
+
+    handle_error(error);
+
+    obj_list = ds3_convert_file_list(books, 3);
+    request = ds3_init_put_object_for_job("unit_test_bucket", "dir/something/", 0 /* Offset */, 0 /* Length */, NULL /* JobID */);
+    error     = ds3_put_object(client, request, NULL /* CallbackArg */, NULL /* Callback */);
+    ds3_free_request(request);
+    handle_error(error);
+    //    job_id = ds3_str_dup(response->job_id);
+
+    //    ds3_free_bulk_response(response);
+    ds3_free_bulk_object_list(obj_list);
+    //ds3_str_free(job_id);
+
+    printf("placed\n");
+
+    request = ds3_init_get_bucket(bucket_name);
+    error = ds3_get_bucket(client, request, &bucket_response);
+    ds3_free_request(request);
+
+    num_objs = bucket_response->num_objects;
+
+    BOOST_CHECK(error == NULL);
+    BOOST_CHECK_EQUAL(num_objs, 5);
+
+    BOOST_CHECK(contains_object(bucket_response->objects, num_objs, "resources/beowulf.txt"));
+
+    ds3_free_bucket_response(bucket_response);
+
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
 BOOST_AUTO_TEST_CASE( prefix ) {
     ds3_request* request;
     ds3_error* error;

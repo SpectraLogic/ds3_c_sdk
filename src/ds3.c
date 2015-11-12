@@ -899,7 +899,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
     g_free(url);
 
     if (retry_count == client->num_redirects) {
-      return _ds3_create_error(DS3_ERROR_TOO_MANY_REDIRECTS, "Encountered too many redirects while attempting to fullfil the request");
+      return _ds3_create_error(DS3_ERROR_TOO_MANY_REDIRECTS, "Encountered too many redirects while attempting to fulfill the request");
     }
     return NULL;
 }
