@@ -389,7 +389,13 @@ static size_t _process_response_body(void* buffer, size_t size, size_t nmemb, vo
     }
 }
 
-ds3_error* net_process_request(const ds3_client* client, const ds3_request* _request, void* read_user_struct, size_t (*read_handler_func)(void*, size_t, size_t, void*), void* write_user_struct, size_t (*write_handler_func)(void*, size_t, size_t, void*), GHashTable** return_headers) {
+ds3_error* net_process_request(const ds3_client* client,
+                               const ds3_request* _request,
+                               void* read_user_struct,
+                               size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                               void* write_user_struct,
+                               size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                               GHashTable** return_headers) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
     CURL* handle;
     CURLcode res;

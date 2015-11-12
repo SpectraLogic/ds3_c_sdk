@@ -330,6 +330,21 @@ ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key) {
     return creds;
 }
 
+void ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
+                                                                        const ds3_request* _request,
+                                                                        void* read_user_struct,
+                                                                        size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                                                        void* write_user_struct,
+                                                                        size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                                                        GHashTable** return_headers)) {
+    if (client == NULL) {
+        fprintf(stderr, "Cannot configure a null ds3_client for net_callback.\n");
+        return;
+    }
+
+    client->net_callback = net_callback;
+}
+
 ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
     ds3_client* client;
     if (endpoint == NULL) {
@@ -344,6 +359,9 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
     client->creds = creds;
 
     client->num_redirects = 5L; //default to 5 redirects before failing
+
+    ds3_client_register_net( client, &net_process_request );
+
     return client;
 }
 

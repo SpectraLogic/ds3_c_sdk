@@ -16,6 +16,7 @@
 #ifndef __DS3_HEADER__
 #define __DS3_HEADER__
 
+#include <glib.h> //TODO remove after pulling out ds3_response_headers_table
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
@@ -36,6 +37,8 @@ extern "C" {
 #endif
 
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
+
+typedef struct _ds3_request ds3_request;
 
 typedef enum {
     False, True
@@ -152,15 +155,42 @@ typedef struct {
     ds3_str* secret_key;
 }ds3_creds;
 
+typedef enum {
+  DS3_ERROR_INVALID_XML,
+  DS3_ERROR_CURL_HANDLE,
+  DS3_ERROR_REQUEST_FAILED,
+  DS3_ERROR_MISSING_ARGS,
+  DS3_ERROR_BAD_STATUS_CODE,
+  DS3_ERROR_TOO_MANY_REDIRECTS
+}ds3_error_code;
+
 typedef struct {
-    ds3_str*    endpoint;
-    ds3_str*    proxy;
-    uint64_t    num_redirects;
-    ds3_creds*  creds;
-    ds3_log*    log;
+    uint64_t  status_code;
+    ds3_str*  status_message;
+    ds3_str*  error_body;
+}ds3_error_response;
+
+typedef struct {
+    ds3_error_code      code;
+    ds3_str*            message;
+    ds3_error_response* error;
+}ds3_error;
+
+typedef struct _ds3_client {
+    ds3_str*      endpoint;
+    ds3_str*      proxy;
+    uint64_t      num_redirects;
+    ds3_creds*    creds;
+    ds3_log*      log;
+    ds3_error* (* net_callback)(const struct _ds3_client* client,
+                                const ds3_request* _request,
+                                void* read_user_struct,
+                                size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                void* write_user_struct,
+                                size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                GHashTable** return_headers);
 }ds3_client;
 
-typedef struct _ds3_request ds3_request;
 
 typedef struct {
     ds3_str* creation_date;
@@ -301,11 +331,6 @@ typedef struct {
     uint64_t		num_tapes;
 }ds3_get_physical_placement_response;
 
-typedef enum {
-  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_REQUEST_FAILED,
-  DS3_ERROR_MISSING_ARGS, DS3_ERROR_BAD_STATUS_CODE, DS3_ERROR_TOO_MANY_REDIRECTS
-}ds3_error_code;
-
 typedef struct {
     ds3_bulk_object_list*   objects;
     uint64_t                retry_after;
@@ -315,18 +340,6 @@ typedef struct {
     ds3_bulk_response* 	  object_list;
     uint64_t              retry_after;
 }ds3_get_available_chunks_response;
-
-typedef struct {
-    uint64_t  status_code;
-    ds3_str*  status_message;
-    ds3_str*  error_body;
-}ds3_error_response;
-
-typedef struct {
-    ds3_error_code      code;
-    ds3_str*            message;
-    ds3_error_response* error;
-}ds3_error;
 
 typedef struct {
     ds3_str*    name;
