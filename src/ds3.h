@@ -46,6 +46,14 @@ typedef enum {
 }http_verb;
 
 typedef enum {
+    DS3_MD5,
+    DS3_SHA256,
+    DS3_SHA512,
+    DS3_CRC32,
+    DS3_CRC32C
+} ds3_checksum_type;
+
+typedef enum {
     CRITICAL,
     VERY_HIGH,
     HIGH,
@@ -119,8 +127,8 @@ typedef enum {
 }ds3_tape_type;
 
 typedef enum {
-  DATA, NO_TYPE
-}object_type;
+  DATA, FOLDER
+}ds3_object_type;
 
 LIBRARY_API ds3_str* ds3_str_init(const char* string);
 LIBRARY_API ds3_str* ds3_str_init_with_size(const char* string, size_t size);
@@ -394,10 +402,14 @@ LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* del
 LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
 LIBRARY_API void ds3_request_set_max_keys(ds3_request* request, uint32_t max_keys);
 LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char* md5);
+LIBRARY_API void ds3_request_set_sha256(ds3_request* request, const char* sha256);
+LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char* sha512);
+LIBRARY_API void ds3_request_set_crc32(ds3_request* request, const char* crc32);
+LIBRARY_API void ds3_request_set_crc32c(ds3_request* request, const char* crc32c);
 LIBRARY_API void ds3_request_set_metadata(ds3_request* request, const char* name, const char* value);
 LIBRARY_API void ds3_request_set_name(ds3_request* request, const char* name);
 LIBRARY_API void ds3_request_set_id(ds3_request* request, const char* id);
-LIBRARY_API void ds3_request_set_type(ds3_request* request, object_type type);
+LIBRARY_API void ds3_request_set_type(ds3_request* request, ds3_object_type type);
 LIBRARY_API void ds3_request_set_version(ds3_request* request, const char* version);
 
 LIBRARY_API ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** response);
