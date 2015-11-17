@@ -1,17 +1,23 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
+void myLogger(const char* log_message, void* user_data){
+  printf("--%s--\n", log_message);
+}
+
 BOOST_AUTO_TEST_CASE( get_service ) {
     ds3_client* client = get_client();
+    ds3_client_register_logging(client, DS3_TRACE, myLogger, NULL);
     ds3_request* request = ds3_init_get_service();
     ds3_get_service_response* response;
 
     printf("-----Testing GET service-------\n");
-
+	
+	printf("----upppdated?-- %i ---\n", CURL_STATICLIB);
     ds3_error* error = ds3_get_service(client, request, &response);
+    printf("----crash get------\n");
 
     BOOST_CHECK(error == NULL);
 

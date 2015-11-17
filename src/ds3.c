@@ -709,10 +709,12 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
     int retry_count = 0;
     char* query_params;
 
+	printf("crckin\n");
+
     _init_curl();
-
+	
     query_params = _net_gen_query_params(request->query_params);
-
+	
     if (query_params == NULL) {
         url = g_strconcat(client->endpoint->value, request->path->value, NULL);
     } else {
@@ -722,6 +724,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
 
     while (retry_count < client->num_redirects) {
         handle = curl_easy_init();
+		
+	printf("thru me\n");
 
         if (handle) {
             char* amz_headers;
@@ -805,7 +809,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             date = _generate_date_string();
             date_header = g_strconcat("Date: ", date, NULL);
             headers = NULL;
-
+			
+	printf("thru mec\n");
             if (request->md5 == NULL) {
                 md5_value = "";
             } else {
@@ -815,30 +820,40 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 headers = curl_slist_append(headers, md5_header);
                 g_free(md5_header);
             }
+	printf("thru med\n");
             amz_headers = _canonicalize_amz_headers(request->headers);
             canonicalized_resource = _canonicalized_resource(request->path, request->query_params);
             signature = _net_compute_signature(client->log, client->creds, request->verb, canonicalized_resource, date, "", md5_value, amz_headers);
 
             g_free(amz_headers);
             g_free(canonicalized_resource);
-
+			
+	printf("thru mef\n");
             auth_header = g_strconcat("Authorization: AWS ", client->creds->access_id->value, ":", signature, NULL);
-
+			
+	printf("thru mef1\n");
             headers = curl_slist_append(headers, auth_header);
+	printf("thru mef2\n");
             headers = curl_slist_append(headers, date_header);
+	printf("thru mef3\n");
             headers = _append_headers(headers, request->headers);
-
+			
+	printf("thru mef4\n");
             curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+			
+	printf("thru mef5, w/ update\n");
 
             res = curl_easy_perform(handle);
-
+			
+	printf("thru meg\n");
             g_free(date);
             g_free(date_header);
             g_free(signature);
             g_free(auth_header);
             curl_slist_free_all(headers);
             curl_easy_cleanup(handle);
-
+			
+	printf("thru meh\n");
             //process the response
             if (res != CURLE_OK) {
                 char * message = g_strconcat("Request failed: ", curl_easy_strerror(res), NULL);
@@ -850,6 +865,7 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
                 g_free(message);
                 return error;
             }
+	printf("thru mei\n");
 
             LOG(client->log, DS3_DEBUG, "Request completed with status code of: %d", response_data.status_code);
 
@@ -897,6 +913,8 @@ static ds3_error* _net_process_request(const ds3_client* client, const ds3_reque
             return _ds3_create_error(DS3_ERROR_CURL_HANDLE, "Failed to create curl handle");
         }
     }
+	
+	printf("crckin\n");
     g_free(url);
 
     if (retry_count == client->num_redirects) {
@@ -1089,7 +1107,7 @@ static struct _ds3_request* _common_request_init(http_verb verb, ds3_str* path) 
     request->query_params = _create_hash_table();
     request->verb = verb;
     request->path = path;
-    return request;
+	return request;
 }
 
 static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, const char* object_name) {
@@ -1299,6 +1317,7 @@ static ds3_error* _internal_request_dispatcher(const ds3_client* client, const d
     if (client == NULL || request == NULL) {
         return _ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
+	printf("in line\n");
     return _net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, NULL);
 }
 
@@ -1554,12 +1573,16 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
 
-    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+	printf("one\n");
 
+    error = _internal_request_dispatcher(client, request, xml_blob, load_buffer, NULL, NULL);
+	
+	printf("twp\n");
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
+	printf("there\n");
 
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
 
