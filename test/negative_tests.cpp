@@ -13,7 +13,6 @@
 */
 
 #include <glib.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include "ds3.h"
 #include "test.h"

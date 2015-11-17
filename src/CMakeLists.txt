@@ -1,3 +1,7 @@
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/win32/output/bin) 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/win32/output/bin) 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/win32/output/bin)
+
 add_library(ds3 SHARED ds3.h ds3_net.c ds3_request.h ds3_string_multimap.h ds3.c ds3_net.h ds3_string_multimap.c ds3_utils.h)
 
 if (WIN32)
@@ -8,6 +12,7 @@ SET_SOURCE_FILES_PROPERTIES(ds3.c PROPERTIES LANGUAGE CXX)
 include_directories(../win32/deps/install/include ../win32/deps/install/include/glib-2.0 ../win32/deps/install/lib/glib-2.0/include ../win32/compatibility_includes)
 #target_link_libraries(ds3 ../win32/deps/install/bin)
 target_link_libraries(ds3 ../win32/deps/install/lib/glib-2.0 ../win32/deps/install/lib/libxml2_a ../win32/deps/install/lib/libcurl_a ../win32/deps/install/lib/zlib_a)
+
 
 else(WIN32)
 find_package(LibXml2 2.9 REQUIRED)
@@ -30,5 +35,5 @@ if (GLIB2_FOUND)
 endif(GLIB2_FOUND)
 
 install(FILES "ds3.h" DESTINATION "/usr/local/include")
-endif(WIN32)
 install(TARGETS ds3 DESTINATION lib)
+endif(WIN32)

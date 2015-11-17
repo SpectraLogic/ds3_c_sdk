@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <glib.h>
 #include "ds3.h"

@@ -519,7 +519,7 @@ static struct _ds3_request* _common_request_init(http_verb verb, ds3_str* path) 
     request->query_params = _create_hash_table();
     request->verb = verb;
     request->path = path;
-    return request;
+	return request;
 }
 
 static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, const char* object_name) {
@@ -985,7 +985,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     GByteArray* xml_blob = g_byte_array_new();
 
     error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
-
+    
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -1004,7 +1004,7 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
     root = xmlDocGetRootElement(doc);
 
     if (element_equal(root, "ListAllMyBucketsResult") == false) {
-        char* message = g_strconcat("Expected the root element to be 'ListAllMyBucketsResult'.  The actual response is: ", xml_blob->data, NULL);
+      char* message = g_strconcat("Expected the root element to be 'ListAllMyBucketsResult'.  The actual response is: ", xml_blob->data, NULL);
         xmlFreeDoc(doc);
         g_byte_array_free(xml_blob, TRUE);
         ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
