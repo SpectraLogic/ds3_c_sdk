@@ -1,4 +1,5 @@
-add_library(ds3 SHARED ds3.c ds3.h)
+add_library(ds3 SHARED ds3.h ds3_net.c ds3_request.h ds3_string_multimap.h ds3.c ds3_net.h ds3_string_multimap.c ds3_utils.h)
+
 if (WIN32)
 
 add_definitions(-DLIBRARY_EXPORTS -DCURL_STATICLIB -Dinline=__inline)
