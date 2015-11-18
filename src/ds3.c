@@ -267,10 +267,6 @@ void ds3_str_free(ds3_str* string) {
     g_free(string);
 }
 
-static ds3_str* _ds3_response_header_get_first(const ds3_response_header* header) {
-    return (ds3_str*)g_ptr_array_index(header->values, 0);
-}
-
 ds3_error* ds3_create_error(ds3_error_code code, const char * message) {
     ds3_error* error = g_new0(ds3_error, 1);
     error->code = code;
@@ -331,15 +327,19 @@ ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key) {
 }
 
 void ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
-                                                                        const ds3_request* _request,
-                                                                        void* read_user_struct,
-                                                                        size_t (*read_handler_func)(void*, size_t, size_t, void*),
-                                                                        void* write_user_struct,
-                                                                        size_t (*write_handler_func)(void*, size_t, size_t, void*),
-                                                                        GHashTable** return_headers)) {
+                                                                             const ds3_request* _request,
+                                                                             void* read_user_struct,
+                                                                             size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                                                             void* write_user_struct,
+                                                                             size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                                                             ds3_map** return_headers)) {
     if (client == NULL) {
         fprintf(stderr, "Cannot configure a null ds3_client for net_callback.\n");
         return;
+    }
+
+    if (client->net_callback != NULL) {
+        g_free(client->net_callback);
     }
 
     client->net_callback = net_callback;
@@ -1274,7 +1274,7 @@ static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
 
 ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
     ds3_error* error;
-    GHashTable* return_headers;
+    struct _ds3_map* return_headers;
     ds3_metadata* metadata = NULL;
 
     if (num_chars_in_ds3_str(request->path, '/') < 2){
@@ -1287,9 +1287,9 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
 
     if (error == NULL) {
         fprintf(stderr, "Head object completed successfully\n");
-        metadata = _init_metadata(return_headers);
+        metadata = _init_metadata(return_headers->map);
         *_metadata = metadata;
-        g_hash_table_destroy(return_headers);
+        ds3_map_free(return_headers);
     }
 
     return error;
@@ -1309,16 +1309,16 @@ ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, 
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
     ds3_error* error;
-    GHashTable* return_headers;
+    struct _ds3_map* return_headers;
     ds3_metadata* metadata;
 
     error = net_process_request(client, request, user_data, callback, NULL, NULL, &return_headers);
 
     if (error == NULL) {
         fprintf(stderr, "Head object completed successfully\n");
-        metadata = _init_metadata(return_headers);
+        metadata = _init_metadata(return_headers->map);
         *_metadata = metadata;
-        g_hash_table_destroy(return_headers);
+        ds3_map_free(return_headers);
     }
 
     return error;
@@ -2123,12 +2123,17 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     return NULL;
 }
 
+
+static ds3_str* ds3_response_header_get_first(const ds3_response_header* header) {
+    return (ds3_str*)g_ptr_array_index(header->values, 0);
+}
+
 ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* request, ds3_allocate_chunk_response** response) {
     ds3_error* error = NULL;
     GByteArray* xml_blob = g_byte_array_new();
     ds3_allocate_chunk_response* ds3_response = NULL;
     ds3_bulk_object_list* object_list = NULL;
-    GHashTable* response_headers = NULL;
+    ds3_map* response_headers = NULL;
     ds3_response_header* retry_after_header;
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -2146,15 +2151,15 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
-        retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        retry_after_header = ds3_map_lookup(response_headers, "Retry-After");
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = _ds3_response_header_get_first(retry_after_header);
+            ds3_str* retry_value = ds3_response_header_get_first(retry_after_header);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         } else {
-            g_hash_table_destroy(response_headers);
+            ds3_map_free(response_headers);
             return ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
         }
-        g_hash_table_destroy(response_headers);
+        ds3_map_free(response_headers);
         return NULL;
     }
 
@@ -2168,14 +2173,14 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
         error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
         g_free(message);
         g_byte_array_free(xml_blob, TRUE);
-        g_hash_table_destroy(response_headers);
+        ds3_map_free(response_headers);
         return error;
     }
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
     if (response_headers != NULL) {
-        g_hash_table_destroy(response_headers);
+        ds3_map_free(response_headers);
     }
     *response = ds3_response;
     return NULL;
@@ -2186,7 +2191,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_available_chunks_response* ds3_response;
     ds3_bulk_response* bulk_response;
-    GHashTable* response_headers = NULL;
+    ds3_map* response_headers;
     ds3_response_header* retry_after_header;
     xmlDocPtr doc;
 
@@ -2194,7 +2199,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 
     if (error != NULL) {
         if (response_headers != NULL) {
-            g_hash_table_destroy(response_headers);
+            ds3_map_free(response_headers);
         }
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -2205,9 +2210,9 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (response_headers != NULL) {
-        retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        retry_after_header = ds3_map_lookup(response_headers, "Retry-After");
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = _ds3_response_header_get_first(retry_after_header);
+            ds3_str* retry_value = ds3_response_header_get_first(retry_after_header);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         }
     }
@@ -2218,7 +2223,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
     if (response_headers != NULL) {
-        g_hash_table_destroy(response_headers);
+        ds3_map_free(response_headers);
     }
     *response = ds3_response;
     return NULL;
@@ -2274,7 +2279,7 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_jobs_response* get_jobs_response = NULL;
-    GHashTable* response_headers = NULL;
+    ds3_map* response_headers;
     xmlDocPtr doc;
 
     error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
@@ -2294,7 +2299,7 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
     if (response_headers != NULL) {
-        g_hash_table_destroy(response_headers);
+        ds3_map_free(response_headers);
     }
     *response = get_jobs_response;
     return NULL;

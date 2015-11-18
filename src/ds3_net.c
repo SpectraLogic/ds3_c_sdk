@@ -272,18 +272,6 @@ static char* _canonicalized_resource(ds3_str* path, GHashTable* query_params) {
     }
 }
 
-static void _ds3_free_response_header(gpointer data) {
-    ds3_response_header* header;
-    if (data == NULL) {
-        return;
-    }
-
-    header = (ds3_response_header*) data;
-    ds3_str_free(header->key);
-    g_ptr_array_free(header->values, TRUE);
-    g_free(data);
-}
-
 /* This is used to free the entires in the values ptr array in the ds3_response_header
  */
 static void _ds3_internal_str_free(gpointer data) {
@@ -295,6 +283,41 @@ static ds3_response_header* _ds3_init_response_header(const ds3_str* key) {
     header->key = ds3_str_dup(key);
     header->values = g_ptr_array_new_with_free_func(_ds3_internal_str_free);
     return header;
+}
+
+void ds3_free_response_header(gpointer data) {
+    ds3_response_header* header;
+    if (data == NULL) {
+        return;
+    }
+
+    header = (ds3_response_header*) data;
+    ds3_str_free(header->key);
+    g_ptr_array_free(header->values, TRUE);
+    g_free(data);
+}
+
+ds3_map* ds3_map_init() {
+    struct _ds3_map* map = g_new0(struct _ds3_map, 1);
+    map->map = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, ds3_free_response_header);
+    return (ds3_map*)map;
+}
+
+ds3_response_header* ds3_map_lookup(ds3_map* map, char* key) {
+    return (ds3_response_header*)g_hash_table_lookup(map->map, key);
+}
+
+void ds3_map_free(ds3_map* map) {
+    if (map == NULL) {
+        return;
+    }
+
+    struct _ds3_map* _map;
+    _map = (struct _ds3_map*) map;
+    if (_map->map == NULL) return;
+
+    g_hash_table_destroy(_map->map);
+    g_free(map);
 }
 
 // caller frees all passed in values
@@ -316,7 +339,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
     ds3_str* header_key;
     ds3_str* header_value;
     ds3_response_data* response_data = (ds3_response_data*) user_data;
-    GHashTable* headers = response_data->headers;
+    GHashTable* headers = (GHashTable*)response_data->headers;
 
     to_read = size * nmemb;
     if (to_read < 2) {
@@ -395,7 +418,7 @@ ds3_error* net_process_request(const ds3_client* client,
                                size_t (*read_handler_func)(void*, size_t, size_t, void*),
                                void* write_user_struct,
                                size_t (*write_handler_func)(void*, size_t, size_t, void*),
-                               GHashTable** return_headers) {
+                               ds3_map** return_headers) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
     CURL* handle;
     CURLcode res;
@@ -427,7 +450,7 @@ ds3_error* net_process_request(const ds3_client* client,
             char* auth_header;
             char* checksum_value;
             ds3_response_data response_data;
-            GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_response_header);
+            GHashTable* response_headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, ds3_free_response_header);
 
             ds3_log_message(client->log, DS3_DEBUG, "Preparing to send request");
 
@@ -583,7 +606,9 @@ ds3_error* net_process_request(const ds3_client* client,
             if (return_headers == NULL) {
                 g_hash_table_destroy(response_headers);
             } else {
-                *return_headers = response_headers;
+                struct _ds3_map* map = ds3_map_init();
+                map->map = response_headers;
+                *return_headers = (ds3_map*)map;
             }
 
             break;

@@ -16,7 +16,6 @@
 #ifndef __DS3_HEADER__
 #define __DS3_HEADER__
 
-#include <glib.h> //TODO remove after pulling out ds3_response_headers_table
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
@@ -39,6 +38,8 @@ extern "C" {
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
 
 typedef struct _ds3_request ds3_request;
+
+typedef struct _ds3_map ds3_map;
 
 typedef enum {
     False, True
@@ -188,9 +189,8 @@ typedef struct _ds3_client {
                                 size_t (*read_handler_func)(void*, size_t, size_t, void*),
                                 void* write_user_struct,
                                 size_t (*write_handler_func)(void*, size_t, size_t, void*),
-                                GHashTable** return_headers);
+                                ds3_map** return_headers);
 }ds3_client;
-
 
 typedef struct {
     ds3_str* creation_date;
@@ -378,6 +378,13 @@ LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secr
 LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
+LIBRARY_API void        ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
+                                                                                                const ds3_request* _request,
+                                                                                                void* read_user_struct,
+                                                                                                size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                                                                                void* write_user_struct,
+                                                                                                size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                                                                                ds3_map** return_headers));
 
 LIBRARY_API ds3_request* ds3_init_get_system_information(void);
 LIBRARY_API ds3_request* ds3_init_get_service(void);
@@ -485,6 +492,7 @@ LIBRARY_API ds3_bulk_object_list* ds3_convert_file_list_with_basepath(const char
 LIBRARY_API ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_t num_objects);
 LIBRARY_API ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files);
 LIBRARY_API void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
+
 
 #ifdef __cplusplus
 }
