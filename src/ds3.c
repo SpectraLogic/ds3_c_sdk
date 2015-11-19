@@ -1309,7 +1309,7 @@ ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, 
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
     ds3_error* error;
-    struct _ds3_map* return_headers;
+    ds3_map* return_headers;
     ds3_metadata* metadata;
 
     error = net_process_request(client, request, user_data, callback, NULL, NULL, &return_headers);
@@ -2141,6 +2141,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
+        ds3_map_free(response_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
@@ -2179,9 +2180,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    if (response_headers != NULL) {
-        ds3_map_free(response_headers);
-    }
+    ds3_map_free(response_headers);
     *response = ds3_response;
     return NULL;
 }
@@ -2198,9 +2197,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
-        if (response_headers != NULL) {
-            ds3_map_free(response_headers);
-        }
+        ds3_map_free(response_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
@@ -2222,9 +2219,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    if (response_headers != NULL) {
-        ds3_map_free(response_headers);
-    }
+    ds3_map_free(response_headers);
     *response = ds3_response;
     return NULL;
 }
@@ -2279,10 +2274,9 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_jobs_response* get_jobs_response = NULL;
-    ds3_map* response_headers;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
+    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -2298,9 +2292,6 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    if (response_headers != NULL) {
-        ds3_map_free(response_headers);
-    }
     *response = get_jobs_response;
     return NULL;
 }

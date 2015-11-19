@@ -285,6 +285,18 @@ static ds3_response_header* _ds3_init_response_header(const ds3_str* key) {
     return header;
 }
 
+// caller frees all passed in values
+static void _insert_header(GHashTable* headers, const ds3_str* key, const ds3_str* value) {
+    ds3_response_header* header = (ds3_response_header*)g_hash_table_lookup(headers, key->value);
+
+    if (header == NULL) {
+        header = _ds3_init_response_header(key);
+        g_hash_table_insert(headers, g_strdup(key->value), header);
+    }
+
+    g_ptr_array_add(header->values, ds3_str_dup(value));
+}
+
 void ds3_free_response_header(gpointer data) {
     ds3_response_header* header;
     if (data == NULL) {
@@ -314,22 +326,12 @@ void ds3_map_free(ds3_map* map) {
 
     struct _ds3_map* _map;
     _map = (struct _ds3_map*) map;
-    if (_map->map == NULL) return;
-
+    if (_map->map == NULL) {
+        g_free(_map);
+        return;
+    }
     g_hash_table_destroy(_map->map);
     g_free(map);
-}
-
-// caller frees all passed in values
-static void _insert_header(GHashTable* headers, const ds3_str* key, const ds3_str* value) {
-    ds3_response_header* header = (ds3_response_header*)g_hash_table_lookup(headers, key->value);
-
-    if (header == NULL) {
-        header = _ds3_init_response_header(key);
-        g_hash_table_insert(headers, g_strdup(key->value), header);
-    }
-
-    g_ptr_array_add(header->values, ds3_str_dup(value));
 }
 
 static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void* user_data) {
