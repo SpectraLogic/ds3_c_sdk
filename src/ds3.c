@@ -1274,7 +1274,7 @@ static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
 
 ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
     ds3_error* error;
-    struct _ds3_map* return_headers;
+    ds3_map* return_headers;
     ds3_metadata* metadata = NULL;
 
     if (num_chars_in_ds3_str(request->path, '/') < 2){
