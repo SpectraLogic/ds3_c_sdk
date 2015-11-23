@@ -15,11 +15,7 @@
 
 #include <glib.h>
 #include "ds3_string_multimap.h"
-
-struct _ds3_string_multimap {
-    GHashTable* hash;
-};
-
+#include "ds3_string_multimap_impl.h"
 
 static void _free_pointer_array(gpointer pointer) {
     GPtrArray* array = (GPtrArray*) pointer;
@@ -60,3 +56,4 @@ void ds3_string_multimap_free(ds3_string_multimap* _map) {
 
     g_free(map);
 }
+

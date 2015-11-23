@@ -29,6 +29,8 @@ ds3_string_multimap* ds3_string_multimap_init(void);
 void ds3_string_multimap_insert(ds3_string_multimap* hashtable, char* key, char* value);
 GPtrArray* ds3_string_multimap_lookup(ds3_string_multimap* hashtable, char* key);
 void ds3_string_multimap_free(ds3_string_multimap* map);
+
+
 /*
 // TODO implement this as a future refactor
 // operations for multimaps

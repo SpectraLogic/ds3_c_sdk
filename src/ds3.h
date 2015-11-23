@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
+#include "ds3_string_multimap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +40,7 @@ extern "C" {
 
 typedef struct _ds3_request ds3_request;
 
-typedef struct _ds3_map ds3_map;
+//typedef struct _ds3_map ds3_map;
 
 typedef enum {
     False, True
@@ -189,7 +190,7 @@ typedef struct _ds3_client {
                                 size_t (*read_handler_func)(void*, size_t, size_t, void*),
                                 void* write_user_struct,
                                 size_t (*write_handler_func)(void*, size_t, size_t, void*),
-                                ds3_map** return_headers);
+                                ds3_string_multimap** return_headers);
 }ds3_client;
 
 typedef struct {
@@ -384,7 +385,7 @@ LIBRARY_API void        ds3_client_register_net(ds3_client* client, ds3_error* (
                                                                                                 size_t (*read_handler_func)(void*, size_t, size_t, void*),
                                                                                                 void* write_user_struct,
                                                                                                 size_t (*write_handler_func)(void*, size_t, size_t, void*),
-                                                                                                ds3_map** return_headers));
+                                                                                                ds3_string_multimap** return_headers));
 
 LIBRARY_API ds3_request* ds3_init_get_system_information(void);
 LIBRARY_API ds3_request* ds3_init_get_service(void);

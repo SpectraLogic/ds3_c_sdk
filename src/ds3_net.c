@@ -19,6 +19,8 @@
 #include "ds3.h"
 #include "ds3_net.h"
 #include "ds3_utils.h"
+#include "ds3_string_multimap.h"
+#include "ds3_string_multimap_impl.h"
 
 static void _init_curl(void) {
     static ds3_bool initialized = False;
@@ -309,6 +311,7 @@ void ds3_free_response_header(gpointer data) {
     g_free(data);
 }
 
+/*
 ds3_map* ds3_map_init() {
     struct _ds3_map* map = g_new0(struct _ds3_map, 1);
     map->map = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, ds3_free_response_header);
@@ -333,6 +336,7 @@ void ds3_map_free(ds3_map* map) {
     g_hash_table_destroy(_map->map);
     g_free(map);
 }
+*/
 
 static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void* user_data) {
     size_t to_read;
@@ -420,7 +424,7 @@ ds3_error* net_process_request(const ds3_client* client,
                                size_t (*read_handler_func)(void*, size_t, size_t, void*),
                                void* write_user_struct,
                                size_t (*write_handler_func)(void*, size_t, size_t, void*),
-                               ds3_map** return_headers) {
+                               ds3_string_multimap** return_headers) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
     CURL* handle;
     CURLcode res;
@@ -602,15 +606,15 @@ ds3_error* net_process_request(const ds3_client* client,
                 g_free(url);
                 return error;
             }
-
             g_byte_array_free(response_data.body, TRUE);
+
             ds3_str_free(response_data.status_message);
             if (return_headers == NULL) {
                 g_hash_table_destroy(response_headers);
             } else {
-                struct _ds3_map* map = ds3_map_init();
-                map->map = response_headers;
-                *return_headers = (ds3_map*)map;
+                ds3_string_multimap* map = ds3_string_multimap_init();
+                ds3_string_multimap_set_hashtable(map, response_headers);
+                *return_headers = (ds3_string_multimap*)map;
             }
 
             break;

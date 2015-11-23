@@ -18,6 +18,7 @@
 
 #include <glib.h>
 #include "ds3.h"
+#include "ds3_string_multimap.h"
 
 char* escape_url(const char* url);
 char* escape_url_object_name(const char* url);
@@ -29,15 +30,15 @@ ds3_error* net_process_request(
    size_t (*read_handler_func)(void*, size_t, size_t, void*),
    void* write_user_struct,
    size_t (*write_handler_func)(void*, size_t, size_t, void*),
-   ds3_map** return_headers);
+   ds3_string_multimap** return_headers);
 
 void net_cleanup(void);
-
+/*
 ds3_map* ds3_map_init();
 
 ds3_response_header* ds3_map_lookup(ds3_map* map, char* key);
 
 void ds3_map_free(ds3_map* map);
-
+*/
 #endif
 

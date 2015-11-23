@@ -34,9 +34,10 @@ struct _ds3_request{
     ds3_chunk_ordering    chunk_ordering;
 };
 
+/*
 struct _ds3_map {
     GHashTable* map;
-};
+};*/
 
 typedef struct {
     ds3_str* key;
