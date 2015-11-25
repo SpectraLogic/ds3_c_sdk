@@ -33,12 +33,6 @@ ds3_error* net_process_request(
    ds3_string_multimap** return_headers);
 
 void net_cleanup(void);
-/*
-ds3_map* ds3_map_init();
 
-ds3_response_header* ds3_map_lookup(ds3_map* map, char* key);
-
-void ds3_map_free(ds3_map* map);
-*/
 #endif
 

@@ -18,15 +18,21 @@
 #define __DS3_STRING_MULTIMAP_IMPL__
 
 #include <glib.h>
-#include "ds3_string_multimap.h"
 
 struct _ds3_string_multimap {
     GHashTable* hash;
 };
 
-GHashTable* ds3_string_multimap_get_hashtable(ds3_string_multimap* mp);
+typedef struct _ds3_string_multimap_entry{
+    ds3_str*   key;
+    GPtrArray* values; // A ds3_str list of the header values
+}ds3_string_multimap_entry;
+
+GHashTable* ds3_string_multimap_get_hashtable(const ds3_string_multimap* mp);
 
 void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht);
+
+void ds3_string_multimap_dupe_response_headers_hashtable(const GHashTable* src_ht, const ds3_string_multimap* dest_map );
 
 #endif
 

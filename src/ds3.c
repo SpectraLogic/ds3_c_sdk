@@ -25,12 +25,12 @@
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 
+#include "ds3.h"
 #include "ds3_request.h"
 #include "ds3_string_multimap.h"
 #include "ds3_string_multimap_impl.h"
 #include "ds3_net.h"
 #include "ds3_utils.h"
-#include "ds3.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -111,22 +111,22 @@ static void _ds3_free_metadata_entry(gpointer pointer) {
 }
 
 /*
- * This copies all the header values in the ds3_response_header struct so that they may be safely returned to the user
+ * This copies all the header values in the ds3_string_multimap_entry struct so that they may be safely returned to the user
  * without having to worry about if the data is freed internally.
  */
-static ds3_metadata_entry* ds3_metadata_entry_init(ds3_response_header* header) {
+static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* header_entry) {
     guint i;
     ds3_str* header_value;
     GPtrArray* values = g_ptr_array_new();
     ds3_str* key_name;
     ds3_metadata_entry* response = g_new0(ds3_metadata_entry, 1);
 
-    for (i = 0; i < header->values->len; i++) {
-        header_value = (ds3_str*)g_ptr_array_index(header->values, i);
+    for (i = 0; i < header_entry->values->len; i++) {
+        header_value = (ds3_str*)g_ptr_array_index(header_entry->values, i);
         g_ptr_array_add(values, ds3_str_dup(header_value));
     }
 
-    key_name = ds3_str_init(header->key->value + 11);
+    key_name = ds3_str_init(header_entry->key->value + 11);
 
     response->num_values = values->len;
     response->name = key_name;
@@ -146,7 +146,7 @@ static ds3_metadata* _init_metadata(ds3_string_multimap* response_headers) {
     GHashTableIter iter;
     gpointer _key, _value;
     char* key;
-    ds3_response_header* header;
+    ds3_string_multimap_entry* header;
     ds3_metadata_entry* entry;
     metadata->metadata = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_metadata_entry);
 
@@ -158,7 +158,7 @@ static ds3_metadata* _init_metadata(ds3_string_multimap* response_headers) {
 
     while(g_hash_table_iter_next(&iter, &_key, &_value)) {
         key = (char*) _key;
-        header = (ds3_response_header*) _value;
+        header = (ds3_string_multimap_entry*) _value;
         if (g_str_has_prefix(key, "x-amz-meta-")) {
             entry = ds3_metadata_entry_init(header);
             g_hash_table_insert(metadata->metadata, g_strdup(entry->name->value), entry);
@@ -2122,20 +2122,13 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     return NULL;
 }
 
-
-//static ds3_str* ds3_response_header_get_first(const ds3_response_header* header) {
-static ds3_str* ds3_response_header_get_first(const GPtrArray* header) {
-    return (ds3_str*)g_ptr_array_index(header, 0);
-}
-
 ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* request, ds3_allocate_chunk_response** response) {
     ds3_error* error = NULL;
     GByteArray* xml_blob = g_byte_array_new();
     ds3_allocate_chunk_response* ds3_response = NULL;
     ds3_bulk_object_list* object_list = NULL;
     ds3_string_multimap* response_headers = NULL;
-    //ds3_response_header* retry_after_header;
-    GPtrArray* retry_after_header;
+    ds3_string_multimap_entry* retry_after_header;
     xmlDocPtr doc;
     xmlNodePtr root;
 
@@ -2155,7 +2148,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
         g_byte_array_free(xml_blob, TRUE);
         retry_after_header = ds3_string_multimap_lookup(response_headers, "Retry-After");
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = ds3_response_header_get_first(retry_after_header);
+            ds3_str* retry_value = ds3_string_multimap_get_value_by_index(retry_after_header, 0);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         } else {
             ds3_string_multimap_free(response_headers);
@@ -2191,9 +2184,8 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_available_chunks_response* ds3_response;
     ds3_bulk_response* bulk_response;
-    ds3_string_multimap* response_headers;
-    //ds3_response_header* retry_after_header;
-    GPtrArray* retry_after_header;
+    ds3_string_multimap* response_headers = NULL;
+    ds3_string_multimap_entry* retry_after_header;
     xmlDocPtr doc;
 
     error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
@@ -2211,7 +2203,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     if (response_headers != NULL) {
         retry_after_header = ds3_string_multimap_lookup(response_headers, "Retry-After");
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = ds3_response_header_get_first(retry_after_header);
+            ds3_str* retry_value = ds3_string_multimap_entry_get_value_by_index(retry_after_header, 0);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         }
     }

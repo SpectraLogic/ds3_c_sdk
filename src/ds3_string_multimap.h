@@ -17,18 +17,32 @@
 #define __DS3_STRING_MULTIMAP__
 
 #include <glib.h>
+#include "ds3.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct _ds3_string_multimap ds3_string_multimap;
+typedef struct _ds3_string_multimap_entry ds3_string_multimap_entry;
 
-//opertions for manipulating a hash map as a string multi map
+//opertions for manipulating a hash map as a ds3_str multi map
 ds3_string_multimap* ds3_string_multimap_init(void);
-void ds3_string_multimap_insert(ds3_string_multimap* hashtable, char* key, char* value);
-GPtrArray* ds3_string_multimap_lookup(ds3_string_multimap* hashtable, char* key);
+void ds3_string_multimap_insert(ds3_string_multimap* map, ds3_str* key, ds3_str* value);
+ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, ds3_str* key);
 void ds3_string_multimap_free(ds3_string_multimap* map);
+
+
+//opertions for manipulating a ds3_str multi map entry
+ds3_string_multimap_entry* ds3_init_string_multimap_entry(const ds3_str* key);
+
+// caller frees all passed in values
+void ds3_insert_string_multimap_entry(ds3_string_multimap* map, const ds3_str* key, const ds3_str* value);
+
+ds3_str* ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, int index);
+
+void ds3_free_string_multimap_entry(gpointer data);
+
 
 
 /*

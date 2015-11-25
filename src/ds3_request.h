@@ -34,24 +34,13 @@ struct _ds3_request{
     ds3_chunk_ordering    chunk_ordering;
 };
 
-/*
-struct _ds3_map {
-    GHashTable* map;
-};*/
-
-typedef struct {
-    ds3_str* key;
-    GPtrArray* values; // A ds3_str list of the header values
-}ds3_response_header;
-
-void ds3_free_response_header(gpointer data);
-
 typedef struct {
     // These attributes are used when processing a response header
     uint64_t status_code;
     ds3_str* status_message;
     size_t header_count;
-    GHashTable* headers;
+    //GHashTable* headers;
+    ds3_string_multimap* headers;
 
     // These attributes are used when processing a response body
     GByteArray* body; // this will only be used when getting errors
