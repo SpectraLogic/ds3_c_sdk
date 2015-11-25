@@ -2654,6 +2654,21 @@ ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_
     return obj_list;
 }
 
+ds3_bulk_object_list* ds3_init_empty_object_list(const char** name_list, uint64_t num_names) {
+    uint64_t object_index;
+    ds3_bulk_object_list* obj_list = ds3_init_bulk_object_list(num_names);
+
+    for (object_index = 0; object_index < num_names; object_index++) {
+        ds3_bulk_object obj;
+        memset(&obj, 0, sizeof(ds3_bulk_object));
+        obj.name = ds3_str_init(name_list[object_index]);
+	obj.length = 0;
+        obj_list->list[object_index] = obj;
+    }
+
+    return obj_list;
+}
+
 ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files) {
     ds3_bulk_object_list* obj_list = g_new0(ds3_bulk_object_list, 1);
     obj_list->size = num_files;
