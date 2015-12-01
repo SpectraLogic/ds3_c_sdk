@@ -281,7 +281,6 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
     ds3_str* header_key;
     ds3_str* header_value;
     ds3_response_data* response_data = (ds3_response_data*) user_data;
-    GHashTable* headers = ds3_string_multimap_get_hashtable(response_data->headers);
 
     to_read = size * nmemb;
     if (to_read < 2) {
@@ -332,7 +331,7 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
         header_key = ds3_str_init(split_result[0]);
         header_value = ds3_str_init(split_result[1]);
 
-        ds3_string_multimap_insert(headers, header_key, header_value);
+        ds3_string_multimap_insert(response_data->headers, header_key, header_value);
 
         ds3_str_free(header_key);
         ds3_str_free(header_value);
@@ -545,12 +544,11 @@ ds3_error* net_process_request(const ds3_client* client,
             g_byte_array_free(response_data.body, TRUE);
             ds3_str_free(response_data.status_message);
 
-            if (return_headers == NULL) {
+            if (return_headers != NULL) {
                 *return_headers = response_headers;
             } else {
                 ds3_string_multimap_free(response_headers);
             }
-            ds3_string_multimap_free(response_headers);
 
             break;
         } else {

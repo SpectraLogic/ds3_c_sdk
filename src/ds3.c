@@ -2146,15 +2146,18 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
-        retry_after_header = ds3_string_multimap_lookup(response_headers, "Retry-After");
+        ds3_str* retry_str = ds3_str_init("Retry-After");
+        retry_after_header = ds3_string_multimap_lookup(response_headers, retry_str);
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = ds3_string_multimap_get_value_by_index(retry_after_header, 0);
+            ds3_str* retry_value = ds3_string_multimap_entry_get_value_by_index(retry_after_header, 0);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         } else {
             ds3_string_multimap_free(response_headers);
+            ds3_str_free(retry_str);
             return ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
         }
         ds3_string_multimap_free(response_headers);
+        ds3_str_free(retry_str);
         return NULL;
     }
 
@@ -2201,11 +2204,13 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (response_headers != NULL) {
-        retry_after_header = ds3_string_multimap_lookup(response_headers, "Retry-After");
+        ds3_str* retry_str = ds3_str_init("Retry-After");
+        retry_after_header = ds3_string_multimap_lookup(response_headers, retry_str);
         if (retry_after_header != NULL) {
             ds3_str* retry_value = ds3_string_multimap_entry_get_value_by_index(retry_after_header, 0);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         }
+        ds3_str_free(retry_str);
     }
 
     _parse_master_object_list(client->log, doc, &bulk_response);

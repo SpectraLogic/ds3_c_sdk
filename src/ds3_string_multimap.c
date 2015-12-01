@@ -28,9 +28,18 @@ static void _internal_string_entry_free(gpointer data) {
     ds3_str_free((ds3_str*)data);
 }
 
+static gboolean _ds3_str_equal(gconstpointer a, gconstpointer b) {
+    if ((a == NULL) || (b == NULL)) return FALSE;
+
+    const ds3_str* _a = a;
+    const ds3_str* _b = b;
+
+    return g_strcmp0(_a->value, _b->value);
+}
+
 ds3_string_multimap* ds3_string_multimap_init(void) {
     struct _ds3_string_multimap* multimap = g_new0(struct _ds3_string_multimap, 1);
-    multimap->hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _free_pointer_array);
+    multimap->hash = g_hash_table_new_full(g_str_hash, _ds3_str_equal, g_free, _free_pointer_array);
 
     return (ds3_string_multimap*) multimap;
 }
@@ -47,16 +56,16 @@ void ds3_string_multimap_insert(ds3_string_multimap* map, ds3_str* key, ds3_str*
 
 ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, ds3_str* key) {
     struct _ds3_string_multimap* _map = (struct _ds3_string_multimap*)map;
-    return g_hash_table_lookup(map->hash, key->value);
+    return g_hash_table_lookup(_map->hash, key->value);
 }
 
-void ds3_string_multimap_free(ds3_string_multimap* _map) {
-    struct _ds3_string_multimap* map;
-    if (_map == NULL) return;
-    map = (struct _ds3_string_multimap*) _map;
+void ds3_string_multimap_free(ds3_string_multimap* map) {
+    struct _ds3_string_multimap* _map;
+    if (map == NULL) return;
+    _map = (struct _ds3_string_multimap*) map;
 
-    if (map->hash != NULL) {
-        g_hash_table_destroy(map->hash);
+    if (_map->hash != NULL) {
+        g_hash_table_destroy(_map->hash);
     }
 
     g_free(map);

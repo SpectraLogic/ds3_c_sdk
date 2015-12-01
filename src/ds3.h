@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
+#include "ds3_string.h"
 #include "ds3_string_multimap.h"
 
 #ifdef __cplusplus
@@ -39,8 +40,6 @@ extern "C" {
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
 
 typedef struct _ds3_request ds3_request;
-
-//typedef struct _ds3_map ds3_map;
 
 typedef enum {
     False, True
@@ -79,11 +78,6 @@ typedef enum {
 typedef enum {
     IN_ORDER, NONE
 }ds3_chunk_ordering;
-
-typedef struct{
-    char* value;
-    size_t size;
-}ds3_str;
 
 typedef enum {
     IN_PROGRESS,

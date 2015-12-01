@@ -38,14 +38,16 @@ ds3_string_multimap* ds3_string_multimap_dupe(GHashTable* response_headers) {
 
     g_hash_table_iter_init(&iter, response_headers);
     while (g_hash_table_iter_next(&iter, &_key, &_value)) {
+        int index;
         struct _ds3_string_multimap_entry* _entry = (ds3_string_multimap_entry*)_value;
         if (_value == NULL) {
             continue;
         }
 
-        for (int index=0; index < _entry->values->len; index++) {
+        for (index=0; index < _entry->values->len; index++) {
             ds3_string_multimap_insert(map, _key, ds3_string_multimap_entry_get_value_by_index(_value, index));
         }
     }
     return map;
 }
+

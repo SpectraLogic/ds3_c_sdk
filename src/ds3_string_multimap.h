@@ -16,8 +16,8 @@
 #ifndef __DS3_STRING_MULTIMAP__
 #define __DS3_STRING_MULTIMAP__
 
+#include "ds3_string.h"
 #include <glib.h>
-#include "ds3.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +25,6 @@ extern "C" {
 
 typedef struct _ds3_string_multimap ds3_string_multimap;
 typedef struct _ds3_string_multimap_entry ds3_string_multimap_entry;
-
 //opertions for manipulating a hash map as a ds3_str multi map
 ds3_string_multimap* ds3_string_multimap_init(void);
 void ds3_string_multimap_insert(ds3_string_multimap* map, ds3_str* key, ds3_str* value);
