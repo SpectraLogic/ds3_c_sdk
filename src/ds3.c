@@ -2652,7 +2652,7 @@ ds3_bulk_object_list* ds3_init_empty_object_list(const char** name_list, uint64_
         ds3_bulk_object obj;
         memset(&obj, 0, sizeof(ds3_bulk_object));
         obj.name = ds3_str_init(name_list[object_index]);
-	obj.length = 0;
+        obj.length = 0;
         obj_list->list[object_index] = obj;
     }
 
