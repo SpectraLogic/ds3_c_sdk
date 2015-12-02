@@ -33,54 +33,43 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     free_client(client);
 }
 
-size_t fake_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return size*nmemb;
-}
-
-BOOST_AUTO_TEST_CASE( put_folder ) {
+BOOST_AUTO_TEST_CASE( bulk_empty ) {
     ds3_client* client = get_client();
     const char* bucket_name = "unit_test_bucket";
     uint64_t num_objs;
 
-    printf("-----Testing Bulk PUT-------\n");
+    printf("-----Testing Empty Object List-------\n");
 
     ds3_request* request = ds3_init_put_bucket(bucket_name);
-    //const char* books[5] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
-    const char* books[3] ={"resources/", "folder2/", "folder2/folder3/"};
+    const char* folders[3] ={"folder1/", "folder2/", "folder2/folder3/"};
     ds3_error* error = ds3_put_bucket(client, request);
     ds3_bulk_object_list* obj_list;
-    ds3_bulk_response* response;
-    //ds3_get_bucket_response* bucket_response;
+    ds3_get_bucket_response* response;
     ds3_free_request(request);
 
     handle_error(error);
 
-    printf("pnt1\n");
-    obj_list = ds3_init_empty_object_list(books, 3);
-    printf("pnt2\n");
-    BOOST_CHECK(obj_list != NULL);
-    printf("pnt3\n");
+    obj_list = ds3_init_empty_object_list(folders, 3);
     request = ds3_init_put_bulk(bucket_name, obj_list);
-    printf("pnt4\n");
-    BOOST_CHECK(request != NULL);
-    error = ds3_bulk(client, request, &response);
-    printf("pnt5\n");
+    error = ds3_bulk(client, request, NULL);
     ds3_free_request(request);
     handle_error(error);
-    //    job_id = ds3_str_dup(response->job_id);
-
-    BOOST_CHECK(response == NULL);
-    //    ds3_free_bulk_response(response);
     ds3_free_bulk_object_list(obj_list);
 
-    //    BOOST_CHECK(error == NULL);
-    //BOOST_CHECK_EQUAL(num_objs, 5);
+    request = ds3_init_get_bucket(bucket_name);
+    error = ds3_get_bucket(client, request, &response);
+    ds3_free_request(request);
 
-    //    BOOST_CHECK(contains_object(bucket_response->objects, num_objs, "resources/beowulf.txt"));
+    num_objs = response->num_objects;
 
-    //ds3_free_bucket_response(bucket_response);
+    BOOST_CHECK(error == NULL);
+    BOOST_CHECK_EQUAL(num_objs, 3);
 
-    //clear_bucket(client, bucket_name);
+    BOOST_CHECK(contains_object(response->objects, num_objs, "folder2/folder3/"));
+
+    ds3_free_bucket_response(response);
+
+    clear_bucket(client, bucket_name);
     free_client(client);
 }
 

@@ -72,9 +72,15 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     handle_error(error);
 
     for (i = 0; i < bucket_response->num_objects; i++) {
-        request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
-        error = ds3_delete_object(client, request);
-        ds3_free_request(request);
+        if (bucket_response->objects[i].name->value[bucket_response->objects[i].name->size-1]!='/') {
+	    request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
+	    error = ds3_delete_object(client, request);
+	    ds3_free_request(request);
+	}else{
+	    request = ds3_init_delete_folder(bucket_name, bucket_response->objects[i].name->value);
+	    error = ds3_delete_folder(client, request);
+	    ds3_free_request(request);
+	}
 
         if (error != NULL) {
             fprintf(stderr, "Failed to delete object %s\n", bucket_response->objects[i].name->value);
