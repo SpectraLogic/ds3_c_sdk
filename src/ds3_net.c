@@ -81,6 +81,21 @@ char* escape_url_object_name(const char* url) {
     return escaped_ptr;
 }
 
+// Like escape_url but don't encode "=".
+char* escape_url_range_header(const char* url) {
+    gchar** split = g_strsplit(url, "=", 0);
+    gchar** ptr;
+    gchar* escaped_ptr;
+    for (ptr = split; *ptr; ptr++) {
+        escaped_ptr = escape_url(*ptr);
+        g_free(*ptr);
+        *ptr = escaped_ptr;
+    }
+    escaped_ptr = g_strjoinv("=", split);
+    g_strfreev(split);
+    return escaped_ptr;
+}
+
 static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
                                char* content_type, char* checksum_value, char* amz_headers) {
     char* verb_str;

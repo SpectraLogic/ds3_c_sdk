@@ -38,6 +38,7 @@ typedef struct {
 
 char* escape_url(const char* url);
 char* escape_url_object_name(const char* url);
+char* escape_url_range_header(const char* url);
 
 ds3_error* net_process_request(
    const ds3_client* client,
