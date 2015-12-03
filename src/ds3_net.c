@@ -332,7 +332,6 @@ static size_t _process_header_line(void* buffer, size_t size, size_t nmemb, void
         header_value = ds3_str_init(split_result[1]);
 
         ds3_string_multimap_insert(response_data->headers, header_key, header_value);
-
         ds3_str_free(header_key);
         ds3_str_free(header_value);
         g_strfreev(split_result);

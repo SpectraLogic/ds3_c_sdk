@@ -121,14 +121,19 @@ static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* he
     ds3_str* key_name;
     ds3_metadata_entry* response = g_new0(ds3_metadata_entry, 1);
 
-    for (i = 0; i < header_entry->values->len; i++) {
-        header_value = (ds3_str*)g_ptr_array_index(header_entry->values, i);
+    unsigned int num_values = ds3_string_multimap_entry_get_num_values(header_entry);
+    for (i = 0; i < num_values; i++) {
+        header_value = ds3_string_multimap_entry_get_value_by_index(header_entry, i);
         g_ptr_array_add(values, ds3_str_dup(header_value));
     }
 
-    key_name = ds3_str_init(header_entry->key->value + 11);
+    ds3_str* full_key = ds3_string_multimap_entry_get_key(header_entry);
+    printf("full_key[%s]\n", full_key->value);
+    key_name = ds3_str_init(full_key->value + 11); // offset after "x-amz-meta-"
+    ds3_str_free(full_key);
+    printf("key[%s]\n", key_name->value);
 
-    response->num_values = values->len;
+    response->num_values = num_values;
     response->name = key_name;
     response->values = (ds3_str**) g_ptr_array_free(values, FALSE);
     fprintf(stderr, "creating metadata entry of: %s\n", key_name->value);
@@ -145,8 +150,7 @@ static ds3_metadata* _init_metadata(ds3_string_multimap* response_headers) {
     struct _ds3_metadata* metadata = g_new0(struct _ds3_metadata, 1);
     GHashTableIter iter;
     gpointer _key, _value;
-    char* key;
-    ds3_string_multimap_entry* header;
+    ds3_str* key;
     ds3_metadata_entry* entry;
     metadata->metadata = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_metadata_entry);
 
@@ -154,14 +158,16 @@ static ds3_metadata* _init_metadata(ds3_string_multimap* response_headers) {
         fprintf(stderr, "response headers was null\n");
     }
 
+    //TODO refactor out glib: ds3_string_multimap needs a lookup_prefix()
     g_hash_table_iter_init(&iter, ds3_string_multimap_get_hashtable(response_headers));
-
     while(g_hash_table_iter_next(&iter, &_key, &_value)) {
-        key = (char*) _key;
-        header = (ds3_string_multimap_entry*) _value;
-        if (g_str_has_prefix(key, "x-amz-meta-")) {
-            entry = ds3_metadata_entry_init(header);
+        key = (ds3_str*) _key;
+        if (g_str_has_prefix(key->value, "x-amz-meta-")) {
+            printf("\nFound key[%s]\n", key->value);
+            ds3_string_multimap_entry* mm_entry = ds3_string_multimap_lookup(response_headers, key);
+            entry = ds3_metadata_entry_init(mm_entry);
             g_hash_table_insert(metadata->metadata, g_strdup(entry->name->value), entry);
+            ds3_string_multimap_entry_free(mm_entry);
         }
     }
 
@@ -1272,8 +1278,7 @@ static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
 
 ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
     ds3_error* error;
-    //ds3_map* return_headers;
-    struct _ds3_string_multimap* return_headers;
+    ds3_string_multimap* return_headers;
     ds3_metadata* metadata = NULL;
 
     if (num_chars_in_ds3_str(request->path, '/') < 2){
@@ -1308,7 +1313,7 @@ ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, 
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
     ds3_error* error;
-    struct _ds3_string_multimap* return_headers;
+    ds3_string_multimap* return_headers;
     ds3_metadata* metadata;
 
     error = net_process_request(client, request, user_data, callback, NULL, NULL, &return_headers);

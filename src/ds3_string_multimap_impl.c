@@ -31,6 +31,7 @@ void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht) 
     _mp->hash = ht;
 }
 
+/*
 ds3_string_multimap* ds3_string_multimap_dupe(GHashTable* response_headers) {
     ds3_string_multimap* map = ds3_string_multimap_init();
     GHashTableIter iter;
@@ -49,5 +50,5 @@ ds3_string_multimap* ds3_string_multimap_dupe(GHashTable* response_headers) {
         }
     }
     return map;
-}
+}*/
 
