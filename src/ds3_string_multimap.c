@@ -30,6 +30,7 @@ static void _internal_str_free(gpointer data) {
     ds3_str_free((ds3_str*)data);
 }
 
+// hashify the string rather than the ds3_str* for better distribution
 static guint _ds3_str_hash(gconstpointer key) {
     if (key == NULL) return 0;
 
@@ -53,7 +54,7 @@ ds3_string_multimap* ds3_string_multimap_init(void) {
     return (ds3_string_multimap*) multimap;
 }
 
-void ds3_string_multimap_insert(ds3_string_multimap* map, ds3_str* key, ds3_str* value) {
+void ds3_string_multimap_insert(ds3_string_multimap* map, const ds3_str* key, const ds3_str* value) {
     struct _ds3_string_multimap* _map = (struct _ds3_string_multimap*) map;
     GPtrArray* entries = g_hash_table_lookup(_map->hash, key);
     if (entries == NULL) {
@@ -79,7 +80,8 @@ void ds3_string_multimap_insert_entry(ds3_string_multimap* map, const ds3_string
     }
 }
 
-ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, ds3_str* key) {
+// caller frees returned ds3_string_multimap_entry
+ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, const ds3_str* key) {
     if ((map == NULL) || (key == NULL)) return NULL;
 
     struct _ds3_string_multimap* _map = (struct _ds3_string_multimap*)map;
@@ -110,6 +112,8 @@ void ds3_string_multimap_free(ds3_string_multimap* map) {
 
 
 // The following functions manipulate ds3_string_multimap_entry
+
+// caller frees returned ds3_string_multimap_entry
 ds3_string_multimap_entry* ds3_string_multimap_entry_init(const ds3_str* key) {
     struct _ds3_string_multimap_entry* _entry = g_new0(ds3_string_multimap_entry, 1);
     _entry->key = ds3_str_dup(key);
@@ -117,14 +121,15 @@ ds3_string_multimap_entry* ds3_string_multimap_entry_init(const ds3_str* key) {
     return (ds3_string_multimap_entry*)_entry;
 }
 
-void ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, ds3_str* value) {
+void ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, const ds3_str* value) {
     if ((entry == NULL) || (value == NULL)) return;
 
     struct _ds3_string_multimap_entry* _entry = entry;
     g_ptr_array_add(_entry->values, (gpointer)ds3_str_dup(value));
 }
 
-ds3_string_multimap_entry* ds3_string_multimap_entry_dupe(const ds3_string_multimap_entry* entry) {
+// caller frees returned ds3_string_multimap_entry
+ds3_string_multimap_entry* ds3_string_multimap_entry_dup(const ds3_string_multimap_entry* entry) {
     const struct _ds3_string_multimap_entry* _entry = entry;
     ds3_string_multimap_entry* duped_entry = ds3_string_multimap_entry_init(_entry->key);
     unsigned int index;

@@ -16,6 +16,8 @@
 #ifndef __DS3_STRING__
 #define __DS3_STRING__
 
+#include <stdlib.h>
+
 typedef struct{
     char* value;
     size_t size;

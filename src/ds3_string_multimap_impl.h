@@ -32,7 +32,5 @@ GHashTable* ds3_string_multimap_get_hashtable(const ds3_string_multimap* mp);
 
 void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht);
 
-//void ds3_string_multimap_dupe_response_headers_hashtable(const GHashTable* src_ht, const ds3_string_multimap* dest_map );
-
 #endif
 

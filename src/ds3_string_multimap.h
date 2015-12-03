@@ -29,18 +29,19 @@ typedef struct _ds3_string_multimap_entry ds3_string_multimap_entry;
 
 //opertions for manipulating a hash map as a ds3_str multi map
 ds3_string_multimap*       ds3_string_multimap_init(void);
-void                       ds3_string_multimap_insert(ds3_string_multimap* map, ds3_str* key, ds3_str* value);
+void                       ds3_string_multimap_insert(ds3_string_multimap* map, const ds3_str* key, const ds3_str* value);
 void                       ds3_string_multimap_insert_entry(ds3_string_multimap* map, const ds3_string_multimap_entry* entry);  // caller frees all passed in values
-ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, ds3_str* key);
+ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, const ds3_str* key);
 void                       ds3_string_multimap_free(ds3_string_multimap* map);
 
 
 //opertions for manipulating a ds3_string_multi_map_entry
 ds3_string_multimap_entry* ds3_string_multimap_entry_init(const ds3_str* key);
 ds3_str*                   ds3_string_multimap_entry_get_key(const ds3_string_multimap_entry* entry);
-void                       ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, ds3_str* value);
+void                       ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, const ds3_str* value);
 unsigned int               ds3_string_multimap_entry_get_num_values(const ds3_string_multimap_entry* map_entry);
 ds3_str*                   ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, int index);
+ds3_string_multimap_entry* ds3_string_multimap_entry_dup(const ds3_string_multimap_entry* entry);
 void                       ds3_string_multimap_entry_free(ds3_string_multimap_entry* entry);
 
 

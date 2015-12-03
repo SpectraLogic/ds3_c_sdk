@@ -31,24 +31,3 @@ void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht) 
     _mp->hash = ht;
 }
 
-/*
-ds3_string_multimap* ds3_string_multimap_dupe(GHashTable* response_headers) {
-    ds3_string_multimap* map = ds3_string_multimap_init();
-    GHashTableIter iter;
-    gpointer _key, _value;
-
-    g_hash_table_iter_init(&iter, response_headers);
-    while (g_hash_table_iter_next(&iter, &_key, &_value)) {
-        int index;
-        struct _ds3_string_multimap_entry* _entry = (ds3_string_multimap_entry*)_value;
-        if (_value == NULL) {
-            continue;
-        }
-
-        for (index=0; index < _entry->values->len; index++) {
-            ds3_string_multimap_insert(map, _key, ds3_string_multimap_entry_get_value_by_index(_value, index));
-        }
-    }
-    return map;
-}*/
-
