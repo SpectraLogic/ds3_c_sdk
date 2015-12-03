@@ -9,6 +9,6 @@
 
 //Functions
 unsigned long get_size_by_fd(int fd);
-void compare_hash(char* filename_1, char* filename_2);
+bool compare_hash(char* filename_1, char* filename_2);
 
 #endif
