@@ -73,6 +73,8 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
     BOOST_REQUIRE(error == NULL);
 
+    bool checksum_passed = true;
+
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
         for(n = 0; n < chunk_object_list->size; n++, file_index++) {
@@ -88,7 +90,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
             fclose(w_file);
             handle_error(error);
             printf("------Performing Data Integrity Test-------\n");
-            compare_hash(orignal_file_path[file_index],tmp_files[file_index]);
+            checksum_passed = checksum_passed && compare_hash(orignal_file_path[file_index],tmp_files[file_index]);
             printf("\n");
         }
     }
@@ -100,6 +102,8 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     }
 
     free(tmp_files);
+    
+    BOOST_CHECK(checksum_passed == true);
 
     // check to make sure that the 'job' has completed
     request = ds3_init_get_job(bulk_response->job_id->value);
@@ -182,6 +186,8 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
 
     BOOST_REQUIRE(error == NULL);
 
+    bool checksum_passed = true;
+
     uint32_t segment_size = 20000;
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
@@ -199,7 +205,7 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
             fclose(w_file);
             handle_error(error);
             printf("------Performing Data Integrity Test-------\n");
-            compare_hash(orignal_file_path[file_index],tmp_files[file_index], segment_size);
+            checksum_passed = checksum_passed && compare_hash(orignal_file_path[file_index], tmp_files[file_index], segment_size);
             printf("\n");
         }
     }
@@ -210,6 +216,8 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
     }
 
     free(tmp_files);
+
+    BOOST_CHECK(checksum_passed == true);
 
     ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(completed_job);

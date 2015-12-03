@@ -19,7 +19,7 @@ unsigned long get_size_by_fd(int fd) {
 }
 
 // Function which compares checksums of the files passed
-void compare_hash(char* filename_1, char* filename_2, unsigned long num_bytes_to_check) {
+bool compare_hash(char* filename_1, char* filename_2, unsigned long num_bytes_to_check) {
     int file_descript_1;
     int file_descript_2;
     unsigned long file_size_1,file_size_2;
@@ -60,7 +60,8 @@ void compare_hash(char* filename_1, char* filename_2, unsigned long num_bytes_to
     printf("%s(checksum):",filename_2);
     printf("%s\n",result_2);
 
-    if(strcmp(reinterpret_cast<char*>(result_1),reinterpret_cast<char*>(result_2))==0) {
+    bool passed = strcmp(reinterpret_cast<char*>(result_1),reinterpret_cast<char*>(result_2))==0;
+    if (passed) {
         printf("Data Integrity Test Passed...MD5 Checksum is Same for Both Files\n");
     } else {
         printf("Data Integrity Test Failed...MD5 Checksum is Not Same for Both Files\n");
@@ -68,5 +69,8 @@ void compare_hash(char* filename_1, char* filename_2, unsigned long num_bytes_to
 
     g_free(result_1);
     g_free(result_2);
+
+
+    return passed;
 }
 
