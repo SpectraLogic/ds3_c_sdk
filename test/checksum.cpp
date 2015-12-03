@@ -19,7 +19,7 @@ unsigned long get_size_by_fd(int fd) {
 }
 
 // Function which compares checksums of the files passed
-void compare_hash(char* filename_1, char* filename_2) {
+void compare_hash(char* filename_1, char* filename_2, unsigned long num_bytes_to_check) {
     int file_descript_1;
     int file_descript_2;
     unsigned long file_size_1,file_size_2;
@@ -41,6 +41,14 @@ void compare_hash(char* filename_1, char* filename_2) {
 
     file_size_1 = get_size_by_fd(file_descript_1);
     file_size_2 = get_size_by_fd(file_descript_2);
+    if(num_bytes_to_check != 0) {
+        if(file_size_1 > num_bytes_to_check) {
+            file_size_1 = num_bytes_to_check;
+        }
+        if(file_size_2 > num_bytes_to_check) {
+            file_size_2 = num_bytes_to_check;
+        }
+    }
 
     file_buffer_1 = static_cast<char*>(mmap(0, file_size_1, PROT_READ, MAP_SHARED, file_descript_1, 0));
     result_1 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_1,file_size_1);

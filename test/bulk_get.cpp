@@ -118,17 +118,6 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     handle_error(error);
 }
 
-struct file_and_size {
-    size_t completed_size;
-    FILE* w_file;
-};
-
-size_t partial_object_helper(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    ((file_and_size*) user_data)->completed_size += size*nmemb;
-    printf("size %i\n", size*nmemb);
-    return fwrite(buffer, size, nmemb, ((file_and_size*) user_data)->w_file);
-}
-
 BOOST_AUTO_TEST_CASE( partial_get ) {
     uint64_t i, n;
     uint64_t file_index = 0;
@@ -193,69 +182,27 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
 
     BOOST_REQUIRE(error == NULL);
 
+    uint32_t segment_size = 20000;
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
-        for (n = 0; n < chunk_object_list->size; n++, file_index++) {
-	    uint64_t p;
-	    file_and_size f_and_s;
+        for(n = 0; n < chunk_object_list->size; n++, file_index++) {
+            FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
+            request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
+	    ds3_request_set_byte_range(request, 0, segment_size-1);
             orignal_file_path[file_index] = current_obj.name->value;
             tmp_files[file_index] = (char*) calloc(12, sizeof(char));
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 11);
-            f_and_s.w_file = fopen(tmp_files[file_index], "w+");
-	    f_and_s.completed_size = 0;
-
-
-
-	    // ! IMPORTANT: doing get object for job, you can only do one request at a time. So we will only get one chunk per file
-	    // We'll just have to add a new function to do a checksum against the first N bytes of a file
-
-
-	    
-
-	    uint32_t segment_size = 20000;
-                request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
-  		    ds3_request_set_byte_range(request, 0, segment_size-1);
-                // iterate over this till we get the full file, we'll need to also somehow check the size?
-                printf("start bytes set, %i to %i\n", f_and_s.completed_size, f_and_s.completed_size + segment_size);
-                error = ds3_get_object(client, request, &f_and_s, partial_object_helper);
-                printf("end, %lu, %lu\n", current_obj.length, f_and_s.completed_size);
-                ds3_free_request(request);
-		
-                request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset+segment_size, bulk_response->job_id->value);
-		
-  		    ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
-                // iterate over this till we get the full file, we'll need to also somehow check the size?
-                printf("start bytes set, %i to %i\n", f_and_s.completed_size, f_and_s.completed_size + segment_size);
-                error = ds3_get_object(client, request, &f_and_s, partial_object_helper);
-                printf("end, %lu, %lu\n", current_obj.length, f_and_s.completed_size);
-                ds3_free_request(request);
-	    #if 0
-	    uint32_t num_segments = current_obj.length/segment_size;
-	    printf("num segs=%lu, %lu, %lu\n", num_segments, current_obj.length, num_segments*segment_size);
-            for (p = 0; p < num_segments; p++) {
-                request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
-		if (f_and_s.completed_size + segment_size > current_obj.length){
-  		    ds3_request_set_byte_range(request, f_and_s.completed_size, current_obj.length);
-		} else {
-  		    ds3_request_set_byte_range(request, f_and_s.completed_size, f_and_s.completed_size + segment_size-1);
-		}
-                // iterate over this till we get the full file, we'll need to also somehow check the size?
-                printf("start bytes set, %i to %i\n", f_and_s.completed_size, f_and_s.completed_size + segment_size);
-                error = ds3_get_object(client, request, &f_and_s, partial_object_helper);
-                printf("end, %lu, %lu\n", current_obj.length, f_and_s.completed_size);
-                ds3_free_request(request);
-            }
-	    #endif
-	    
-            fclose(f_and_s.w_file);
+            w_file = fopen(tmp_files[file_index], "w+");
+            error = ds3_get_object(client, request, w_file, ds3_write_to_file);
+            ds3_free_request(request);
+            fclose(w_file);
             handle_error(error);
             printf("------Performing Data Integrity Test-------\n");
-            compare_hash(orignal_file_path[file_index],tmp_files[file_index]);
+            compare_hash(orignal_file_path[file_index],tmp_files[file_index], segment_size);
             printf("\n");
         }
     }
-
 
     for (i = 0; i < file_index; i++) {
         unlink(tmp_files[i]);
