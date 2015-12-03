@@ -30,25 +30,32 @@ static void _internal_str_free(gpointer data) {
     ds3_str_free((ds3_str*)data);
 }
 
+static guint _ds3_str_hash(gconstpointer key) {
+    if (key == NULL) return 0;
+
+    const ds3_str* d_str = (const ds3_str*)key;
+    return g_str_hash(d_str->value);
+}
+
 static gboolean _ds3_str_equal(gconstpointer a, gconstpointer b) {
     if ((a == NULL) || (b == NULL)) return FALSE;
 
-    const ds3_str* _a = a;
-    const ds3_str* _b = b;
+    const ds3_str* _a = (const ds3_str*) a;
+    const ds3_str* _b = (const ds3_str*) b;
 
-    return g_strcmp0(_a->value, _b->value);
+    return g_str_equal(_a->value, _b->value);
 }
 
 ds3_string_multimap* ds3_string_multimap_init(void) {
     struct _ds3_string_multimap* multimap = g_new0(struct _ds3_string_multimap, 1);
-    multimap->hash = g_hash_table_new_full(g_str_hash, _ds3_str_equal, _internal_str_free, _free_pointer_array);
+    multimap->hash = g_hash_table_new_full(_ds3_str_hash, _ds3_str_equal, _internal_str_free, _free_pointer_array);
 
     return (ds3_string_multimap*) multimap;
 }
 
 void ds3_string_multimap_insert(ds3_string_multimap* map, ds3_str* key, ds3_str* value) {
     struct _ds3_string_multimap* _map = (struct _ds3_string_multimap*) map;
-    GPtrArray* entries = (GPtrArray*) g_hash_table_lookup(_map->hash, key->value);
+    GPtrArray* entries = g_hash_table_lookup(_map->hash, key);
     if (entries == NULL) {
         entries = g_ptr_array_new_with_free_func(_internal_str_free);
         g_hash_table_insert(_map->hash, ds3_str_dup(key), entries);
@@ -81,8 +88,10 @@ ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, 
 
     ds3_string_multimap_entry* entry = ds3_string_multimap_entry_init(key);
     int index;
-    for (index=0; index > ds3_string_multimap_entry_get_num_values(entry); index++) {
-        ds3_string_multimap_entry_add_value(entry, g_ptr_array_index(values, index));
+    unsigned int num_values = values->len;
+    for (index=0; index < num_values; index++) {
+        ds3_str* current_value = g_ptr_array_index(values, index);
+        ds3_string_multimap_entry_add_value(entry, current_value);
     }
 
     return entry;
