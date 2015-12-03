@@ -172,8 +172,6 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
         ds3_free_request(request);
 
         BOOST_REQUIRE(error == NULL);
-
-        BOOST_REQUIRE(chunk_response != NULL);
 	
         BOOST_REQUIRE(chunk_response != NULL);
 
