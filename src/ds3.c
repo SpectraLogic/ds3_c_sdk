@@ -1268,7 +1268,6 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
     error = net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
 
     if (error == NULL) {
-        fprintf(stderr, "Head object completed successfully\n");
         metadata = _init_metadata(return_headers);
         *_metadata = metadata;
         g_hash_table_destroy(return_headers);
@@ -1297,7 +1296,6 @@ ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_requ
     error = net_process_request(client, request, user_data, callback, NULL, NULL, &return_headers);
 
     if (error == NULL) {
-        fprintf(stderr, "Head object completed successfully\n");
         metadata = _init_metadata(return_headers);
         *_metadata = metadata;
         g_hash_table_destroy(return_headers);
