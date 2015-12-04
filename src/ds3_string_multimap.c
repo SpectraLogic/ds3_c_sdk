@@ -71,13 +71,13 @@ void ds3_string_multimap_insert_entry(ds3_string_multimap* map, const ds3_string
 
     int index;
     int num_values = ds3_string_multimap_entry_get_num_values(entry);
+    ds3_str* key = ds3_string_multimap_entry_get_key(entry);
     for (index = 0; index < num_values; index++) {
-        ds3_str* key = ds3_string_multimap_entry_get_key(entry);
         ds3_str* value = ds3_string_multimap_entry_get_value_by_index(entry, index);
         ds3_string_multimap_insert(map, key, value);
-        ds3_str_free(key);
         ds3_str_free(value);
     }
+    ds3_str_free(key);
 }
 
 // caller frees returned ds3_string_multimap_entry
