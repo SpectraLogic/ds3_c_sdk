@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "ds3.h"
+#include "samples.h"
 
 int main (void) {
     // Get Service
@@ -13,11 +14,11 @@ int main (void) {
     uint64_t i;
 
     // Setup client credentials and then the actual client itself.
-    ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
-    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
+    ds3_creds * creds = ds3_create_creds(DS3_ACCESS_KEY, DS3_SECRET_KEY);
+    ds3_client * client = ds3_create_client(DS3_ENDPOINT, creds);
 
     // You can optionally set a proxy server that a request should be sent through
-    //ds3_client_proxy(client, "192.168.56.1:8888");
+    ds3_client_proxy(client, HTTP_PROXY);
 
     // Create the get service request.  All requests to a DS3 appliance start this way.
     // All ds3_init_* functions return a ds3_request struct
@@ -33,8 +34,8 @@ int main (void) {
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Got an error (%lu): %s\n", (long unsigned int)error->error->status_code, error->message->value);
+            printf("Message Body: %s\n", error->error->error_body->value);
         }
         else {
             printf("Got a runtime error: %s\n", error->message->value);
