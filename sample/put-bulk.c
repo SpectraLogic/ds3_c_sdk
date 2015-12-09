@@ -7,28 +7,6 @@
 #include <sys/stat.h>
 #include "ds3.h"
 #include "samples.h"
-/*
-* Prints the contents of an error to stdout
-*/
-void print_error(const ds3_error* error) {
-      printf("ds3_error_message: %s\n", error->message->value);
-      if (error->error != NULL) {
-          printf("ds3_status_code: %lu\n", (long unsigned int)error->error->status_code);
-          printf("ds3_status_message: %s\n", error->error->status_message->value);
-          printf("ds3_error_body: %s\n", error->error->error_body->value);
-      }
-}
-
-/*
-* Prints an error if it is not null and exits the process with return code 1
-*/ 
-void handle_error(ds3_error* error) {
-    if (error != NULL) {
-        print_error(error);
-        ds3_free_error(error);
-        exit(1);
-    }
-}
 
 int main(void) {
       
@@ -52,14 +30,8 @@ int main(void) {
     FILE* obj_file;
     
     // Create a client from environment variables
-    // ds3_error* error = ds3_create_client_from_env(&client);
-    //handle_error(error);
-
-    ds3_creds * creds = ds3_create_creds(DS3_ACCESS_KEY, DS3_SECRET_KEY);
-    client = ds3_create_client(DS3_ENDPOINT, creds);
-
-    // You can optionally set a proxy server that a request should be sent through
-    ds3_client_proxy(client, HTTP_PROXY);
+    error = ds3_create_client_from_env(&client);
+    handle_error(error);
 
     // Create a bucket where our files will be stored
     request = ds3_init_put_bucket(bucket_name); // We need to create the request
