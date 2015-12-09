@@ -1,10 +1,14 @@
 /*** Shared header for all Samples  ***/
 /*** Spectra Logic December 9, 2015 ***/
 
-#define HTTP_PROXY "10.0.2.2:8888"
-#define DS3_ENDPOINT "http://192.168.1.20:8080"
-#define DS3_SECRET_KEY "tzcWTTYE"
-#define DS3_ACCESS_KEY  "ams="
+/*
+ * Set environmet vars to match target device, e.g.:
+ 	export DS3_ACCESS_KEY="ams="
+	export DS3_SECRET_KEY="tzcWTTYE"
+	export DS3_ENDPOINT="http://192.168.1.20:8080"
+	// http_proxy is optional
+	export http_proxy="http://10.0.2.2:8888"
+*/
 
 #define BUCKETNAME ((const char *)"books")
 #define BOOKS {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt"}
