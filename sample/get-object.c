@@ -28,8 +28,9 @@ int main(void) {
     ds3_free_request(request);
     fclose(tmp_file);
     
-	handle_error(error);
-	
+    handle_error(error);
+
+    ds3_free_creds(client->creds);	
     ds3_free_client(client);
     ds3_cleanup();
 

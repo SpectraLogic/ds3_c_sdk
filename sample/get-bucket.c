@@ -29,7 +29,7 @@ int main(void) {
     error = ds3_get_bucket(client, request, &response);
     ds3_free_request(request);
 
-	handle_error(error);
+    handle_error(error);
 	
     if (response == NULL) {
         printf("Response was null\n");
@@ -51,6 +51,7 @@ int main(void) {
 
     ds3_free_bucket_response(response);
 
+    ds3_free_creds(client->creds);
     ds3_free_client(client);
     ds3_cleanup();
 

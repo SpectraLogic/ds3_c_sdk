@@ -30,11 +30,12 @@ int main (void) {
     error = ds3_get_service(client, request, &response);
     ds3_free_request(request);
 
-	handle_error(error);
+    handle_error(error);
 
     if(response->num_buckets == 0) {
         printf("No buckets returned\n");
         ds3_free_service_response(response);
+        ds3_free_creds(client->creds);
         ds3_free_client(client);
         return 0;
     }
@@ -45,7 +46,7 @@ int main (void) {
     }
 
     ds3_free_service_response(response);
-
+    ds3_free_creds(client->creds);
     ds3_free_client(client);
     ds3_cleanup();
 
