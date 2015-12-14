@@ -188,8 +188,18 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
 
     bool checksum_passed = true;
 
+    // we need to somehow associate indexes with objects
+    // then match those indexes to temporary file handles and object names
+    // also give different names to the temporary files per object
+    // and then do the temporary file checksum at the end
+
+    //also:
+	    // change the put_everything command to return a request
+	    // add these changes to the normal bulk_get unit test
+
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
+	// is there any reason that subsequent files would get assign the same list ordering and thus index?
         for(n = 0; n < chunk_object_list->size; n++, file_index++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
@@ -198,18 +208,29 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
             tmp_files[file_index] = (char*) calloc(12, sizeof(char));
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 11);
             w_file = fopen(tmp_files[file_index], "w+");
+
+	    printf("%ld\n", current_obj.offset);
+	    // seek to correct location in file before writing
+	    fseek(w_file, current_obj.offset, SEEK_SET);
+	    
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
             fclose(w_file);
             handle_error(error);
+            printf("-----%s----%s----\n", orignal_file_path[file_index],tmp_files[file_index]);
+	    /*
             printf("------Performing Data Integrity Test-------\n");
             checksum_passed = checksum_passed && compare_hash(orignal_file_path[file_index],tmp_files[file_index]);
-            printf("\n");
+            printf("\n");*/
         }
     }
 
 
     for (i = 0; i < file_index; i++) {
+            printf("------Performing Data Integrity Test-------\n");
+            printf("-----%s----%s----\n", orignal_file_path[file_index],tmp_files[file_index]);
+            checksum_passed = checksum_passed && compare_hash(orignal_file_path[file_index],tmp_files[file_index]);
+            printf("\n");
         unlink(tmp_files[i]);
         free(tmp_files[i]);
     }
