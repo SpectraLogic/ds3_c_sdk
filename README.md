@@ -1,6 +1,8 @@
 Spectra S3 C SDK
 ================
 
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/SpectraLogic/ds3_c_sdk/blob/master/LICENSE.md)
+
 This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
