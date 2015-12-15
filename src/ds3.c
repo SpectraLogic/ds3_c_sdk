@@ -531,8 +531,8 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     if (bucket_name != NULL) {
         if (g_str_has_suffix(bucket_name, "/") == TRUE) {
             char* chomp_bucket = g_strndup(bucket_name, strlen(bucket_name)-1);
-	    escaped_bucket_name = escape_url(chomp_bucket);
-	    g_free(chomp_bucket);
+            escaped_bucket_name = escape_url(chomp_bucket);
+            g_free(chomp_bucket);
 	} else {
 	    escaped_bucket_name = escape_url(bucket_name);
 	}
