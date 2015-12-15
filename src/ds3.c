@@ -529,20 +529,20 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     char* full_path = NULL;
 
     if (bucket_name != NULL) {
-        escaped_bucket_name = escape_url(bucket_name);
+        if (g_str_has_suffix(bucket_name, "/") == TRUE) {
+            char* chomp_bucket = g_strndup(bucket_name, strlen(bucket_name)-1);
+            escaped_bucket_name = escape_url(chomp_bucket);
+            g_free(chomp_bucket);
+	} else {
+	    escaped_bucket_name = escape_url(bucket_name);
+	}
     }
     if (object_name != NULL) {
         escaped_object_name = escape_url_object_name(object_name);
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    if (g_str_has_suffix(joined_path, "/") == TRUE) {
-        char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
-        full_path = g_strconcat(path_prefix, chomp_path, NULL);
-        g_free(chomp_path);
-    } else {
-        full_path = g_strconcat(path_prefix, joined_path, NULL);
-    }
+    full_path = g_strconcat(path_prefix, joined_path, NULL);
     g_free(joined_path);
 
     path = ds3_str_init(full_path);
