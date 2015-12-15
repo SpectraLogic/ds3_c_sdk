@@ -51,7 +51,7 @@ service_tests.o:
 
 search_tests.o:
 	$(CPP) -c search_tests.cpp $(CFLAGS)
-	
+
 bucket_tests.o:
 	$(CPP) -c bucket_tests.cpp $(CFLAGS)
 

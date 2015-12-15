@@ -434,15 +434,16 @@ void ds3_request_set_metadata(ds3_request* _request, const char* name, const cha
 
 void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd) {
     char* range_value;
-    range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
+    
+    gpointer header_value = g_hash_table_lookup(_request->headers, "Range");
+    if(header_value != NULL) {
+        range_value = g_strdup_printf("%s,%ld-%ld", (char*)header_value, rangeStart, rangeEnd);
+    } else {
+	range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
+    }
+    
     _set_header(_request, "Range", range_value);
     g_free(range_value);
-
-    _request->length = rangeEnd - rangeStart;
-    
-    char offset_s[21];
-    sprintf(offset_s, "%llu" , (unsigned long long int) rangeStart);
-    _set_query_param((ds3_request*) _request, "offset", offset_s);
 }
 
 void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {

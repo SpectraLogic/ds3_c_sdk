@@ -18,6 +18,10 @@
 
 #include <glib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     ds3_str* key;
     GPtrArray* values; // A ds3_str list of the header values
@@ -37,6 +41,7 @@ typedef struct {
 }ds3_response_data;
 
 char* escape_url(const char* url);
+char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters);
 char* escape_url_object_name(const char* url);
 char* escape_url_range_header(const char* url);
 
@@ -51,5 +56,8 @@ ds3_error* net_process_request(
 
 void net_cleanup(void);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 

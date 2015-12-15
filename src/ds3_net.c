@@ -67,33 +67,34 @@ char* escape_url(const char* url) {
 }
 
 // Like escape_url but don't encode "/".
-char* escape_url_object_name(const char* url) {
-    gchar** split = g_strsplit(url, "/", 0);
+char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters) {
+    gchar** split = g_strsplit(url, delimiters[num_delimiters-1], 0);
     gchar** ptr;
     gchar* escaped_ptr;
     for (ptr = split; *ptr; ptr++) {
-        escaped_ptr = escape_url(*ptr);
+        if( num_delimiters > 1){
+            escaped_ptr = escape_url_extended(*ptr, delimiters, num_delimiters-1);
+        }else{
+	    escaped_ptr = escape_url(*ptr);
+	}
         g_free(*ptr);
         *ptr = escaped_ptr;
     }
-    escaped_ptr = g_strjoinv("/", split);
+    escaped_ptr = g_strjoinv(delimiters[num_delimiters-1], split);
     g_strfreev(split);
     return escaped_ptr;
 }
 
+// Like escape_url but don't encode "/".
+char* escape_url_object_name(const char* url) {
+    const char *delimiters[1]={"/"};
+    return escape_url_extended(url, delimiters, 1);
+}
+
 // Like escape_url but don't encode "=".
 char* escape_url_range_header(const char* url) {
-    gchar** split = g_strsplit(url, "=", 0);
-    gchar** ptr;
-    gchar* escaped_ptr;
-    for (ptr = split; *ptr; ptr++) {
-        escaped_ptr = escape_url(*ptr);
-        g_free(*ptr);
-        *ptr = escaped_ptr;
-    }
-    escaped_ptr = g_strjoinv("=", split);
-    g_strfreev(split);
-    return escaped_ptr;
+    const char *delimiters[2]={"=", ","};
+    return escape_url_extended(url, delimiters, 2);
 }
 
 static unsigned char* _generate_signature_str(http_verb verb, char* resource_name, char* date,
