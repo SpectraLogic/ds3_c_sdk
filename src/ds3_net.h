@@ -16,6 +16,10 @@
 #ifndef __DS3_NET_H__
 #define __DS3_NET_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ds3.h"
 #include "ds3_string_multimap.h"
 
@@ -33,5 +37,8 @@ ds3_error* net_process_request(
 
 void net_cleanup(void);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 

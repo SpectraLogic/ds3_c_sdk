@@ -17,6 +17,10 @@
 #ifndef __DS3_STRING_MULTIMAP_IMPL__
 #define __DS3_STRING_MULTIMAP_IMPL__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <glib.h>
 
 struct _ds3_string_multimap {
@@ -32,5 +36,8 @@ GHashTable* ds3_string_multimap_get_hashtable(const ds3_string_multimap* mp);
 
 void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 

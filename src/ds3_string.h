@@ -45,4 +45,7 @@ LIBRARY_API size_t ds3_str_size(const ds3_str* string);
 LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
 LIBRARY_API void ds3_str_free(ds3_str* string);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

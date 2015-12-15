@@ -16,6 +16,10 @@
 #ifndef __DS3_REQUEST_H__
 #define __DS3_REQUEST_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <glib.h>
 #include "ds3.h"
 
@@ -49,4 +53,7 @@ typedef struct {
 }ds3_response_data;
 
 
+#ifdef __cplusplus
+}
+#endif
 #endif
