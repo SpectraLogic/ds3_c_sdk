@@ -129,13 +129,6 @@ typedef enum {
   DATA, FOLDER
 }ds3_object_type;
 
-LIBRARY_API ds3_str* ds3_str_init(const char* string);
-LIBRARY_API ds3_str* ds3_str_init_with_size(const char* string, size_t size);
-LIBRARY_API char* ds3_str_value(const ds3_str* string);
-LIBRARY_API size_t ds3_str_size(const ds3_str* string);
-LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
-LIBRARY_API void ds3_str_free(ds3_str* string);
-
 typedef enum {
   DS3_ERROR, DS3_WARN, DS3_INFO, DS3_DEBUG, DS3_TRACE
 }ds3_log_lvl;

@@ -18,9 +18,31 @@
 
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// For windows DLL symbol exports.
+#ifdef _WIN32
+#    ifdef LIBRARY_EXPORTS
+#        define LIBRARY_API __declspec(dllexport)
+#    else
+#        define LIBRARY_API __declspec(dllimport)
+#    endif
+#else
+#    define LIBRARY_API
+#endif
+
 typedef struct{
     char* value;
     size_t size;
 }ds3_str;
+
+LIBRARY_API ds3_str* ds3_str_init(const char* string);
+LIBRARY_API ds3_str* ds3_str_init_with_size(const char* string, size_t size);
+LIBRARY_API char* ds3_str_value(const ds3_str* string);
+LIBRARY_API size_t ds3_str_size(const ds3_str* string);
+LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
+LIBRARY_API void ds3_str_free(ds3_str* string);
 
 #endif

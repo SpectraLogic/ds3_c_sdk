@@ -17,7 +17,6 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -114,12 +113,15 @@ static void _ds3_free_metadata_entry(gpointer pointer) {
  * This copies all the header values in the ds3_string_multimap_entry struct so that they may be safely returned to the user
  * without having to worry about if the data is freed internally.
  */
+static const char* METADATA_PREFIX = "x-amz-meta-";
 static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* header_entry) {
     guint i;
     ds3_str* header_value;
     GPtrArray* values = g_ptr_array_new();
     ds3_str* key_name;
+    ds3_str* full_key;
     ds3_metadata_entry* response = g_new0(ds3_metadata_entry, 1);
+    int metadata_prefix_length = strlen(METADATA_PREFIX);
 
     unsigned int num_values = ds3_string_multimap_entry_get_num_values(header_entry);
     for (i = 0; i < num_values; i++) {
@@ -127,8 +129,8 @@ static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* he
         g_ptr_array_add(values, header_value);
     }
 
-    ds3_str* full_key = ds3_string_multimap_entry_get_key(header_entry);
-    key_name = ds3_str_init(full_key->value + 11); // offset after "x-amz-meta-"
+    full_key = ds3_string_multimap_entry_get_key(header_entry);
+    key_name = ds3_str_init(full_key->value + metadata_prefix_length);
     ds3_str_free(full_key);
 
     response->num_values = num_values;
@@ -234,42 +236,6 @@ ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* _metadata) {
     result->num_keys = return_keys->len;
     result->keys = (ds3_str**) g_ptr_array_free(return_keys, FALSE);
     return result;
-}
-
-ds3_str* ds3_str_init(const char* string) {
-    size_t size = strlen(string);
-    return ds3_str_init_with_size(string, size);
-}
-
-ds3_str* ds3_str_init_with_size(const char* string, size_t size) {
-    ds3_str* str = g_new0(ds3_str, 1);
-    str->value = g_strndup(string, size);
-    str->size = size;
-    return str;
-}
-
-ds3_str* ds3_str_dup(const ds3_str* string) {
-    ds3_str* str = g_new0(ds3_str, 1);
-    str->value = g_strndup(string->value, string->size);
-    str->size = string->size;
-    return str;
-}
-
-char* ds3_str_value(const ds3_str* string) {
-    return string->value;
-}
-
-size_t ds3_str_size(const ds3_str* string) {
-    return string->size;
-}
-
-void ds3_str_free(ds3_str* string) {
-    if (string == NULL) return;
-
-    if (string->value != NULL) {
-        g_free(string->value);
-    }
-    g_free(string);
 }
 
 ds3_error* ds3_create_error(ds3_error_code code, const char * message) {
@@ -498,9 +464,10 @@ void ds3_request_set_marker(ds3_request* _request, const char* marker) {
 }
 
 void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
-    char max_keys_s[11];
-    memset(max_keys_s, 0, sizeof(char) * 11);
-    g_snprintf(max_keys_s, sizeof(char) * 11, "%u", max_keys);
+    int metadata_prefix_length = strlen(METADATA_PREFIX);
+    char max_keys_s[metadata_prefix_length];
+    memset(max_keys_s, 0, sizeof(char) * metadata_prefix_length);
+    g_snprintf(max_keys_s, sizeof(char) * metadata_prefix_length, "%u", max_keys);
     _set_query_param(_request, "max-keys", max_keys_s);
 }
 

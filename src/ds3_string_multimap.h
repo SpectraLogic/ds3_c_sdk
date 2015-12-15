@@ -17,7 +17,6 @@
 #define __DS3_STRING_MULTIMAP__
 
 #include "ds3_string.h"
-#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -16,7 +16,6 @@
 #ifndef __DS3_NET_H__
 #define __DS3_NET_H__
 
-#include <glib.h>
 #include "ds3.h"
 #include "ds3_string_multimap.h"
 
