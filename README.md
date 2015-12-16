@@ -1,6 +1,8 @@
 Spectra S3 C SDK
 ================
 
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/SpectraLogic/ds3_c_sdk/blob/master/LICENSE.md)
+
 This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
@@ -147,8 +149,13 @@ To build the sample, use the following commands:
     $ cd sample
     $ make deps # Builds the SDK and installs it into directory/containing/source/tree**/install**
     $ make
+	
+To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set in environment variables to match the target device. For the simulator, see [Installation Instructions] (https://developer.spectralogic.com/sim-install/) 
 
-To run it, just use `make run`.
+    $ make run-put-bulk     # create "books" bucket and put files into it
+    $ make run-get-service  # list all buckets
+    $ make run-get-bucket   # list contents of "books" bucket
+    $ make run-get-object   # get first book and write to temp file
 
 Code Samples
 ------------
