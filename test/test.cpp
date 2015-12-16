@@ -21,7 +21,7 @@ void test_log(const char* message, void* user_data) {
 }
 
 ds3_client* get_client_at_loglvl(ds3_log_lvl log_lvl) {
-  ds3_client* client;
+    ds3_client* client;
 
     ds3_error* error = ds3_create_client_from_env(&client);
 
