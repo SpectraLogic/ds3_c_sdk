@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 
 //global variables
@@ -20,7 +19,7 @@ unsigned long get_size_by_fd(int fd) {
 }
 
 // Function which compares checksums of the files passed
-bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long offset, unsigned long num_bytes_to_check) {
+bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num_bytes_to_check, unsigned long offset_1, unsigned long offset_2) {
     int file_descript_1;
     int file_descript_2;
     unsigned long file_size_1,file_size_2;
@@ -44,12 +43,12 @@ bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long off
     file_size_2 = get_size_by_fd(file_descript_2);
 
     file_buffer_1 = static_cast<char*>(mmap(0, file_size_1, PROT_READ, MAP_SHARED, file_descript_1, 0));
-    result_1 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_1+offset, num_bytes_to_check);
+    result_1 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_1+offset_1, num_bytes_to_check);
     printf("%s(checksum):",filename_1);
     printf("%s\n",result_1);
 
     file_buffer_2 = static_cast<char*>(mmap(0, file_size_2, PROT_READ, MAP_SHARED, file_descript_2, 0));
-    result_2 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_2+offset, num_bytes_to_check);
+    result_2 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_2+offset_2, num_bytes_to_check);
     printf("%s(checksum):",filename_2);
     printf("%s\n",result_2);
 
@@ -69,5 +68,5 @@ bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long off
 
 // Function which compares checksums of the files passed
 bool compare_hash(char* filename_1, char* filename_2) {
-  return compare_hash_extended(filename_1, filename_2, 0, 0);
+  return compare_hash_extended(filename_1, filename_2, 0, 0, 0);
 }

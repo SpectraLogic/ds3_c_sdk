@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     }
 
     free(tmp_files);
-    
+
     BOOST_CHECK(checksum_passed == true);
 
     // check to make sure that the 'job' has completed
@@ -188,30 +188,30 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
 
     bool checksum_passed = true;
 
-    uint32_t segment_size = 200;
+    uint32_t segment_size = 3200;
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
         for(n = 0; n < chunk_object_list->size; n++, file_index++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
             request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
-	    //	    ds3_request_set_byte_range(request, 0, segment_size-1);
 	    ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
+	    ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
             orignal_file_path[file_index] = current_obj.name->value;
             tmp_files[file_index] = (char*) calloc(12, sizeof(char));
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 11);
             w_file = fopen(tmp_files[file_index], "w+");
-	    fseek(w_file, segment_size, SEEK_SET);
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
             fclose(w_file);
             handle_error(error);
             printf("------Performing Data Integrity Test-------\n");
-            checksum_passed = checksum_passed && compare_hash_extended(orignal_file_path[file_index], tmp_files[file_index], segment_size, segment_size);
-            //checksum_passed = checksum_passed && compare_hash_extended(orignal_file_path[file_index], tmp_files[file_index], segment_size+10, segment_size*2-20);
+            checksum_passed = checksum_passed && compare_hash_extended(orignal_file_path[file_index], tmp_files[file_index], segment_size, segment_size, 0);
+            checksum_passed = checksum_passed && compare_hash_extended(orignal_file_path[file_index], tmp_files[file_index], segment_size, segment_size*3, segment_size);
             printf("\n");
         }
     }
+
 
     for (i = 0; i < file_index; i++) {
         unlink(tmp_files[i]);
@@ -222,6 +222,16 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
 
     BOOST_CHECK(checksum_passed == true);
 
+    // NOTE: this currently returns an error from the server because of the partial get
+    // check to make sure that the 'job' has completed
+    request = ds3_init_get_job(bulk_response->job_id->value);
+    error = ds3_get_job(client, request, &completed_job);
+    handle_error(error);
+
+    BOOST_CHECK(completed_job != NULL);
+    BOOST_CHECK(completed_job->status == COMPLETED);
+
+    ds3_free_request(request);
     ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(completed_job);
     ds3_free_bulk_response(bulk_response);

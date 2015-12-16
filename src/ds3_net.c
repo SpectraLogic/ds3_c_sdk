@@ -75,8 +75,8 @@ char* escape_url_extended(const char* url, const char** delimiters, uint32_t num
         if( num_delimiters > 1){
             escaped_ptr = escape_url_extended(*ptr, delimiters, num_delimiters-1);
         }else{
-	    escaped_ptr = escape_url(*ptr);
-	}
+            escaped_ptr = escape_url(*ptr);
+        }
         g_free(*ptr);
         *ptr = escaped_ptr;
     }
