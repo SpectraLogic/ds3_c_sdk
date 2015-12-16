@@ -13,18 +13,31 @@
 * ****************************************************************************
 */
 
-#ifndef __DS3_UTIL__
-#define __DS3_UTIL__
+
+#ifndef __DS3_STRING_MULTIMAP_IMPL__
+#define __DS3_STRING_MULTIMAP_IMPL__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void         ds3_log_message(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...);
-size_t       ds3_load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data);
-ds3_error*   ds3_create_error(ds3_error_code code, const char * message);
+#include <glib.h>
+
+struct _ds3_string_multimap {
+    GHashTable* hash; //key is ds3_str, values are a GPtrArray of ds3_str
+};
+
+typedef struct _ds3_string_multimap_entry{
+    ds3_str*   key;
+    GPtrArray* values; // A ds3_str list of the header values
+}ds3_string_multimap_entry;
+
+GHashTable* ds3_string_multimap_get_hashtable(const ds3_string_multimap* mp);
+
+void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht);
 
 #ifdef __cplusplus
 }
 #endif
 #endif
+
