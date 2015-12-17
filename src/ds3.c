@@ -58,30 +58,6 @@ typedef enum {
     GET_PHYSICAL_PLACEMENT
 }object_list_type;
 
-void ds3_log_message(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...) {
-    if (log == NULL) {
-        return;
-    }
-
-    if (log->log_callback == NULL) {
-        fprintf(stderr, "ERROR: ds3_c_sdk - User supplied log_callback is null, failed to log message.\n");
-        return;
-    }
-
-    if (lvl <= log->log_lvl) {
-        va_list args;
-        char * log_message;
-
-        va_start(args, message);
-        log_message = g_strdup_vprintf(message, args);
-        va_end(args);
-
-        log->log_callback(log_message, log->user_data);
-
-        g_free(log_message);
-    }
-}
-
 void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data) {
     if (client == NULL) {
         fprintf(stderr, "Cannot configure a null ds3_client for logging.\n");
@@ -238,14 +214,6 @@ ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* _metadata) {
     return result;
 }
 
-ds3_error* ds3_create_error(ds3_error_code code, const char * message) {
-    ds3_error* error = g_new0(ds3_error, 1);
-    error->code = code;
-    error->message = ds3_str_init(message);
-    error->error = NULL;
-    return error;
-}
-
 static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
     size_t to_read;
     size_t remaining;
@@ -262,14 +230,6 @@ static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* 
     strncpy((char*)buffer, xml_buff->buff + xml_buff->total_read, to_read);
     xml_buff->total_read += to_read;
     return to_read;
-}
-
-size_t ds3_load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    size_t realsize = size * nmemb;
-    GByteArray* blob = (GByteArray*) user_data;
-
-    g_byte_array_append(blob, (const guint8 *) buffer, realsize);
-    return realsize;
 }
 
 static void _cleanup_hash_value(gpointer value) {

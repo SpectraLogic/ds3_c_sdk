@@ -13,8 +13,8 @@
 * ****************************************************************************
 */
 
-#ifndef __DS3_UTIL__
-#define __DS3_UTIL__
+#ifndef __DS3_UTILS__
+#define __DS3_UTILS__
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +27,5 @@ ds3_error*   ds3_create_error(ds3_error_code code, const char * message);
 #ifdef __cplusplus
 }
 #endif
+
 #endif
