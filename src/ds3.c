@@ -417,6 +417,10 @@ void ds3_request_set_metadata(ds3_request* _request, const char* name, const cha
     g_free(prefixed_name);
 }
 
+void ds3_request_reset_byte_range(ds3_request* _request) {
+    g_hash_table_remove(_request->headers, "Range");
+}
+
 void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd) {
     char* range_value;
     

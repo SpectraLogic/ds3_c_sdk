@@ -195,8 +195,8 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
             request = ds3_init_get_object_for_job(bucket_name, current_obj.name->value, current_obj.offset, bulk_response->job_id->value);
-	    ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
-	    ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
+            ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
+            ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
             orignal_file_path[file_index] = current_obj.name->value;
             tmp_files[file_index] = (char*) calloc(12, sizeof(char));
             memcpy(tmp_files[file_index], FILE_TEMPLATE, 11);

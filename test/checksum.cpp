@@ -68,5 +68,5 @@ bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num
 
 // Function which compares checksums of the files passed
 bool compare_hash(char* filename_1, char* filename_2) {
-  return compare_hash_extended(filename_1, filename_2, 0, 0, 0);
+    return compare_hash_extended(filename_1, filename_2, 0, 0, 0);
 }
