@@ -330,7 +330,11 @@ static void _set_map_value(GHashTable* map, const char* key, const char* value) 
     //TODO update this to handle multiple values being set for a header field
     gpointer escaped_value;
     if (value != NULL) {
-        escaped_value = (gpointer) escape_url(value);
+        if (g_strcmp0(key, "Range") == 0) {
+            escaped_value = (gpointer) escape_url_range_header(value);
+        } else {
+            escaped_value = (gpointer) escape_url(value);
+        }
     } else {
         escaped_value = NULL;
     }
@@ -371,6 +375,24 @@ void ds3_request_set_metadata(ds3_request* _request, const char* name, const cha
     _set_header(_request, prefixed_name, value);
 
     g_free(prefixed_name);
+}
+
+void ds3_request_reset_byte_range(ds3_request* _request) {
+    g_hash_table_remove(_request->headers, "Range");
+}
+
+void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd) {
+    char* range_value;
+    
+    gpointer header_value = g_hash_table_lookup(_request->headers, "Range");
+    if(header_value != NULL) {
+        range_value = g_strdup_printf("%s,%ld-%ld", (char*)header_value, rangeStart, rangeEnd);
+    } else {
+        range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
+    }
+    
+    _set_header(_request, "Range", range_value);
+    g_free(range_value);
 }
 
 void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
