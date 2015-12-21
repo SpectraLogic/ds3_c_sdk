@@ -474,6 +474,7 @@ LIBRARY_API ds3_bulk_object_list* ds3_convert_file_list_with_basepath(const char
 LIBRARY_API ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_t num_objects);
 LIBRARY_API ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files);
 LIBRARY_API void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
+LIBRARY_API void ds3_free_bulk_object_list_from_request(ds3_request* _request);
 
 #ifdef __cplusplus
 }
