@@ -754,6 +754,43 @@ static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, s
     return xml_get_bool(log, doc, (xmlNodePtr) attribute);
 }
 
+ds3_error* _get_request_xml_nodes(
+        const ds3_client* client,
+        const ds3_request* request,
+        xmlDocPtr* doc,
+        xmlNodePtr* root,
+        char* root_element_name) {
+    GByteArray* xml_blob = g_byte_array_new();
+
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    *doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    if (doc == NULL) {
+        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    *root = xmlDocGetRootElement(*doc);
+    if (element_equal(*root, root_element_name) == false) {
+        char* message = g_strconcat("Expected the root element to be '", root_element_name, "'.  The actual response is: ", xml_blob->data, NULL);
+        xmlFreeDoc(*doc);
+        g_byte_array_free(xml_blob, TRUE);
+        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
+        g_free(message);
+        return error;
+    }
+
+    g_byte_array_free(xml_blob, TRUE);
+    return NULL;
+}
+
 static void _parse_build_information(const ds3_log* log, xmlDocPtr doc, xmlNodePtr build_info_node, ds3_build_information** _build_info_response) {
     ds3_build_information* build_info_response;
     xmlNodePtr build_element;
@@ -773,42 +810,6 @@ static void _parse_build_information(const ds3_log* log, xmlDocPtr doc, xmlNodeP
     *_build_info_response = build_info_response;
 }
 
-ds3_error* _get_request_xml_nodes(
-        const ds3_client* client,
-        const ds3_request* request,
-        GByteArray* xml_blob,
-        xmlDocPtr* doc,
-        xmlNodePtr* root,
-        char* root_element_name) {
-
-    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    *doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if (doc == NULL) {
-        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
-    }
-
-    *root = xmlDocGetRootElement(*doc);
-    if (element_equal(*root, root_element_name) == false) {
-        char* message = g_strconcat("Expected the root element to be '", root_element_name, "'.  The actual response is: ", xml_blob->data, NULL);
-        xmlFreeDoc(*doc);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
-    }
-
-    return NULL;
-}
-
 
 ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** _response) {
     ds3_get_system_information_response* response;
@@ -816,40 +817,11 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
     xmlNodePtr root;
     xmlNodePtr sys_info_node;
     ds3_error* error;
-    GByteArray* xml_blob = g_byte_array_new();
 
-    error = _get_request_xml_nodes(client, request, xml_blob, &doc, &root, "Data");
+    error = _get_request_xml_nodes(client, request, &doc, &root, "Data");
     if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
         return error;
     }
-
-    /*
-    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    *doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if (doc == NULL) {
-        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
-    }
-
-    *root = xmlDocGetRootElement(*doc);
-    if (element_equal(*root, root_element_name) == false) {
-        char* message = g_strconcat("Expected the root element to be '", root_element_name, "'.  The actual response is: ", xml_blob->data, NULL);
-        xmlFreeDoc(*doc);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
-    }
-    */
 
     response = g_new0(ds3_get_system_information_response, 1);
     for (sys_info_node = root->xmlChildrenNode; sys_info_node != NULL; sys_info_node = sys_info_node->next) {
@@ -865,7 +837,6 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
     }
 
     xmlFreeDoc(doc);
-    g_byte_array_free(xml_blob, TRUE);
     *_response = response;
     return NULL;
 }
@@ -876,30 +847,9 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     xmlNodePtr root;
     xmlNodePtr child_node;
     ds3_error* error;
-    GByteArray* xml_blob = g_byte_array_new();
 
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
+    error = _get_request_xml_nodes(client, request, &doc, &root, "Data");
     if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
-    if (doc == NULL) {
-        char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
-        return error;
-    }
-
-    root = xmlDocGetRootElement(doc);
-    if (element_equal(root, "Data") == false) {
-        char* message = g_strconcat("Expected the root element to be 'Data'.  The actual response is: ", xml_blob->data, NULL);
-        xmlFreeDoc(doc);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
-        g_free(message);
         return error;
     }
 
@@ -913,7 +863,6 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     }
 
     xmlFreeDoc(doc);
-    g_byte_array_free(xml_blob, TRUE);
     *_response = response;
     return NULL;
 }
