@@ -46,6 +46,7 @@ BOOST_AUTO_TEST_CASE( empty_object ) {
 
     request = ds3_init_put_object_for_job("unit_test_bucket", "empty-directory/", 0, 0, NULL);
     error   = ds3_put_object(client, request, NULL, NULL);
+    ds3_free_request(request);
     handle_error(error);
 
     ds3_get_bucket_response* response;
