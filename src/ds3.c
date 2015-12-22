@@ -501,9 +501,9 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
             char* chomp_bucket = g_strndup(bucket_name, strlen(bucket_name)-1);
             escaped_bucket_name = escape_url(chomp_bucket);
             g_free(chomp_bucket);
-	} else {
-	    escaped_bucket_name = escape_url(bucket_name);
-	}
+        } else {
+            escaped_bucket_name = escape_url(bucket_name);
+        }
     }
     if (object_name != NULL) {
         escaped_object_name = escape_url_object_name(object_name);
@@ -1227,7 +1227,8 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
     ds3_string_multimap* return_headers;
     ds3_metadata* metadata = NULL;
 
-    if (num_chars_in_ds3_str(request->path, '/') < 2){
+    if (num_chars_in_ds3_str(request->path, '/') < 2
+       || '/' == request->path->value[request->path->size-1]) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
     }else if(g_ascii_strncasecmp(request->path->value, "//", 2) == 0){
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
