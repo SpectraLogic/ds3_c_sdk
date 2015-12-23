@@ -65,4 +65,3 @@ bool compare_hash(char* filename_1, char* filename_2) {
 
     return passed;
 }
-

@@ -2524,10 +2524,6 @@ void ds3_free_client(ds3_client* client) {
     g_free(client);
 }
 
-void ds3_free_bulk_object_list_from_request(ds3_request* _request) {
-    ds3_free_bulk_object_list(_request->object_list);
-}
-
 void ds3_free_request(ds3_request* _request) {
     struct _ds3_request* request;
     if (_request == NULL) {
