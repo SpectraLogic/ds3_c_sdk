@@ -130,8 +130,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     const char* bucket_name = "unit_test_bucket";
 
     const uint32_t num_files=5;
-    const char* books[num_files] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
-    object_list=ds3_convert_file_list(books, num_files);
+    object_list=default_object_list();
     
     request=populate_bulk_return_request(client, bucket_name, object_list);
     bulk_response=populate_bulk_return_response(client, request);
@@ -175,8 +174,6 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 }
 
 BOOST_AUTO_TEST_CASE( max_upload_size ) {
-    // clean up code
-    // add these changes to the normal bulk_get unit test
     // add changes to other bulk_gets
     ds3_request* request = NULL;
     ds3_error* error = NULL;
