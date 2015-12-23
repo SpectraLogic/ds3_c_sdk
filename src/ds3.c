@@ -754,7 +754,7 @@ static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, s
     return xml_get_bool(log, doc, (xmlNodePtr) attribute);
 }
 
-ds3_error* _get_request_xml_nodes(
+static ds3_error* _get_request_xml_nodes(
         const ds3_client* client,
         const ds3_request* request,
         xmlDocPtr* doc,
