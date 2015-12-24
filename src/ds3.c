@@ -17,7 +17,6 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -25,10 +24,12 @@
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 
+#include "ds3.h"
 #include "ds3_request.h"
+#include "ds3_string_multimap.h"
+#include "ds3_string_multimap_impl.h"
 #include "ds3_net.h"
 #include "ds3_utils.h"
-#include "ds3.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -56,30 +57,6 @@ typedef enum {
     BULK_DELETE,
     GET_PHYSICAL_PLACEMENT
 }object_list_type;
-
-void ds3_log_message(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...) {
-    if (log == NULL) {
-        return;
-    }
-
-    if (log->log_callback == NULL) {
-        fprintf(stderr, "ERROR: ds3_c_sdk - User supplied log_callback is null, failed to log message.\n");
-        return;
-    }
-
-    if (lvl <= log->log_lvl) {
-        va_list args;
-        char * log_message;
-
-        va_start(args, message);
-        log_message = g_strdup_vprintf(message, args);
-        va_end(args);
-
-        log->log_callback(log_message, log->user_data);
-
-        g_free(log_message);
-    }
-}
 
 void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data) {
     if (client == NULL) {
@@ -109,24 +86,30 @@ static void _ds3_free_metadata_entry(gpointer pointer) {
 }
 
 /*
- * This copies all the header values in the ds3_response_header struct so that they may be safely returned to the user
+ * This copies all the header values in the ds3_string_multimap_entry struct so that they may be safely returned to the user
  * without having to worry about if the data is freed internally.
  */
-static ds3_metadata_entry* ds3_metadata_entry_init(ds3_response_header* header) {
+static const char* METADATA_PREFIX = "x-amz-meta-";
+static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* header_entry) {
     guint i;
     ds3_str* header_value;
     GPtrArray* values = g_ptr_array_new();
     ds3_str* key_name;
+    ds3_str* full_key;
     ds3_metadata_entry* response = g_new0(ds3_metadata_entry, 1);
+    int metadata_prefix_length = strlen(METADATA_PREFIX);
 
-    for (i = 0; i < header->values->len; i++) {
-        header_value = (ds3_str*)g_ptr_array_index(header->values, i);
-        g_ptr_array_add(values, ds3_str_dup(header_value));
+    unsigned int num_values = ds3_string_multimap_entry_get_num_values(header_entry);
+    for (i = 0; i < num_values; i++) {
+        header_value = ds3_string_multimap_entry_get_value_by_index(header_entry, i);
+        g_ptr_array_add(values, header_value);
     }
 
-    key_name = ds3_str_init(header->key->value + 11);
+    full_key = ds3_string_multimap_entry_get_key(header_entry);
+    key_name = ds3_str_init(full_key->value + metadata_prefix_length);
+    ds3_str_free(full_key);
 
-    response->num_values = values->len;
+    response->num_values = num_values;
     response->name = key_name;
     response->values = (ds3_str**) g_ptr_array_free(values, FALSE);
     fprintf(stderr, "creating metadata entry of: %s\n", key_name->value);
@@ -139,12 +122,11 @@ static ds3_metadata_entry* ds3_metadata_entry_init(ds3_response_header* header) 
  *
  * All values should be copied from the struct to avoid memory issues
  */
-static ds3_metadata* _init_metadata(GHashTable* response_headers) {
+static ds3_metadata* _init_metadata(ds3_string_multimap* response_headers) {
     struct _ds3_metadata* metadata = g_new0(struct _ds3_metadata, 1);
     GHashTableIter iter;
     gpointer _key, _value;
-    char* key;
-    ds3_response_header* header;
+    ds3_str* key;
     ds3_metadata_entry* entry;
     metadata->metadata = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _ds3_free_metadata_entry);
 
@@ -152,14 +134,15 @@ static ds3_metadata* _init_metadata(GHashTable* response_headers) {
         fprintf(stderr, "response headers was null\n");
     }
 
-    g_hash_table_iter_init(&iter, response_headers);
-
+    //TODO refactor out glib: ds3_string_multimap needs a lookup_prefix()
+    g_hash_table_iter_init(&iter, ds3_string_multimap_get_hashtable(response_headers));
     while(g_hash_table_iter_next(&iter, &_key, &_value)) {
-        key = (char*) _key;
-        header = (ds3_response_header*) _value;
-        if (g_str_has_prefix(key, "x-amz-meta-")) {
-            entry = ds3_metadata_entry_init(header);
+        key = (ds3_str*) _key;
+        if (g_str_has_prefix(key->value, "x-amz-meta-")) {
+            ds3_string_multimap_entry* mm_entry = ds3_string_multimap_lookup(response_headers, key);
+            entry = ds3_metadata_entry_init(mm_entry);
             g_hash_table_insert(metadata->metadata, g_strdup(entry->name->value), entry);
+            ds3_string_multimap_entry_free(mm_entry);
         }
     }
 
@@ -231,54 +214,6 @@ ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* _metadata) {
     return result;
 }
 
-ds3_str* ds3_str_init(const char* string) {
-    size_t size = strlen(string);
-    return ds3_str_init_with_size(string, size);
-}
-
-ds3_str* ds3_str_init_with_size(const char* string, size_t size) {
-    ds3_str* str = g_new0(ds3_str, 1);
-    str->value = g_strndup(string, size);
-    str->size = size;
-    return str;
-}
-
-ds3_str* ds3_str_dup(const ds3_str* string) {
-    ds3_str* str = g_new0(ds3_str, 1);
-    str->value = g_strndup(string->value, string->size);
-    str->size = string->size;
-    return str;
-}
-
-char* ds3_str_value(const ds3_str* string) {
-    return string->value;
-}
-
-size_t ds3_str_size(const ds3_str* string) {
-    return string->size;
-}
-
-void ds3_str_free(ds3_str* string) {
-    if (string == NULL) return;
-
-    if (string->value != NULL) {
-        g_free(string->value);
-    }
-    g_free(string);
-}
-
-static ds3_str* _ds3_response_header_get_first(const ds3_response_header* header) {
-    return (ds3_str*)g_ptr_array_index(header->values, 0);
-}
-
-ds3_error* ds3_create_error(ds3_error_code code, const char * message) {
-    ds3_error* error = g_new0(ds3_error, 1);
-    error->code = code;
-    error->message = ds3_str_init(message);
-    error->error = NULL;
-    return error;
-}
-
 static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
     size_t to_read;
     size_t remaining;
@@ -295,14 +230,6 @@ static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* 
     strncpy((char*)buffer, xml_buff->buff + xml_buff->total_read, to_read);
     xml_buff->total_read += to_read;
     return to_read;
-}
-
-size_t ds3_load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    size_t realsize = size * nmemb;
-    GByteArray* blob = (GByteArray*) user_data;
-
-    g_byte_array_append(blob, (const guint8 *) buffer, realsize);
-    return realsize;
 }
 
 static void _cleanup_hash_value(gpointer value) {
@@ -330,6 +257,21 @@ ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key) {
     return creds;
 }
 
+void ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
+                                                                             const ds3_request* _request,
+                                                                             void* read_user_struct,
+                                                                             size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                                                             void* write_user_struct,
+                                                                             size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                                                             ds3_string_multimap** return_headers)) {
+    if (client == NULL) {
+        fprintf(stderr, "Cannot configure a null ds3_client for net_callback.\n");
+        return;
+    }
+
+    client->net_callback = net_callback;
+}
+
 ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
     ds3_client* client;
     if (endpoint == NULL) {
@@ -344,6 +286,9 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
     client->creds = creds;
 
     client->num_redirects = 5L; //default to 5 redirects before failing
+
+    ds3_client_register_net( client, net_process_request );
+
     return client;
 }
 
@@ -385,7 +330,11 @@ static void _set_map_value(GHashTable* map, const char* key, const char* value) 
     //TODO update this to handle multiple values being set for a header field
     gpointer escaped_value;
     if (value != NULL) {
-        escaped_value = (gpointer) escape_url(value);
+        if (g_strcmp0(key, "Range") == 0) {
+            escaped_value = (gpointer) escape_url_range_header(value);
+        } else {
+            escaped_value = (gpointer) escape_url(value);
+        }
     } else {
         escaped_value = NULL;
     }
@@ -426,6 +375,24 @@ void ds3_request_set_metadata(ds3_request* _request, const char* name, const cha
     _set_header(_request, prefixed_name, value);
 
     g_free(prefixed_name);
+}
+
+void ds3_request_reset_byte_range(ds3_request* _request) {
+    g_hash_table_remove(_request->headers, "Range");
+}
+
+void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd) {
+    char* range_value;
+    
+    gpointer header_value = g_hash_table_lookup(_request->headers, "Range");
+    if(header_value != NULL) {
+        range_value = g_strdup_printf("%s,%ld-%ld", (char*)header_value, rangeStart, rangeEnd);
+    } else {
+        range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
+    }
+    
+    _set_header(_request, "Range", range_value);
+    g_free(range_value);
 }
 
 void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
@@ -479,9 +446,10 @@ void ds3_request_set_marker(ds3_request* _request, const char* marker) {
 }
 
 void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
-    char max_keys_s[11];
-    memset(max_keys_s, 0, sizeof(char) * 11);
-    g_snprintf(max_keys_s, sizeof(char) * 11, "%u", max_keys);
+    int metadata_prefix_length = strlen(METADATA_PREFIX);
+    char max_keys_s[metadata_prefix_length];
+    memset(max_keys_s, 0, sizeof(char) * metadata_prefix_length);
+    g_snprintf(max_keys_s, sizeof(char) * metadata_prefix_length, "%u", max_keys);
     _set_query_param(_request, "max-keys", max_keys_s);
 }
 
@@ -543,20 +511,20 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     char* full_path = NULL;
 
     if (bucket_name != NULL) {
-        escaped_bucket_name = escape_url(bucket_name);
+        if (g_str_has_suffix(bucket_name, "/") == TRUE) {
+            char* chomp_bucket = g_strndup(bucket_name, strlen(bucket_name)-1);
+            escaped_bucket_name = escape_url(chomp_bucket);
+            g_free(chomp_bucket);
+        } else {
+            escaped_bucket_name = escape_url(bucket_name);
+        }
     }
     if (object_name != NULL) {
         escaped_object_name = escape_url_object_name(object_name);
     }
 
     joined_path = g_strjoin("/", escaped_bucket_name, escaped_object_name, NULL);
-    if (g_str_has_suffix(joined_path, "/") == TRUE) {
-        char* chomp_path = g_strndup(joined_path, strlen(joined_path)-1);
-        full_path = g_strconcat(path_prefix, chomp_path, NULL);
-        g_free(chomp_path);
-    } else {
-        full_path = g_strconcat(path_prefix, joined_path, NULL);
-    }
+    full_path = g_strconcat(path_prefix, joined_path, NULL);
     g_free(joined_path);
 
     path = ds3_str_init(full_path);
@@ -1270,10 +1238,11 @@ static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
 
 ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
     ds3_error* error;
-    GHashTable* return_headers;
+    ds3_string_multimap* return_headers;
     ds3_metadata* metadata = NULL;
 
-    if (num_chars_in_ds3_str(request->path, '/') < 2){
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
     }else if(g_ascii_strncasecmp(request->path->value, "//", 2) == 0){
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
@@ -1282,10 +1251,9 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
     error = net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
 
     if (error == NULL) {
-        fprintf(stderr, "Head object completed successfully\n");
         metadata = _init_metadata(return_headers);
         *_metadata = metadata;
-        g_hash_table_destroy(return_headers);
+        ds3_string_multimap_free(return_headers);
     }
 
     return error;
@@ -1305,16 +1273,15 @@ ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, 
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
     ds3_error* error;
-    GHashTable* return_headers;
+    ds3_string_multimap* return_headers;
     ds3_metadata* metadata;
 
     error = net_process_request(client, request, user_data, callback, NULL, NULL, &return_headers);
 
     if (error == NULL) {
-        fprintf(stderr, "Head object completed successfully\n");
         metadata = _init_metadata(return_headers);
         *_metadata = metadata;
-        g_hash_table_destroy(return_headers);
+        ds3_string_multimap_free(return_headers);
     }
 
     return error;
@@ -2124,14 +2091,15 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     GByteArray* xml_blob = g_byte_array_new();
     ds3_allocate_chunk_response* ds3_response = NULL;
     ds3_bulk_object_list* object_list = NULL;
-    GHashTable* response_headers = NULL;
-    ds3_response_header* retry_after_header;
+    ds3_string_multimap* response_headers = NULL;
+    ds3_string_multimap_entry* retry_after_header;
     xmlDocPtr doc;
     xmlNodePtr root;
 
     error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
+        ds3_string_multimap_free(response_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
@@ -2142,15 +2110,18 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (doc == NULL) {
         g_byte_array_free(xml_blob, TRUE);
-        retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        ds3_str* retry_str = ds3_str_init("Retry-After");
+        retry_after_header = ds3_string_multimap_lookup(response_headers, retry_str);
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = _ds3_response_header_get_first(retry_after_header);
+            ds3_str* retry_value = ds3_string_multimap_entry_get_value_by_index(retry_after_header, 0);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
         } else {
-            g_hash_table_destroy(response_headers);
+            ds3_string_multimap_free(response_headers);
+            ds3_str_free(retry_str);
             return ds3_create_error(DS3_ERROR_REQUEST_FAILED, "We did not get a response and did not find the 'Retry-After Header'");
         }
-        g_hash_table_destroy(response_headers);
+        ds3_string_multimap_free(response_headers);
+        ds3_str_free(retry_str);
         return NULL;
     }
 
@@ -2164,15 +2135,13 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
         error = ds3_create_error(DS3_ERROR_INVALID_XML, message);
         g_free(message);
         g_byte_array_free(xml_blob, TRUE);
-        g_hash_table_destroy(response_headers);
+        ds3_string_multimap_free(response_headers);
         return error;
     }
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    if (response_headers != NULL) {
-        g_hash_table_destroy(response_headers);
-    }
+    ds3_string_multimap_free(response_headers);
     *response = ds3_response;
     return NULL;
 }
@@ -2182,16 +2151,14 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_available_chunks_response* ds3_response;
     ds3_bulk_response* bulk_response;
-    GHashTable* response_headers = NULL;
-    ds3_response_header* retry_after_header;
+    ds3_string_multimap* response_headers = NULL;
+    ds3_string_multimap_entry* retry_after_header;
     xmlDocPtr doc;
 
     error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
-        if (response_headers != NULL) {
-            g_hash_table_destroy(response_headers);
-        }
+        ds3_string_multimap_free(response_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
@@ -2201,11 +2168,15 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     // Start processing the data that was received back.
     doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (response_headers != NULL) {
-        retry_after_header = (ds3_response_header*)g_hash_table_lookup(response_headers, "Retry-After");
+        ds3_str* retry_str = ds3_str_init("Retry-After");
+        retry_after_header = ds3_string_multimap_lookup(response_headers, retry_str);
         if (retry_after_header != NULL) {
-            ds3_str* retry_value = _ds3_response_header_get_first(retry_after_header);
+            ds3_str* retry_value = ds3_string_multimap_entry_get_value_by_index(retry_after_header, 0);
             ds3_response->retry_after = g_ascii_strtoull(retry_value->value, NULL, 10);
+            ds3_string_multimap_entry_free(retry_after_header);
+            ds3_str_free(retry_value);
         }
+        ds3_str_free(retry_str);
     }
 
     _parse_master_object_list(client->log, doc, &bulk_response);
@@ -2213,9 +2184,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    if (response_headers != NULL) {
-        g_hash_table_destroy(response_headers);
-    }
+    ds3_string_multimap_free(response_headers);
     *response = ds3_response;
     return NULL;
 }
@@ -2270,10 +2239,9 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
     ds3_error* error;
     GByteArray* xml_blob = g_byte_array_new();
     ds3_get_jobs_response* get_jobs_response = NULL;
-    GHashTable* response_headers = NULL;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
+    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
@@ -2289,9 +2257,6 @@ ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds
 
     xmlFreeDoc(doc);
     g_byte_array_free(xml_blob, TRUE);
-    if (response_headers != NULL) {
-        g_hash_table_destroy(response_headers);
-    }
     *response = get_jobs_response;
     return NULL;
 }

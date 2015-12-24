@@ -2,10 +2,10 @@
 #include <string.h>
 #include <unistd.h>
 #include "ds3.h"
+#include "ds3_net.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 #include "checksum.h"
-
 
 #define FILE_TEMPLATE "temp-resources-"
 
@@ -87,6 +87,59 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_availabl
     for (i = 0; i < max_file_index; i++) {
             printf("------Performing Data Integrity Test-------\n");
 	    results[i].passed=compare_hash(results[i].original_name, results[i].tmp_name);
+	    unlink(results[i].tmp_name);
+    }
+}
+
+void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_available_chunks_response* chunk_response, checksum_result* results, uint32_t segment_size){
+    uint64_t i, n, k;
+    uint64_t max_file_index = 0;
+    int64_t file_index = 0;
+    ds3_request* request = NULL;
+    ds3_error* error = NULL;
+
+    for (i = 0; i < chunk_response->object_list->list_size; i++) {
+        ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
+        for(n = 0; n < chunk_object_list->size; n++) {
+            FILE* w_file;
+            ds3_bulk_object current_obj = chunk_object_list->list[n];
+	    file_index = -1;
+	    for(k = 0; k < max_file_index; k++){
+	      if(g_strcmp0(current_obj.name->value, results[k].original_name) == 0){
+		file_index = k;
+		break;
+	      }
+	    }
+	    if(file_index == -1){
+                file_index=max_file_index;
+                max_file_index++;
+		
+		memcpy(results[file_index].tmp_name+5, current_obj.name->value, 64-5);
+		memcpy(results[file_index].tmp_name, FILE_TEMPLATE, 15);
+		
+		memcpy(results[file_index].original_name, current_obj.name->value, 64);
+	    }
+	    results[file_index].num_chunks++;
+	    
+            request = ds3_init_get_object_for_job(chunk_response->object_list->bucket_name->value, current_obj.name->value, current_obj.offset, chunk_response->object_list->job_id->value);
+            ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
+            ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
+	    
+            w_file = fopen(results[file_index].tmp_name, "a+");
+	    fseek(w_file, current_obj.offset, SEEK_SET);
+	    
+            error = ds3_get_object(client, request, w_file, ds3_write_to_file);
+            ds3_free_request(request);
+            fclose(w_file);
+            handle_error(error);
+        }
+    }
+
+    for (i = 0; i < max_file_index; i++) {
+            printf("------Performing Data Integrity Test-------\n");
+            bool check1 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size, 0);
+            bool check2 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size*3, segment_size);
+	    results[i].passed=check1 && check2;
 	    unlink(results[i].tmp_name);
     }
 }
@@ -174,7 +227,6 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 }
 
 BOOST_AUTO_TEST_CASE( max_upload_size ) {
-    // add changes to other bulk_gets
     ds3_request* request = NULL;
     ds3_error* error = NULL;
     ds3_bulk_response* completed_job = NULL;
@@ -231,6 +283,88 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     clear_bucket(client, bucket_name);
     free_client(client);
     handle_error(error);
+}
+
+BOOST_AUTO_TEST_CASE( partial_get ) {
+    ds3_request* request = NULL;
+    ds3_error* error = NULL;
+    ds3_bulk_response* completed_job = NULL;
+    ds3_bulk_response* bulk_response = NULL;
+    ds3_bulk_object_list* object_list = NULL;
+    ds3_get_available_chunks_response* chunk_response = NULL;
+
+    ds3_client* client = get_client();
+    const char* bucket_name = "unit_test_bucket";
+
+    const uint32_t num_files=5;
+    object_list=default_object_list();
+    
+    request=populate_bulk_return_request(client, bucket_name, object_list);
+    bulk_response=populate_bulk_return_response(client, request);
+    populate_with_objects_from_bulk(client, bucket_name, bulk_response);
+
+    request = ds3_init_get_bulk(bucket_name, object_list, NONE);
+    error = ds3_bulk(client, request, &bulk_response);
+
+    ds3_free_request(request);
+    ds3_free_bulk_object_list(object_list);
+
+    BOOST_REQUIRE(error == NULL);
+
+    chunk_response = ensure_available_chunks(client, bulk_response->job_id);
+
+    BOOST_REQUIRE(error == NULL);
+
+    checksum_result* checksum_results=(checksum_result*) calloc(num_files, sizeof(checksum_result));
+    checkChunkResponsePartials(client, num_files, chunk_response, checksum_results, 3200);
+    
+    BOOST_CHECK(check_all_passed(num_files, checksum_results) == true);
+    BOOST_CHECK(get_sum_of_chunks(num_files, checksum_results) == num_files);
+    
+    free(checksum_results);
+
+    // check to make sure that the 'job' has completed
+    request = ds3_init_get_job(bulk_response->job_id->value);
+    error = ds3_get_job(client, request, &completed_job);
+
+    BOOST_CHECK(completed_job != NULL);
+    BOOST_CHECK(completed_job->status == COMPLETED);
+
+    ds3_free_request(request);
+    ds3_free_available_chunks_response(chunk_response);
+    ds3_free_bulk_response(completed_job);
+    ds3_free_bulk_response(bulk_response);
+
+    clear_bucket(client, bucket_name);
+    free_client(client);
+    handle_error(error);
+}
+
+BOOST_AUTO_TEST_CASE( escape_urls ) {
+    const char *delimiters[4]={"or", "/", "@", "="};
+    const char *strings_to_test[5]={"some normal text", "/an/object/name", "bytes=0-255,300-400,550-800", "orqwerty/qwerty@qwerty=", "`1234567890-=~!@#$%^&*()_+[]\{}|;:,./<>?"}; 
+    const char *object_name_results[5]={"some%20normal%20text", "/an/object/name", "bytes%3D0-255%2C300-400%2C550-800", "orqwerty/qwerty%40qwerty%3D",
+                                        "%601234567890-%3D~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
+    const char *range_header_results[5]={"some%20normal%20text", "%2Fan%2Fobject%2Fname", "bytes=0-255,300-400,550-800", "orqwerty%2Fqwerty%40qwerty=",
+                                         "%601234567890-=~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A,.%2F%3C%3E%3F"};
+    const char *general_delimiter_results[5]={"some%20normal%20text", "/an/object/name", "bytes=0-255%2C300-400%2C550-800", "orqwerty/qwerty@qwerty=",
+                                              "%601234567890-=~%21@%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
+
+    for(int i=0; i<5; i++) {
+        char* escaped_url = escape_url_object_name(strings_to_test[i]);
+        BOOST_CHECK(strcmp(escaped_url, object_name_results[i]) == 0);
+        free(escaped_url);
+    }
+    for(int i=0; i<5; i++) {
+        char* escaped_url = escape_url_range_header(strings_to_test[i]);
+        BOOST_CHECK(strcmp(escaped_url, range_header_results[i]) == 0);
+        free(escaped_url);
+    }
+    for(int i=0; i<5; i++) {
+        char* escaped_url = escape_url_extended(strings_to_test[i], delimiters, 4);
+        BOOST_CHECK(strcmp(escaped_url, general_delimiter_results[i]) == 0);
+        free(escaped_url);
+    }
 }
 
 BOOST_AUTO_TEST_CASE( convert_list_helper ) {

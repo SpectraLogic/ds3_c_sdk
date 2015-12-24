@@ -1,3 +1,18 @@
+/*
+ * ******************************************************************************
+ *   Copyright 2014-2015 Spectra Logic Corporation. All Rights Reserved.
+ *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+ *   this file except in compliance with the License. A copy of the License is located at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file.
+ *   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ *   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ *   specific language governing permissions and limitations under the License.
+ * ****************************************************************************
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -6,41 +21,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "ds3.h"
-
-/*
-* Prints the contents of an error to stdout
-*/
-void print_error(const ds3_error* error) {
-      printf("ds3_error_message: %s\n", error->message->value);
-      if (error->error != NULL) {
-          printf("ds3_status_code: %lu\n", error->error->status_code);
-          printf("ds3_status_message: %s\n", error->error->status_message->value);
-          printf("ds3_error_body: %s\n", error->error->error_body->value);
-      }
-}
-
-/*
-* Prints an error if it is not null and exits the process with return code 1
-*/ 
-void handle_error(ds3_error* error) {
-    if (error != NULL) {
-        print_error(error);
-        ds3_free_error(error);
-        exit(1);
-    }
-}
+#include "samples.h"
 
 int main(void) {
       
     // The bucket the files will be stored in      
-    const char* bucket_name = "put_sample";
+    const char* bucket_name = BUCKETNAME;
     
     // A list of files to bulk put
-    const char* books[4] ={"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt"};
+    const char* books[4] = BOOKS;
 
     // Get a client instance which uses the environment variables to get the endpoint and credentials
     ds3_client* client;
     ds3_request* request;
+    ds3_error* error;
     ds3_bulk_object_list* obj_list;
     ds3_get_available_chunks_response* chunks_response;
     ds3_bulk_response* response;
@@ -51,7 +45,7 @@ int main(void) {
     FILE* obj_file;
     
     // Create a client from environment variables
-    ds3_error* error = ds3_create_client_from_env(&client);
+    error = ds3_create_client_from_env(&client);
     handle_error(error);
 
     // Create a bucket where our files will be stored

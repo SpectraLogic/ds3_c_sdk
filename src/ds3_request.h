@@ -16,6 +16,10 @@
 #ifndef __DS3_REQUEST_H__
 #define __DS3_REQUEST_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <glib.h>
 #include "ds3.h"
 
@@ -34,5 +38,22 @@ struct _ds3_request{
     ds3_chunk_ordering    chunk_ordering;
 };
 
-#endif
+typedef struct {
+    // These attributes are used when processing a response header
+    uint64_t status_code;
+    ds3_str* status_message;
+    size_t header_count;
+    //GHashTable* headers;
+    ds3_string_multimap* headers;
 
+    // These attributes are used when processing a response body
+    GByteArray* body; // this will only be used when getting errors
+    void* user_data;
+    size_t (*user_func)(void*, size_t, size_t, void*);
+}ds3_response_data;
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif
