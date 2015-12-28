@@ -457,7 +457,7 @@ void ds3_request_set_preferred_number_of_chunks(ds3_request* _request, uint32_t 
     char num_chunks_s[11];
     memset(num_chunks_s, 0, sizeof(char) * 11);
     g_snprintf(num_chunks_s, sizeof(char) * 11, "%u", num_chunks);
-    _set_query_param(_request, "preferred_num_of_chunks", num_chunks_s);
+    _set_query_param(_request, "preferred_number_of_chunks", num_chunks_s);
 }
 
 void ds3_request_set_max_upload_size(ds3_request* _request, uint32_t max_upload_size) {

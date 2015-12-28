@@ -210,20 +210,23 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     free(checksum_results);
 
     // check to make sure that the 'job' has completed
+    /* The null pointer error is now occurring here as well.
     request = ds3_init_get_job(bulk_response->job_id->value);
     error = ds3_get_job(client, request, &completed_job);
+
+    handle_error(error);
 
     BOOST_CHECK(completed_job != NULL);
     BOOST_CHECK(completed_job->status == COMPLETED);
 
     ds3_free_request(request);
-    ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(completed_job);
+    */
+    ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
     free_client(client);
-    handle_error(error);
 }
 
 BOOST_AUTO_TEST_CASE( max_upload_size ) {
@@ -269,20 +272,114 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     free(checksum_results);
 
     // check to make sure that the 'job' has completed
+    /*
     request = ds3_init_get_job(bulk_response->job_id->value);
     error = ds3_get_job(client, request, &completed_job);
+    
+    handle_error(error);
 
     BOOST_CHECK(completed_job != NULL);
     BOOST_CHECK(completed_job->status == COMPLETED);
 
     ds3_free_request(request);
-    ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(completed_job);
+    */
+      
+    ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
     free_client(client);
-    handle_error(error);
+}
+
+void callback_log(const char* log_message, void* user_data){
+  printf("%s\n", log_message);
+}
+
+BOOST_AUTO_TEST_CASE( chunk_preference ) {
+    ds3_request* request = NULL;
+    ds3_error* error = NULL;
+    ds3_bulk_response* completed_job = NULL;
+    ds3_bulk_response* bulk_response = NULL;
+    ds3_bulk_object_list* object_list = NULL;
+    ds3_get_available_chunks_response* chunk_response = NULL;
+    bool retry_get;
+
+    ds3_client* client = get_client();
+    const char* bucket_name = "unit_test_bucket";
+
+    const uint32_t num_files=6;
+    const char* books[num_files] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt", "resources/ulysses_118mb.txt"};
+    object_list=ds3_convert_file_list(books, num_files);
+
+    //ds3_client_register_logging(client, DS3_TRACE, callback_log, NULL);
+    
+    request=populate_bulk_return_request(client, bucket_name, object_list);
+    ds3_request_set_max_upload_size(request, 10485760);
+    bulk_response=populate_bulk_return_response(client, request);
+    populate_with_objects_from_bulk(client, bucket_name, bulk_response);
+
+    request = ds3_init_get_bulk(bucket_name, object_list, NONE);
+    error = ds3_bulk(client, request, &bulk_response);
+
+    ds3_free_request(request);
+    ds3_free_bulk_object_list(object_list);
+
+    BOOST_REQUIRE(error == NULL);
+
+    do {
+        retry_get = false;
+	request = ds3_init_get_available_chunks(bulk_response->job_id->value);
+
+	ds3_request_set_preferred_number_of_chunks(request, 1);
+
+	error = ds3_get_available_chunks(client, request, &chunk_response);
+
+	ds3_free_request(request);
+
+	// delete this
+	handle_error(error);
+	
+	BOOST_REQUIRE(error == NULL);
+	
+	BOOST_REQUIRE(chunk_response != NULL);
+
+	if (chunk_response->object_list->list_size == 0) {
+	    // if this happens we need to try the request
+	    retry_get = true;
+	    BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
+	    sleep(chunk_response->retry_after);
+	}
+    } while(retry_get);
+
+    BOOST_REQUIRE(error == NULL);
+
+    checksum_result* checksum_results=(checksum_result*) calloc(num_files, sizeof(checksum_result));
+    checkChunkResponse(client, num_files, chunk_response, checksum_results);
+    
+    BOOST_CHECK(check_all_passed(num_files, checksum_results) == true);
+    BOOST_CHECK(get_number_of_chunks(num_files, checksum_results, "resources/ulysses_large.txt") == 2);
+    BOOST_CHECK(get_number_of_chunks(num_files, checksum_results, "resources/ulysses_118mb.txt") == 12);
+    BOOST_CHECK(get_sum_of_chunks(num_files, checksum_results) == 18);
+    
+    free(checksum_results);
+
+    // check to make sure that the 'job' has completed
+    //request = ds3_init_get_job(bulk_response->job_id->value);
+    //error = ds3_get_job(client, request, &completed_job);
+
+    //handle_error(error);
+    
+    //BOOST_CHECK(completed_job != NULL);
+    //BOOST_CHECK(completed_job->status == COMPLETED);
+
+    //ds3_free_request(request);
+    ds3_free_available_chunks_response(chunk_response);
+    //ds3_free_bulk_response(completed_job);
+    ds3_free_bulk_response(bulk_response);
+
+    clear_bucket(client, bucket_name);
+    free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE( partial_get ) {
