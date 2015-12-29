@@ -73,14 +73,14 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
 
     for (i = 0; i < bucket_response->num_objects; i++) {
         if (bucket_response->objects[i].name->value[bucket_response->objects[i].name->size-1] == '/') {
-	    request = ds3_init_delete_folder(bucket_name, bucket_response->objects[i].name->value);
-	    error = ds3_delete_folder(client, request);
-	    ds3_free_request(request);
-	}else{
-	    request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
-	    error = ds3_delete_object(client, request);
-	    ds3_free_request(request);
-	}
+            request = ds3_init_delete_folder(bucket_name, bucket_response->objects[i].name->value);
+            error = ds3_delete_folder(client, request);
+            ds3_free_request(request);
+        }else{
+            request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
+            error = ds3_delete_object(client, request);
+            ds3_free_request(request);
+        }
 
         if (error != NULL) {
             fprintf(stderr, "Failed to delete object %s\n", bucket_response->objects[i].name->value);
@@ -143,23 +143,23 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
     ds3_get_available_chunks_response* chunk_response;
     do {
         retry_get = false;
-	request = ds3_init_get_available_chunks(job_id->value);
+        request = ds3_init_get_available_chunks(job_id->value);
 
-	error = ds3_get_available_chunks(client, request, &chunk_response);
+        error = ds3_get_available_chunks(client, request, &chunk_response);
 
-	ds3_free_request(request);
-	  
-	BOOST_REQUIRE(error == NULL);
-	
-	BOOST_REQUIRE(chunk_response != NULL);
+        ds3_free_request(request);
+          
+        BOOST_REQUIRE(error == NULL);
+        
+        BOOST_REQUIRE(chunk_response != NULL);
 
-	if (chunk_response->object_list->list_size == 0) {
-	    // if this happens we need to try the request
-	    retry_get = true;
-	    BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
-	    sleep(chunk_response->retry_after);
-	    ds3_free_available_chunks_response(chunk_response);
-	}
+        if (chunk_response->object_list->list_size == 0) {
+            // if this happens we need to try the request
+            retry_get = true;
+            BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
+            sleep(chunk_response->retry_after);
+            ds3_free_available_chunks_response(chunk_response);
+        }
     } while(retry_get);
     return chunk_response;
 }

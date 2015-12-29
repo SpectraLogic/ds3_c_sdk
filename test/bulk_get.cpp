@@ -11,10 +11,10 @@
 
 
 struct checksum_result {
-  char original_name[64];
-  char tmp_name[64];
-  int num_chunks;
-  bool passed;
+    char original_name[64];
+    char tmp_name[64];
+    int num_chunks;
+    bool passed;
 };
 
 bool check_all_passed(uint32_t num_files, checksum_result* results){
@@ -27,9 +27,9 @@ bool check_all_passed(uint32_t num_files, checksum_result* results){
 
 uint32_t get_number_of_chunks(uint32_t num_files, checksum_result* results, const char* filename){
     for(uint32_t i=0; i<num_files; i++){
-      if(g_strcmp0(results[i].original_name, filename)==0){
-        return results[i].num_chunks;
-      }
+        if(g_strcmp0(results[i].original_name, filename)==0){
+            return results[i].num_chunks;
+        }
     }
     return 0;
 }
@@ -47,18 +47,18 @@ uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_nam
     int64_t file_index = -1;
     for(k = 0; k < *max_file_index; k++){
         if(g_strcmp0(current_obj_name->value, results[k].original_name) == 0){
-  	    file_index = k;
-	    break;
-	}
+            file_index = k;
+            break;
+        }
     }
     if(file_index == -1){
         file_index=*max_file_index;
-	(*max_file_index)++;
-		
-	memcpy(results[file_index].tmp_name+5, current_obj_name->value, 64-5);
-	memcpy(results[file_index].tmp_name, FILE_TEMPLATE, 15);
-	
-	memcpy(results[file_index].original_name, current_obj_name->value, 64);
+        (*max_file_index)++;
+                
+        memcpy(results[file_index].tmp_name+5, current_obj_name->value, 64-5);
+        memcpy(results[file_index].tmp_name, FILE_TEMPLATE, 15);
+        
+        memcpy(results[file_index].original_name, current_obj_name->value, 64);
     }
     results[file_index].num_chunks++;
     return file_index;
@@ -76,13 +76,13 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_availabl
         for(n = 0; n < chunk_object_list->size; n++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
-	    file_index=getFileIndexForChunk(&max_file_index, current_obj.name, results);
-	    
+            file_index=getFileIndexForChunk(&max_file_index, current_obj.name, results);
+            
             request = ds3_init_get_object_for_job(chunk_response->object_list->bucket_name->value, current_obj.name->value, current_obj.offset, chunk_response->object_list->job_id->value);
-	    
+            
             w_file = fopen(results[file_index].tmp_name, "a+");
-	    fseek(w_file, current_obj.offset, SEEK_SET);
-	    
+            fseek(w_file, current_obj.offset, SEEK_SET);
+            
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
             fclose(w_file);
@@ -92,8 +92,8 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_availabl
 
     for (i = 0; i < max_file_index; i++) {
         printf("------Performing Data Integrity Test-------\n");
-	results[i].passed=compare_hash(results[i].original_name, results[i].tmp_name);
-	unlink(results[i].tmp_name);
+        results[i].passed=compare_hash(results[i].original_name, results[i].tmp_name);
+        unlink(results[i].tmp_name);
     }
 }
 
@@ -109,15 +109,15 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_
         for(n = 0; n < chunk_object_list->size; n++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
-	    file_index=getFileIndexForChunk(&max_file_index, current_obj.name, results);
-	    
+            file_index=getFileIndexForChunk(&max_file_index, current_obj.name, results);
+            
             request = ds3_init_get_object_for_job(chunk_response->object_list->bucket_name->value, current_obj.name->value, current_obj.offset, chunk_response->object_list->job_id->value);
             ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
             ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
-	    
+            
             w_file = fopen(results[file_index].tmp_name, "a+");
-	    fseek(w_file, current_obj.offset, SEEK_SET);
-	    
+            fseek(w_file, current_obj.offset, SEEK_SET);
+            
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
             fclose(w_file);
@@ -127,10 +127,10 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_
 
     for (i = 0; i < max_file_index; i++) {
         printf("------Performing Data Integrity Test-------\n");
-	bool check1 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size, 0);
-	bool check2 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size*3, segment_size);
-	results[i].passed=check1 && check2;
-	unlink(results[i].tmp_name);
+        bool check1 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size, 0);
+        bool check2 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size*3, segment_size);
+        results[i].passed=check1 && check2;
+        unlink(results[i].tmp_name);
     }
 }
 
