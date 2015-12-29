@@ -42,8 +42,30 @@ uint32_t get_sum_of_chunks(uint32_t num_files, checksum_result* results){
     return result;
 }
 
+uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_name, checksum_result* results){
+    uint64_t k;
+    int64_t file_index = -1;
+    for(k = 0; k < *max_file_index; k++){
+        if(g_strcmp0(current_obj_name->value, results[k].original_name) == 0){
+  	    file_index = k;
+	    break;
+	}
+    }
+    if(file_index == -1){
+        file_index=*max_file_index;
+	(*max_file_index)++;
+		
+	memcpy(results[file_index].tmp_name+5, current_obj_name->value, 64-5);
+	memcpy(results[file_index].tmp_name, FILE_TEMPLATE, 15);
+	
+	memcpy(results[file_index].original_name, current_obj_name->value, 64);
+    }
+    results[file_index].num_chunks++;
+    return file_index;
+}
+
 void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_available_chunks_response* chunk_response, checksum_result* results){
-    uint64_t i, n, k;
+    uint64_t i, n;
     uint64_t max_file_index = 0;
     int64_t file_index = 0;
     ds3_request* request = NULL;
@@ -54,23 +76,7 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_availabl
         for(n = 0; n < chunk_object_list->size; n++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
-	    file_index = -1;
-	    for(k = 0; k < max_file_index; k++){
-	      if(g_strcmp0(current_obj.name->value, results[k].original_name) == 0){
-		file_index = k;
-		break;
-	      }
-	    }
-	    if(file_index == -1){
-                file_index=max_file_index;
-                max_file_index++;
-		
-		memcpy(results[file_index].tmp_name+5, current_obj.name->value, 64-5);
-		memcpy(results[file_index].tmp_name, FILE_TEMPLATE, 15);
-		
-		memcpy(results[file_index].original_name, current_obj.name->value, 64);
-	    }
-	    results[file_index].num_chunks++;
+	    file_index=getFileIndexForChunk(&max_file_index, current_obj.name, results);
 	    
             request = ds3_init_get_object_for_job(chunk_response->object_list->bucket_name->value, current_obj.name->value, current_obj.offset, chunk_response->object_list->job_id->value);
 	    
@@ -85,14 +91,14 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_availabl
     }
 
     for (i = 0; i < max_file_index; i++) {
-            printf("------Performing Data Integrity Test-------\n");
-	    results[i].passed=compare_hash(results[i].original_name, results[i].tmp_name);
-	    unlink(results[i].tmp_name);
+        printf("------Performing Data Integrity Test-------\n");
+	results[i].passed=compare_hash(results[i].original_name, results[i].tmp_name);
+	unlink(results[i].tmp_name);
     }
 }
 
 void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_available_chunks_response* chunk_response, checksum_result* results, uint32_t segment_size){
-    uint64_t i, n, k;
+    uint64_t i, n;
     uint64_t max_file_index = 0;
     int64_t file_index = 0;
     ds3_request* request = NULL;
@@ -103,23 +109,7 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_
         for(n = 0; n < chunk_object_list->size; n++) {
             FILE* w_file;
             ds3_bulk_object current_obj = chunk_object_list->list[n];
-	    file_index = -1;
-	    for(k = 0; k < max_file_index; k++){
-	      if(g_strcmp0(current_obj.name->value, results[k].original_name) == 0){
-		file_index = k;
-		break;
-	      }
-	    }
-	    if(file_index == -1){
-                file_index=max_file_index;
-                max_file_index++;
-		
-		memcpy(results[file_index].tmp_name+5, current_obj.name->value, 64-5);
-		memcpy(results[file_index].tmp_name, FILE_TEMPLATE, 15);
-		
-		memcpy(results[file_index].original_name, current_obj.name->value, 64);
-	    }
-	    results[file_index].num_chunks++;
+	    file_index=getFileIndexForChunk(&max_file_index, current_obj.name, results);
 	    
             request = ds3_init_get_object_for_job(chunk_response->object_list->bucket_name->value, current_obj.name->value, current_obj.offset, chunk_response->object_list->job_id->value);
             ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
@@ -136,39 +126,12 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_
     }
 
     for (i = 0; i < max_file_index; i++) {
-            printf("------Performing Data Integrity Test-------\n");
-            bool check1 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size, 0);
-            bool check2 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size*3, segment_size);
-	    results[i].passed=check1 && check2;
-	    unlink(results[i].tmp_name);
+        printf("------Performing Data Integrity Test-------\n");
+	bool check1 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size, 0);
+	bool check2 = compare_hash_extended(results[i].original_name, results[i].tmp_name, segment_size, segment_size*3, segment_size);
+	results[i].passed=check1 && check2;
+	unlink(results[i].tmp_name);
     }
-}
-
-ds3_get_available_chunks_response* ensure_available_chunks(ds3_client* client, ds3_str* job_id){
-    ds3_request* request = NULL;
-    ds3_error* error = NULL;
-    bool retry_get;
-    ds3_get_available_chunks_response* chunk_response;
-    do {
-        retry_get = false;
-	request = ds3_init_get_available_chunks(job_id->value);
-
-	error = ds3_get_available_chunks(client, request, &chunk_response);
-
-	ds3_free_request(request);
-	  
-	BOOST_REQUIRE(error == NULL);
-	
-	BOOST_REQUIRE(chunk_response != NULL);
-
-	if (chunk_response->object_list->list_size == 0) {
-	    // if this happens we need to try the request
-	    retry_get = true;
-	    BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
-	    sleep(chunk_response->retry_after);
-	}
-    } while(retry_get);
-    return chunk_response;
 }
 
 BOOST_AUTO_TEST_CASE( bulk_get ) {
@@ -176,18 +139,14 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     ds3_error* error = NULL;
     ds3_bulk_response* completed_job = NULL;
     ds3_bulk_response* bulk_response = NULL;
-    ds3_bulk_object_list* object_list = NULL;
+    const uint32_t num_files=5;
+    ds3_bulk_object_list* object_list = default_object_list();
     ds3_get_available_chunks_response* chunk_response = NULL;
 
     ds3_client* client = get_client();
     const char* bucket_name = "unit_test_bucket";
 
-    const uint32_t num_files=5;
-    object_list=default_object_list();
-    
-    request=populate_bulk_return_request(client, bucket_name, object_list);
-    bulk_response=populate_bulk_return_response(client, request);
-    populate_with_objects_from_bulk(client, bucket_name, bulk_response);
+    populate_with_objects(client, bucket_name);
 
     request = ds3_init_get_bulk(bucket_name, object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
@@ -248,6 +207,7 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     ds3_request_set_max_upload_size(request, 10485760);
     bulk_response=populate_bulk_return_response(client, request);
     populate_with_objects_from_bulk(client, bucket_name, bulk_response);
+    ds3_free_bulk_response(bulk_response);
 
     request = ds3_init_get_bulk(bucket_name, object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);
@@ -297,6 +257,7 @@ void callback_log(const char* log_message, void* user_data){
 }
 
 BOOST_AUTO_TEST_CASE( chunk_preference ) {
+    uint64_t i, n;
     ds3_request* request = NULL;
     ds3_error* error = NULL;
     ds3_bulk_response* completed_job = NULL;
@@ -317,29 +278,17 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
     request=populate_bulk_return_request(client, bucket_name, object_list);
     ds3_request_set_max_upload_size(request, 10485760);
     bulk_response=populate_bulk_return_response(client, request);
-    populate_with_objects_from_bulk(client, bucket_name, bulk_response);
-
-    request = ds3_init_get_bulk(bucket_name, object_list, NONE);
-    error = ds3_bulk(client, request, &bulk_response);
-
-    ds3_free_request(request);
-    ds3_free_bulk_object_list(object_list);
-
-    BOOST_REQUIRE(error == NULL);
 
     do {
         retry_get = false;
 	request = ds3_init_get_available_chunks(bulk_response->job_id->value);
-
-	ds3_request_set_preferred_number_of_chunks(request, 1);
+	
+        ds3_request_set_preferred_number_of_chunks(request, 1);
 
 	error = ds3_get_available_chunks(client, request, &chunk_response);
 
 	ds3_free_request(request);
-
-	// delete this
-	handle_error(error);
-	
+	  
 	BOOST_REQUIRE(error == NULL);
 	
 	BOOST_REQUIRE(chunk_response != NULL);
@@ -349,10 +298,39 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
 	    retry_get = true;
 	    BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
 	    sleep(chunk_response->retry_after);
+	    ds3_free_available_chunks_response(chunk_response);
 	}
     } while(retry_get);
+    
+    for (i = 0; i < chunk_response->object_list->list_size; i++) {
+        ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
+        for(n = 0; n < chunk_object_list->size; n++) {
+            ds3_bulk_object current_obj = chunk_object_list->list[n];
+            FILE* file = fopen(current_obj.name->value, "r");
+
+            request = ds3_init_put_object_for_job(bucket_name, current_obj.name->value, current_obj.offset,  current_obj.length, bulk_response->job_id->value);
+            if (current_obj.offset > 0) {
+                fseek(file, current_obj.offset, SEEK_SET);
+            }
+            error = ds3_put_object(client, request, file, ds3_read_from_file);
+            ds3_free_request(request);
+            
+            fclose(file);
+            handle_error(error);
+        }
+    }
+    ds3_free_available_chunks_response(chunk_response);
+    ds3_free_bulk_response(bulk_response);
+
+    request = ds3_init_get_bulk(bucket_name, object_list, NONE);
+    error = ds3_bulk(client, request, &bulk_response);
+
+    ds3_free_request(request);
+    ds3_free_bulk_object_list(object_list);
 
     BOOST_REQUIRE(error == NULL);
+    
+    chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
     checksum_result* checksum_results=(checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -374,8 +352,8 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
     //BOOST_CHECK(completed_job->status == COMPLETED);
 
     //ds3_free_request(request);
-    ds3_free_available_chunks_response(chunk_response);
     //ds3_free_bulk_response(completed_job);
+    ds3_free_available_chunks_response(chunk_response);
     ds3_free_bulk_response(bulk_response);
 
     clear_bucket(client, bucket_name);
@@ -387,18 +365,14 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
     ds3_error* error = NULL;
     ds3_bulk_response* completed_job = NULL;
     ds3_bulk_response* bulk_response = NULL;
-    ds3_bulk_object_list* object_list = NULL;
+    const uint32_t num_files=5;
+    ds3_bulk_object_list* object_list = default_object_list();
     ds3_get_available_chunks_response* chunk_response = NULL;
 
     ds3_client* client = get_client();
     const char* bucket_name = "unit_test_bucket";
 
-    const uint32_t num_files=5;
-    object_list=default_object_list();
-    
-    request=populate_bulk_return_request(client, bucket_name, object_list);
-    bulk_response=populate_bulk_return_response(client, request);
-    populate_with_objects_from_bulk(client, bucket_name, bulk_response);
+    populate_with_objects(client, bucket_name);
 
     request = ds3_init_get_bulk(bucket_name, object_list, NONE);
     error = ds3_bulk(client, request, &bulk_response);

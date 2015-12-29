@@ -136,7 +136,7 @@ ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucke
 }
 
 
-ds3_get_available_chunks_response* ensure_available_chunks2(const ds3_client* client, ds3_str* job_id){
+ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* client, ds3_str* job_id){
     ds3_request* request = NULL;
     ds3_error* error = NULL;
     bool retry_get;
@@ -158,6 +158,7 @@ ds3_get_available_chunks_response* ensure_available_chunks2(const ds3_client* cl
 	    retry_get = true;
 	    BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
 	    sleep(chunk_response->retry_after);
+	    ds3_free_available_chunks_response(chunk_response);
 	}
     } while(retry_get);
     return chunk_response;
@@ -165,48 +166,29 @@ ds3_get_available_chunks_response* ensure_available_chunks2(const ds3_client* cl
 
 void populate_with_objects_from_bulk(const ds3_client* client, const char* bucket_name, ds3_bulk_response* response){
     uint64_t i, n;
-    //ds3_allocate_chunk_response* chunk_response;
     ds3_error* error;
     ds3_request* request;
 
-    // do the ensure chunks thing here?
-    // so that we get the correct chunk response back
-    ds3_get_available_chunks_response* chunk_response=ensure_available_chunks2(client, response->job_id);
+    ds3_get_available_chunks_response* chunk_response=ensure_available_chunks(client, response->job_id);
     
-    //    for (n = 0; n < response->list_size; n ++) {
-      //      ds3_request* request = ds3_init_allocate_chunk(response->list[n]->chunk_id->value);
-
-      //error = ds3_allocate_chunk(client, request, &chunk_response);
-
-    //      ds3_free_request(request);
-
-    // handle_error(error);
-    /*
-      BOOST_REQUIRE(chunk_response->retry_after == 0);
-      BOOST_REQUIRE(chunk_response->objects != NULL);
-      for (i = 0; i < chunk_response->objects->size; i++) {
-      ds3_bulk_object bulk_object = chunk_response->objects->list[i];*/
-
-	  
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
         for(n = 0; n < chunk_object_list->size; n++) {
             ds3_bulk_object current_obj = chunk_object_list->list[n];
-          FILE* file = fopen(current_obj.name->value, "r");
+            FILE* file = fopen(current_obj.name->value, "r");
 
-          request = ds3_init_put_object_for_job(bucket_name, current_obj.name->value, current_obj.offset,  current_obj.length, response->job_id->value);
-          if (current_obj.offset > 0) {
-              fseek(file, current_obj.offset, SEEK_SET);
-          }
-          error = ds3_put_object(client, request, file, ds3_read_from_file);
-          ds3_free_request(request);
-
-          fclose(file);
-          handle_error(error);
-      }
+            request = ds3_init_put_object_for_job(bucket_name, current_obj.name->value, current_obj.offset,  current_obj.length, response->job_id->value);
+            if (current_obj.offset > 0) {
+                fseek(file, current_obj.offset, SEEK_SET);
+            }
+            error = ds3_put_object(client, request, file, ds3_read_from_file);
+            ds3_free_request(request);
+            
+            fclose(file);
+            handle_error(error);
+        }
     }
-      //      ds3_free_allocate_chunk_response(chunk_response);
-      //}
+    ds3_free_available_chunks_response(chunk_response);
 }
 
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
