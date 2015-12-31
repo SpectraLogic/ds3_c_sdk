@@ -19,6 +19,5 @@ bool contains_object(const ds3_object* objects, uint64_t num_objects, const char
 void handle_error(ds3_error* error);
 void free_client(ds3_client* client);
 
-// remove?
 ds3_bulk_object_list* default_object_list();
 #endif
