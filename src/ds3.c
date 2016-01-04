@@ -786,15 +786,6 @@ static ds3_error* _get_request_xml_nodes(
     }
 
     root = xmlDocGetRootElement(doc);
-    /*
-    if (root == NULL || root->xmlChildrenNode == NULL) {
-        printf("FOUND NULL NODE\n");
-        xmlFreeDoc(doc);
-        g_byte_array_free(xml_blob, TRUE);
-        ds3_error* error = ds3_create_error(DS3_ERROR_INVALID_XML, "No children nodes in response.");
-        return error;
-    }
-    */
     if (element_equal(root, root_element_name) == false) {
         char* message = g_strconcat("Expected the root element to be '", root_element_name, "'.  The actual response is: ", xml_blob->data, NULL);
         xmlFreeDoc(doc);
