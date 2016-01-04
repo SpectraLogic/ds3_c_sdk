@@ -821,7 +821,6 @@ static void _parse_build_information(const ds3_log* log, xmlDocPtr doc, xmlNodeP
     *_build_info_response = build_info_response;
 }
 
-
 ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_request* request, ds3_get_system_information_response** _response) {
     ds3_get_system_information_response* response;
     xmlDocPtr doc;
