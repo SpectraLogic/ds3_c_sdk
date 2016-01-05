@@ -385,7 +385,7 @@ void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64
     char* range_value;
     
     gpointer header_value = g_hash_table_lookup(_request->headers, "Range");
-    if(header_value != NULL) {
+    if (header_value != NULL) {
         range_value = g_strdup_printf("%s,%ld-%ld", (char*)header_value, rangeStart, rangeEnd);
     } else {
         range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);

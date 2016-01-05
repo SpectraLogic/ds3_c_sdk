@@ -100,12 +100,12 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
     ds3_str_free(job_id);
 }
 
-ds3_bulk_object_list* default_object_list(){
+ds3_bulk_object_list* default_object_list() {
     const char* books[5] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
     return ds3_convert_file_list(books, 5);
 }
 
-ds3_request* populate_bulk_return_request(const ds3_client* client, const char* bucket_name, ds3_bulk_object_list* obj_list){
+ds3_request* populate_bulk_return_request(const ds3_client* client, const char* bucket_name, ds3_bulk_object_list* obj_list) {
     ds3_request* request = ds3_init_put_bucket(bucket_name);
     ds3_error* error = ds3_put_bucket(client, request);
     ds3_free_request(request);
@@ -116,7 +116,7 @@ ds3_request* populate_bulk_return_request(const ds3_client* client, const char* 
     return request;
 }
 
-ds3_bulk_response* populate_bulk_return_response(const ds3_client* client, ds3_request* request){
+ds3_bulk_response* populate_bulk_return_response(const ds3_client* client, ds3_request* request) {
     ds3_bulk_response* response;
     ds3_error* error = ds3_bulk(client, request, &response);
     ds3_free_request(request);
@@ -124,10 +124,10 @@ ds3_bulk_response* populate_bulk_return_response(const ds3_client* client, ds3_r
     return response;
 }
 
-ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucket_name){
-    ds3_bulk_object_list* obj_list=default_object_list();
-    ds3_request* request=populate_bulk_return_request(client, bucket_name, obj_list);
-    ds3_bulk_response* response=populate_bulk_return_response(client, request);
+ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucket_name) {
+    ds3_bulk_object_list* obj_list = default_object_list();
+    ds3_request* request = populate_bulk_return_request(client, bucket_name, obj_list);
+    ds3_bulk_response* response = populate_bulk_return_response(client, request);
     ds3_free_bulk_object_list(obj_list);
     
     ds3_str* job_id = ds3_str_dup(response->job_id);
@@ -136,7 +136,7 @@ ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucke
 }
 
 
-ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* client, ds3_str* job_id){
+ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* client, ds3_str* job_id) {
     ds3_request* request = NULL;
     ds3_error* error = NULL;
     bool retry_get;
@@ -164,16 +164,16 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
     return chunk_response;
 }
 
-void populate_with_objects_from_bulk(const ds3_client* client, const char* bucket_name, ds3_bulk_response* response){
+void populate_with_objects_from_bulk(const ds3_client* client, const char* bucket_name, ds3_bulk_response* response) {
     uint64_t i, n;
     ds3_error* error;
     ds3_request* request;
 
-    ds3_get_available_chunks_response* chunk_response=ensure_available_chunks(client, response->job_id);
+    ds3_get_available_chunks_response* chunk_response = ensure_available_chunks(client, response->job_id);
     
     for (i = 0; i < chunk_response->object_list->list_size; i++) {
         ds3_bulk_object_list* chunk_object_list = chunk_response->object_list->list[i];
-        for(n = 0; n < chunk_object_list->size; n++) {
+        for (n = 0; n < chunk_object_list->size; n++) {
             ds3_bulk_object current_obj = chunk_object_list->list[n];
             FILE* file = fopen(current_obj.name->value, "r");
 
@@ -192,9 +192,9 @@ void populate_with_objects_from_bulk(const ds3_client* client, const char* bucke
 }
 
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
-    ds3_bulk_object_list* obj_list=default_object_list();
-    ds3_request* request=populate_bulk_return_request(client, bucket_name, obj_list);
-    ds3_bulk_response* response=populate_bulk_return_response(client, request);
+    ds3_bulk_object_list* obj_list = default_object_list();
+    ds3_request* request = populate_bulk_return_request(client, bucket_name, obj_list);
+    ds3_bulk_response* response = populate_bulk_return_response(client, request);
     ds3_free_bulk_object_list(obj_list);
     
     ds3_str* job_id = ds3_str_dup(response->job_id);
@@ -208,7 +208,7 @@ ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* 
 bool contains_object(const ds3_object* objects, uint64_t num_objects, const char* obj) {
     uint64_t i;
     for (i = 0; i < num_objects; i++) {
-        if(strcmp(objects[i].name->value, obj) == 0) {
+        if (strcmp(objects[i].name->value, obj) == 0) {
             return true;
         }
     }
