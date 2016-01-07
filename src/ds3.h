@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
+#include "ds3_string.h"
+#include "ds3_string_multimap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +38,8 @@ extern "C" {
 #endif
 
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
+
+typedef struct _ds3_request ds3_request;
 
 typedef enum {
     False, True
@@ -74,11 +78,6 @@ typedef enum {
 typedef enum {
     IN_ORDER, NONE
 }ds3_chunk_ordering;
-
-typedef struct{
-    char* value;
-    size_t size;
-}ds3_str;
 
 typedef enum {
     IN_PROGRESS,
@@ -130,13 +129,6 @@ typedef enum {
   DATA, FOLDER
 }ds3_object_type;
 
-LIBRARY_API ds3_str* ds3_str_init(const char* string);
-LIBRARY_API ds3_str* ds3_str_init_with_size(const char* string, size_t size);
-LIBRARY_API char* ds3_str_value(const ds3_str* string);
-LIBRARY_API size_t ds3_str_size(const ds3_str* string);
-LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
-LIBRARY_API void ds3_str_free(ds3_str* string);
-
 typedef enum {
   DS3_ERROR, DS3_WARN, DS3_INFO, DS3_DEBUG, DS3_TRACE
 }ds3_log_lvl;
@@ -152,15 +144,41 @@ typedef struct {
     ds3_str* secret_key;
 }ds3_creds;
 
-typedef struct {
-    ds3_str*    endpoint;
-    ds3_str*    proxy;
-    uint64_t    num_redirects;
-    ds3_creds*  creds;
-    ds3_log*    log;
-}ds3_client;
+typedef enum {
+  DS3_ERROR_INVALID_XML,
+  DS3_ERROR_CURL_HANDLE,
+  DS3_ERROR_REQUEST_FAILED,
+  DS3_ERROR_MISSING_ARGS,
+  DS3_ERROR_BAD_STATUS_CODE,
+  DS3_ERROR_TOO_MANY_REDIRECTS
+}ds3_error_code;
 
-typedef struct _ds3_request ds3_request;
+typedef struct {
+    uint64_t  status_code;
+    ds3_str*  status_message;
+    ds3_str*  error_body;
+}ds3_error_response;
+
+typedef struct {
+    ds3_error_code      code;
+    ds3_str*            message;
+    ds3_error_response* error;
+}ds3_error;
+
+typedef struct _ds3_client {
+    ds3_str*      endpoint;
+    ds3_str*      proxy;
+    uint64_t      num_redirects;
+    ds3_creds*    creds;
+    ds3_log*      log;
+    ds3_error* (* net_callback)(const struct _ds3_client* client,
+                                const ds3_request* _request,
+                                void* read_user_struct,
+                                size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                void* write_user_struct,
+                                size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                ds3_string_multimap** return_headers);
+}ds3_client;
 
 typedef struct {
     ds3_str* creation_date;
@@ -194,9 +212,9 @@ typedef struct {
 }ds3_search_object;
 
 typedef struct {
-    ds3_bucket* buckets;
-    size_t      num_buckets;
-    ds3_owner*  owner;
+    ds3_bucket** buckets;
+    size_t       num_buckets;
+    ds3_owner*   owner;
 }ds3_get_service_response;
 
 typedef struct {
@@ -301,11 +319,6 @@ typedef struct {
     uint64_t		num_tapes;
 }ds3_get_physical_placement_response;
 
-typedef enum {
-  DS3_ERROR_INVALID_XML, DS3_ERROR_CURL_HANDLE, DS3_ERROR_REQUEST_FAILED,
-  DS3_ERROR_MISSING_ARGS, DS3_ERROR_BAD_STATUS_CODE, DS3_ERROR_TOO_MANY_REDIRECTS
-}ds3_error_code;
-
 typedef struct {
     ds3_bulk_object_list*   objects;
     uint64_t                retry_after;
@@ -315,18 +328,6 @@ typedef struct {
     ds3_bulk_response* 	  object_list;
     uint64_t              retry_after;
 }ds3_get_available_chunks_response;
-
-typedef struct {
-    uint64_t  status_code;
-    ds3_str*  status_message;
-    ds3_str*  error_body;
-}ds3_error_response;
-
-typedef struct {
-    ds3_error_code      code;
-    ds3_str*            message;
-    ds3_error_response* error;
-}ds3_error;
 
 typedef struct {
     ds3_str*    name;
@@ -365,6 +366,13 @@ LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secr
 LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
+LIBRARY_API void        ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
+                                                                                                const ds3_request* _request,
+                                                                                                void* read_user_struct,
+                                                                                                size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                                                                                                void* write_user_struct,
+                                                                                                size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                                                                                                ds3_string_multimap** return_headers));
 
 LIBRARY_API ds3_request* ds3_init_get_system_information(void);
 LIBRARY_API ds3_request* ds3_init_get_service(void);
@@ -407,6 +415,8 @@ LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char* sha512
 LIBRARY_API void ds3_request_set_crc32(ds3_request* request, const char* crc32);
 LIBRARY_API void ds3_request_set_crc32c(ds3_request* request, const char* crc32c);
 LIBRARY_API void ds3_request_set_metadata(ds3_request* request, const char* name, const char* value);
+LIBRARY_API void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd);
+LIBRARY_API void ds3_request_reset_byte_range(ds3_request* _request);
 LIBRARY_API void ds3_request_set_name(ds3_request* request, const char* name);
 LIBRARY_API void ds3_request_set_id(ds3_request* request, const char* id);
 LIBRARY_API void ds3_request_set_type(ds3_request* request, ds3_object_type type);
@@ -472,6 +482,7 @@ LIBRARY_API ds3_bulk_object_list* ds3_convert_file_list_with_basepath(const char
 LIBRARY_API ds3_bulk_object_list* ds3_convert_object_list(const ds3_object* objects, uint64_t num_objects);
 LIBRARY_API ds3_bulk_object_list* ds3_init_bulk_object_list(uint64_t num_files);
 LIBRARY_API void ds3_free_bulk_object_list(ds3_bulk_object_list* object_list);
+
 
 #ifdef __cplusplus
 }
