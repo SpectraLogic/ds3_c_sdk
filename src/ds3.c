@@ -974,8 +974,8 @@ ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request,
         return error;
     }
 
-    xmlFreeDoc(doc);
     *_response = _parse_get_service_response(client->log, doc, root);
+    xmlFreeDoc(doc);
     return NULL;
 }
 
