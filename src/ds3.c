@@ -899,7 +899,7 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     return NULL;
 }
 
-static ds3_bucket _parse_bucket( const ds3_log* log, xmlDocPtr doc, xmlNodePtr root) {
+static ds3_bucket _parse_bucket(const ds3_log* log, xmlDocPtr doc, xmlNodePtr root) {
     xmlNodePtr child_node;
     ds3_bucket bucket;
     memset(&bucket, 0, sizeof(ds3_bucket));
