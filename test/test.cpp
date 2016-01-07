@@ -76,7 +76,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
             request = ds3_init_delete_folder(bucket_name, bucket_response->objects[i].name->value);
             error = ds3_delete_folder(client, request);
             ds3_free_request(request);
-        }else{
+        } else {
             request = ds3_init_delete_object(bucket_name, bucket_response->objects[i].name->value);
             error = ds3_delete_object(client, request);
             ds3_free_request(request);
@@ -144,19 +144,16 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
     do {
         retry_get = false;
         request = ds3_init_get_available_chunks(job_id->value);
-
         error = ds3_get_available_chunks(client, request, &chunk_response);
-
         ds3_free_request(request);
           
-        BOOST_REQUIRE(error == NULL);
-        
+        BOOST_REQUIRE(error == NULL);        
         BOOST_REQUIRE(chunk_response != NULL);
 
         if (chunk_response->object_list->list_size == 0) {
             // if this happens we need to try the request
+            BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after);
             retry_get = true;
-            BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
             sleep(chunk_response->retry_after);
             ds3_free_available_chunks_response(chunk_response);
         }
