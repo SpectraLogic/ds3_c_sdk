@@ -212,9 +212,9 @@ typedef struct {
 }ds3_search_object;
 
 typedef struct {
-    ds3_bucket** buckets;
-    size_t       num_buckets;
-    ds3_owner*   owner;
+    ds3_bucket* buckets;
+    size_t      num_buckets;
+    ds3_owner*  owner;
 }ds3_get_service_response;
 
 typedef struct {
