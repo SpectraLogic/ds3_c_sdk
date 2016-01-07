@@ -9,7 +9,6 @@ BOOST_AUTO_TEST_CASE( get_service ) {
     ds3_get_service_response* response;
 
     printf("-----Testing GET service-------\n");
-    
     ds3_error* error = ds3_get_service(client, request, &response);
 
     BOOST_CHECK(error == NULL);
