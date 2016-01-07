@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
     handle_error(error);
 
     for (i = 0; i < response->num_buckets; i++) {
-        if (strcmp(bucket_name, response->buckets[i]->name->value) == 0) {
+        if (strcmp(bucket_name, response->buckets[i].name->value) == 0) {
             found = true;
             break;
         }
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_object) {
     handle_error(error);
 
     for (i = 0; i < response->num_buckets; i++) {
-        if (strcmp(bucket_name, response->buckets[i]->name->value) == 0) {
+        if (strcmp(bucket_name, response->buckets[i].name->value) == 0) {
             found = true;
             break;
         }

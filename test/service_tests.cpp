@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE( put_bucket) {
     BOOST_CHECK(error == NULL);
 
     for (i = 0; i < response->num_buckets; i++) {
-        fprintf(stderr, "Expected Name (%s) actual (%s)\n", bucket_name, response->buckets[i]->name->value);
-        if (strcmp(bucket_name, response->buckets[i]->name->value) == 0) {
+        fprintf(stderr, "Expected Name (%s) actual (%s)\n", bucket_name, response->buckets[i].name->value);
+        if (strcmp(bucket_name, response->buckets[i].name->value) == 0) {
             found = true;
             break;
         }
