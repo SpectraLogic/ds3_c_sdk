@@ -40,7 +40,7 @@ put-bulk.o: ../install/lib/pkgconfig/libds3.pc
 	$(CC) -c put-bulk.c $(CFLAGS)
 
 run-get-object: get-object
-	LD_LIBRARY_PATH=../install/lib valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./get-object
+	LD_LIBRARY_PATH=../install/lib ./get-object
 
 get-object: get-object.o
 	$(CC) $< $(CFLAGS) $(LIBS) -o $@

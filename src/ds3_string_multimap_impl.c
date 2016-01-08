@@ -13,19 +13,21 @@
 * ****************************************************************************
 */
 
-#ifndef __DS3_UTILS__
-#define __DS3_UTILS__
+#include <glib.h>
+#include "ds3_string_multimap.h"
+#include "ds3_string_multimap_impl.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void         ds3_log_message(const ds3_log* log, ds3_log_lvl lvl, const char* message, ...);
-size_t       ds3_load_buffer(void* buffer, size_t size, size_t nmemb, void* user_data);
-ds3_error*   ds3_create_error(ds3_error_code code, const char * message);
-
-#ifdef __cplusplus
+GHashTable* ds3_string_multimap_get_hashtable(const ds3_string_multimap* mp) {
+    const struct _ds3_string_multimap* _mp = mp;
+    return _mp->hash;
 }
-#endif
 
-#endif
+void ds3_string_multimap_set_hashtable(ds3_string_multimap* mp, GHashTable* ht) {
+    if (mp != NULL) {
+        ds3_string_multimap_free(mp);
+    }
+
+    struct _ds3_string_multimap* _mp = mp;
+    _mp->hash = ht;
+}
+

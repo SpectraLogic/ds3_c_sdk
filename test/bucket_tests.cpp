@@ -33,6 +33,39 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
     free_client(client);
 }
 
+BOOST_AUTO_TEST_CASE( empty_object ) {
+    ds3_client* client = get_client();
+    const char* bucket_name = "unit_test_bucket";
+    uint64_t num_objs;
+
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    ds3_error* error = ds3_put_bucket(client, request);
+    ds3_free_request(request);
+
+    handle_error(error);
+
+    request = ds3_init_put_object_for_job("unit_test_bucket", "empty-directory/", 0, 0, NULL);
+    error   = ds3_put_object(client, request, NULL, NULL);
+    handle_error(error);
+
+    ds3_get_bucket_response* response;
+    request = ds3_init_get_bucket(bucket_name);
+    error = ds3_get_bucket(client, request, &response);
+    ds3_free_request(request);
+
+    num_objs = response->num_objects;
+
+    BOOST_CHECK(error == NULL);
+    BOOST_CHECK_EQUAL(num_objs, 1);
+
+    BOOST_CHECK(contains_object(response->objects, num_objs, "empty-directory/"));
+
+    ds3_free_bucket_response(response);
+
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
 BOOST_AUTO_TEST_CASE( prefix ) {
     ds3_request* request;
     ds3_error* error;
