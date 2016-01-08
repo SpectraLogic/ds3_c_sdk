@@ -7,11 +7,11 @@
 #include <boost/test/unit_test.hpp>
 #include "checksum.h"
 
-const unsigned char MAX_UNIT_TEST_FILEPATH_LENGTH = 64;
+static const unsigned char MAX_UNIT_TEST_FILEPATH_LENGTH = 64;
 
-const char* FILE_TEMPLATE = "temp-resources-";
-const unsigned char LENGTH_OF_FILE_TEMPLATE = 15;
-const unsigned char LENGTH_OF_PREFIX = 5;
+static const char* FILE_TEMPLATE = "temp-resources-";
+static const unsigned char LENGTH_OF_FILE_TEMPLATE = 15;
+static const unsigned char LENGTH_OF_PREFIX = 5;
 
 struct checksum_result {
     char original_name[MAX_UNIT_TEST_FILEPATH_LENGTH];
