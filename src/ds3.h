@@ -409,6 +409,8 @@ LIBRARY_API void ds3_request_set_prefix(ds3_request* request, const char* prefix
 LIBRARY_API void ds3_request_set_delimiter(ds3_request* request, const char* delimiter);
 LIBRARY_API void ds3_request_set_marker(ds3_request* request, const char* marker);
 LIBRARY_API void ds3_request_set_max_keys(ds3_request* request, uint32_t max_keys);
+LIBRARY_API void ds3_request_set_preferred_number_of_chunks(ds3_request* request, uint32_t preferred_number_of_chunks);
+LIBRARY_API void ds3_request_set_max_upload_size(ds3_request* request, uint32_t max_upload_size);
 LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char* md5);
 LIBRARY_API void ds3_request_set_sha256(ds3_request* request, const char* sha256);
 LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char* sha512);

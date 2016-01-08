@@ -385,7 +385,7 @@ void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64
     char* range_value;
     
     gpointer header_value = g_hash_table_lookup(_request->headers, "Range");
-    if(header_value != NULL) {
+    if (header_value != NULL) {
         range_value = g_strdup_printf("%s,%ld-%ld", (char*)header_value, rangeStart, rangeEnd);
     } else {
         range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
@@ -451,6 +451,23 @@ void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
     memset(max_keys_s, 0, sizeof(char) * metadata_prefix_length);
     g_snprintf(max_keys_s, sizeof(char) * metadata_prefix_length, "%u", max_keys);
     _set_query_param(_request, "max-keys", max_keys_s);
+}
+
+static const char* UNSIGNED_LONG_BASE_10 = "4294967296";
+static const unsigned char UNSIGNED_LONG_BASE_10_STR_LEN = 11;
+  
+void ds3_request_set_preferred_number_of_chunks(ds3_request* _request, uint32_t num_chunks) {
+    char num_chunks_s[UNSIGNED_LONG_BASE_10_STR_LEN];
+    memset(num_chunks_s, 0, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN);
+    g_snprintf(num_chunks_s, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN, "%u", num_chunks);
+    _set_query_param(_request, "preferred_number_of_chunks", num_chunks_s);
+}
+
+void ds3_request_set_max_upload_size(ds3_request* _request, uint32_t max_upload_size) {
+    char max_size_s[UNSIGNED_LONG_BASE_10_STR_LEN];
+    memset(max_size_s, 0, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN);
+    g_snprintf(max_size_s, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN, "%u", max_upload_size);
+    _set_query_param(_request, "max_upload_size", max_size_s);
 }
 
 void ds3_request_set_name(ds3_request* _request, const char* name) {
