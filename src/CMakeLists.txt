@@ -11,7 +11,7 @@ SET_SOURCE_FILES_PROPERTIES(ds3.c PROPERTIES LANGUAGE CXX)
 
 include_directories(../win32/deps/install/include ../win32/deps/install/include/glib-2.0 ../win32/deps/install/lib/glib-2.0/include ../win32/compatibility_includes)
 #target_link_libraries(ds3 ../win32/deps/install/bin)
-target_link_libraries(ds3 ../win32/deps/install/lib/glib-2.0 ../win32/deps/install/lib/libxml2_a ../win32/deps/install/lib/libcurl_a ../win32/deps/install/lib/zlib_a)
+target_link_libraries(ds3 ../win32/deps/install/lib/glib-2.0 ../win32/deps/install/lib/libxml2_a ../win32/deps/install/lib/libcurl_a ../win32/deps/install/lib/zlib_a Ws2_32)
 
 
 else(WIN32)

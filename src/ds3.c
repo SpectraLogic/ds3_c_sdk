@@ -449,9 +449,10 @@ void ds3_request_set_marker(ds3_request* _request, const char* marker) {
 
 void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
     int metadata_prefix_length = strlen(METADATA_PREFIX);
-    char max_keys_s[metadata_prefix_length];
+    char *max_keys_s = (char*)g_malloc(sizeof(char) * metadata_prefix_length);
     memset(max_keys_s, 0, sizeof(char) * metadata_prefix_length);
     g_snprintf(max_keys_s, sizeof(char) * metadata_prefix_length, "%u", max_keys);
+	g_free(max_keys_s);
     _set_query_param(_request, "max-keys", max_keys_s);
 }
 
