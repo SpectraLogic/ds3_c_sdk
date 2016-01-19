@@ -2,7 +2,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/win32/output/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/win32/output/bin) 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/win32/output/bin)
 
-add_library(ds3 SHARED ds3.h ds3_net.c ds3_request.h ds3_string_multimap.h ds3.c ds3_net.h ds3_string_multimap.c ds3_utils.h)
+add_library(ds3 SHARED ds3.h ds3_net.c ds3_request.h ds3_string_multimap_impl.h ds3_string_multimap.h ds3_string.h ds3_string.c ds3.c ds3_net.h ds3_string_multimap.c ds3_string_multimap_impl.c ds3_utils.h ds3_utils.c)
 
 if (WIN32)
 
@@ -34,6 +34,6 @@ if (GLIB2_FOUND)
   target_link_libraries (ds3 ${GLIB2_LIBRARIES})
 endif(GLIB2_FOUND)
 
-install(FILES "ds3.h" DESTINATION "/usr/local/include")
+install(FILES "ds3.h" "ds3_utils.h" "ds3_net.h" "ds3_request.h" "ds3_string_multimap_impl.h" "ds3_string_multimap.h" "ds3_string.h" DESTINATION "/usr/local/include")
 install(TARGETS ds3 DESTINATION lib)
 endif(WIN32)

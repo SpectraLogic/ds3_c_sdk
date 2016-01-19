@@ -65,6 +65,7 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
 }
 
 BOOST_AUTO_TEST_CASE( head_bucket ) {
+    printf("-----Testing head_bucket-------\n");
     ds3_error* error;
     ds3_client* client = get_client();
     const char* bucket_name = "metadata_test";
@@ -79,6 +80,35 @@ BOOST_AUTO_TEST_CASE( head_bucket ) {
     error = ds3_head_bucket(client, request);
     ds3_free_request(request);
     handle_error(error);
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
+BOOST_AUTO_TEST_CASE( head_folder ) {
+    printf("-----Testing head_folder-------\n");
+    ds3_metadata* metadata_result;
+    ds3_error* error;
+    ds3_client* client = get_client();
+    const char* bucket_name = "head_folder_test";
+    ds3_request* request = ds3_init_put_bucket(bucket_name);
+    error = ds3_put_bucket(client, request);
+    ds3_free_request(request);
+    handle_error(error);
+
+    const char* test_folder = "test_folder/";
+    request = ds3_init_put_object_for_job(bucket_name, test_folder, 0, 0, NULL);
+    error   = ds3_put_object(client, request, NULL, NULL);
+    ds3_free_request(request);
+    handle_error(error);
+
+    request = ds3_init_head_object(bucket_name, test_folder);
+
+    error = ds3_head_object(client, request, &metadata_result);
+    ds3_free_request(request);
+    handle_error(error);
+    BOOST_REQUIRE(metadata_result != NULL);
+    ds3_free_metadata(metadata_result);
+
     clear_bucket(client, bucket_name);
     free_client(client);
 }

@@ -254,13 +254,19 @@ BOOST_AUTO_TEST_CASE( escape_urls ) {
                                               "%601234567890-=~%21@%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
 
     for(int i=0; i<5; i++) {
-        BOOST_CHECK(strcmp(escape_url_object_name(strings_to_test[i]), object_name_results[i]) == 0);
+        char* escaped_url = escape_url_object_name(strings_to_test[i]);
+        BOOST_CHECK(strcmp(escaped_url, object_name_results[i]) == 0);
+        free(escaped_url);
     }
     for(int i=0; i<5; i++) {
-        BOOST_CHECK(strcmp(escape_url_range_header(strings_to_test[i]), range_header_results[i]) == 0);
+        char* escaped_url = escape_url_range_header(strings_to_test[i]);
+        BOOST_CHECK(strcmp(escaped_url, range_header_results[i]) == 0);
+        free(escaped_url);
     }
     for(int i=0; i<5; i++) {
-        BOOST_CHECK(strcmp(escape_url_extended(strings_to_test[i], delimiters, 4), general_delimiter_results[i]) == 0);
+        char* escaped_url = escape_url_extended(strings_to_test[i], delimiters, 4);
+        BOOST_CHECK(strcmp(escaped_url, general_delimiter_results[i]) == 0);
+        free(escaped_url);
     }
 }
 
