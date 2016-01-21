@@ -218,6 +218,9 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     ds3_free_request(request);
     ds3_free_bulk_object_list(object_list);
 
+    // for testing puroses
+    handle_error(error);
+
     BOOST_REQUIRE(error == NULL);
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
