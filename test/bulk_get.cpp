@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     printf("-----Testing Bulk GET with max_upload_size-------\n");
 
     const uint32_t num_files = 6;
-    const char* books[num_files] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt", "resources/ulysses_118mb.txt"};
+    const char* books[num_files] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt", "resources/ulysses_46mb.txt"};
     object_list = ds3_convert_file_list(books, num_files);
     
     request = populate_bulk_return_request(client, bucket_name, object_list);
@@ -232,8 +232,8 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     
     BOOST_CHECK(check_all_passed(num_files, checksum_results) == true);
     BOOST_CHECK(get_number_of_chunks(num_files, checksum_results, "resources/ulysses_large.txt") == 2);
-    BOOST_CHECK(get_number_of_chunks(num_files, checksum_results, "resources/ulysses_118mb.txt") == 12);
-    BOOST_CHECK(get_sum_of_chunks(num_files, checksum_results) == 18);
+    BOOST_CHECK(get_number_of_chunks(num_files, checksum_results, "resources/ulysses_46mb.txt") == 5);
+    BOOST_CHECK(get_sum_of_chunks(num_files, checksum_results) == 11);
     
     free(checksum_results);
 
