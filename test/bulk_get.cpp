@@ -155,11 +155,11 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     ds3_free_request(request);
     ds3_free_bulk_object_list(object_list);
 
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -218,14 +218,11 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     ds3_free_request(request);
     ds3_free_bulk_object_list(object_list);
 
-    // for testing puroses
-    handle_error(error);
-
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
     
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -282,7 +279,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
     ds3_free_request(request);
     ds3_free_bulk_object_list(object_list);
 
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     do {
         retry_get = false;
@@ -293,9 +290,9 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
         error = ds3_get_available_chunks(client, request, &chunk_response);
 
         ds3_free_request(request);
-          
-        BOOST_REQUIRE(error == NULL);
-        
+
+        BOOST_REQUIRE( handle_error_and_return_is_null(error) );
+
         BOOST_REQUIRE(chunk_response != NULL);
 
         if (chunk_response->object_list->list_size == 0) {
@@ -307,7 +304,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
         }
     } while(retry_get);
     
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -359,11 +356,11 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
     ds3_free_request(request);
     ds3_free_bulk_object_list(object_list);
 
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE( handle_error_and_return_is_null(error) );
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponsePartials(client, num_files, chunk_response, checksum_results, 3200);
