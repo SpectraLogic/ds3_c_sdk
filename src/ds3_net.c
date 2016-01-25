@@ -68,7 +68,7 @@ char* escape_url(const char* url) {
     return escaped_url;
 }
 
-// Like escape_url but don't encode "/".
+// Like escape_url but don't encode the given delimiters.
 char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters) {
     gchar** split = g_strsplit(url, delimiters[num_delimiters-1], 0);
     gchar** ptr;

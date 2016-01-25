@@ -23,10 +23,10 @@ extern "C" {
 #include "ds3.h"
 #include "ds3_string_multimap.h"
 
-char* escape_url(const char* url);
-char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters);
-char* escape_url_object_name(const char* url);
-char* escape_url_range_header(const char* url);
+LIBRARY_API char* escape_url(const char* url);
+LIBRARY_API char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters);
+LIBRARY_API char* escape_url_object_name(const char* url);
+LIBRARY_API char* escape_url_range_header(const char* url);
 
 ds3_error* net_process_request(
    const ds3_client* client,
