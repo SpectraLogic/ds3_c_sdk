@@ -153,7 +153,7 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
         error = ds3_get_available_chunks(client, request, &chunk_response);
         ds3_free_request(request);
 
-        BOOST_REQUIRE( handle_error_and_return_is_null(error) );
+        BOOST_REQUIRE(handle_error_and_return_is_null(error));
         BOOST_REQUIRE(chunk_response != NULL);
 
         if (chunk_response->object_list->list_size == 0) {
