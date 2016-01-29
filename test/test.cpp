@@ -59,6 +59,12 @@ void handle_error(ds3_error* error) {
     }
 }
 
+bool handle_error_and_return_is_null(ds3_error* error){
+    bool result = (error == NULL);
+    handle_error(error);
+    return result;
+}
+
 void clear_bucket(const ds3_client* client, const char* bucket_name) {
     uint64_t i;
     ds3_request* request;
@@ -146,8 +152,8 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
         request = ds3_init_get_available_chunks(job_id->value);
         error = ds3_get_available_chunks(client, request, &chunk_response);
         ds3_free_request(request);
-          
-        BOOST_REQUIRE(error == NULL);        
+
+        BOOST_REQUIRE(handle_error_and_return_is_null(error));
         BOOST_REQUIRE(chunk_response != NULL);
 
         if (chunk_response->object_list->list_size == 0) {
