@@ -7,6 +7,10 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
+#ifdef _WIN32
+#define sleep Sleep
+#endif
+
 struct TestCleanup {
     TestCleanup() {}
     ~TestCleanup() {
