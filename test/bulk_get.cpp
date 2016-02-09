@@ -5,10 +5,7 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 #include "checksum.h"
-
-#ifdef _WIN32
-#define sleep Sleep
-#endif
+#include <glib.h>
 
 static const unsigned char MAX_UNIT_TEST_FILEPATH_LENGTH = 64;
 
@@ -305,7 +302,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
             // if this happens we need to try the request
             retry_get = true;
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
-            sleep(chunk_response->retry_after);
+            g_usleep(chunk_response->retry_after*G_USEC_PER_SEC);
             ds3_free_available_chunks_response(chunk_response);
         }
     } while(retry_get);
