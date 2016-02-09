@@ -45,7 +45,7 @@ include_directories("${PROJECT_SOURCE_DIR}/../install/include")
 
 endif(WIN32)
 
-add_executable(ds3_c_test test.cpp service_tests.cpp checksum.cpp bucket_tests.cpp job_tests.cpp bulk_get.cpp get_physical_placement.cpp negative_tests.cpp metadata_tests.cpp deletes_test.cpp search_tests.cpp)
+add_executable(ds3_c_test test.cpp service_tests.cpp checksum.cpp bucket_tests.cpp job_tests.cpp bulk_get.cpp get_physical_placement.cpp negative_tests.cpp multimap_tests.cpp metadata_tests.cpp deletes_test.cpp search_tests.cpp)
 
 target_link_libraries(ds3_c_test ds3 glib-2.0 boost_unit_test_framework)
 
