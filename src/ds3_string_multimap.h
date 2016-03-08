@@ -16,19 +16,34 @@
 #ifndef __DS3_STRING_MULTIMAP__
 #define __DS3_STRING_MULTIMAP__
 
-#include <glib.h>
+#include "ds3_string.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct _ds3_string_multimap ds3_string_multimap;
+typedef struct _ds3_string_multimap       ds3_string_multimap;
+typedef struct _ds3_string_multimap_entry ds3_string_multimap_entry;
 
-//opertions for manipulating a hash map as a string multi map
-ds3_string_multimap* ds3_string_multimap_init(void);
-void ds3_string_multimap_insert(ds3_string_multimap* hashtable, char* key, char* value);
-GPtrArray* ds3_string_multimap_lookup(ds3_string_multimap* hashtable, char* key);
-void ds3_string_multimap_free(ds3_string_multimap* map);
+
+//opertions for manipulating a hash map as a ds3_str multi map
+LIBRARY_API ds3_string_multimap*       ds3_string_multimap_init(void);
+LIBRARY_API void                       ds3_string_multimap_insert(ds3_string_multimap* map, const ds3_str* key, const ds3_str* value);
+LIBRARY_API void                       ds3_string_multimap_insert_entry(ds3_string_multimap* map, const ds3_string_multimap_entry* entry);  // caller frees all passed in values
+LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, const ds3_str* key);
+LIBRARY_API void                       ds3_string_multimap_free(ds3_string_multimap* map);
+
+
+//opertions for manipulating a ds3_string_multi_map_entry
+LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_entry_init(const ds3_str* key);
+LIBRARY_API ds3_str*                   ds3_string_multimap_entry_get_key(const ds3_string_multimap_entry* entry);
+LIBRARY_API void                       ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, const ds3_str* value);
+LIBRARY_API unsigned int               ds3_string_multimap_entry_get_num_values(const ds3_string_multimap_entry* map_entry);
+LIBRARY_API ds3_str*                   ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, int index);
+LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_entry_dup(const ds3_string_multimap_entry* entry);
+LIBRARY_API void                       ds3_string_multimap_entry_free(ds3_string_multimap_entry* entry);
+
+
 /*
 // TODO implement this as a future refactor
 // operations for multimaps

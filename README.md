@@ -1,6 +1,8 @@
 Spectra S3 C SDK
 ================
 
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/SpectraLogic/ds3_c_sdk/blob/master/LICENSE.md)
+
 This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
@@ -42,16 +44,21 @@ Unix/Linux
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
 contain a simple build script that should work on most Unix/Linux systems.  The
-build system is currently autotools.  To install autotools on ubuntu use apt-get 
-and install the following:
+build system is currently autotools.  
+
+To install autotools on Ubuntu use apt-get and install the following:
 
     $ sudo apt-get install build-essential
     $ sudo apt-get install autoconf
     $ sudo apt-get install libtool
+    
+To install autotools on CentOS use yum and install the following:
+    $ sudo yum install autoconf
+    $ sudo yum install libtool
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
-example, Linux systems often provide lib\*-dev or lib\*-devel packages. The DS3
+example, Linux systems often provide lib\*-dev or lib\*-devel packages. The Spectra S3
 dependencies are:
 
 * libxml2
@@ -63,11 +70,23 @@ On Ubuntu you can install them with apt-get:
     $ sudo apt-get install libxml2-dev
     $ sudo apt-get install libcurl4-openssl-dev
     $ sudo apt-get install libglib2.0-dev 
+    
+On CentOS you can install them with yum:
 
-For testing you will need the boost unit test library as well.  On ubuntu this can be installed with:
+    $ sudo yum install libxml2-devel
+    $ sudo yum install libcurl-devel
+    $ sudo yum install glib2-devel 
+    
+For testing you will need the boost unit test library as well.  
+
+On Ubuntu this can be installed with:
 
     $ sudo apt-get install libboost-test-dev
 
+On CentOS this can be installed with:
+
+    $ sudo yum install boost-test
+    
 Release Tarball
 ---------------
 
@@ -77,6 +96,7 @@ terminal window.
     $ cd directory/containing/release/tarball
     $ tar zxf ds3_c_sdk-{version}.tgz
     $ cd ds3_c_sdk-{version}
+    $ autoreconf --install
     $ ./configure
     $ make
     $ su
@@ -129,8 +149,13 @@ To build the sample, use the following commands:
     $ cd sample
     $ make deps # Builds the SDK and installs it into directory/containing/source/tree**/install**
     $ make
+	
+To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set in environment variables to match the target device. For the simulator, see [Installation Instructions] (https://developer.spectralogic.com/sim-install/) 
 
-To run it, just use `make run`.
+    $ make run-put-bulk     # create "books" bucket and put files into it
+    $ make run-get-service  # list all buckets
+    $ make run-get-bucket   # list contents of "books" bucket
+    $ make run-get-object   # get first book and write to temp file
 
 Code Samples
 ------------

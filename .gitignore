@@ -39,3 +39,4 @@ cmake_install.cmake
 *.opensdf
 Debug/
 *.dir/
+!win32/deps/install/include/boost/core
