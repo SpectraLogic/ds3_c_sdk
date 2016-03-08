@@ -28,7 +28,20 @@ include_directories("${PROJECT_SOURCE_DIR}/../win32/deps/install/lib/glib-2.0/in
 #C:\Users\charlesh\code\boost_1_59_0\boost_1_59_0
 #include_directories("${PROJECT_SOURCE_DIR}/../win32/deps/install/lib/glib-2.0/include")
 
-link_directories("${PROJECT_SOURCE_DIR}/../win32/output/bin/Debug"  "${PROJECT_SOURCE_DIR}/../win32/deps/install/lib")
+link_directories("${PROJECT_SOURCE_DIR}/../win32/output/bin"  "${PROJECT_SOURCE_DIR}/../win32/deps/install/lib")
+
+set(WINDOWS_VS_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/bin)
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR}) 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR}) 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR})
+
+foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
+    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${WINDOWS_VS_OUTPUT_DIR} )
+    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${WINDOWS_VS_OUTPUT_DIR} )
+    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${WINDOWS_VS_OUTPUT_DIR} )
+endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 else(WIN32)
 add_definitions(-DBOOST_TEST_DYN_LINK)
