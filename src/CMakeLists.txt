@@ -21,10 +21,8 @@ add_definitions(-DLIBRARY_EXPORTS -DCURL_STATICLIB -Dinline=__inline)
 SET_SOURCE_FILES_PROPERTIES(ds3.c PROPERTIES LANGUAGE CXX)
 
 include_directories(../win32/deps/install/include ../win32/deps/install/include/glib-2.0 ../win32/deps/install/lib/glib-2.0/include ../win32/compatibility_includes)
-#target_link_libraries(ds3 ../win32/deps/install/bin)
 target_link_libraries(ds3 ../win32/deps/install/lib/glib-2.0 ../win32/deps/install/lib/libxml2_a ../win32/deps/install/lib/libcurl_a ../win32/deps/install/lib/zlib_a Ws2_32)
 
-#install(TARGETS ds3 DESTINATION ${PROJECT_SOURCE_DIR}/win32/output)
 file(TO_NATIVE_PATH ${WINDOWS_VS_OUTPUT_DIR}/ds3.dll DLL_LOCATION)
 file(TO_NATIVE_PATH ${PROJECT_SOURCE_DIR}/test/bin UNIT_TEST_DIR)
 ADD_CUSTOM_COMMAND(TARGET ds3 POST_BUILD

@@ -25,9 +25,6 @@ include_directories("${PROJECT_SOURCE_DIR}/../win32/deps/install/include")
 include_directories("${PROJECT_SOURCE_DIR}/../win32/deps/install/include/glib-2.0")
 include_directories("${PROJECT_SOURCE_DIR}/../win32/deps/install/lib/glib-2.0/include")
 
-#C:\Users\charlesh\code\boost_1_59_0\boost_1_59_0
-#include_directories("${PROJECT_SOURCE_DIR}/../win32/deps/install/lib/glib-2.0/include")
-
 link_directories("${PROJECT_SOURCE_DIR}/../win32/output/bin"  "${PROJECT_SOURCE_DIR}/../win32/deps/install/lib")
 
 set(WINDOWS_VS_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/bin)
