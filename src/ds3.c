@@ -383,14 +383,14 @@ void ds3_request_reset_byte_range(ds3_request* _request) {
 
 void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd) {
     char* range_value;
-    
+
     gpointer header_value = g_hash_table_lookup(_request->headers, "Range");
     if (header_value != NULL) {
         range_value = g_strdup_printf("%s,%ld-%ld", (char*)header_value, rangeStart, rangeEnd);
     } else {
         range_value = g_strdup_printf("bytes=%ld-%ld", rangeStart, rangeEnd);
     }
-    
+
     _set_header(_request, "Range", range_value);
     g_free(range_value);
 }
@@ -453,8 +453,8 @@ void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
     _set_query_param(_request, "max-keys", max_keys_s);
 }
 
-static const char* UNSIGNED_LONG_BASE_10 = "4294967296";
-static const unsigned char UNSIGNED_LONG_BASE_10_STR_LEN = 11;
+static const char UNSIGNED_LONG_BASE_10[] = "4294967296";
+static const unsigned int UNSIGNED_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_BASE_10);
 
 void ds3_request_set_preferred_number_of_chunks(ds3_request* _request, uint32_t num_chunks) {
     char num_chunks_s[UNSIGNED_LONG_BASE_10_STR_LEN];
@@ -916,37 +916,41 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     return NULL;
 }
 
-static ds3_bucket _parse_bucket(const ds3_log* log, xmlDocPtr doc, xmlNodePtr root) {
+static ds3_error* _parse_bucket( const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root, ds3_bucket** _response) {
     xmlNodePtr child_node;
-    ds3_bucket bucket;
-    memset(&bucket, 0, sizeof(ds3_bucket));
+    ds3_bucket* bucket = g_new0(ds3_bucket, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "CreationDate")) {
-            bucket.creation_date = xml_get_string(doc, child_node);
+            bucket->creation_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
-            bucket.name = xml_get_string(doc, child_node);
+            bucket->name = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
         }
     }
 
-    return bucket;
+    *_response = bucket;
+
+    return NULL;
 }
 
-static GArray* _parse_buckets(const ds3_log* log, xmlDocPtr doc, xmlNodePtr root) {
+static ds3_error* _parse_bucket_array(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
     xmlNodePtr child_node;
-    GArray* buckets_array = g_array_new(FALSE, TRUE, sizeof(ds3_bucket));
+    GPtrArray* buckets_array = g_ptr_array_new();
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_bucket bucket = _parse_bucket(log, doc, child_node);
-        g_array_append_val(buckets_array, bucket);
+        ds3_bucket* bucket;
+        _parse_bucket(log, doc, child_node, &bucket);
+        g_ptr_array_add(buckets_array, bucket);
     }
 
-    return buckets_array;
+    *_response = buckets_array;
+
+    return NULL;
 }
 
-static ds3_owner* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr owner_node) {
+static ds3_error* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr owner_node, ds3_owner** _response) {
     xmlNodePtr child_node;
     ds3_owner* owner = g_new0(ds3_owner, 1);
 
@@ -960,43 +964,48 @@ static ds3_owner* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xm
         }
     }
 
-    return owner;
+    *_response = owner;
+
+    return NULL;
 }
 
-static ds3_get_service_response* _parse_get_service_response(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root) {
-    ds3_get_service_response* response = g_new0(ds3_get_service_response, 1);
-    xmlNodePtr child_node;
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Buckets") == true) {
-            GArray* buckets_array = _parse_buckets(log, doc, child_node);
-            response->buckets = (ds3_bucket*)buckets_array->data;
-            response->num_buckets = buckets_array->len;
-            g_array_free(buckets_array, FALSE);
-        } else if (element_equal(child_node, "Owner") == true) {
-            response->owner = _parse_owner(log, doc, child_node);
-        } else {
-            ds3_log_message(log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
-        }
-    }
-
-    return response;
-}
-
-ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
+static ds3_error* _parse_get_service_response(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
     xmlDocPtr doc;
     xmlNodePtr root;
     ds3_error* error;
+    ds3_get_service_response* response;
+    xmlNodePtr child_node;
 
     error = _get_request_xml_nodes(client, request, &doc, &root, "ListAllMyBucketsResult");
     if (error != NULL) {
         return error;
     }
 
-    *_response = _parse_get_service_response(client->log, doc, root);
+    response = g_new0(ds3_get_service_response, 1);
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Buckets") == true) {
+            GPtrArray* buckets_array;
+            error = _parse_bucket_array(client->log, doc, child_node, &buckets_array);
+            response->num_buckets = buckets_array->len;
+            response->buckets = (ds3_bucket**) g_ptr_array_free(buckets_array, FALSE);
+        } else if (element_equal(child_node, "Owner") == true) {
+            error = _parse_owner(client->log, doc, child_node, &response->owner);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
+        }
+    }
+
     xmlFreeDoc(doc);
-    return NULL;
+
+    *_response = response;
+
+    return error;
 }
+
+ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response) {
+    return _parse_get_service_response(client, request, response);
+}
+
 
 static ds3_object _parse_object(const ds3_log* log, xmlDocPtr doc, xmlNodePtr contents_node) {
     xmlNodePtr child_node;
@@ -1015,7 +1024,7 @@ static ds3_object _parse_object(const ds3_log* log, xmlDocPtr doc, xmlNodePtr co
         } else if (element_equal(child_node, "Size") == true) {
             object.size = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Owner") == true) {
-            object.owner = _parse_owner(log, doc, child_node);
+            _parse_owner(log, doc, child_node, &object.owner);
         } else {
             ds3_log_message(log, DS3_ERROR, "Unknown element: (%s)\n", child_node->name);
         }
@@ -1042,7 +1051,7 @@ static ds3_search_object* _parse_search_object(const ds3_log* log, xmlDocPtr doc
         } else if (element_equal(child_node, "Size") == true) {
             object->size = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Owner") == true) {
-            object->owner = _parse_owner(log, doc, child_node);
+            _parse_owner(log, doc, child_node, &object->owner);
         } else if (element_equal(child_node, "Type") == true) {
             object->type = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Version") == true) {
@@ -2276,9 +2285,10 @@ void ds3_free_service_response(ds3_get_service_response* response) {
     num_buckets = response->num_buckets;
 
     for (bucket_index = 0; bucket_index < num_buckets; bucket_index++) {
-        ds3_bucket bucket = response->buckets[bucket_index];
-        ds3_str_free(bucket.name);
-        ds3_str_free(bucket.creation_date);
+        ds3_bucket* bucket = response->buckets[bucket_index];
+        ds3_str_free(bucket->name);
+        ds3_str_free(bucket->creation_date);
+        g_free(bucket);
     }
 
     ds3_free_owner(response->owner);
@@ -2358,6 +2368,7 @@ void ds3_free_client(ds3_client* client) {
     if (client->log != NULL) {
         g_free(client->log);
     }
+    ds3_free_creds(client->creds);
     g_free(client);
 }
 
