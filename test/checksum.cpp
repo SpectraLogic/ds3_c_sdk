@@ -24,7 +24,7 @@ unsigned long get_size_by_fd(int fd) {
 bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num_bytes_to_check, unsigned long offset_1, unsigned long offset_2) {
     GMappedFile* file_descript_1;
     GMappedFile* file_descript_2;
-    GError *error=NULL;
+    GError *error = NULL;
     char* file_buffer_1;
     char* file_buffer_2;
 
@@ -36,15 +36,15 @@ bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num
     printf("File to be checked:\t%s\n", filename_2);
 
     file_descript_1 = g_mapped_file_new (filename_1, FALSE, &error);
-    if(error!=NULL) exit(-1);
+    if(error!=NULL) { printf("encountered glib error: code %i, %s\n", error->code, error->message); exit(-1); }
     
     file_descript_2 = g_mapped_file_new (filename_2, FALSE, &error);
-    if(error!=NULL) exit(-1);
+    if(error!=NULL) { printf("encountered glib error: code %i, %s\n", error->code, error->message); exit(-1); }
 
     file_buffer_1 = g_mapped_file_get_contents(file_descript_1);
     file_buffer_2 = g_mapped_file_get_contents(file_descript_2);
-    if(num_bytes_to_check==0) {
-        num_bytes_to_check=MIN(g_mapped_file_get_length (file_descript_1), g_mapped_file_get_length (file_descript_1));
+    if(num_bytes_to_check == 0) {
+        num_bytes_to_check = MIN(g_mapped_file_get_length (file_descript_1), g_mapped_file_get_length (file_descript_1));
     }
     
     result_1 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_1+offset_1, num_bytes_to_check);
