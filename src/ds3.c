@@ -916,7 +916,7 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     return NULL;
 }
 
-static ds3_error* _parse_bucket( const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root, ds3_bucket** _response) {
+static ds3_error* _parse_bucket(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root, ds3_bucket** _response) {
     xmlNodePtr child_node;
     ds3_bucket* bucket = g_new0(ds3_bucket, 1);
 
