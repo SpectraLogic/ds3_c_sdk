@@ -6,6 +6,7 @@
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
+#include <glib.h>
 
 struct TestCleanup {
     TestCleanup() {}
@@ -154,7 +155,7 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
             // if this happens we need to try the request
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after);
             retry_get = true;
-            sleep(chunk_response->retry_after);
+            g_usleep(chunk_response->retry_after*G_USEC_PER_SEC);
             ds3_free_available_chunks_response(chunk_response);
         }
     } while(retry_get);
