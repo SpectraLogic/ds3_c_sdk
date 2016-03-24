@@ -89,7 +89,7 @@ ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_multimap* map, 
     if (values == NULL) return NULL;
 
     ds3_string_multimap_entry* entry = ds3_string_multimap_entry_init(key);
-    int index;
+    unsigned int index;
     unsigned int num_values = values->len;
     for (index=0; index < num_values; index++) {
         ds3_str* current_value = g_ptr_array_index(values, index);
@@ -152,7 +152,7 @@ ds3_str* ds3_string_multimap_entry_get_key(const ds3_string_multimap_entry* entr
 }
 
 // caller frees returned ds3_str
-ds3_str* ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, int index) {
+ds3_str* ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, unsigned int index) {
     const struct _ds3_string_multimap_entry* _entry = entry;
     if ((entry == NULL) || (index > ds3_string_multimap_entry_get_num_values(entry))) {
         return NULL;

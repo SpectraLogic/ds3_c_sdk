@@ -45,7 +45,7 @@ uint32_t get_sum_of_chunks(uint32_t num_files, checksum_result* results) {
     return result;
 }
 
-uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_name, checksum_result* results) {
+uint64_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_name, checksum_result* results) {
     int64_t file_index = -1;
     for (uint64_t current_file_index = 0; current_file_index < *max_file_index; current_file_index++) {
         if (g_strcmp0(current_obj_name->value, results[current_file_index].original_name) == 0) {
@@ -63,7 +63,7 @@ uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_nam
         memcpy(results[file_index].original_name, current_obj_name->value, MAX_UNIT_TEST_FILEPATH_LENGTH);
     }
     results[file_index].num_chunks++;
-    return file_index;
+    return (uint64_t)file_index;
 }
 
 void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_available_chunks_response* chunk_response, checksum_result* results) {
@@ -82,7 +82,7 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_get_availabl
             request = ds3_init_get_object_for_job(chunk_response->object_list->bucket_name->value, current_obj.name->value, current_obj.offset, chunk_response->object_list->job_id->value);
             
             w_file = fopen(results[file_index].tmp_name, "a+");
-            fseek(w_file, current_obj.offset, SEEK_SET);
+            fseek(w_file, (long)current_obj.offset, SEEK_SET);
             
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
@@ -116,7 +116,7 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_get_
             ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
             
             w_file = fopen(results[file_index].tmp_name, "a+");
-            fseek(w_file, current_obj.offset, SEEK_SET);
+            fseek(w_file, (long)current_obj.offset, SEEK_SET);
             
             error = ds3_get_object(client, request, w_file, ds3_write_to_file);
             ds3_free_request(request);
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
             // if this happens we need to try the request
             retry_get = true;
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after) ;
-            g_usleep(chunk_response->retry_after*G_USEC_PER_SEC);
+            g_usleep((gulong)chunk_response->retry_after*G_USEC_PER_SEC);
             ds3_free_available_chunks_response(chunk_response);
         }
     } while(retry_get);
