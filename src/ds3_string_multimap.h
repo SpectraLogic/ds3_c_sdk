@@ -39,7 +39,7 @@ LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_entry_init(const ds3_
 LIBRARY_API ds3_str*                   ds3_string_multimap_entry_get_key(const ds3_string_multimap_entry* entry);
 LIBRARY_API void                       ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, const ds3_str* value);
 LIBRARY_API unsigned int               ds3_string_multimap_entry_get_num_values(const ds3_string_multimap_entry* map_entry);
-LIBRARY_API ds3_str*                   ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, int index);
+LIBRARY_API ds3_str*                   ds3_string_multimap_entry_get_value_by_index(const ds3_string_multimap_entry* entry, unsigned int index);
 LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_entry_dup(const ds3_string_multimap_entry* entry);
 LIBRARY_API void                       ds3_string_multimap_entry_free(ds3_string_multimap_entry* entry);
 

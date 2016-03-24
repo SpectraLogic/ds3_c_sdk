@@ -46,7 +46,7 @@ void print_error(const ds3_error* error) {
         printf("ds3_error_message: %s\n", error->message->value);
       }
       if (error->error != NULL) {
-          printf("ds3_status_code: %lu\n", error->error->status_code);
+	printf("ds3_status_code: %lu\n", (unsigned long)error->error->status_code);
           printf("ds3_status_message: %s\n", error->error->status_message->value);
           printf("ds3_error_body: %s\n", error->error->error_body->value);
       }
@@ -155,7 +155,7 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
             // if this happens we need to try the request
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for: " << chunk_response->retry_after);
             retry_get = true;
-            g_usleep(chunk_response->retry_after*G_USEC_PER_SEC);
+            g_usleep((gulong)chunk_response->retry_after*G_USEC_PER_SEC);
             ds3_free_available_chunks_response(chunk_response);
         }
     } while(retry_get);
@@ -177,7 +177,7 @@ void populate_with_objects_from_bulk(const ds3_client* client, const char* bucke
 
             request = ds3_init_put_object_for_job(bucket_name, current_obj.name->value, current_obj.offset,  current_obj.length, response->job_id->value);
             if (current_obj.offset > 0) {
-                fseek(file, current_obj.offset, SEEK_SET);
+	        fseek(file, (long)current_obj.offset, SEEK_SET);
             }
             error = ds3_put_object(client, request, file, ds3_read_from_file);
             ds3_free_request(request);

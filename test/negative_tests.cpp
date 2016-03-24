@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(get_bucket_with_empty_bucket_name){
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
-    BOOST_CHECK(g_str_has_prefix(error->message->value, "The bucket name parameter is required") == TRUE);
+    BOOST_CHECK(g_str_has_prefix(error->message->value, "The bucket name parameter is required") == (boolean)TRUE);
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
     ds3_free_error(error);
 }
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(get_bucket_with_null_bucket_name){
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
-    BOOST_CHECK(TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
+    BOOST_CHECK((boolean)TRUE == g_str_has_prefix(error->message->value, "The bucket name parameter is required"));
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
     ds3_free_error(error);
 }
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(head_object_with_empty_object_name){
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
-    BOOST_CHECK(g_str_has_prefix(error->message->value, "The object name parameter is required") == TRUE);
+    BOOST_CHECK(g_str_has_prefix(error->message->value, "The object name parameter is required") == (boolean)TRUE);
     ds3_free_error(error);
 }
 
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(head_object_with_null_object_name){
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
-    BOOST_CHECK(g_str_has_prefix(error->message->value, "The object name parameter is required") == TRUE);
+    BOOST_CHECK(g_str_has_prefix(error->message->value, "The object name parameter is required") == (boolean)TRUE);
     ds3_free_error(error);
 }
 
@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
                 }
 
                 if (bulk_object.offset > 0) {
-                    fseek(file, bulk_object.offset, SEEK_SET);
+		    fseek(file, (long)bulk_object.offset, SEEK_SET);
                 }
                 error = ds3_put_object(client, request, file, ds3_read_from_file);
                 ds3_free_request(request);

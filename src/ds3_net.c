@@ -255,7 +255,7 @@ static char* _canonicalize_amz_headers(GHashTable* headers) {
     GPtrArray *signing_strings = g_ptr_array_new_with_free_func(g_free);  // stores char*
     GString* header_signing_value;
     char* signing_value;
-    int i;
+    unsigned int i;
 
     while(key != NULL) {
         if(g_str_has_prefix((char*)key->data, "x-amz")){

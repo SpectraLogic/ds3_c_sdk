@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(checksum) {
                 }
 
                 if (bulk_object.offset > 0) {
-                    fseek(file, bulk_object.offset, SEEK_SET);
+		    fseek(file, (long)bulk_object.offset, SEEK_SET);
                 }
                 error = ds3_put_object(client, request, file, ds3_read_from_file);
                 ds3_free_request(request);
