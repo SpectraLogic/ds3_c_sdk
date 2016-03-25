@@ -937,25 +937,30 @@ static ds3_error* _parse_bucket(const ds3_log* log, const xmlDocPtr doc, const x
 }
 
 static ds3_error* _parse_bucket_array(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
     xmlNodePtr child_node;
     GPtrArray* buckets_array = g_ptr_array_new();
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         ds3_bucket* bucket;
-        _parse_bucket(log, doc, child_node, &bucket);
+        error = _parse_bucket(log, doc, child_node, &bucket);
         g_ptr_array_add(buckets_array, bucket);
+
+        if (error != NULL) {
+            break;
+        }
     }
 
     *_response = buckets_array;
 
-    return NULL;
+    return error;
 }
 
-static ds3_error* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr owner_node, ds3_owner** _response) {
+static ds3_error* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xmlNodePtr root, ds3_owner** _response) {
     xmlNodePtr child_node;
     ds3_owner* owner = g_new0(ds3_owner, 1);
 
-    for (child_node = owner_node->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "DisplayName")) {
             owner->name = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "ID")) {
@@ -973,11 +978,10 @@ static ds3_error* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xm
 static ds3_error* _parse_get_service_response(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
     xmlDocPtr doc;
     xmlNodePtr root;
-    ds3_error* error;
-    ds3_get_service_response* response;
     xmlNodePtr child_node;
+    ds3_get_service_response* response;
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "ListAllMyBucketsResult");
+    ds3_error* error = _get_request_xml_nodes(client, request, &doc, &root, "ListAllMyBucketsResult");
     if (error != NULL) {
         return error;
     }
@@ -1011,8 +1015,8 @@ static ds3_error* _parse_get_service_response(const ds3_client* client, const ds
     return error;
 }
 
-ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** response) {
-    return _parse_get_service_response(client, request, response);
+ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
+    return _parse_get_service_response(client, request, _response);
 }
 
 
