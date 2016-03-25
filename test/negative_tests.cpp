@@ -23,7 +23,7 @@
 BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
     printf("-----Negative Testing Duplicate Bucket Creation-------\n");
     ds3_client* client = get_client();
-    uint64_t i;
+    size_t i;
     bool found = false;
     const char* bucket_name = "duplicatename_test_bucket";
     ds3_request* request = ds3_init_put_bucket(bucket_name);
@@ -39,7 +39,8 @@ BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
     handle_error(error);
 
     for (i = 0; i < response->num_buckets; i++) {
-        if (strcmp(bucket_name, response->buckets[i].name->value) == 0) {
+        ds3_bucket* currentBucket = response->buckets[i];
+        if (strcmp(bucket_name, currentBucket->name->value) == 0) {
             found = true;
             break;
         }
@@ -71,8 +72,8 @@ BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
 BOOST_AUTO_TEST_CASE(delete_non_existing_bucket){
     printf("-----Negative Testing Non Existing Bucket Deletion-------\n");
     ds3_client* client = get_client();
-    ds3_request* request ;
-    ds3_error* error ;
+    ds3_request* request;
+    ds3_error* error;
     const char* bucket_name = "delete_non_existing_bucket";
     request = ds3_init_delete_bucket(bucket_name);
     error = ds3_delete_bucket(client, request);
@@ -209,7 +210,7 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_object) {
     handle_error(error);
 
     for (i = 0; i < response->num_buckets; i++) {
-        if (strcmp(bucket_name, response->buckets[i].name->value) == 0) {
+        if (strcmp(bucket_name, response->buckets[i]->name->value) == 0) {
             found = true;
             break;
         }
