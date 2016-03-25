@@ -994,11 +994,19 @@ static ds3_error* _parse_get_service_response(const ds3_client* client, const ds
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown xml element: (%s)\b", child_node->name);
         }
+
+        if (error != NULL) {
+            break;
+        }
     }
 
     xmlFreeDoc(doc);
 
-    *_response = response;
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_free_service_response(response);
+    }
 
     return error;
 }
