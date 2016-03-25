@@ -219,7 +219,6 @@ bool contains_object(const ds3_object* objects, uint64_t num_objects, const char
 }
 
 void free_client(ds3_client* client) {
-    ds3_free_creds(client->creds);
     ds3_free_client(client);
 }
 
