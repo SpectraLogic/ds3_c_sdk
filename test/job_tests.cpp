@@ -24,9 +24,7 @@ BOOST_AUTO_TEST_CASE(get_job){
 
     ds3_free_request(request);
 
-    handle_error(error);
-    
-    BOOST_REQUIRE(error == NULL);
+    BOOST_REQUIRE(handle_error_and_return_is_null(error));
 
     object_list = ds3_convert_object_list(response->objects, response->num_objects);
 

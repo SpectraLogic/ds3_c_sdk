@@ -17,6 +17,7 @@ ds3_get_available_chunks_response* ensure_available_chunks(const ds3_client* cli
 
 bool contains_object(const ds3_object* objects, uint64_t num_objects, const char* obj);
 void handle_error(ds3_error* error);
+bool handle_error_and_return_is_null(ds3_error* error);
 void free_client(ds3_client* client);
 
 ds3_bulk_object_list* default_object_list();
