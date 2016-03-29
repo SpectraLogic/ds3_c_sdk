@@ -96,6 +96,34 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     free_client(client);
 }
 
+BOOST_AUTO_TEST_CASE(get_one_objects_with_plus) {
+	uint64_t num_objs;
+	ds3_client* client = get_client();
+	ds3_get_objects_response* response;
+	const char* bucket_name = "Get_objects_with_plus";
+	const char* plus_object = "Plus+Object"
+
+	ds3_request* put_request = ds3_init_put_object_for_job(bucket_name, plus_object, 0, 1024, NULL);
+	ds3_error* error = ds3_put_object(client, put_request, NULL, NULL);
+	ds3_free_request(put_request);
+	handle_error(error);
+
+	ds3_request* request = ds3_init_get_objects();
+	ds3_request_set_bucket_name(request, bucket_name);
+	ds3_request_set_name(request, plus_object);
+	error = ds3_get_objects(client, request, &response);
+
+	handle_error(error);
+	num_objs = response->num_objects;
+	BOOST_CHECK_EQUAL(num_objs, 1);
+
+	ds3_free_request(request);
+	ds3_free_objects_response(response);
+
+	clear_bucket(client, bucket_name);
+	free_client(client);
+}
+
 BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     uint64_t num_objs;
     ds3_client* client = get_client();
