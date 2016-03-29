@@ -191,6 +191,7 @@ static char* _net_gen_query_params(GHashTable* query_params) {
         }
 
         g_free(entries);
+		g_strescape(return_string, NULL);
         return return_string;
     } else {
         return NULL;
