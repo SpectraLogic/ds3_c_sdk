@@ -10,46 +10,46 @@ CFLAGS+= -g -DDS3_LOG -Wall# Debug flags
 all: get-service get-bucket put-bulk
 
 deps:
-	./build_local.sh
+    ./build_local.sh
 
 run-get-service: get-service
-	LD_LIBRARY_PATH=../install/lib ./get-service
+    LD_LIBRARY_PATH=../install/lib ./get-service
 
 get-service: get-service.o
-	$(CC) $< $(CFLAGS) $(LIBS) -o $@
+    $(CC) $< $(CFLAGS) $(LIBS) -o $@
 
 get-service.o: ../install/lib/pkgconfig/libds3.pc
-	$(CC) -c get-service.c $(CFLAGS)
+    $(CC) -c get-service.c $(CFLAGS)
 
 run-get-bucket: get-bucket
-	LD_LIBRARY_PATH=../install/lib ./get-bucket
+    LD_LIBRARY_PATH=../install/lib ./get-bucket
 
 get-bucket: get-bucket.o
-	$(CC) $< $(CFLAGS) $(LIBS) -o $@
+    $(CC) $< $(CFLAGS) $(LIBS) -o $@
 
 get-bucket.o: ../install/lib/pkgconfig/libds3.pc
-	$(CC) -c get-bucket.c $(CFLAGS)
+    $(CC) -c get-bucket.c $(CFLAGS)
 
 run-put-bulk: put-bulk
-	LD_LIBRARY_PATH=../install/lib ./put-bulk
+    LD_LIBRARY_PATH=../install/lib ./put-bulk
 
 put-bulk: put-bulk.o
-	$(CC) $< $(CFLAGS) $(LIBS) -o $@
+    $(CC) $< $(CFLAGS) $(LIBS) -o $@
 
 put-bulk.o: ../install/lib/pkgconfig/libds3.pc
-	$(CC) -c put-bulk.c $(CFLAGS)
+    $(CC) -c put-bulk.c $(CFLAGS)
 
 run-get-object: get-object
-	LD_LIBRARY_PATH=../install/lib ./get-object
+    LD_LIBRARY_PATH=../install/lib ./get-object
 
 get-object: get-object.o
-	$(CC) $< $(CFLAGS) $(LIBS) -o $@
+    $(CC) $< $(CFLAGS) $(LIBS) -o $@
 
 get-object.o: ../install/lib/pkgconfig/libds3.pc
-	$(CC) $(CFLAGS) -c get-object.c
+    $(CC) $(CFLAGS) -c get-object.c
 
 ../install/lib/pkgconfig/libds3.pc:
-	$(error SDK not built. Please run make deps)
+    $(error SDK not built. Please run make deps)
 
 clean:
-	rm -f *.o get-service get-bucket put-bulk get-object
+    rm -f *.o get-service get-bucket put-bulk get-object

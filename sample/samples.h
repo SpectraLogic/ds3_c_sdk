@@ -15,11 +15,11 @@
 
 /*
  * Set environment vars to match target device, e.g.:
- 	export DS3_ACCESS_KEY="ams="
-	export DS3_SECRET_KEY="tzcWTTYE"
-	export DS3_ENDPOINT="http://192.168.1.20:8080"
-	// http_proxy is optional
-	export http_proxy="http://10.0.2.2:8888"
+     export DS3_ACCESS_KEY="ams="
+    export DS3_SECRET_KEY="tzcWTTYE"
+    export DS3_ENDPOINT="http://192.168.1.20:8080"
+    // http_proxy is optional
+    export http_proxy="http://10.0.2.2:8888"
 */
 
 #define BUCKETNAME ((const char *)"books")

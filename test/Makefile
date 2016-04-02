@@ -26,61 +26,61 @@ CFLAGS+= -DBOOST_TEST_DYN_LINK -lboost_unit_test_framework
 all: test
 
 mem: test
-	$(LIB_PATH) valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./test
+    $(LIB_PATH) valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./test
 
 debug: test
-	$(LIB_PATH) $(GDB) ./test
+    $(LIB_PATH) $(GDB) ./test
 
 run: test
-	$(LIB_PATH) ./test --catch_system_errors=no
+    $(LIB_PATH) ./test --catch_system_errors=no
 
 run_specified_test: test
-	$(LIB_PATH) ./test --catch_system_errors=no --run_test=$(test)
+    $(LIB_PATH) ./test --catch_system_errors=no --run_test=$(test)
 
 deps:
-	./build_local.sh
+    ./build_local.sh
 
 test: test.o checksum.o service_tests.o bucket_tests.o job_tests.o bulk_get.o get_physical_placement.o negative_tests.o metadata_tests.o deletes_test.o search_tests.o multimap_tests.o
-	$(CPP) *.o $(CFLAGS) $(LIBS) -o test
+    $(CPP) *.o $(CFLAGS) $(LIBS) -o test
 
 test.o: ../install/lib/pkgconfig/libds3.pc
-	$(CPP) -c test.cpp $(CFLAGS)
+    $(CPP) -c test.cpp $(CFLAGS)
 
 metadata_tests.o:
-	$(CPP) -c metadata_tests.cpp $(CFLAGS)
+    $(CPP) -c metadata_tests.cpp $(CFLAGS)
 
 service_tests.o:
-	$(CPP) -c service_tests.cpp $(CFLAGS)
+    $(CPP) -c service_tests.cpp $(CFLAGS)
 
 search_tests.o:
-	$(CPP) -c search_tests.cpp $(CFLAGS)
+    $(CPP) -c search_tests.cpp $(CFLAGS)
 
 bucket_tests.o:
-	$(CPP) -c bucket_tests.cpp $(CFLAGS)
+    $(CPP) -c bucket_tests.cpp $(CFLAGS)
 
 deletes_test.o:
-	$(CPP) -c deletes_test.cpp $(CFLAGS)
+    $(CPP) -c deletes_test.cpp $(CFLAGS)
 
 job_tests.o:
-	$(CPP) -c job_tests.cpp $(CFLAGS)
+    $(CPP) -c job_tests.cpp $(CFLAGS)
 
 bulk_get.o:
-	$(CPP) -c bulk_get.cpp $(CFLAGS)
+    $(CPP) -c bulk_get.cpp $(CFLAGS)
 
 get_physical_placement.o:
-	$(CPP) -c get_physical_placement.cpp $(CFLAGS)
+    $(CPP) -c get_physical_placement.cpp $(CFLAGS)
 
 negative_tests.o:
-	$(CPP) -c negative_tests.cpp $(CFLAGS)
+    $(CPP) -c negative_tests.cpp $(CFLAGS)
 
 multimap_tests.o:
-	$(CPP) -c multimap_tests.cpp $(CFLAGS)
+    $(CPP) -c multimap_tests.cpp $(CFLAGS)
 
 checksum.o:
-	$(CPP) -c checksum.cpp $(CFLAGS)
+    $(CPP) -c checksum.cpp $(CFLAGS)
 
 ../install/lib/pkgconfig/libds3.pc:
-	$(error SDK not built. Please run make deps)
+    $(error SDK not built. Please run make deps)
 
 clean:
-	rm -f *.o test
+    rm -f *.o test
