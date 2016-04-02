@@ -23,7 +23,7 @@ $(OUTPUT)\bin\ds3.dll: obj\ds3.obj
     copy $(DEPS)\bin\*.dll $(OUTPUT)\bin
 
 $(OUTPUT)\include\ds3.h: ..\src\ds3.h
-	copy ..\src\ds3.h $(OUTPUT)\include\ds3.h
+    copy ..\src\ds3.h $(OUTPUT)\include\ds3.h
 
 obj\get-service.obj: ..\sample\get-service.c $(OUTPUT)\include\ds3.h obj
     cl $(CFLAGS) /W4 /MD /c ..\sample\get-service.c /Foobj\get-service.obj $(COMPAT_INCLUDE) $(DEPS_INCLUDE) /I$(OUTPUT)\include

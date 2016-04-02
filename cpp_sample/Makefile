@@ -9,20 +9,20 @@ CPPFLAGS+= -g -DDS3_LOG -Wall# Debug flags
 all: sample
 
 run: sample
-	LD_LIBRARY_PATH=../install/lib ./cpp_sample
+    LD_LIBRARY_PATH=../install/lib ./cpp_sample
 
 deps:
-	./build_local.sh
+    ./build_local.sh
 
 sample: main.o
-	$(CPP) *.o $(CPPFLAGS) $(LIBS) -o cpp_sample
+    $(CPP) *.o $(CPPFLAGS) $(LIBS) -o cpp_sample
 
 main.o: ../install/lib/pkgconfig/libds3.pc
-	$(CPP) -c main.cpp $(CPPFLAGS)
+    $(CPP) -c main.cpp $(CPPFLAGS)
 
 ../install/lib/pkgconfig/libds3.pc:
-	$(error SDK not built. Please run make deps)
+    $(error SDK not built. Please run make deps)
 
 clean:
-	rm -f *.o cpp_sample
+    rm -f *.o cpp_sample
 

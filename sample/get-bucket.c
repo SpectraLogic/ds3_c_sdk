@@ -45,7 +45,7 @@ int main(void) {
     ds3_free_request(request);
 
     handle_error(error);
-	
+
     if (response == NULL) {
         printf("Response was null\n");
         ds3_free_client(client);
