@@ -315,8 +315,8 @@ typedef struct {
 }ds3_tape;
 
 typedef struct {
-    ds3_tape*		tapes;
-    uint64_t		num_tapes;
+    ds3_tape*   tapes;
+    uint64_t    num_tapes;
 }ds3_get_physical_placement_response;
 
 typedef struct {
@@ -325,7 +325,7 @@ typedef struct {
 }ds3_allocate_chunk_response;
 
 typedef struct {
-    ds3_bulk_response* 	  object_list;
+    ds3_bulk_response*    object_list;
     uint64_t              retry_after;
 }ds3_get_available_chunks_response;
 

@@ -45,7 +45,7 @@ int main(void) {
     
     handle_error(error);
 
-    ds3_free_creds(client->creds);	
+    ds3_free_creds(client->creds);
     ds3_free_client(client);
     ds3_cleanup();
 
