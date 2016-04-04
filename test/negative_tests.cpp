@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_object) {
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
-	  BOOST_CHECK(error->error->status_code == 404);
+    BOOST_CHECK(error->error->status_code == 404);
     BOOST_CHECK(strcmp(error->error->status_message->value ,"Not Found") == 0);
     ds3_free_error(error);
 }

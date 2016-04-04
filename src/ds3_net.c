@@ -87,10 +87,10 @@ char* escape_url_extended(const char* url, const char** delimiters, uint32_t num
     return escaped_ptr;
 }
 
-// Like escape_url but don't encode "/".
+// Like escape_url but don't encode "/" or "+".
 char* escape_url_object_name(const char* url) {
-    const char *delimiters[1]={"/"};
-    return escape_url_extended(url, delimiters, 1);
+    const char *delimiters[2]={"/","+"};
+    return escape_url_extended(url, delimiters, 2);
 }
 
 // Like escape_url but don't encode "=".
@@ -191,6 +191,7 @@ static char* _net_gen_query_params(GHashTable* query_params) {
         }
 
         g_free(entries);
+
         return return_string;
     } else {
         return NULL;

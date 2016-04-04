@@ -34,6 +34,9 @@ debug: test
 run: test
 	$(LIB_PATH) ./test --catch_system_errors=no
 
+run_specified_test: test
+	$(LIB_PATH) ./test --catch_system_errors=no --run_test=$(test)
+
 deps:
 	./build_local.sh
 
