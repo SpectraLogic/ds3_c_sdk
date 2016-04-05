@@ -147,8 +147,8 @@ BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     uint64_t num_objs;
     ds3_client* client = get_client();
     ds3_get_objects_response* response;
-    char* bucket_name = "TestSpecialCharacterInObjectName";
-    char* special_char_object = "varsity1314/_projects/VARSITY 13-14/_versions/Varsity 13-14 (2015-10-05 1827)/_project/Trash/PCMAC HD.avb";
+    const char* bucket_name = "TestSpecialCharacterInObjectName";
+    const char* special_char_object = "varsity1314/_projects/VARSITY 13-14/_versions/Varsity 13-14 (2015-10-05 1827)/_project/Trash/PCMAC HD.avb";
 
     ds3_request* put_bucket_request = ds3_init_put_bucket(bucket_name);
     ds3_error* bucket_error = ds3_put_bucket(client, put_bucket_request);
