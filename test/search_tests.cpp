@@ -176,8 +176,8 @@ BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     BOOST_CHECK_EQUAL(num_objs, 1);
     ds3_search_object* searchObjectReturned = response->objects[0];
     ds3_str* name_ds3_str = searchObjectReturned->name;
-        char* name = name_ds3_str->value;
-        BOOST_CHECK_EQUAL(name, special_char_object);
+    char* name = name_ds3_str->value;
+    BOOST_CHECK_EQUAL(name, special_char_object);
 
     ds3_free_request(request);
     ds3_free_objects_response(response);

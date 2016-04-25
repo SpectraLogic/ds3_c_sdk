@@ -453,8 +453,8 @@ void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
     _set_query_param(_request, "max-keys", max_keys_s);
 }
 
-static const char* UNSIGNED_LONG_BASE_10 = "4294967296";
-static const unsigned char UNSIGNED_LONG_BASE_10_STR_LEN = 11;
+static const char UNSIGNED_LONG_BASE_10[] = "4294967296";
+static const unsigned int UNSIGNED_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_BASE_10);
 
 void ds3_request_set_preferred_number_of_chunks(ds3_request* _request, uint32_t num_chunks) {
     char num_chunks_s[UNSIGNED_LONG_BASE_10_STR_LEN];
@@ -715,11 +715,12 @@ static ds3_error* _internal_request_dispatcher(
         void* read_user_struct,
         size_t (*read_handler_func)(void*, size_t, size_t, void*),
         void* write_user_struct,
-        size_t (*write_handler_func)(void*, size_t, size_t, void*)) {
+        size_t (*write_handler_func)(void*, size_t, size_t, void*),
+        ds3_string_multimap** return_headers) {
     if (client == NULL || request == NULL) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
-    return net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, NULL);
+    return net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, return_headers);
 }
 
 static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name) {
@@ -800,22 +801,12 @@ static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, s
 }
 
 static ds3_error* _get_request_xml_nodes(
-        const ds3_client* client,
-        const ds3_request* request,
+        GByteArray* xml_blob,
         xmlDocPtr* _doc,
         xmlNodePtr* _root,
         char* root_element_name) {
-    xmlDocPtr doc;
     xmlNodePtr root;
-    GByteArray* xml_blob = g_byte_array_new();
-
-    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    xmlDocPtr doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
     if (doc == NULL) {
         char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
         g_byte_array_free(xml_blob, TRUE);
@@ -865,9 +856,15 @@ ds3_error* ds3_get_system_information(const ds3_client* client, const ds3_reques
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr sys_info_node;
-    ds3_error* error;
+    GByteArray* xml_blob = g_byte_array_new();
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "Data");
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
@@ -895,9 +892,16 @@ ds3_error* ds3_verify_system_health(const ds3_client* client, const ds3_request*
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    ds3_error* error;
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "Data");
+    GByteArray* xml_blob = g_byte_array_new();
+
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
@@ -986,9 +990,16 @@ static ds3_get_service_response* _parse_get_service_response(const ds3_log* log,
 ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
     xmlDocPtr doc;
     xmlNodePtr root;
-    ds3_error* error;
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "ListAllMyBucketsResult");
+    GByteArray* xml_blob = g_byte_array_new();
+
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListAllMyBucketsResult");
     if (error != NULL) {
         return error;
     }
@@ -1079,7 +1090,6 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    ds3_error* error;
     GArray* object_array;
     GArray* common_prefix_array;
 
@@ -1087,7 +1097,15 @@ ds3_error* ds3_get_bucket(const ds3_client* client, const ds3_request* request, 
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "ListBucketResult");
+    GByteArray* xml_blob = g_byte_array_new();
+
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListBucketResult");
     if (error != NULL) {
         return error;
     }
@@ -1160,7 +1178,7 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
 
-    error = net_process_request(client, request, NULL, NULL, NULL, NULL, &return_headers);
+    error = _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, &return_headers);
 
     if (error == NULL) {
         metadata = _init_metadata(return_headers);
@@ -1172,15 +1190,11 @@ ds3_error* ds3_head_object(const ds3_client* client, const ds3_request* request,
 }
 
 ds3_error* ds3_head_bucket(const ds3_client* client, const ds3_request* request) {
-    ds3_error* error;
-
-    error = net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
-
-    return error;
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_get_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t(*callback)(void*,size_t, size_t, void*)) {
-    return _internal_request_dispatcher(client, request, user_data, callback, NULL, NULL);
+    return _internal_request_dispatcher(client, request, user_data, callback, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_request* request, void* user_data, size_t (* callback)(void*, size_t, size_t, void*), ds3_metadata** _metadata) {
@@ -1188,8 +1202,7 @@ ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_requ
     ds3_string_multimap* return_headers;
     ds3_metadata* metadata;
 
-    error = net_process_request(client, request, user_data, callback, NULL, NULL, &return_headers);
-
+    error = _internal_request_dispatcher(client, request, user_data, callback, NULL, NULL, &return_headers);
     if (error == NULL) {
         metadata = _init_metadata(return_headers);
         *_metadata = metadata;
@@ -1200,15 +1213,15 @@ ds3_error* ds3_get_object_with_metadata(const ds3_client* client, const ds3_requ
 }
 
 ds3_error* ds3_put_object(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*)) {
-    return _internal_request_dispatcher(client, request, NULL, NULL, user_data, callback);
+    return _internal_request_dispatcher(client, request, NULL, NULL, user_data, callback, NULL);
 }
 
 ds3_error* ds3_put_bucket(const ds3_client* client, const ds3_request* request) {
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_delete_bucket(const ds3_client* client, const ds3_request* request) {
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request, ds3_get_objects_response** _response) {
@@ -1216,10 +1229,16 @@ ds3_error* ds3_get_objects(const ds3_client* client, const ds3_request* request,
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    ds3_error* error;
     GArray* object_array;
+    GByteArray* xml_blob = g_byte_array_new();
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "Data");
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
@@ -1679,7 +1698,7 @@ ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* reques
     if(g_ascii_strncasecmp(request->path->value, "//", 2) == 0){
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
     }
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _request, ds3_bulk_object_list *bulkObjList) {
@@ -1718,7 +1737,7 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 
     xml_blob = g_byte_array_new();
 
-    error_response = net_process_request(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error_response = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -1729,9 +1748,7 @@ ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _requ
 }
 
 ds3_error* ds3_delete_folder(const ds3_client* client, const ds3_request* _request) {
-    struct _ds3_request* request;
-    request = (struct _ds3_request*) _request;
-    return net_process_request(client, request, NULL, NULL, NULL, NULL, NULL);
+    return _internal_request_dispatcher(client, _request, NULL, NULL, NULL, NULL, NULL);
 }
 
 ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_request* _request, ds3_get_physical_placement_response** _response) {
@@ -1781,7 +1798,7 @@ ds3_error* ds3_get_physical_placement(const ds3_client* client, const ds3_reques
     request->length = send_buff.size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
-    error_response = net_process_request(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error_response = _internal_request_dispatcher(client, _request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -1944,7 +1961,7 @@ ds3_error* ds3_bulk(const ds3_client* client, const ds3_request* _request, ds3_b
     request->length = send_buff.size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
-    error_response = net_process_request(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error_response = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
@@ -1986,7 +2003,7 @@ ds3_error* ds3_allocate_chunk(const ds3_client* client, const ds3_request* reque
     xmlDocPtr doc;
     xmlNodePtr root;
 
-    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
         ds3_string_multimap_free(response_headers);
@@ -2045,7 +2062,7 @@ ds3_error* ds3_get_available_chunks(const ds3_client* client, const ds3_request*
     ds3_string_multimap_entry* retry_after_header;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &response_headers);
 
     if (error != NULL) {
         ds3_string_multimap_free(response_headers);
@@ -2116,12 +2133,19 @@ static ds3_error* _parse_jobs_list(const ds3_log* log, xmlDocPtr doc, xmlNodePtr
 }
 
 ds3_error* ds3_get_jobs(const ds3_client* client, const ds3_request* request, ds3_get_jobs_response** response) {
-    ds3_error* error;
     ds3_get_jobs_response* get_jobs_response = NULL;
     xmlDocPtr doc;
     xmlNodePtr root;
 
-    error = _get_request_xml_nodes(client, request, &doc, &root, "Jobs");
+    GByteArray* xml_blob = g_byte_array_new();
+
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Jobs");
     if (error != NULL) {
         return error;
     }
@@ -2139,7 +2163,7 @@ static ds3_error* _common_job(const ds3_client* client, const ds3_request* reque
     ds3_bulk_response* bulk_response;
     xmlDocPtr doc;
 
-    error = net_process_request(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
 
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
@@ -2171,7 +2195,7 @@ ds3_error* ds3_put_job(const ds3_client* client, const ds3_request* request, ds3
 }
 
 ds3_error* ds3_delete_job(const ds3_client* client, const ds3_request* request) {
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL);
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
 void ds3_free_bucket_response(ds3_get_bucket_response* response) {
