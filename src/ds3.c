@@ -1723,44 +1723,48 @@ ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* reques
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
-ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _request, ds3_bulk_object_list *bulkObjList) {
-    ds3_error* error;
-    ds3_xml_send_buff send_buff;
-    int buff_size;
+ds3_error* _init_request_payload(const ds3_request* _request,
+                                 ds3_xml_send_buff* send_buff,
+                                 ds3_bulk_object_list *bulkObjList,
+                                 const object_list_type operation_type,
+                                 const ds3_chunk_ordering order) {
+    xmlDocPtr doc;
 
     struct _ds3_request* request = (struct _ds3_request*) _request;
     request->object_list = bulkObjList;
-
-    GByteArray* xml_blob;
-
-    xmlDocPtr doc;
-    xmlChar* xml_buff;
 
     if (bulkObjList == NULL || bulkObjList->size == 0) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
     }
 
-    // Init the data structures declared above the null check
-    memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
+    // Clear send_buff
+    memset(send_buff, 0, sizeof(ds3_xml_send_buff));
+
+    doc = _generate_xml_objects_list(bulkObjList, operation_type, order);
+
+    xmlDocDumpFormatMemory(doc, (xmlChar**) &send_buff->buff, (int*) &send_buff->size, 1);
+    request->length = send_buff->size; // make sure to set the size of the request.
+
+    xmlFreeDoc(doc);
+
+    return NULL;
+}
+
+ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _request, ds3_bulk_object_list *bulkObjList) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
+
+    GByteArray* xml_blob;
 
     // The chunk ordering is not used.  Just pass in NONE.
-    doc = _generate_xml_objects_list(bulkObjList, BULK_DELETE, NONE);
-
-    xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
-
-    send_buff.buff = (char*) xml_buff;
-    send_buff.size = buff_size;
-
-    request->length = buff_size; // make sure to set the size of the request.
+    error = _init_request_payload(_request, &send_buff, bulkObjList, BULK_DELETE, NONE);
+    if (error != NULL) return error;
 
     xml_blob = g_byte_array_new();
-
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error = _internal_request_dispatcher(client, _request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
-    xmlFreeDoc(doc);
-    xmlFree(xml_buff);
-
+    xmlFree(send_buff.buff);
     g_byte_array_free(xml_blob, TRUE);
 
     return error;
