@@ -1724,49 +1724,46 @@ ds3_error* ds3_delete_object(const ds3_client* client, const ds3_request* reques
 }
 
 ds3_error* ds3_delete_objects(const ds3_client* client, const ds3_request* _request, ds3_bulk_object_list *bulkObjList) {
-    ds3_error* error_response;
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
     int buff_size;
 
-    struct _ds3_request* request;
-    ds3_bulk_object_list* obj_list;
-    ds3_xml_send_buff send_buff;
+    struct _ds3_request* request = (struct _ds3_request*) _request;
+    request->object_list = bulkObjList;
 
     GByteArray* xml_blob;
 
     xmlDocPtr doc;
     xmlChar* xml_buff;
 
-    request = (struct _ds3_request*) _request;
-    request->object_list = bulkObjList;
-
-    if (request->object_list == NULL || request->object_list->size == 0) {
+    if (bulkObjList == NULL || bulkObjList->size == 0) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
     }
 
     // Init the data structures declared above the null check
     memset(&send_buff, 0, sizeof(ds3_xml_send_buff));
-    obj_list = request->object_list;
 
     // The chunk ordering is not used.  Just pass in NONE.
-    doc = _generate_xml_objects_list(obj_list, BULK_DELETE, NONE);
+    doc = _generate_xml_objects_list(bulkObjList, BULK_DELETE, NONE);
 
     xmlDocDumpFormatMemory(doc, &xml_buff, &buff_size, 1);
 
     send_buff.buff = (char*) xml_buff;
-    send_buff.size = strlen(send_buff.buff);
+    send_buff.size = buff_size;
 
-    request->length = send_buff.size; // make sure to set the size of the request.
+    request->length = buff_size; // make sure to set the size of the request.
 
     xml_blob = g_byte_array_new();
 
-    error_response = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
 
     // Cleanup the data sent to the server.
     xmlFreeDoc(doc);
     xmlFree(xml_buff);
 
     g_byte_array_free(xml_blob, TRUE);
-    return error_response;
+
+    return error;
 }
 
 ds3_error* ds3_delete_folder(const ds3_client* client, const ds3_request* _request) {
