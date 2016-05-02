@@ -979,20 +979,13 @@ static ds3_error* _parse_owner(const ds3_log* log, const xmlDocPtr doc, const xm
     return NULL;
 }
 
-static ds3_error* _parse_get_service_response(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
+static ds3_error* _parse_get_service_response(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
     ds3_get_service_response* response;
-    GByteArray* xml_blob = g_byte_array_new();
 
-    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListAllMyBucketsResult");
+    ds3_error* error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListAllMyBucketsResult");
     if (error != NULL) {
         return error;
     }
@@ -1027,7 +1020,16 @@ static ds3_error* _parse_get_service_response(const ds3_client* client, const ds
 }
 
 ds3_error* ds3_get_service(const ds3_client* client, const ds3_request* request, ds3_get_service_response** _response) {
-    return _parse_get_service_response(client, request, _response);
+    GByteArray* xml_blob = g_byte_array_new();
+
+    ds3_error* error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_get_service_response(client, request, _response, xml_blob);
+    return error;
 }
 
 
