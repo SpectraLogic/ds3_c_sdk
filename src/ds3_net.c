@@ -1,6 +1,6 @@
 /*
  * ******************************************************************************
- *   Copyright 2014-2015 Spectra Logic Corporation. All Rights Reserved.
+ *   Copyright 2014-2016 Spectra Logic Corporation. All Rights Reserved.
  *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *   this file except in compliance with the License. A copy of the License is located at
  *
@@ -12,6 +12,9 @@
  *   specific language governing permissions and limitations under the License.
  * ****************************************************************************
  */
+
+/* This Code is Auto-Generated; DO NOT MODIFY! */
+
 
 #include <curl/curl.h>
 
@@ -47,11 +50,11 @@ static char* _net_get_verb(http_verb verb) {
 
 static char* _get_checksum_type_header(const ds3_checksum_type type) {
     switch(type) {
-        case DS3_MD5: return "Content-MD5:";
-        case DS3_SHA256: return "Content-SHA256:";
-        case DS3_SHA512: return "Content-SHA512:";
-        case DS3_CRC32: return "Content-CRC32:";
-        case DS3_CRC32C: return "Content-CRC32C:";
+        case DS3_CHECKSUM_TYPE_MD5: return "Content-MD5:";
+        case DS3_CHECKSUM_TYPE_SHA_256: return "Content-SHA256:";
+        case DS3_CHECKSUM_TYPE_SHA_512: return "Content-SHA512:";
+        case DS3_CHECKSUM_TYPE_CRC_32: return "Content-CRC32:";
+        case DS3_CHECKSUM_TYPE_CRC_32C: return "Content-CRC32C:";
     }
 
     return NULL;
@@ -542,14 +545,14 @@ ds3_error* net_process_request(const ds3_client* client,
             if (response_data.status_code < 200 || response_data.status_code >= 300) {
                 ds3_error* error = ds3_create_error(DS3_ERROR_BAD_STATUS_CODE, "Got an unexpected status code.");
                 error->error = g_new0(ds3_error_response, 1);
-                error->error->status_code = response_data.status_code;
-                error->error->status_message = ds3_str_init(response_data.status_message->value);
+                error->error->http_error_code = response_data.status_code;
+                error->error->code = ds3_str_init(response_data.status_message->value);
                 if (response_data.body != NULL) {
-                    error->error->error_body = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
+                    error->error->message = ds3_str_init_with_size((char*)response_data.body->data, response_data.body->len);
                     g_byte_array_free(response_data.body, TRUE);
                 } else {
                     ds3_log_message(client->log, DS3_ERROR, "The response body for the error is empty");
-                    error->error->error_body = NULL;
+                    error->error->message = NULL;
                 }
                 ds3_string_multimap_free(response_headers);
                 ds3_str_free(response_data.status_message);
@@ -581,4 +584,3 @@ ds3_error* net_process_request(const ds3_client* client,
 void net_cleanup(void) {
     curl_global_cleanup();
 }
-
