@@ -77,50 +77,6 @@ uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_nam
     return file_index;
 }
 
-/*
-typedef struct {
-    ds3_bool in_cache;
-    ds3_bool latest;
-    uint64_t length;
-    ds3_str* name;
-    uint64_t offset;
-    ds3_physical_placement_response* physical_placement;
-    uint64_t version;
-}ds3_bulk_object_response;
-typedef struct {
-    ds3_bulk_object_response** objects;
-    size_t num_objects;
-}ds3_bulk_object_list_response;
-typedef struct {
-      ds3_str* chunk_id;
-      int chunk_number;
-      ds3_str* node_id;
-      ds3_bulk_object_response** objects;
-      size_t num_objects;
-}ds3_objects_response;
-typedef struct {
-    ds3_bool aggregating;
-    ds3_str* bucket_name;
-    uint64_t cached_size_in_bytes;
-    ds3_job_chunk_client_processing_order_guarantee chunk_client_processing_order_guarantee;
-    uint64_t completed_size_in_bytes;
-    ds3_str* job_id;
-    ds3_bool naked;
-    ds3_str* name;
-    ds3_job_node_response** nodes;
-    size_t num_nodes;
-    ds3_objects_response** objects;
-    size_t num_objects;
-    uint64_t original_size_in_bytes;
-    ds3_priority priority;
-    ds3_job_request_type request_type;
-    ds3_str* start_date;
-    ds3_job_status status;
-    ds3_str* user_id;
-    ds3_str* user_name;
-    ds3_write_optimization write_optimization;
-}ds3_master_object_list_response;
-*/
 void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_master_object_list_response* chunk_response, checksum_result* results) {
     uint64_t max_file_index = 0;
     int64_t file_index = 0;
@@ -197,50 +153,6 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_mast
     }
 }
 
-/*
-typedef struct {
-    ds3_bool in_cache;
-    ds3_bool latest;
-    uint64_t length;
-    ds3_str* name;
-    uint64_t offset;
-    ds3_physical_placement_response* physical_placement;
-    uint64_t version;
-}ds3_bulk_object_response;
-typedef struct {
-    ds3_bulk_object_response** objects;
-    size_t num_objects;
-}ds3_bulk_object_list_response;
-typedef struct {
-      ds3_str* chunk_id;
-      int chunk_number;
-      ds3_str* node_id;
-      ds3_bulk_object_response** objects;
-      size_t num_objects;
-}ds3_objects_response;
-typedef struct {
-    ds3_bool aggregating;
-    ds3_str* bucket_name;
-    uint64_t cached_size_in_bytes;
-    ds3_job_chunk_client_processing_order_guarantee chunk_client_processing_order_guarantee;
-    uint64_t completed_size_in_bytes;
-    ds3_str* job_id;
-    ds3_bool naked;
-    ds3_str* name;
-    ds3_job_node_response** nodes;
-    size_t num_nodes;
-    ds3_objects_response** objects;
-    size_t num_objects;
-    uint64_t original_size_in_bytes;
-    ds3_priority priority;
-    ds3_job_request_type request_type;
-    ds3_str* start_date;
-    ds3_job_status status;
-    ds3_str* user_id;
-    ds3_str* user_name;
-    ds3_write_optimization write_optimization;
-}ds3_master_object_list_response;
-*/
 BOOST_AUTO_TEST_CASE( bulk_get ) {
     ds3_request* request = NULL;
     ds3_error* error = NULL;
