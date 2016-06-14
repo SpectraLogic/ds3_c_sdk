@@ -6,12 +6,12 @@
 
 BOOST_AUTO_TEST_CASE( get_service ) {
     ds3_client* client = get_client();
-    ds3_request* request = init_get_service_request();
+    ds3_request* request = ds3_init_get_service_request();
     ds3_list_all_my_buckets_result_response* response;
 
     printf("-----Testing GET service-------\n");
 
-    ds3_error* error = get_service_request(client, request, &response);
+    ds3_error* error = ds3_get_service_request(client, request, &response);
     BOOST_CHECK(error == NULL);
 
     ds3_request_free(request);
@@ -24,17 +24,17 @@ BOOST_AUTO_TEST_CASE( put_bucket ) {
     uint64_t i;
     bool found = false;
     const char* bucket_name = "test_put_bucket";
-    ds3_request* request = init_put_bucket_request(bucket_name);
+    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
     ds3_list_all_my_buckets_result_response* response;
 
     printf("-----Testing GET service after PUT bucket-------\n");
 
-    ds3_error* error = put_bucket_request(client, request);
+    ds3_error* error = ds3_put_bucket_request(client, request);
     handle_error(error);
     ds3_request_free(request);
 
-    request = init_get_service_request();
-    error = get_service_request(client, request, &response);
+    request = ds3_init_get_service_request();
+    error = ds3_get_service_request(client, request, &response);
     BOOST_CHECK(error == NULL);
 
     for (i = 0; i < response->num_buckets; i++) {
@@ -50,22 +50,22 @@ BOOST_AUTO_TEST_CASE( put_bucket ) {
 
     BOOST_CHECK(found);
 
-    request = init_delete_bucket_request(bucket_name);
-    error = delete_bucket_request(client, request);
+    request = ds3_init_delete_bucket_request(bucket_name);
+    error = ds3_delete_bucket_request(client, request);
     ds3_request_free(request);
 
-    ds3_client_free(client);
+    free_client(client);
     BOOST_CHECK(error == NULL);
 }
 
 BOOST_AUTO_TEST_CASE( get_system_information ) {
     ds3_client* client = get_client();
-    ds3_request* request = init_get_system_information_spectra_s3_request();
+    ds3_request* request = ds3_init_get_system_information_spectra_s3_request();
     ds3_system_information_response* response;
 
     printf("-----Testing GET system_information-------\n");
 
-    ds3_error* error = get_system_information_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_system_information_spectra_s3_request(client, request, &response);
     BOOST_CHECK(error == NULL);
 
     BOOST_CHECK(response->api_version != NULL);
@@ -83,20 +83,20 @@ BOOST_AUTO_TEST_CASE( get_system_information ) {
 
 BOOST_AUTO_TEST_CASE( verify_system_health ) {
     ds3_client* client = get_client();
-    ds3_request* request = init_verify_system_health_spectra_s3_request();
+    ds3_request* request = ds3_init_verify_system_health_spectra_s3_request();
     ds3_health_verification_result_response* response = NULL;
 
     printf("-----Testing VerifySystemHealth-------\n");
 
     ds3_request_free(request);
-    request = init_verify_system_health_spectra_s3_request();
+    request = ds3_init_verify_system_health_spectra_s3_request();
 
-    ds3_error* error = verify_system_health_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_verify_system_health_spectra_s3_request(client, request, &response);
     BOOST_CHECK(error == NULL);
     BOOST_CHECK(response->ms_required_to_verify_data_planner_health >= 0);
 
     ds3_request_free(request);
-    ds3_client_free(client);
+    free_client(client);
     ds3_health_verification_result_response_free(response);
     BOOST_CHECK(error == NULL);
 }
