@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE( bulk_put ) {
 
     populate_with_objects(client, bucket_name);
 
-    request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
     handle_error(error);
@@ -43,14 +43,13 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
     ds3_request_free(request);
     handle_error(error);
 
-    uint64_t size = 0;
-    request = ds3_init_put_object_request(bucket_name, "empty-folder/", &size, NULL, NULL);
+    request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
     error   = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
     handle_error(error);
 
     ds3_list_bucket_result_response* response;
-    request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
     handle_error(error);
@@ -78,7 +77,8 @@ BOOST_AUTO_TEST_CASE( prefix ) {
 
     populate_with_objects(client, bucket_name);
 
-    request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, "resources/beo");
+    request = ds3_init_get_bucket_request(bucket_name);
+    ds3_request_set_prefix(request, "resources/beo");
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
 
@@ -106,7 +106,8 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
 
     populate_with_objects(client, bucket_name);
 
-    request = ds3_init_get_bucket_request(bucket_name, "/", NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
+    ds3_request_set_delimiter(request, "/");
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
 
@@ -135,7 +136,8 @@ BOOST_AUTO_TEST_CASE(marker) {
 
     populate_with_objects(client,bucket_name);
 
-    request = ds3_init_get_bucket_request(bucket_name, NULL, "resources/sherlock_holmes.txt", NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
+    ds3_request_set_marker(request, "resources/sherlock_holmes.txt");
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
 
@@ -165,8 +167,8 @@ BOOST_AUTO_TEST_CASE(max_keys) {
 
     populate_with_objects(client, bucket_name);
 
-    int max_keys = 2;
-    request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, &max_keys, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
+    ds3_request_set_max_keys(request, 2);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
 
@@ -191,7 +193,7 @@ BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
     ds3_request_free(request);
     handle_error(error);
 
-    request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
     ds3_list_bucket_result_response* response;
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);

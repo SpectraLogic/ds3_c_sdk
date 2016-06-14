@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(get_bucket_with_empty_bucket_name){
     ds3_client* client = get_client();
     const char* bucket_name = "";
 
-    ds3_request* request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, NULL);
+    ds3_request* request = ds3_init_get_bucket_request(bucket_name);
     ds3_error* error;
     ds3_list_bucket_result_response* response = NULL;
     error = ds3_get_bucket_request(client, request, &response);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(get_bucket_with_null_bucket_name){
     printf("-----Negative Testing get_bucket with null bucket_name parameter-------\n");
     ds3_client* client = get_client();
     const char* bucket_name = NULL;
-    ds3_request* request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, NULL);
+    ds3_request* request = ds3_init_get_bucket_request(bucket_name);
     ds3_error* error = NULL;
     ds3_list_bucket_result_response* response = NULL;
     error = ds3_get_bucket_request(client, request, &response);
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_object) {
     BOOST_CHECK(found);
 
     //Deleting Non Existing Object
-    request = ds3_init_delete_object_request(bucket_name,"delete_non_existing_object", NULL);
+    request = ds3_init_delete_object_request(bucket_name,"delete_non_existing_object");
     error = ds3_delete_object_request(client, request);
     ds3_request_free(request);
 
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(put_duplicate_object_list){
     handle_error(error);
     obj_list = ds3_convert_file_list(books, 3);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, NULL, NULL, NULL, NULL, NULL, obj_list);
+    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(obj_list);
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(put_duplicate_object){
 
     obj_list = ds3_convert_file_list(books,2);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, NULL, NULL, NULL, NULL, NULL, obj_list);
+    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(obj_list);
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(put_empty_object_list) {
     ds3_request_free(request);
     handle_error(error);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, NULL, NULL, NULL, NULL, NULL, obj_list);
+    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(obj_list);
@@ -367,8 +367,8 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job) {
 
     ds3_str* job_id = populate_with_objects_return_job(client, bucket_name);
 
-    ds3_bool force = True;
-    request = ds3_init_cancel_job_spectra_s3_request(job_id->value, &force);
+    request = ds3_init_cancel_job_spectra_s3_request(job_id->value);
+    ds3_request_set_custom_query_param(request, "force", NULL);
     error = ds3_cancel_job_spectra_s3_request(client,request);
     ds3_str_free(job_id);
     handle_error(error);

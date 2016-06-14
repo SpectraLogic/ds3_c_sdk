@@ -980,6 +980,10 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
    _set_header(_request, header_name, header_value);
 }
 
+void ds3_request_set_custom_query_param(ds3_request* _request, const char* param_name, const char* param_value) {
+    _set_query_param(_request, param_name, param_value);
+}
+
 void ds3_request_set_bucket_name(ds3_request* _request, const char* bucket_name) {
     _set_query_param(_request, "bucket_id", bucket_name);
 }
@@ -1128,7 +1132,6 @@ ds3_request* ds3_init_abort_multi_part_upload_request(const char* bucket_name, c
     if (upload_id != NULL) {
         _set_query_param((ds3_request*) request, "upload_id", upload_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_complete_multi_part_upload_request(const char* bucket_name, const char* object_name, const char* upload_id, const ds3_complete_multipart_upload_response* mpu_list) {
@@ -1138,162 +1141,83 @@ ds3_request* ds3_init_complete_multi_part_upload_request(const char* bucket_name
     }
     request->mpu_list = (ds3_complete_multipart_upload_response*) mpu_list;
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_bucket_request(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_multi_part_upload_part_request(const char* bucket_name, const char* object_name, const int* part_number, const char* upload_id) {
+ds3_request* ds3_init_put_multi_part_upload_part_request(const char* bucket_name, const char* object_name, const int part_number, const char* upload_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
-    if (part_number != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *part_number);
-        _set_query_param((ds3_request*) request, "part_number", tmp_buff);
-    }
+    char tmp_buff[32];
+    sprintf(tmp_buff, "%d", part_number);
+    _set_query_param((ds3_request*) request, "part_number", tmp_buff);
+
     if (upload_id != NULL) {
         _set_query_param((ds3_request*) request, "upload_id", upload_id);
     }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_object_request(const char* bucket_name, const char* object_name, const uint64_t* length, const char* job, const uint64_t* offset) {
+ds3_request* ds3_init_put_object_request(const char* bucket_name, const char* object_name, const uint64_t length) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
-    request->length = *length;
-
-    if (job != NULL) {
-        _set_query_param((ds3_request*) request, "job", job);
-    }
-    if (offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *offset);
-        _set_query_param((ds3_request*) request, "offset", tmp_buff);
-    }
+    request->length = length;
 
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_bucket_request(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_delete_object_request(const char* bucket_name, const char* object_name, const ds3_bool* roll_back) {
+ds3_request* ds3_init_delete_object_request(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, object_name));
-    if (roll_back && *roll_back) {
-        _set_query_param((ds3_request*) request, "roll_back", NULL);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_delete_objects_request(const char* bucket_name, const ds3_bool* roll_back, const ds3_delete_objects_response* objects_list) {
+ds3_request* ds3_init_delete_objects_request(const char* bucket_name, const ds3_delete_objects_response* objects_list) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/", bucket_name, NULL));
     _set_query_param((ds3_request*) request, "delete", NULL);
 
-    if (roll_back && *roll_back) {
-        _set_query_param((ds3_request*) request, "roll_back", NULL);
-    }
     request->delete_objects = (ds3_delete_objects_response*) objects_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_bucket_request(const char* bucket_name, const char* delimiter, const char* marker, const int* max_keys, const char* prefix) {
+ds3_request* ds3_init_get_bucket_request(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, NULL));
-    if (delimiter != NULL) {
-        _set_query_param((ds3_request*) request, "delimiter", delimiter);
-    }
-    if (marker != NULL) {
-        _set_query_param((ds3_request*) request, "marker", marker);
-    }
-    if (max_keys != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *max_keys);
-        _set_query_param((ds3_request*) request, "max_keys", tmp_buff);
-    }
-    if (prefix != NULL) {
-        _set_query_param((ds3_request*) request, "prefix", prefix);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_service_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_object_request(const char* bucket_name, const char* object_name, const uint64_t* length, const char* job, const uint64_t* offset) {
+ds3_request* ds3_init_get_object_request(const char* bucket_name, const char* object_name, const uint64_t length) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
-    request->length = *length;
-
-    if (job != NULL) {
-        _set_query_param((ds3_request*) request, "job", job);
-    }
-    if (offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *offset);
-        _set_query_param((ds3_request*) request, "offset", tmp_buff);
-    }
+    request->length = length;
 
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_head_bucket_request(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(HTTP_HEAD, _build_path("/", bucket_name, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_head_object_request(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init(HTTP_HEAD, _build_path("/", bucket_name, object_name));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_initiate_multi_part_upload_request(const char* bucket_name, const char* object_name) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/", bucket_name, object_name));
     _set_query_param((ds3_request*) request, "uploads", NULL);
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_list_multi_part_upload_parts_request(const char* bucket_name, const char* object_name, const char* upload_id, const int* max_parts, const int* part_number_marker) {
+ds3_request* ds3_init_list_multi_part_upload_parts_request(const char* bucket_name, const char* object_name, const char* upload_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
     if (upload_id != NULL) {
         _set_query_param((ds3_request*) request, "upload_id", upload_id);
     }
-    if (max_parts != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *max_parts);
-        _set_query_param((ds3_request*) request, "max_parts", tmp_buff);
-    }
-    if (part_number_marker != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *part_number_marker);
-        _set_query_param((ds3_request*) request, "part_number_marker", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_list_multi_part_uploads_request(const char* bucket_name, const char* delimiter, const char* key_marker, const int* max_uploads, const char* prefix, const char* upload_id_marker) {
+ds3_request* ds3_init_list_multi_part_uploads_request(const char* bucket_name) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, NULL));
     _set_query_param((ds3_request*) request, "uploads", NULL);
-
-    if (delimiter != NULL) {
-        _set_query_param((ds3_request*) request, "delimiter", delimiter);
-    }
-    if (key_marker != NULL) {
-        _set_query_param((ds3_request*) request, "key_marker", key_marker);
-    }
-    if (max_uploads != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *max_uploads);
-        _set_query_param((ds3_request*) request, "max_uploads", tmp_buff);
-    }
-    if (prefix != NULL) {
-        _set_query_param((ds3_request*) request, "prefix", prefix);
-    }
-    if (upload_id_marker != NULL) {
-        _set_query_param((ds3_request*) request, "upload_id_marker", upload_id_marker);
-    }
 
     return (ds3_request*) request;
 }
@@ -1308,7 +1232,6 @@ ds3_request* ds3_init_put_bucket_acl_for_group_spectra_s3_request(const char* bu
     if (permission != NULL) {
         _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_bucket_acl_for_user_spectra_s3_request(const char* bucket_id, const ds3_bucket_acl_permission* permission, const char* user_id) {
@@ -1322,7 +1245,6 @@ ds3_request* ds3_init_put_bucket_acl_for_user_spectra_s3_request(const char* buc
     if (user_id != NULL) {
         _set_query_param((ds3_request*) request, "user_id", user_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_data_policy_acl_for_group_spectra_s3_request(const char* data_policy_id, const char* group_id) {
@@ -1333,7 +1255,6 @@ ds3_request* ds3_init_put_data_policy_acl_for_group_spectra_s3_request(const cha
     if (group_id != NULL) {
         _set_query_param((ds3_request*) request, "group_id", group_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_data_policy_acl_for_user_spectra_s3_request(const char* data_policy_id, const char* user_id) {
@@ -1344,7 +1265,6 @@ ds3_request* ds3_init_put_data_policy_acl_for_user_spectra_s3_request(const char
     if (user_id != NULL) {
         _set_query_param((ds3_request*) request, "user_id", user_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_global_bucket_acl_for_group_spectra_s3_request(const char* group_id, const ds3_bucket_acl_permission* permission) {
@@ -1355,7 +1275,6 @@ ds3_request* ds3_init_put_global_bucket_acl_for_group_spectra_s3_request(const c
     if (permission != NULL) {
         _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_global_bucket_acl_for_user_spectra_s3_request(const ds3_bucket_acl_permission* permission, const char* user_id) {
@@ -1366,7 +1285,6 @@ ds3_request* ds3_init_put_global_bucket_acl_for_user_spectra_s3_request(const ds
     if (user_id != NULL) {
         _set_query_param((ds3_request*) request, "user_id", user_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_global_data_policy_acl_for_group_spectra_s3_request(const char* group_id) {
@@ -1374,7 +1292,6 @@ ds3_request* ds3_init_put_global_data_policy_acl_for_group_spectra_s3_request(co
     if (group_id != NULL) {
         _set_query_param((ds3_request*) request, "group_id", group_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_global_data_policy_acl_for_user_spectra_s3_request(const char* user_id) {
@@ -1382,227 +1299,78 @@ ds3_request* ds3_init_put_global_data_policy_acl_for_user_spectra_s3_request(con
     if (user_id != NULL) {
         _set_query_param((ds3_request*) request, "user_id", user_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_bucket_acl_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/bucket_acl/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_data_policy_acl_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/data_policy_acl/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_bucket_acl_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket_acl/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_bucket_acls_spectra_s3_request(const char* bucket_id, const char* group_id, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_bucket_acl_permission* permission, const char* user_id) {
+ds3_request* ds3_init_get_bucket_acls_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket_acl/", NULL, NULL));
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (group_id != NULL) {
-        _set_query_param((ds3_request*) request, "group_id", group_id);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (permission != NULL) {
-        _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_data_policy_acl_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_policy_acl/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_data_policy_acls_spectra_s3_request(const char* data_policy_id, const char* group_id, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_data_policy_acls_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_policy_acl/", NULL, NULL));
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (group_id != NULL) {
-        _set_query_param((ds3_request*) request, "group_id", group_id);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_bucket_spectra_s3_request(const char* name, const char* data_policy_id, const char* user_id) {
+ds3_request* ds3_init_put_bucket_spectra_s3_request(const char* name) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/bucket/", NULL, NULL));
     if (name != NULL) {
         _set_query_param((ds3_request*) request, "name", name);
     }
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_delete_bucket_spectra_s3_request(const char* resource_id, const ds3_bool* force) {
+ds3_request* ds3_init_delete_bucket_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/bucket/", resource_id, NULL));
-    if (force && *force) {
-        _set_query_param((ds3_request*) request, "force", NULL);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_bucket_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_buckets_spectra_s3_request(const char* data_policy_id, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_buckets_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket/", NULL, NULL));
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_bucket_spectra_s3_request(const char* resource_id, const char* data_policy_id, const char* user_id) {
+ds3_request* ds3_init_modify_bucket_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_force_full_cache_reclaim_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/cache_filesystem/", NULL, NULL));
     _set_query_param((ds3_request*) request, "reclaim", NULL);
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_cache_filesystem_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/cache_filesystem/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_cache_filesystems_spectra_s3_request(const ds3_bool* last_page, const char* node_id, const int* page_length, const int* page_offset, const char* page_start_marker) {
+ds3_request* ds3_init_get_cache_filesystems_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/cache_filesystem/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (node_id != NULL) {
-        _set_query_param((ds3_request*) request, "node_id", node_id);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_cache_state_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/cache_state/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_cache_filesystem_spectra_s3_request(const char* resource_id, const float* auto_reclaim_initiate_threshold, const float* auto_reclaim_terminate_threshold, const float* burst_threshold, const uint64_t* max_capacity_in_bytes) {
+ds3_request* ds3_init_modify_cache_filesystem_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/cache_filesystem/", resource_id, NULL));
-    if (auto_reclaim_initiate_threshold != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%f", *auto_reclaim_initiate_threshold);
-        _set_query_param((ds3_request*) request, "auto_reclaim_initiate_threshold", tmp_buff);
-    }
-    if (auto_reclaim_terminate_threshold != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%f", *auto_reclaim_terminate_threshold);
-        _set_query_param((ds3_request*) request, "auto_reclaim_terminate_threshold", tmp_buff);
-    }
-    if (burst_threshold != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%f", *burst_threshold);
-        _set_query_param((ds3_request*) request, "burst_threshold", tmp_buff);
-    }
-    if (max_capacity_in_bytes != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *max_capacity_in_bytes);
-        _set_query_param((ds3_request*) request, "max_capacity_in_bytes", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_bucket_capacity_summary_spectra_s3_request(const char* bucket_id, const char* storage_domain_id, const ds3_pool_health* pool_health, const ds3_pool_state* pool_state, const ds3_pool_type* pool_type, const ds3_tape_state* tape_state, const ds3_tape_type* tape_type) {
+ds3_request* ds3_init_get_bucket_capacity_summary_spectra_s3_request(const char* bucket_id, const char* storage_domain_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/capacity_summary/", NULL, NULL));
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
@@ -1610,113 +1378,32 @@ ds3_request* ds3_init_get_bucket_capacity_summary_spectra_s3_request(const char*
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    if (pool_health != NULL) {
-        _set_query_param((ds3_request*) request, "pool_health", _get_ds3_pool_health_str(*pool_health));
-    }
-    if (pool_state != NULL) {
-        _set_query_param((ds3_request*) request, "pool_state", _get_ds3_pool_state_str(*pool_state));
-    }
-    if (pool_type != NULL) {
-        _set_query_param((ds3_request*) request, "pool_type", _get_ds3_pool_type_str(*pool_type));
-    }
-    if (tape_state != NULL) {
-        _set_query_param((ds3_request*) request, "tape_state", _get_ds3_tape_state_str(*tape_state));
-    }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_storage_domain_capacity_summary_spectra_s3_request(const char* storage_domain_id, const ds3_pool_health* pool_health, const ds3_pool_state* pool_state, const ds3_pool_type* pool_type, const ds3_tape_state* tape_state, const ds3_tape_type* tape_type) {
+ds3_request* ds3_init_get_storage_domain_capacity_summary_spectra_s3_request(const char* storage_domain_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/capacity_summary/", NULL, NULL));
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    if (pool_health != NULL) {
-        _set_query_param((ds3_request*) request, "pool_health", _get_ds3_pool_health_str(*pool_health));
-    }
-    if (pool_state != NULL) {
-        _set_query_param((ds3_request*) request, "pool_state", _get_ds3_pool_state_str(*pool_state));
-    }
-    if (pool_type != NULL) {
-        _set_query_param((ds3_request*) request, "pool_type", _get_ds3_pool_type_str(*pool_type));
-    }
-    if (tape_state != NULL) {
-        _set_query_param((ds3_request*) request, "tape_state", _get_ds3_tape_state_str(*tape_state));
-    }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_system_capacity_summary_spectra_s3_request(const ds3_pool_health* pool_health, const ds3_pool_state* pool_state, const ds3_pool_type* pool_type, const ds3_tape_state* tape_state, const ds3_tape_type* tape_type) {
+ds3_request* ds3_init_get_system_capacity_summary_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/capacity_summary/", NULL, NULL));
-    if (pool_health != NULL) {
-        _set_query_param((ds3_request*) request, "pool_health", _get_ds3_pool_health_str(*pool_health));
-    }
-    if (pool_state != NULL) {
-        _set_query_param((ds3_request*) request, "pool_state", _get_ds3_pool_state_str(*pool_state));
-    }
-    if (pool_type != NULL) {
-        _set_query_param((ds3_request*) request, "pool_type", _get_ds3_pool_type_str(*pool_type));
-    }
-    if (tape_state != NULL) {
-        _set_query_param((ds3_request*) request, "tape_state", _get_ds3_tape_state_str(*tape_state));
-    }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_data_path_backend_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_path_backend/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_data_planner_blob_store_tasks_spectra_s3_request(const ds3_bool* full_details) {
+ds3_request* ds3_init_get_data_planner_blob_store_tasks_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/blob_store_task/", NULL, NULL));
-    if (full_details && *full_details) {
-        _set_query_param((ds3_request*) request, "full_details", NULL);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_data_path_backend_spectra_s3_request(const ds3_bool* activated, const int* auto_activate_timeout_in_mins, const ds3_auto_inspect_mode* auto_inspect, const ds3_import_conflict_resolution_mode* default_import_conflict_resolution_mode, const ds3_unavailable_media_usage_policy* unavailable_media_policy, const int* unavailable_pool_max_job_retry_in_mins, const int* unavailable_tape_partition_max_job_retry_in_mins) {
+ds3_request* ds3_init_modify_data_path_backend_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_path_backend/", NULL, NULL));
-    if (activated && *activated) {
-        _set_query_param((ds3_request*) request, "activated", NULL);
-    }
-    if (auto_activate_timeout_in_mins != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *auto_activate_timeout_in_mins);
-        _set_query_param((ds3_request*) request, "auto_activate_timeout_in_mins", tmp_buff);
-    }
-    if (auto_inspect != NULL) {
-        _set_query_param((ds3_request*) request, "auto_inspect", _get_ds3_auto_inspect_mode_str(*auto_inspect));
-    }
-    if (default_import_conflict_resolution_mode != NULL) {
-        _set_query_param((ds3_request*) request, "default_import_conflict_resolution_mode", _get_ds3_import_conflict_resolution_mode_str(*default_import_conflict_resolution_mode));
-    }
-    if (unavailable_media_policy != NULL) {
-        _set_query_param((ds3_request*) request, "unavailable_media_policy", _get_ds3_unavailable_media_usage_policy_str(*unavailable_media_policy));
-    }
-    if (unavailable_pool_max_job_retry_in_mins != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *unavailable_pool_max_job_retry_in_mins);
-        _set_query_param((ds3_request*) request, "unavailable_pool_max_job_retry_in_mins", tmp_buff);
-    }
-    if (unavailable_tape_partition_max_job_retry_in_mins != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *unavailable_tape_partition_max_job_retry_in_mins);
-        _set_query_param((ds3_request*) request, "unavailable_tape_partition_max_job_retry_in_mins", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_data_persistence_rule_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level* isolation_level, const char* storage_domain_id, const ds3_data_persistence_rule_type* type, const int* minimum_days_to_retain) {
+ds3_request* ds3_init_put_data_persistence_rule_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level* isolation_level, const char* storage_domain_id, const ds3_data_persistence_rule_type* type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/data_persistence_rule/", NULL, NULL));
     if (data_policy_id != NULL) {
         _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
@@ -1730,254 +1417,53 @@ ds3_request* ds3_init_put_data_persistence_rule_spectra_s3_request(const char* d
     if (type != NULL) {
         _set_query_param((ds3_request*) request, "type", _get_ds3_data_persistence_rule_type_str(*type));
     }
-    if (minimum_days_to_retain != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *minimum_days_to_retain);
-        _set_query_param((ds3_request*) request, "minimum_days_to_retain", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_data_policy_spectra_s3_request(const char* name, const ds3_bool* blobbing_enabled, const ds3_checksum_type* checksum_type, const uint64_t* default_blob_size, const ds3_priority* default_get_job_priority, const ds3_priority* default_put_job_priority, const ds3_priority* default_verify_job_priority, const ds3_bool* end_to_end_crc_required, const ds3_priority* rebuild_priority, const ds3_versioning_level* versioning) {
+ds3_request* ds3_init_put_data_policy_spectra_s3_request(const char* name) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/data_policy/", NULL, NULL));
     if (name != NULL) {
         _set_query_param((ds3_request*) request, "name", name);
     }
-    if (blobbing_enabled && *blobbing_enabled) {
-        _set_query_param((ds3_request*) request, "blobbing_enabled", NULL);
-    }
-    if (checksum_type != NULL) {
-        _set_query_param((ds3_request*) request, "checksum_type", _get_ds3_checksum_type_str(*checksum_type));
-    }
-    if (default_blob_size != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *default_blob_size);
-        _set_query_param((ds3_request*) request, "default_blob_size", tmp_buff);
-    }
-    if (default_get_job_priority != NULL) {
-        _set_query_param((ds3_request*) request, "default_get_job_priority", _get_ds3_priority_str(*default_get_job_priority));
-    }
-    if (default_put_job_priority != NULL) {
-        _set_query_param((ds3_request*) request, "default_put_job_priority", _get_ds3_priority_str(*default_put_job_priority));
-    }
-    if (default_verify_job_priority != NULL) {
-        _set_query_param((ds3_request*) request, "default_verify_job_priority", _get_ds3_priority_str(*default_verify_job_priority));
-    }
-    if (end_to_end_crc_required && *end_to_end_crc_required) {
-        _set_query_param((ds3_request*) request, "end_to_end_crc_required", NULL);
-    }
-    if (rebuild_priority != NULL) {
-        _set_query_param((ds3_request*) request, "rebuild_priority", _get_ds3_priority_str(*rebuild_priority));
-    }
-    if (versioning != NULL) {
-        _set_query_param((ds3_request*) request, "versioning", _get_ds3_versioning_level_str(*versioning));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_data_persistence_rule_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/data_persistence_rule/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_data_policy_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/data_policy/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_data_persistence_rule_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_persistence_rule/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_data_persistence_rules_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level* isolation_level, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_data_persistence_rule_state* state, const char* storage_domain_id, const ds3_data_persistence_rule_type* type) {
+ds3_request* ds3_init_get_data_persistence_rules_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_persistence_rule/", NULL, NULL));
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (isolation_level != NULL) {
-        _set_query_param((ds3_request*) request, "isolation_level", _get_ds3_data_isolation_level_str(*isolation_level));
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_data_persistence_rule_state_str(*state));
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_data_persistence_rule_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_data_policies_spectra_s3_request(const ds3_checksum_type* checksum_type, const ds3_bool* end_to_end_crc_required, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker) {
+ds3_request* ds3_init_get_data_policies_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_policy/", NULL, NULL));
-    if (checksum_type != NULL) {
-        _set_query_param((ds3_request*) request, "checksum_type", _get_ds3_checksum_type_str(*checksum_type));
-    }
-    if (end_to_end_crc_required && *end_to_end_crc_required) {
-        _set_query_param((ds3_request*) request, "end_to_end_crc_required", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_data_policy_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_policy/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_data_persistence_rule_spectra_s3_request(const char* resource_id, const ds3_data_isolation_level* isolation_level, const int* minimum_days_to_retain, const ds3_data_persistence_rule_type* type) {
+ds3_request* ds3_init_modify_data_persistence_rule_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_persistence_rule/", resource_id, NULL));
-    if (isolation_level != NULL) {
-        _set_query_param((ds3_request*) request, "isolation_level", _get_ds3_data_isolation_level_str(*isolation_level));
-    }
-    if (minimum_days_to_retain != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *minimum_days_to_retain);
-        _set_query_param((ds3_request*) request, "minimum_days_to_retain", tmp_buff);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_data_persistence_rule_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_data_policy_spectra_s3_request(const char* resource_id, const ds3_bool* blobbing_enabled, const ds3_checksum_type* checksum_type, const uint64_t* default_blob_size, const ds3_priority* default_get_job_priority, const ds3_priority* default_put_job_priority, const ds3_priority* default_verify_job_priority, const ds3_bool* end_to_end_crc_required, const char* name, const ds3_priority* rebuild_priority, const ds3_versioning_level* versioning) {
+ds3_request* ds3_init_modify_data_policy_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_policy/", resource_id, NULL));
-    if (blobbing_enabled && *blobbing_enabled) {
-        _set_query_param((ds3_request*) request, "blobbing_enabled", NULL);
-    }
-    if (checksum_type != NULL) {
-        _set_query_param((ds3_request*) request, "checksum_type", _get_ds3_checksum_type_str(*checksum_type));
-    }
-    if (default_blob_size != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *default_blob_size);
-        _set_query_param((ds3_request*) request, "default_blob_size", tmp_buff);
-    }
-    if (default_get_job_priority != NULL) {
-        _set_query_param((ds3_request*) request, "default_get_job_priority", _get_ds3_priority_str(*default_get_job_priority));
-    }
-    if (default_put_job_priority != NULL) {
-        _set_query_param((ds3_request*) request, "default_put_job_priority", _get_ds3_priority_str(*default_put_job_priority));
-    }
-    if (default_verify_job_priority != NULL) {
-        _set_query_param((ds3_request*) request, "default_verify_job_priority", _get_ds3_priority_str(*default_verify_job_priority));
-    }
-    if (end_to_end_crc_required && *end_to_end_crc_required) {
-        _set_query_param((ds3_request*) request, "end_to_end_crc_required", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (rebuild_priority != NULL) {
-        _set_query_param((ds3_request*) request, "rebuild_priority", _get_ds3_priority_str(*rebuild_priority));
-    }
-    if (versioning != NULL) {
-        _set_query_param((ds3_request*) request, "versioning", _get_ds3_versioning_level_str(*versioning));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_degraded_buckets_spectra_s3_request(const char* data_policy_id, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_degraded_buckets_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_bucket/", NULL, NULL));
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_degraded_data_persistence_rules_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level* isolation_level, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_data_persistence_rule_state* state, const char* storage_domain_id, const ds3_data_persistence_rule_type* type) {
+ds3_request* ds3_init_get_degraded_data_persistence_rules_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_data_persistence_rule/", NULL, NULL));
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (isolation_level != NULL) {
-        _set_query_param((ds3_request*) request, "isolation_level", _get_ds3_data_isolation_level_str(*isolation_level));
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_data_persistence_rule_state_str(*state));
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_data_persistence_rule_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_group_group_member_spectra_s3_request(const char* group_id, const char* member_group_id) {
@@ -1988,7 +1474,6 @@ ds3_request* ds3_init_put_group_group_member_spectra_s3_request(const char* grou
     if (member_group_id != NULL) {
         _set_query_param((ds3_request*) request, "member_group_id", member_group_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_group_spectra_s3_request(const char* name) {
@@ -1996,7 +1481,6 @@ ds3_request* ds3_init_put_group_spectra_s3_request(const char* name) {
     if (name != NULL) {
         _set_query_param((ds3_request*) request, "name", name);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_user_group_member_spectra_s3_request(const char* group_id, const char* member_user_id) {
@@ -2007,101 +1491,39 @@ ds3_request* ds3_init_put_user_group_member_spectra_s3_request(const char* group
     if (member_user_id != NULL) {
         _set_query_param((ds3_request*) request, "member_user_id", member_user_id);
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_group_member_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/group_member/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_group_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/group/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_group_member_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/group_member/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_group_members_spectra_s3_request(const char* group_id, const ds3_bool* last_page, const char* member_group_id, const char* member_user_id, const int* page_length, const int* page_offset, const char* page_start_marker) {
+ds3_request* ds3_init_get_group_members_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/group_member/", NULL, NULL));
-    if (group_id != NULL) {
-        _set_query_param((ds3_request*) request, "group_id", group_id);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (member_group_id != NULL) {
-        _set_query_param((ds3_request*) request, "member_group_id", member_group_id);
-    }
-    if (member_user_id != NULL) {
-        _set_query_param((ds3_request*) request, "member_user_id", member_user_id);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_group_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/group/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_groups_spectra_s3_request(const ds3_bool* built_in, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker) {
+ds3_request* ds3_init_get_groups_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/group/", NULL, NULL));
-    if (built_in && *built_in) {
-        _set_query_param((ds3_request*) request, "built_in", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_group_spectra_s3_request(const char* resource_id, const char* name) {
+ds3_request* ds3_init_modify_group_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/group/", resource_id, NULL));
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_user_is_member_of_group_spectra_s3_request(const char* resource_id, const char* user_id) {
+ds3_request* ds3_init_verify_user_is_member_of_group_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/group/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
-
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
 
     return (ds3_request*) request;
 }
@@ -2109,879 +1531,308 @@ ds3_request* ds3_init_allocate_job_chunk_spectra_s3_request(const char* resource
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/job_chunk/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "ALLOCATE");
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_cancel_all_jobs_spectra_s3_request(const char* bucket_id, const ds3_bool* force, const ds3_job_request_type* request_type) {
+ds3_request* ds3_init_cancel_all_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/job/", NULL, NULL));
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (force && *force) {
-        _set_query_param((ds3_request*) request, "force", NULL);
-    }
-    if (request_type != NULL) {
-        _set_query_param((ds3_request*) request, "request_type", _get_ds3_job_request_type_str(*request_type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_cancel_job_spectra_s3_request(const char* resource_id, const ds3_bool* force) {
+ds3_request* ds3_init_cancel_job_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/job/", resource_id, NULL));
-    if (force && *force) {
-        _set_query_param((ds3_request*) request, "force", NULL);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_clear_all_canceled_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/canceled_job/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_clear_all_completed_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/completed_job/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bool* aggregating, const ds3_job_chunk_client_processing_order_guarantee* chunk_client_processing_order_guarantee, const char* name, const ds3_priority* priority, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_get_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "START_BULK_GET");
 
-    if (aggregating && *aggregating) {
-        _set_query_param((ds3_request*) request, "aggregating", NULL);
-    }
-    request->chunk_ordering = *(ds3_job_chunk_client_processing_order_guarantee*) chunk_client_processing_order_guarantee;
-
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bool* aggregating, const ds3_bool* ignore_naming_conflicts, const uint64_t* max_upload_size, const char* name, const ds3_priority* priority, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_put_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "START_BULK_PUT");
 
-    if (aggregating && *aggregating) {
-        _set_query_param((ds3_request*) request, "aggregating", NULL);
-    }
-    if (ignore_naming_conflicts && *ignore_naming_conflicts) {
-        _set_query_param((ds3_request*) request, "ignore_naming_conflicts", NULL);
-    }
-    if (max_upload_size != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *max_upload_size);
-        _set_query_param((ds3_request*) request, "max_upload_size", tmp_buff);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bool* aggregating, const char* name, const ds3_priority* priority, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_verify_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "START_BULK_VERIFY");
 
-    if (aggregating && *aggregating) {
-        _set_query_param((ds3_request*) request, "aggregating", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_active_jobs_spectra_s3_request(const ds3_bool* aggregating, const char* bucket_id, const ds3_job_chunk_client_processing_order_guarantee* chunk_client_processing_order_guarantee, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_priority* priority, const char* rechunked, const ds3_job_request_type* request_type, const ds3_bool* truncated, const char* user_id) {
+ds3_request* ds3_init_get_active_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/active_job/", NULL, NULL));
-    if (aggregating && *aggregating) {
-        _set_query_param((ds3_request*) request, "aggregating", NULL);
-    }
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    request->chunk_ordering = *(ds3_job_chunk_client_processing_order_guarantee*) chunk_client_processing_order_guarantee;
-
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-    if (rechunked != NULL) {
-        _set_query_param((ds3_request*) request, "rechunked", rechunked);
-    }
-    if (request_type != NULL) {
-        _set_query_param((ds3_request*) request, "request_type", _get_ds3_job_request_type_str(*request_type));
-    }
-    if (truncated && *truncated) {
-        _set_query_param((ds3_request*) request, "truncated", NULL);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_canceled_jobs_spectra_s3_request(const char* bucket_id, const ds3_job_chunk_client_processing_order_guarantee* chunk_client_processing_order_guarantee, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_priority* priority, const char* rechunked, const ds3_job_request_type* request_type, const ds3_bool* truncated, const char* user_id) {
+ds3_request* ds3_init_get_canceled_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/canceled_job/", NULL, NULL));
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    request->chunk_ordering = *(ds3_job_chunk_client_processing_order_guarantee*) chunk_client_processing_order_guarantee;
-
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-    if (rechunked != NULL) {
-        _set_query_param((ds3_request*) request, "rechunked", rechunked);
-    }
-    if (request_type != NULL) {
-        _set_query_param((ds3_request*) request, "request_type", _get_ds3_job_request_type_str(*request_type));
-    }
-    if (truncated && *truncated) {
-        _set_query_param((ds3_request*) request, "truncated", NULL);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_completed_jobs_spectra_s3_request(const char* bucket_id, const ds3_job_chunk_client_processing_order_guarantee* chunk_client_processing_order_guarantee, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_priority* priority, const char* rechunked, const ds3_job_request_type* request_type, const ds3_bool* truncated, const char* user_id) {
+ds3_request* ds3_init_get_completed_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/completed_job/", NULL, NULL));
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    request->chunk_ordering = *(ds3_job_chunk_client_processing_order_guarantee*) chunk_client_processing_order_guarantee;
-
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-    if (rechunked != NULL) {
-        _set_query_param((ds3_request*) request, "rechunked", rechunked);
-    }
-    if (request_type != NULL) {
-        _set_query_param((ds3_request*) request, "request_type", _get_ds3_job_request_type_str(*request_type));
-    }
-    if (truncated && *truncated) {
-        _set_query_param((ds3_request*) request, "truncated", NULL);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_job_chunk_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_chunk/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request(const char* job, const int* preferred_number_of_chunks) {
+ds3_request* ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request(const char* job) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_chunk/", NULL, NULL));
     if (job != NULL) {
         _set_query_param((ds3_request*) request, "job", job);
     }
-    if (preferred_number_of_chunks != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *preferred_number_of_chunks);
-        _set_query_param((ds3_request*) request, "preferred_number_of_chunks", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_job_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_jobs_spectra_s3_request(const char* bucket_id, const ds3_bool* full_details) {
+ds3_request* ds3_init_get_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job/", NULL, NULL));
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (full_details && *full_details) {
-        _set_query_param((ds3_request*) request, "full_details", NULL);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_put_job_to_replicate_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "replicate", NULL);
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_job_spectra_s3_request(const char* resource_id, const char* created_at, const char* name, const ds3_priority* priority) {
+ds3_request* ds3_init_modify_job_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/job/", resource_id, NULL));
-    if (created_at != NULL) {
-        _set_query_param((ds3_request*) request, "created_at", created_at);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_replicate_put_job_spectra_s3_request(const char* resource_id, const ds3_replication_conflict_resolution_mode* conflict_resolution_mode, const ds3_priority* priority, const char* payload) {
+ds3_request* ds3_init_replicate_put_job_spectra_s3_request(const char* resource_id, const char* payload) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "START_BULK_PUT");
 
     _set_query_param((ds3_request*) request, "replicate", NULL);
 
-    if (conflict_resolution_mode != NULL) {
-        _set_query_param((ds3_request*) request, "conflict_resolution_mode", _get_ds3_replication_conflict_resolution_mode_str(*conflict_resolution_mode));
-    }
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
     if (payload != NULL) {
         request->delete_objects->strings_list[0]->value = (char*) payload;
         request->delete_objects->strings_list[0]->size = strlen(payload);    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_node_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/node/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_nodes_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker) {
+ds3_request* ds3_init_get_nodes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/node/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_node_spectra_s3_request(const char* resource_id, const char* dns_name, const char* name) {
+ds3_request* ds3_init_modify_node_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/node/", resource_id, NULL));
-    if (dns_name != NULL) {
-        _set_query_param((ds3_request*) request, "dns_name", dns_name);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_job_completed_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const char* job_id, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_job_completed_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/job_completed_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (job_id != NULL) {
-        _set_query_param((ds3_request*) request, "job_id", job_id);
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_job_created_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_job_created_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/job_created_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_object_cached_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const char* job_id, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_object_cached_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/object_cached_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (job_id != NULL) {
-        _set_query_param((ds3_request*) request, "job_id", job_id);
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_object_lost_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_object_lost_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/object_lost_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_object_persisted_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const char* job_id, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_object_persisted_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/object_persisted_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (job_id != NULL) {
-        _set_query_param((ds3_request*) request, "job_id", job_id);
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_pool_failure_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_pool_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/pool_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_storage_domain_failure_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_storage_domain_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_system_failure_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_system_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/system_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_failure_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_tape_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/tape_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_partition_failure_notification_registration_spectra_s3_request(const char* notification_end_point, const ds3_http_response_format_type* format, const ds3_naming_convention_type* naming_convention, const ds3_request_type* notification_http_method) {
+ds3_request* ds3_init_put_tape_partition_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/tape_partition_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
-    if (format != NULL) {
-        _set_query_param((ds3_request*) request, "format", _get_ds3_http_response_format_type_str(*format));
-    }
-    if (naming_convention != NULL) {
-        _set_query_param((ds3_request*) request, "naming_convention", _get_ds3_naming_convention_type_str(*naming_convention));
-    }
-    if (notification_http_method != NULL) {
-        _set_query_param((ds3_request*) request, "notification_http_method", _get_ds3_request_type_str(*notification_http_method));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_job_completed_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/job_completed_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_job_created_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/job_created_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_object_cached_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/object_cached_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_object_lost_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/object_lost_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_object_persisted_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/object_persisted_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_pool_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/pool_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_storage_domain_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/storage_domain_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_system_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/system_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_partition_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_partition_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_job_completed_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_completed_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_job_completed_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_job_completed_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_completed_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_job_created_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_created_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_job_created_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_job_created_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_created_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_object_cached_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object_cached_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_object_cached_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_object_cached_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object_cached_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_object_lost_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object_lost_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_object_lost_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_object_lost_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object_lost_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_object_persisted_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object_persisted_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_object_persisted_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_object_persisted_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object_persisted_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_pool_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_pool_failure_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_pool_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool_failure_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_storage_domain_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_storage_domain_failure_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_storage_domain_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain_failure_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_system_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/system_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_system_failure_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_system_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/system_failure_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_failure_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_tape_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_failure_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_partition_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition_failure_notification_registration/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_partition_failure_notification_registrations_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* user_id) {
+ds3_request* ds3_init_get_tape_partition_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition_failure_notification_registration/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_delete_folder_recursively_spectra_s3_request(const char* resource_id, const char* bucket_id, const ds3_bool* roll_back) {
+ds3_request* ds3_init_delete_folder_recursively_spectra_s3_request(const char* resource_id, const char* bucket_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/folder/", resource_id, NULL));
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
     }
     _set_query_param((ds3_request*) request, "recursive", NULL);
-
-    if (roll_back && *roll_back) {
-        _set_query_param((ds3_request*) request, "roll_back", NULL);
-    }
 
     return (ds3_request*) request;
 }
@@ -2990,148 +1841,51 @@ ds3_request* ds3_init_get_object_spectra_s3_request(const char* resource_id, con
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
     }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_objects_spectra_s3_request(const char* bucket_id, const char* folder, const ds3_bool* include_physical_placement, const ds3_bool* last_page, const ds3_bool* latest, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_s3_object_type* type, const uint64_t* version) {
+ds3_request* ds3_init_get_objects_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object/", NULL, NULL));
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (folder != NULL) {
-        _set_query_param((ds3_request*) request, "folder", folder);
-    }
-    if (include_physical_placement && *include_physical_placement) {
-        _set_query_param((ds3_request*) request, "include_physical_placement", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (latest && *latest) {
-        _set_query_param((ds3_request*) request, "latest", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_s3_object_type_str(*type));
-    }
-    if (version != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *version);
-        _set_query_param((ds3_request*) request, "version", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_objects_with_full_details_spectra_s3_request(const char* bucket_id, const char* folder, const ds3_bool* include_physical_placement, const ds3_bool* last_page, const ds3_bool* latest, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_s3_object_type* type, const uint64_t* version) {
+ds3_request* ds3_init_get_objects_with_full_details_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object/", NULL, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
 
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (folder != NULL) {
-        _set_query_param((ds3_request*) request, "folder", folder);
-    }
-    if (include_physical_placement && *include_physical_placement) {
-        _set_query_param((ds3_request*) request, "include_physical_placement", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (latest && *latest) {
-        _set_query_param((ds3_request*) request, "latest", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_s3_object_type_str(*type));
-    }
-    if (version != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%llu", (unsigned long long) *version);
-        _set_query_param((ds3_request*) request, "version", tmp_buff);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_physical_placement_for_objects_spectra_s3_request(const char* resource_id, const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_get_physical_placement_for_objects_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
 
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_physical_placement_for_objects_with_full_details_spectra_s3_request(const char* resource_id, const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_get_physical_placement_for_objects_with_full_details_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
 
     _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
 
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_physical_placement_for_objects_spectra_s3_request(const char* resource_id, const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_verify_physical_placement_for_objects_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY_PHYSICAL_PLACEMENT");
 
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_physical_placement_for_objects_with_full_details_spectra_s3_request(const char* resource_id, const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_verify_physical_placement_for_objects_with_full_details_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
 
     _set_query_param((ds3_request*) request, "operation", "VERIFY_PHYSICAL_PLACEMENT");
 
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
@@ -3139,33 +1893,23 @@ ds3_request* ds3_init_cancel_import_on_all_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_IMPORT");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_cancel_import_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_IMPORT");
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_compact_all_pools_spectra_s3_request(const ds3_priority* priority) {
+ds3_request* ds3_init_compact_all_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "COMPACT");
 
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_compact_pool_spectra_s3_request(const char* resource_id, const ds3_priority* priority) {
+ds3_request* ds3_init_compact_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "COMPACT");
-
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
 
     return (ds3_request*) request;
 }
@@ -3177,40 +1921,33 @@ ds3_request* ds3_init_put_pool_partition_spectra_s3_request(const char* name, co
     if (type != NULL) {
         _set_query_param((ds3_request*) request, "type", _get_ds3_pool_type_str(*type));
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_deallocate_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "DEALLOCATE");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_permanently_lost_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/pool/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_pool_failure_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/pool_failure/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_pool_partition_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/pool_partition/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_force_pool_environment_refresh_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool_environment/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_format_all_foreign_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "FORMAT");
-
 
     return (ds3_request*) request;
 }
@@ -3218,166 +1955,43 @@ ds3_request* ds3_init_format_foreign_pool_spectra_s3_request(const char* resourc
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "FORMAT");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_blobs_on_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_pool_failures_spectra_s3_request(const char* error_message, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* pool_id, const ds3_pool_failure_type* type) {
+ds3_request* ds3_init_get_pool_failures_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool_failure/", NULL, NULL));
-    if (error_message != NULL) {
-        _set_query_param((ds3_request*) request, "error_message", error_message);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (pool_id != NULL) {
-        _set_query_param((ds3_request*) request, "pool_id", pool_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_pool_failure_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_pool_partition_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool_partition/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_pool_partitions_spectra_s3_request(const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_pool_type* type) {
+ds3_request* ds3_init_get_pool_partitions_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool_partition/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_pool_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_pools_spectra_s3_request(const ds3_bool* assigned_to_storage_domain, const char* bucket_id, const ds3_pool_health* health, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const char* partition_id, const ds3_bool* powered_on, const ds3_pool_state* state, const char* storage_domain_id, const ds3_pool_type* type) {
+ds3_request* ds3_init_get_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool/", NULL, NULL));
-    if (assigned_to_storage_domain && *assigned_to_storage_domain) {
-        _set_query_param((ds3_request*) request, "assigned_to_storage_domain", NULL);
-    }
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (health != NULL) {
-        _set_query_param((ds3_request*) request, "health", _get_ds3_pool_health_str(*health));
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (powered_on && *powered_on) {
-        _set_query_param((ds3_request*) request, "powered_on", NULL);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_pool_state_str(*state));
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_pool_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_import_all_pools_spectra_s3_request(const ds3_import_conflict_resolution_mode* conflict_resolution_mode, const char* data_policy_id, const char* storage_domain_id, const char* user_id) {
+ds3_request* ds3_init_import_all_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "IMPORT");
 
-    if (conflict_resolution_mode != NULL) {
-        _set_query_param((ds3_request*) request, "conflict_resolution_mode", _get_ds3_import_conflict_resolution_mode_str(*conflict_resolution_mode));
-    }
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_import_pool_spectra_s3_request(const char* resource_id, const ds3_import_conflict_resolution_mode* conflict_resolution_mode, const char* data_policy_id, const char* storage_domain_id, const char* user_id) {
+ds3_request* ds3_init_import_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "IMPORT");
-
-    if (conflict_resolution_mode != NULL) {
-        _set_query_param((ds3_request*) request, "conflict_resolution_mode", _get_ds3_import_conflict_resolution_mode_str(*conflict_resolution_mode));
-    }
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
 
     return (ds3_request*) request;
 }
@@ -3386,49 +2000,29 @@ ds3_request* ds3_init_modify_all_pools_spectra_s3_request(const ds3_quiesced* qu
     if (quiesced != NULL) {
         _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
     }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_pool_partition_spectra_s3_request(const char* resource_id, const char* name) {
+ds3_request* ds3_init_modify_pool_partition_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool_partition/", resource_id, NULL));
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_pool_spectra_s3_request(const char* resource_id, const char* partition_id, const ds3_quiesced* quiesced) {
+ds3_request* ds3_init_modify_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (quiesced != NULL) {
-        _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_all_pools_spectra_s3_request(const ds3_priority* priority) {
+ds3_request* ds3_init_verify_all_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
 
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_pool_spectra_s3_request(const char* resource_id, const ds3_priority* priority) {
+ds3_request* ds3_init_verify_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
 
-    if (priority != NULL) {
-        _set_query_param((ds3_request*) request, "priority", _get_ds3_priority_str(*priority));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_pool_storage_domain_member_spectra_s3_request(const char* pool_partition_id, const char* storage_domain_id, const ds3_write_preference_level* write_preference) {
+ds3_request* ds3_init_put_pool_storage_domain_member_spectra_s3_request(const char* pool_partition_id, const char* storage_domain_id) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain_member/", NULL, NULL));
     if (pool_partition_id != NULL) {
         _set_query_param((ds3_request*) request, "pool_partition_id", pool_partition_id);
@@ -3436,55 +2030,16 @@ ds3_request* ds3_init_put_pool_storage_domain_member_spectra_s3_request(const ch
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    if (write_preference != NULL) {
-        _set_query_param((ds3_request*) request, "write_preference", _get_ds3_write_preference_level_str(*write_preference));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_storage_domain_spectra_s3_request(const char* name, const char* auto_eject_upon_cron, const ds3_bool* auto_eject_upon_job_cancellation, const ds3_bool* auto_eject_upon_job_completion, const ds3_bool* auto_eject_upon_media_full, const ds3_ltfs_file_naming_mode* ltfs_file_naming, const int* max_tape_fragmentation_percent, const int* maximum_auto_verification_frequency_in_days, const ds3_bool* media_ejection_allowed, const ds3_priority* verify_prior_to_auto_eject, const ds3_write_optimization* write_optimization) {
+ds3_request* ds3_init_put_storage_domain_spectra_s3_request(const char* name) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain/", NULL, NULL));
     if (name != NULL) {
         _set_query_param((ds3_request*) request, "name", name);
     }
-    if (auto_eject_upon_cron != NULL) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_cron", auto_eject_upon_cron);
-    }
-    if (auto_eject_upon_job_cancellation && *auto_eject_upon_job_cancellation) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_job_cancellation", NULL);
-    }
-    if (auto_eject_upon_job_completion && *auto_eject_upon_job_completion) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_job_completion", NULL);
-    }
-    if (auto_eject_upon_media_full && *auto_eject_upon_media_full) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_media_full", NULL);
-    }
-    if (ltfs_file_naming != NULL) {
-        _set_query_param((ds3_request*) request, "ltfs_file_naming", _get_ds3_ltfs_file_naming_mode_str(*ltfs_file_naming));
-    }
-    if (max_tape_fragmentation_percent != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *max_tape_fragmentation_percent);
-        _set_query_param((ds3_request*) request, "max_tape_fragmentation_percent", tmp_buff);
-    }
-    if (maximum_auto_verification_frequency_in_days != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *maximum_auto_verification_frequency_in_days);
-        _set_query_param((ds3_request*) request, "maximum_auto_verification_frequency_in_days", tmp_buff);
-    }
-    if (media_ejection_allowed && *media_ejection_allowed) {
-        _set_query_param((ds3_request*) request, "media_ejection_allowed", NULL);
-    }
-    if (verify_prior_to_auto_eject != NULL) {
-        _set_query_param((ds3_request*) request, "verify_prior_to_auto_eject", _get_ds3_priority_str(*verify_prior_to_auto_eject));
-    }
-    if (write_optimization != NULL) {
-        _set_query_param((ds3_request*) request, "write_optimization", _get_ds3_write_optimization_str(*write_optimization));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type* tape_type, const ds3_write_preference_level* write_preference) {
+ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type* tape_type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain_member/", NULL, NULL));
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
@@ -3495,239 +2050,63 @@ ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const ch
     if (tape_type != NULL) {
         _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
     }
-    if (write_preference != NULL) {
-        _set_query_param((ds3_request*) request, "write_preference", _get_ds3_write_preference_level_str(*write_preference));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_storage_domain_failure_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/storage_domain_failure/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_storage_domain_member_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/storage_domain_member/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_storage_domain_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/storage_domain/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_storage_domain_failures_spectra_s3_request(const char* error_message, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* storage_domain_id, const ds3_storage_domain_failure_type* type) {
+ds3_request* ds3_init_get_storage_domain_failures_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain_failure/", NULL, NULL));
-    if (error_message != NULL) {
-        _set_query_param((ds3_request*) request, "error_message", error_message);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_storage_domain_failure_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_storage_domain_member_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain_member/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_storage_domain_members_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* pool_partition_id, const ds3_storage_domain_member_state* state, const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type* tape_type, const ds3_write_preference_level* write_preference) {
+ds3_request* ds3_init_get_storage_domain_members_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain_member/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (pool_partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "pool_partition_id", pool_partition_id);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_storage_domain_member_state_str(*state));
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (tape_partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "tape_partition_id", tape_partition_id);
-    }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
-    if (write_preference != NULL) {
-        _set_query_param((ds3_request*) request, "write_preference", _get_ds3_write_preference_level_str(*write_preference));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_storage_domain_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_storage_domains_spectra_s3_request(const char* auto_eject_upon_cron, const ds3_bool* auto_eject_upon_job_cancellation, const ds3_bool* auto_eject_upon_job_completion, const ds3_bool* auto_eject_upon_media_full, const ds3_bool* last_page, const ds3_bool* media_ejection_allowed, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_write_optimization* write_optimization) {
+ds3_request* ds3_init_get_storage_domains_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/storage_domain/", NULL, NULL));
-    if (auto_eject_upon_cron != NULL) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_cron", auto_eject_upon_cron);
-    }
-    if (auto_eject_upon_job_cancellation && *auto_eject_upon_job_cancellation) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_job_cancellation", NULL);
-    }
-    if (auto_eject_upon_job_completion && *auto_eject_upon_job_completion) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_job_completion", NULL);
-    }
-    if (auto_eject_upon_media_full && *auto_eject_upon_media_full) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_media_full", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (media_ejection_allowed && *media_ejection_allowed) {
-        _set_query_param((ds3_request*) request, "media_ejection_allowed", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (write_optimization != NULL) {
-        _set_query_param((ds3_request*) request, "write_optimization", _get_ds3_write_optimization_str(*write_optimization));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_storage_domain_member_spectra_s3_request(const char* resource_id, const ds3_write_preference_level* write_preference) {
+ds3_request* ds3_init_modify_storage_domain_member_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/storage_domain_member/", resource_id, NULL));
-    if (write_preference != NULL) {
-        _set_query_param((ds3_request*) request, "write_preference", _get_ds3_write_preference_level_str(*write_preference));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char* resource_id, const char* auto_eject_upon_cron, const ds3_bool* auto_eject_upon_job_cancellation, const ds3_bool* auto_eject_upon_job_completion, const ds3_bool* auto_eject_upon_media_full, const ds3_ltfs_file_naming_mode* ltfs_file_naming, const int* max_tape_fragmentation_percent, const int* maximum_auto_verification_frequency_in_days, const ds3_bool* media_ejection_allowed, const char* name, const ds3_priority* verify_prior_to_auto_eject, const ds3_write_optimization* write_optimization) {
+ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/storage_domain/", resource_id, NULL));
-    if (auto_eject_upon_cron != NULL) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_cron", auto_eject_upon_cron);
-    }
-    if (auto_eject_upon_job_cancellation && *auto_eject_upon_job_cancellation) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_job_cancellation", NULL);
-    }
-    if (auto_eject_upon_job_completion && *auto_eject_upon_job_completion) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_job_completion", NULL);
-    }
-    if (auto_eject_upon_media_full && *auto_eject_upon_media_full) {
-        _set_query_param((ds3_request*) request, "auto_eject_upon_media_full", NULL);
-    }
-    if (ltfs_file_naming != NULL) {
-        _set_query_param((ds3_request*) request, "ltfs_file_naming", _get_ds3_ltfs_file_naming_mode_str(*ltfs_file_naming));
-    }
-    if (max_tape_fragmentation_percent != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *max_tape_fragmentation_percent);
-        _set_query_param((ds3_request*) request, "max_tape_fragmentation_percent", tmp_buff);
-    }
-    if (maximum_auto_verification_frequency_in_days != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *maximum_auto_verification_frequency_in_days);
-        _set_query_param((ds3_request*) request, "maximum_auto_verification_frequency_in_days", tmp_buff);
-    }
-    if (media_ejection_allowed && *media_ejection_allowed) {
-        _set_query_param((ds3_request*) request, "media_ejection_allowed", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (verify_prior_to_auto_eject != NULL) {
-        _set_query_param((ds3_request*) request, "verify_prior_to_auto_eject", _get_ds3_priority_str(*verify_prior_to_auto_eject));
-    }
-    if (write_optimization != NULL) {
-        _set_query_param((ds3_request*) request, "write_optimization", _get_ds3_write_optimization_str(*write_optimization));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_system_failures_spectra_s3_request(const char* error_message, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_system_failure_type* type) {
+ds3_request* ds3_init_get_system_failures_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/system_failure/", NULL, NULL));
-    if (error_message != NULL) {
-        _set_query_param((ds3_request*) request, "error_message", error_message);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_system_failure_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_system_information_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/system_information/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_verify_system_health_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/system_health/", NULL, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_cancel_eject_on_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_EJECT");
-
 
     return (ds3_request*) request;
 }
@@ -3735,13 +2114,11 @@ ds3_request* ds3_init_cancel_eject_tape_spectra_s3_request(const char* resource_
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_EJECT");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_cancel_format_on_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_FORMAT");
-
 
     return (ds3_request*) request;
 }
@@ -3749,13 +2126,11 @@ ds3_request* ds3_init_cancel_format_tape_spectra_s3_request(const char* resource
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_FORMAT");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_cancel_import_on_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_IMPORT");
-
 
     return (ds3_request*) request;
 }
@@ -3763,13 +2138,11 @@ ds3_request* ds3_init_cancel_import_tape_spectra_s3_request(const char* resource
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_IMPORT");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_cancel_online_on_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_ONLINE");
-
 
     return (ds3_request*) request;
 }
@@ -3777,13 +2150,11 @@ ds3_request* ds3_init_cancel_online_tape_spectra_s3_request(const char* resource
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_ONLINE");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_drive/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CLEAN");
-
 
     return (ds3_request*) request;
 }
@@ -3798,53 +2169,39 @@ ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_ta
     if (tape_type != NULL) {
         _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
     }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_permanently_lost_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_density_directive_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_density_directive/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_drive_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_drive/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_failure_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_failure/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_partition_failure_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_partition_failure/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_tape_partition_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_partition/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_eject_all_tapes_spectra_s3_request(const char* eject_label, const char* eject_location) {
+ds3_request* ds3_init_eject_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "EJECT");
 
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_eject_storage_domain_blobs_spectra_s3_request(const char* bucket_id, const char* storage_domain_id, const char* eject_label, const char* eject_location, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_eject_storage_domain_blobs_spectra_s3_request(const char* bucket_id, const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "blobs", NULL);
 
@@ -3856,73 +2213,40 @@ ds3_request* ds3_init_eject_storage_domain_blobs_spectra_s3_request(const char* 
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_eject_storage_domain_spectra_s3_request(const char* storage_domain_id, const char* bucket_id, const char* eject_label, const char* eject_location, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_eject_storage_domain_spectra_s3_request(const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "EJECT");
 
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
     request->object_list = (ds3_bulk_object_list_response*) object_list;
-
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_eject_tape_spectra_s3_request(const char* resource_id, const char* eject_label, const char* eject_location) {
+ds3_request* ds3_init_eject_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "EJECT");
-
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
 
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_force_tape_environment_refresh_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_environment/", NULL, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_format_all_tapes_spectra_s3_request(const ds3_bool* force) {
+ds3_request* ds3_init_format_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "FORMAT");
 
-    if (force && *force) {
-        _set_query_param((ds3_request*) request, "force", NULL);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_format_tape_spectra_s3_request(const char* resource_id, const ds3_bool* force) {
+ds3_request* ds3_init_format_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "FORMAT");
-
-    if (force && *force) {
-        _set_query_param((ds3_request*) request, "force", NULL);
-    }
 
     return (ds3_request*) request;
 }
@@ -3930,461 +2254,101 @@ ds3_request* ds3_init_get_blobs_on_tape_spectra_s3_request(const char* resource_
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
 
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_density_directive_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_density_directive/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_density_directives_spectra_s3_request(const ds3_tape_drive_type* density, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* partition_id, const ds3_tape_type* tape_type) {
+ds3_request* ds3_init_get_tape_density_directives_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_density_directive/", NULL, NULL));
-    if (density != NULL) {
-        _set_query_param((ds3_request*) request, "density", _get_ds3_tape_drive_type_str(*density));
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_drive_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_drive/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_drives_spectra_s3_request(const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* partition_id, const char* serial_number, const ds3_tape_drive_state* state, const ds3_tape_drive_type* type) {
+ds3_request* ds3_init_get_tape_drives_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_drive/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (serial_number != NULL) {
-        _set_query_param((ds3_request*) request, "serial_number", serial_number);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_tape_drive_state_str(*state));
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_tape_drive_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_failures_spectra_s3_request(const char* error_message, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* tape_drive_id, const char* tape_id, const ds3_tape_failure_type* type) {
+ds3_request* ds3_init_get_tape_failures_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_failure/", NULL, NULL));
-    if (error_message != NULL) {
-        _set_query_param((ds3_request*) request, "error_message", error_message);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (tape_drive_id != NULL) {
-        _set_query_param((ds3_request*) request, "tape_drive_id", tape_drive_id);
-    }
-    if (tape_id != NULL) {
-        _set_query_param((ds3_request*) request, "tape_id", tape_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_tape_failure_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_libraries_spectra_s3_request(const ds3_bool* last_page, const char* management_url, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const char* serial_number) {
+ds3_request* ds3_init_get_tape_libraries_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_library/", NULL, NULL));
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (management_url != NULL) {
-        _set_query_param((ds3_request*) request, "management_url", management_url);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (serial_number != NULL) {
-        _set_query_param((ds3_request*) request, "serial_number", serial_number);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_library_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_library/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_partition_failures_spectra_s3_request(const char* error_message, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* partition_id, const ds3_tape_partition_failure_type* type) {
+ds3_request* ds3_init_get_tape_partition_failures_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition_failure/", NULL, NULL));
-    if (error_message != NULL) {
-        _set_query_param((ds3_request*) request, "error_message", error_message);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_tape_partition_failure_type_str(*type));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_partition_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_partition_with_full_details_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_partitions_spectra_s3_request(const ds3_import_export_configuration* import_export_configuration, const ds3_bool* last_page, const char* library_id, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_quiesced* quiesced, const char* serial_number, const ds3_tape_partition_state* state) {
+ds3_request* ds3_init_get_tape_partitions_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition/", NULL, NULL));
-    if (import_export_configuration != NULL) {
-        _set_query_param((ds3_request*) request, "import_export_configuration", _get_ds3_import_export_configuration_str(*import_export_configuration));
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (library_id != NULL) {
-        _set_query_param((ds3_request*) request, "library_id", library_id);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (quiesced != NULL) {
-        _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
-    }
-    if (serial_number != NULL) {
-        _set_query_param((ds3_request*) request, "serial_number", serial_number);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_tape_partition_state_str(*state));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tape_partitions_with_full_details_spectra_s3_request(const ds3_import_export_configuration* import_export_configuration, const ds3_bool* last_page, const char* library_id, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker, const ds3_quiesced* quiesced, const char* serial_number, const ds3_tape_partition_state* state) {
+ds3_request* ds3_init_get_tape_partitions_with_full_details_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape_partition/", NULL, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
-
-    if (import_export_configuration != NULL) {
-        _set_query_param((ds3_request*) request, "import_export_configuration", _get_ds3_import_export_configuration_str(*import_export_configuration));
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (library_id != NULL) {
-        _set_query_param((ds3_request*) request, "library_id", library_id);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (quiesced != NULL) {
-        _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
-    }
-    if (serial_number != NULL) {
-        _set_query_param((ds3_request*) request, "serial_number", serial_number);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_tape_partition_state_str(*state));
-    }
 
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_tape_with_full_details_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tapes_spectra_s3_request(const ds3_bool* assigned_to_storage_domain, const char* bar_code, const char* bucket_id, const char* eject_label, const char* eject_location, const ds3_bool* full_of_data, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* partition_id, const ds3_tape_state* previous_state, const char* serial_number, const ds3_tape_state* state, const char* storage_domain_id, const ds3_tape_type* type, const ds3_bool* write_protected) {
+ds3_request* ds3_init_get_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape/", NULL, NULL));
-    if (assigned_to_storage_domain && *assigned_to_storage_domain) {
-        _set_query_param((ds3_request*) request, "assigned_to_storage_domain", NULL);
-    }
-    if (bar_code != NULL) {
-        _set_query_param((ds3_request*) request, "bar_code", bar_code);
-    }
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
-    if (full_of_data && *full_of_data) {
-        _set_query_param((ds3_request*) request, "full_of_data", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (previous_state != NULL) {
-        _set_query_param((ds3_request*) request, "previous_state", _get_ds3_tape_state_str(*previous_state));
-    }
-    if (serial_number != NULL) {
-        _set_query_param((ds3_request*) request, "serial_number", serial_number);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_tape_state_str(*state));
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_tape_type_str(*type));
-    }
-    if (write_protected && *write_protected) {
-        _set_query_param((ds3_request*) request, "write_protected", NULL);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_tapes_with_full_details_spectra_s3_request(const ds3_bool* assigned_to_storage_domain, const char* bar_code, const char* bucket_id, const char* eject_label, const char* eject_location, const ds3_bool* full_of_data, const ds3_bool* last_page, const int* page_length, const int* page_offset, const char* page_start_marker, const char* partition_id, const ds3_tape_state* previous_state, const char* serial_number, const ds3_tape_state* state, const char* storage_domain_id, const ds3_tape_type* type, const ds3_bool* write_protected) {
+ds3_request* ds3_init_get_tapes_with_full_details_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "full_details", NULL);
 
-    if (assigned_to_storage_domain && *assigned_to_storage_domain) {
-        _set_query_param((ds3_request*) request, "assigned_to_storage_domain", NULL);
-    }
-    if (bar_code != NULL) {
-        _set_query_param((ds3_request*) request, "bar_code", bar_code);
-    }
-    if (bucket_id != NULL) {
-        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
-    }
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
-    if (full_of_data && *full_of_data) {
-        _set_query_param((ds3_request*) request, "full_of_data", NULL);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-    if (partition_id != NULL) {
-        _set_query_param((ds3_request*) request, "partition_id", partition_id);
-    }
-    if (previous_state != NULL) {
-        _set_query_param((ds3_request*) request, "previous_state", _get_ds3_tape_state_str(*previous_state));
-    }
-    if (serial_number != NULL) {
-        _set_query_param((ds3_request*) request, "serial_number", serial_number);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_tape_state_str(*state));
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_tape_type_str(*type));
-    }
-    if (write_protected && *write_protected) {
-        _set_query_param((ds3_request*) request, "write_protected", NULL);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_import_all_tapes_spectra_s3_request(const ds3_import_conflict_resolution_mode* conflict_resolution_mode, const char* data_policy_id, const char* storage_domain_id, const char* user_id) {
+ds3_request* ds3_init_import_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "IMPORT");
 
-    if (conflict_resolution_mode != NULL) {
-        _set_query_param((ds3_request*) request, "conflict_resolution_mode", _get_ds3_import_conflict_resolution_mode_str(*conflict_resolution_mode));
-    }
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_import_tape_spectra_s3_request(const char* resource_id, const ds3_import_conflict_resolution_mode* conflict_resolution_mode, const char* data_policy_id, const char* storage_domain_id, const char* user_id) {
+ds3_request* ds3_init_import_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "IMPORT");
 
-    if (conflict_resolution_mode != NULL) {
-        _set_query_param((ds3_request*) request, "conflict_resolution_mode", _get_ds3_import_conflict_resolution_mode_str(*conflict_resolution_mode));
-    }
-    if (data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
-    }
-    if (storage_domain_id != NULL) {
-        _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
-    }
-    if (user_id != NULL) {
-        _set_query_param((ds3_request*) request, "user_id", user_id);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_inspect_all_tapes_spectra_s3_request(const ds3_priority* task_priority) {
+ds3_request* ds3_init_inspect_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "INSPECT");
 
-    if (task_priority != NULL) {
-        _set_query_param((ds3_request*) request, "task_priority", _get_ds3_priority_str(*task_priority));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char* resource_id, const ds3_priority* task_priority) {
+ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "INSPECT");
-
-    if (task_priority != NULL) {
-        _set_query_param((ds3_request*) request, "task_priority", _get_ds3_priority_str(*task_priority));
-    }
 
     return (ds3_request*) request;
 }
@@ -4393,35 +2357,19 @@ ds3_request* ds3_init_modify_all_tape_partitions_spectra_s3_request(const ds3_qu
     if (quiesced != NULL) {
         _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
     }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char* resource_id, const ds3_quiesced* quiesced) {
+ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_partition/", resource_id, NULL));
-    if (quiesced != NULL) {
-        _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_tape_spectra_s3_request(const char* resource_id, const char* eject_label, const char* eject_location, const ds3_tape_state* state) {
+ds3_request* ds3_init_modify_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
-    if (eject_label != NULL) {
-        _set_query_param((ds3_request*) request, "eject_label", eject_label);
-    }
-    if (eject_location != NULL) {
-        _set_query_param((ds3_request*) request, "eject_location", eject_location);
-    }
-    if (state != NULL) {
-        _set_query_param((ds3_request*) request, "state", _get_ds3_tape_state_str(*state));
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_online_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "ONLINE");
-
 
     return (ds3_request*) request;
 }
@@ -4429,79 +2377,35 @@ ds3_request* ds3_init_online_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "ONLINE");
 
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_all_tapes_spectra_s3_request(const ds3_priority* task_priority) {
+ds3_request* ds3_init_verify_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
 
-    if (task_priority != NULL) {
-        _set_query_param((ds3_request*) request, "task_priority", _get_ds3_priority_str(*task_priority));
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_verify_tape_spectra_s3_request(const char* resource_id, const ds3_priority* task_priority) {
+ds3_request* ds3_init_verify_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
-
-    if (task_priority != NULL) {
-        _set_query_param((ds3_request*) request, "task_priority", _get_ds3_priority_str(*task_priority));
-    }
 
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_user_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/user/", resource_id, NULL));
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_users_spectra_s3_request(const char* auth_id, const char* default_data_policy_id, const ds3_bool* last_page, const char* name, const int* page_length, const int* page_offset, const char* page_start_marker) {
+ds3_request* ds3_init_get_users_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/user/", NULL, NULL));
-    if (auth_id != NULL) {
-        _set_query_param((ds3_request*) request, "auth_id", auth_id);
-    }
-    if (default_data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "default_data_policy_id", default_data_policy_id);
-    }
-    if (last_page && *last_page) {
-        _set_query_param((ds3_request*) request, "last_page", NULL);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-    if (page_length != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_length);
-        _set_query_param((ds3_request*) request, "page_length", tmp_buff);
-    }
-    if (page_offset != NULL) {
-        char tmp_buff[32];
-        sprintf(tmp_buff, "%d", *page_offset);
-        _set_query_param((ds3_request*) request, "page_offset", tmp_buff);
-    }
-    if (page_start_marker != NULL) {
-        _set_query_param((ds3_request*) request, "page_start_marker", page_start_marker);
-    }
-
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_user_spectra_s3_request(const char* resource_id, const char* default_data_policy_id, const char* name) {
+ds3_request* ds3_init_modify_user_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/user/", resource_id, NULL));
-    if (default_data_policy_id != NULL) {
-        _set_query_param((ds3_request*) request, "default_data_policy_id", default_data_policy_id);
-    }
-    if (name != NULL) {
-        _set_query_param((ds3_request*) request, "name", name);
-    }
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_regenerate_user_secret_key_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/user/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "REGENERATE_SECRET_KEY");
-
 
     return (ds3_request*) request;
 }

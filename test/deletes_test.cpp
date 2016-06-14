@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( delete_objects ) {
     obj_list->num_strings = ds3_str_list->len;
     g_ptr_array_free(ds3_str_list, FALSE);
 
-    ds3_request* request = ds3_init_delete_objects_request(bucket_name, NULL, obj_list);
+    ds3_request* request = ds3_init_delete_objects_request(bucket_name, obj_list);
     ds3_delete_result_response* response;
     ds3_error* error = ds3_delete_objects_request(client, request, &response);
 
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE( delete_non_existant_object ) {
     obj_list->num_strings = ds3_str_list->len;
     g_ptr_array_free(ds3_str_list, FALSE);
 
-    ds3_request* request = ds3_init_delete_objects_request(bucket_name, NULL, obj_list);
+    ds3_request* request = ds3_init_delete_objects_request(bucket_name, obj_list);
     ds3_delete_result_response* response;
     ds3_error* error = ds3_delete_objects_request(client, request, &response);
     clear_bucket(client, bucket_name);
@@ -70,8 +70,7 @@ BOOST_AUTO_TEST_CASE( delete_folder ) {
     const char* bucket_name = "delete_folder_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_delete_folder_recursively_spectra_s3_request("resources", bucket_name, NULL);
-
+    ds3_request* request = ds3_init_delete_folder_recursively_spectra_s3_request("resources", bucket_name);
     ds3_error* error = ds3_delete_folder_recursively_spectra_s3_request(client, request);
     clear_bucket(client, bucket_name);
 
@@ -86,7 +85,7 @@ BOOST_AUTO_TEST_CASE( delete_non_existant_folder ) {
     const char* bucket_name = "negative_delete_folder_test";
     const char* fake_folder = "fake_folder";
     populate_with_objects(client, bucket_name);
-    ds3_request* request = ds3_init_delete_folder_recursively_spectra_s3_request(fake_folder, bucket_name, NULL);
+    ds3_request* request = ds3_init_delete_folder_recursively_spectra_s3_request(fake_folder, bucket_name);
 
     ds3_error* error = ds3_delete_folder_recursively_spectra_s3_request(client, request);
     clear_bucket(client, bucket_name);

@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     bulk_object_list->num_objects = 1;
     g_ptr_array_free(objs_list, FALSE);
 
-    request = ds3_init_get_physical_placement_for_objects_spectra_s3_request(bucket_name, NULL, bulk_object_list);
+    request = ds3_init_get_physical_placement_for_objects_spectra_s3_request(bucket_name, bulk_object_list);
     error = ds3_get_physical_placement_for_objects_spectra_s3_request(client, request, &get_physical_placement_response);
 
     ds3_request_free(request);

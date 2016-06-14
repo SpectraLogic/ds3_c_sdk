@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(get_job){
 
     populate_with_objects(client, bucket_name);
 
-    request = ds3_init_get_bucket_request(bucket_name, NULL, NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket_name);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
     BOOST_REQUIRE(handle_error_and_return_is_null(error));
@@ -25,8 +25,8 @@ BOOST_AUTO_TEST_CASE(get_job){
     object_list = ds3_convert_object_list((const ds3_contents_response**)response->objects, response->num_objects);
     ds3_list_bucket_result_response_free(response);
 
-    ds3_job_chunk_client_processing_order_guarantee chunk_order = DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, NULL, &chunk_order, NULL, NULL, object_list);
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
+    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
@@ -57,8 +57,8 @@ BOOST_AUTO_TEST_CASE(cancel_job){
 
     ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
 
-    ds3_bool force = True;
-    request = ds3_init_cancel_job_spectra_s3_request(job_id->value, &force);
+    request = ds3_init_cancel_job_spectra_s3_request(job_id->value);
+    ds3_request_set_custom_query_param(request, "force", NULL);
     error = ds3_cancel_job_spectra_s3_request(client, request);
     handle_error(error);
     ds3_request_free(request);
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     /* create bucket1 with objects */
     populate_with_objects(client, bucket1_name);
 
-    request = ds3_init_get_bucket_request(bucket1_name, NULL, NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket1_name);
     error = ds3_get_bucket_request(client, request, &get_bucket_response);
     ds3_request_free(request);
     handle_error(error);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     ds3_list_bucket_result_response_free(get_bucket_response);
 
     /* create bucket2 with objects */
-    request = ds3_init_get_bucket_request(bucket2_name, NULL, NULL, NULL, NULL);
+    request = ds3_init_get_bucket_request(bucket2_name);
     populate_with_objects(client, bucket2_name);
     error = ds3_get_bucket_request(client, request, &get_bucket_response);
     ds3_request_free(request);
@@ -120,9 +120,9 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     ds3_list_bucket_result_response_free(get_bucket_response);
 
     /* init bulk get bucket1 */
-    ds3_job_chunk_client_processing_order_guarantee chunk_order = DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket1_name, NULL, &chunk_order, NULL, NULL, bucket1_object_list);
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket1_name, bucket1_object_list);
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
+    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
     bucket1_job_id = ds3_str_dup(bulk_response->job_id);
     ds3_bulk_object_list_response_free(bucket1_object_list);
     ds3_master_object_list_response_free(bulk_response);
@@ -130,7 +130,8 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     handle_error(error);
 
     /* init bulk get bucket2 */
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket2_name, NULL, &chunk_order, NULL, NULL, bucket2_object_list);
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket2_name, bucket2_object_list);
+    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     bucket2_job_id = ds3_str_dup(bulk_response->job_id);
     ds3_bulk_object_list_response_free(bucket2_object_list);
@@ -139,7 +140,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     handle_error(error);
 
     /* GET jobs */
-    request = ds3_init_get_jobs_spectra_s3_request(NULL, NULL);
+    request = ds3_init_get_jobs_spectra_s3_request();
     error = ds3_get_jobs_spectra_s3_request(client, request, &get_jobs_response);
     ds3_request_free(request);
     handle_error(error);
