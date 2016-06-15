@@ -34,10 +34,13 @@ debug: test
 run: test
 	$(LIB_PATH) ./test --catch_system_errors=no
 
+run_single: test
+	$(LIB_PATH) ./test --catch_system_errors=no --run_test=$(test_name)
+
 deps:
 	./build_local.sh
 
-test: test.o checksum.o service_tests.o bucket_tests.o job_tests.o bulk_get.o get_physical_placement.o negative_tests.o metadata_tests.o deletes_test.o search_tests.o multimap_tests.o
+test: test.o get_physical_placement.o search_tests.o metadata_tests.o negative_tests.o checksum.o service_tests.o bucket_tests.o multimap_tests.o deletes_test.o job_tests.o # bulk_get.o
 	$(CPP) *.o $(CFLAGS) $(LIBS) -o test
 
 test.o: ../install/lib/pkgconfig/libds3.pc
