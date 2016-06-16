@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(get_job){
     ds3_list_bucket_result_response_free(response);
 
     request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
-    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE);
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(cancel_job){
     ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
 
     request = ds3_init_cancel_job_spectra_s3_request(job_id->value);
-    ds3_request_set_custom_query_param(request, "force", NULL);
+    ds3_request_set_force(request);
     error = ds3_cancel_job_spectra_s3_request(client, request);
     handle_error(error);
     ds3_request_free(request);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     /* init bulk get bucket1 */
     request = ds3_init_get_bulk_job_spectra_s3_request(bucket1_name, bucket1_object_list);
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
-    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE);
     bucket1_job_id = ds3_str_dup(bulk_response->job_id);
     ds3_bulk_object_list_response_free(bucket1_object_list);
     ds3_master_object_list_response_free(bulk_response);
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(get_jobs){
 
     /* init bulk get bucket2 */
     request = ds3_init_get_bulk_job_spectra_s3_request(bucket2_name, bucket2_object_list);
-    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE);
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     bucket2_job_id = ds3_str_dup(bulk_response->job_id);
     ds3_bulk_object_list_response_free(bucket2_object_list);
