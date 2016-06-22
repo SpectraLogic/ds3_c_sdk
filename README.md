@@ -164,81 +164,50 @@ The following section contains several examples of using the DS3 C SDK.  The fir
 
 ```c
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-// "ds3.h" is the only header that needs to be included to use the DS3 API.
-#include "ds3.h"
+int main (void) {
+    // Get Service
+    ds3_client* client;
+    ds3_request* request;
+    ds3_error* error;
+    ds3_list_all_my_buckets_result_response *response;
+    uint64_t bucket_index;
 
-int main (int args, char * argv[]) {
-    // Allocate space for the response pointer.
-    // The DS3 client library will end up consuming this.
-    ds3_get_service_response *response; 
-    uint64_t i;
+    // Create a client from environment variables
+    error = ds3_create_client_from_env(&client);
+    handle_error(error);
 
-    // Setup client credentials and then the actual client itself.
-    ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
-    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
-    
-    // You can optionally set a proxy server that a request should be sent through
-    //ds3_client_proxy(client, "192.168.56.1:8888");
-    
     // Create the get service request.  All requests to a DS3 appliance start this way.
     // All ds3_init_* functions return a ds3_request struct
-    
-    ds3_request* request = ds3_init_get_service();
-    
+    request = ds3_init_get_service_request();
+
     // This performs the request to a DS3 appliance.
     // If there is an error 'error' will not be NULL
     // If the request completed successfully then 'error' will be NULL
-    ds3_error* error = ds3_get_service(client, request, &response);
-    ds3_free_request(request);
-   
-    // Check that the request completed successfully
-    if(error != NULL) {
-        if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
-            printf("Message Body: %s\n", error->error->error_body->value);
-        }
-        else {
-            printf("Got a runtime error: %s\n", error->message->value);
-        }
-        ds3_free_error(error);
-        ds3_free_creds(creds);
-        ds3_free_client(client);
-        return 1;
-    }
-
-    if (response == NULL) {
-        printf("Response was null\n");
-        ds3_free_creds(creds);
-        ds3_free_client(client);
-        return 1;
-    }
+    error = ds3_get_service_request(client, request, &response);
+    ds3_request_free(request);
+    handle_error(error);
 
     if(response->num_buckets == 0) {
         printf("No buckets returned\n");
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_list_all_my_buckets_result_response_free(response);
+        ds3_creds_free(client->creds);
+        ds3_client_free(client);
         return 0;
     }
 
-    for (i = 0; i < response->num_buckets; i++) {
-        ds3_bucket bucket = response->buckets[i];
-        printf("Bucket: (%s) created on %s\n", bucket.name->value, bucket.creation_date->value);
+    for (bucket_index = 0; bucket_index < response->num_buckets; bucket_index++) {
+        ds3_bucket_details_response* bucket = response->buckets[bucket_index];
+        printf("Bucket: (%s) created on %s\n", bucket->name->value, bucket->creation_date->value);
     }
-    
-    ds3_free_service_response(response);
 
-    ds3_free_creds(creds);
-    ds3_free_client(client);
+    ds3_list_all_my_buckets_result_response_free(response);
+    ds3_creds_free(client->creds);
+    ds3_client_free(client);
     ds3_cleanup();
-    
+
     return 0;
 }
+
 
 ```
 
@@ -247,10 +216,7 @@ The next demonstrates how to create a new bucket:
 ```c
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <sys/types.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include "ds3.h"
 
@@ -259,14 +225,15 @@ int main (int args, char * argv[]) {
     ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
     
     char * bucket = "books";
-    ds3_request * create_bucket_request = ds3_init_put_bucket(bucket);
-    ds3_error* error = ds3_put_bucket(client, create_bucket_request);
-    ds3_free_request(create_bucket_request);
+    ds3_request * create_bucket_request = ds3_init_put_bucket_request(bucket_name);
+    ds3_error* error = ds3_put_bucket_request(client, create_bucket_request);
+    ds3_request_free(create_bucket_request);
     
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message->value);
-            printf("Message Body: %s\n", error->error->error_body->value);
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->http_error_code, error->message->value);
+            printf("Message Body: %s\n", error->error->message->value);
+            printf("Resource: %s\n", error->error->resource->value);
         }
         else {
             printf("Got a runtime error: %s\n", error->message->value);
@@ -291,16 +258,12 @@ The following is an example of performing a get bucket:
 ```c
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 // "ds3.h" is the only header that needs to be included to use the DS3 API.
 #include "ds3.h"
 
 int main (int args, char * argv[]) {
-    ds3_get_bucket_response *response; 
+    ds3_list_bucket_result_response* response; 
     uint64_t i;
 
     // Setup client credentials and then the actual client itself.
@@ -318,48 +281,50 @@ int main (int args, char * argv[]) {
     // This performs the request to a DS3 appliance.
     // If there is an error 'error' will not be NULL
     // If the request completed successfully then 'error' will be NULL
-    ds3_error* error = ds3_get_bucket(client, request, &response);
-    ds3_free_request(request);
+    ds3_error* error = ds3_get_bucket_request(client, request, &response);
+    ds3_request_free(request);
 
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message->value);
-            printf("Message Body: %s\n", error->error->error_body->value);
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->http_error_code, error->message->value);
+            printf("Message Body: %s\n", error->error->message->value);
+            printf("Resource: %s\n", error->error->resource->value);
         }
         else {
             printf("Got a runtime error: %s\n", error->message->value);
         }
-        ds3_free_error(error);
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_list_bucket_result_response_free(response);
+        ds3_error_free(error);
+        ds3_creds_free(creds);
+        ds3_client_free(client);
         return 1;
-    }
+    }   
 
     if (response == NULL) {
         printf("Response was null\n");
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_creds_free(creds);
+        ds3_client_free(client);
         return 1;
     }
 
     if(response->num_objects == 0) {
         printf("No objects returned\n");
-        ds3_free_bucket_response(response);
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_list_bucket_result_response_free(response);
+        ds3_creds_free(creds);
+        ds3_client_free(client);
         return 0;
     }
 
     for (i = 0; i < response->num_objects; i++) {
-        ds3_object object = response->objects[i];
-        printf("Object: (%s) created on %s\n", object.name->value, object.last_modified->value);
+        ds3_contents_response* object = response->objects[i];
+        printf("Object: (%s) created on %s\n", object->name->value, object->last_modified->value);
     }
 
-    ds3_free_bucket_response(response);
+    ds3_list_bucket_result_response_free(response);
 
-    ds3_free_creds(creds);
-    ds3_free_client(client);
+    ds3_creds_free(creds);
+    ds3_client_free(client);
     ds3_cleanup();
     return 0;    
 }
