@@ -70,7 +70,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     ds3_error* error;
 
     request = ds3_init_delete_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_force(request);
+    ds3_request_set_force(request, True);
 
     error = ds3_delete_bucket_spectra_s3_request(client, request);
     ds3_request_free(request);

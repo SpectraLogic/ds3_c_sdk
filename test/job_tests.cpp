@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(cancel_job){
     ds3_str* job_id = populate_with_empty_objects(client, bucket_name);
 
     request = ds3_init_cancel_job_spectra_s3_request(job_id->value);
-    ds3_request_set_force(request);
+    ds3_request_set_force(request, True);
     error = ds3_cancel_job_spectra_s3_request(client, request);
     handle_error(error);
     ds3_request_free(request);
