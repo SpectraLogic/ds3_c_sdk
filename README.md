@@ -163,6 +163,10 @@ Code Samples
 The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from Spectra S3:
 
 ```c
+#include <stdlib.h>
+#include <stdio.h>
+// "ds3.h" is the only header that needs to be included to use the DS3 API.
+#include "ds3.h"
 
 int main (void) {
     // Get Service
@@ -216,8 +220,8 @@ The next demonstrates how to create a new bucket:
 ```c
 
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <stdio.h>
+// "ds3.h" is the only header that needs to be included to use the DS3 API.
 #include "ds3.h"
 
 int main (int args, char * argv[]) {
