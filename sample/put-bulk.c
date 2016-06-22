@@ -96,7 +96,7 @@ int main(void) {
         }
         else {
             // When no chunks are returned we need to sleep to allow for cache space to be freed
-            sleep(30);
+            sleep(300);
         }
     }
 
