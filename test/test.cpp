@@ -70,7 +70,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
     ds3_error* error;
 
     request = ds3_init_delete_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_custom_query_param(request, "force", NULL);
+    ds3_request_set_force(request, True);
 
     error = ds3_delete_bucket_spectra_s3_request(client, request);
     ds3_request_free(request);
@@ -154,16 +154,12 @@ void populate_with_objects_from_bulk(const ds3_client* client, const char* bucke
     for (chunk_index = 0; chunk_index < chunk_response->num_objects; chunk_index++) {
         ds3_objects_response* chunk_object_list = chunk_response->objects[chunk_index];
         for (object_index = 0; object_index < chunk_object_list->num_objects; object_index++) {
-            const unsigned int BUFF_SIZE = 32;
-            char offset_buff[BUFF_SIZE];
-            memset(offset_buff, 0, sizeof(char) * BUFF_SIZE);
             ds3_bulk_object_response* current_obj = chunk_object_list->objects[object_index];
             FILE* file = fopen(current_obj->name->value, "r");
 
             request = ds3_init_put_object_request(bucket_name, current_obj->name->value, current_obj->length);
-            ds3_request_set_custom_query_param(request, "job", response->job_id->value);
-            snprintf(offset_buff, sizeof(char) * BUFF_SIZE, "%lu", current_obj->offset);
-            ds3_request_set_custom_query_param(request, "offset", offset_buff);
+            ds3_request_set_job(request, response->job_id->value);
+            ds3_request_set_offset(request, current_obj->offset);
             if (current_obj->offset > 0) {
                 fseek(file, current_obj->offset, SEEK_SET);
             }

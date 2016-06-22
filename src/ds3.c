@@ -637,39 +637,6 @@ struct _ds3_metadata {
     GHashTable* metadata;
 };
 
-typedef struct {
-    char* buff;
-    size_t size;
-    size_t total_read;
-}ds3_xml_send_buff;
-
-typedef enum {
-    BULK_PUT,
-    BULK_GET,
-    BULK_DELETE,
-    GET_PHYSICAL_PLACEMENT,
-    COMPLETE_MPU,
-    STRING,
-    STRING_LIST,
-    DATA
-}object_list_type;
-
-void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data) {
-    if (client == NULL) {
-        fprintf(stderr, "Cannot configure a null ds3_client for logging.\n");
-        return;
-    }
-    if (client->log != NULL) {
-        g_free(client->log);
-    }
-    ds3_log* log = g_new0(ds3_log, 1);
-    log->log_callback = log_callback;
-    log->user_data = user_data;
-    log->log_lvl = log_lvl;
-
-    client->log = log;
-}
-
 static void _ds3_metadata_entry_free(gpointer pointer) {
     ds3_metadata_entry* entry;
     if (pointer == NULL) {
@@ -809,24 +776,6 @@ ds3_metadata_keys_result* ds3_metadata_keys(const ds3_metadata* _metadata) {
     return result;
 }
 
-static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    size_t to_read;
-    size_t remaining;
-    ds3_xml_send_buff* xml_buff;
-
-    xml_buff = (ds3_xml_send_buff*) user_data;
-    to_read = size * nmemb;
-    remaining = xml_buff->size - xml_buff->total_read;
-
-    if (remaining < to_read) {
-        to_read = remaining;
-    }
-
-    strncpy((char*)buffer, xml_buff->buff + xml_buff->total_read, to_read);
-    xml_buff->total_read += to_read;
-    return to_read;
-}
-
 static void _cleanup_hash_value(gpointer value) {
     g_free(value);
 }
@@ -834,6 +783,66 @@ static void _cleanup_hash_value(gpointer value) {
 static GHashTable* _create_hash_table(void) {
     GHashTable* hash =  g_hash_table_new_full(g_str_hash, g_str_equal, _cleanup_hash_value, _cleanup_hash_value);
     return hash;
+}
+
+void ds3_metadata_free(ds3_metadata* _metadata) {
+    struct _ds3_metadata* metadata;
+    if (_metadata == NULL) return;
+
+    metadata = (struct _ds3_metadata*) _metadata;
+
+    if (metadata->metadata == NULL) return;
+
+    g_hash_table_destroy(metadata->metadata);
+
+    g_free(metadata);
+}
+
+void ds3_metadata_entry_free(ds3_metadata_entry* entry) {
+    int value_index;
+    ds3_str* value;
+    if (entry->name != NULL) {
+        ds3_str_free(entry->name);
+    }
+    if (entry->values != NULL) {
+        for (value_index = 0; value_index < entry->num_values; value_index++) {
+            value = entry->values[value_index];
+            ds3_str_free(value);
+        }
+        g_free(entry->values);
+    }
+    g_free(entry);
+}
+
+void ds3_metadata_keys_free(ds3_metadata_keys_result* metadata_keys) {
+    uint64_t key_index;
+    if (metadata_keys == NULL) {
+        return;
+    }
+
+    if (metadata_keys->keys != NULL) {
+        for (key_index = 0; key_index < metadata_keys->num_keys; key_index++) {
+            ds3_str_free(metadata_keys->keys[key_index]);
+        }
+        g_free(metadata_keys->keys);
+    }
+    g_free(metadata_keys);
+}
+
+void ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data) {
+    if (client == NULL) {
+        fprintf(stderr, "Cannot configure a null ds3_client for logging.\n");
+        return;
+    }
+    if (client->log != NULL) {
+        g_free(client->log);
+    }
+    ds3_log* log = g_new0(ds3_log, 1);
+    log->log_callback = log_callback;
+    log->user_data = user_data;
+    log->log_lvl = log_lvl;
+
+    client->log = log;
 }
 
 ds3_creds* ds3_create_creds(const char* access_id, const char* secret_key) {
@@ -914,6 +923,72 @@ ds3_error* ds3_create_client_from_env(ds3_client** client) {
     return NULL;
 }
 
+void ds3_client_proxy(ds3_client* client, const char* proxy) {
+    client->proxy = ds3_str_init(proxy);
+}
+
+void ds3_creds_free(ds3_creds* creds) {
+    if (creds == NULL) {
+        return;
+    }
+
+    ds3_str_free(creds->access_id);
+    ds3_str_free(creds->secret_key);
+    g_free(creds);
+}
+
+void ds3_client_free(ds3_client* client) {
+    if (client == NULL) {
+      return;
+    }
+
+    ds3_str_free(client->endpoint);
+    ds3_str_free(client->proxy);
+    if (client->log != NULL) {
+        g_free(client->log);
+    }
+    g_free(client);
+}
+
+
+static const char UNSIGNED_LONG_BASE_10[] = "4294967296";
+static const unsigned int UNSIGNED_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_BASE_10);
+
+typedef struct {
+    char* buff;
+    size_t size;
+    size_t total_read;
+}ds3_xml_send_buff;
+
+typedef enum {
+    BULK_PUT,
+    BULK_GET,
+    BULK_DELETE,
+    GET_PHYSICAL_PLACEMENT,
+    COMPLETE_MPU,
+    STRING,
+    STRING_LIST,
+    DATA
+}object_list_type;
+
+static size_t _ds3_send_xml_buff(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    size_t to_read;
+    size_t remaining;
+    ds3_xml_send_buff* xml_buff;
+
+    xml_buff = (ds3_xml_send_buff*) user_data;
+    to_read = size * nmemb;
+    remaining = xml_buff->size - xml_buff->total_read;
+
+    if (remaining < to_read) {
+        to_read = remaining;
+    }
+
+    strncpy((char*)buffer, xml_buff->buff + xml_buff->total_read, to_read);
+    xml_buff->total_read += to_read;
+    return to_read;
+}
+
 static void _set_map_value(GHashTable* map, const char* key, const char* value) {
     gpointer escaped_key = (gpointer) escape_url(key);
 
@@ -931,26 +1006,16 @@ static void _set_map_value(GHashTable* map, const char* key, const char* value) 
     g_hash_table_insert(map, escaped_key, escaped_value);
 }
 
-static void _set_query_param(ds3_request* _request, const char* key, const char* value) {
-    struct _ds3_request* request = (struct _ds3_request*) _request;
-    _set_map_value(request->query_params, key, value);
-}
-
 static void _set_header(ds3_request* _request, const char* key, const char* value) {
     struct _ds3_request* request = (struct _ds3_request*) _request;
     _set_map_value(request->headers, key, value);
 }
 
-void ds3_client_proxy(ds3_client* client, const char* proxy) {
-    client->proxy = ds3_str_init(proxy);
-}
-
-void ds3_request_set_prefix(ds3_request* _request, const char* prefix) {
-    _set_query_param(_request, "prefix", prefix);
+void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
+   _set_header(_request, header_name, header_value);
 }
 
 void ds3_request_set_metadata(ds3_request* _request, const char* name, const char* value) {
-
     char* prefixed_name = g_strconcat("x-amz-meta-", name, NULL);
 
     _set_header(_request, prefixed_name, value);
@@ -974,22 +1039,6 @@ void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64
 
     _set_header(_request, "Range", range_value);
     g_free(range_value);
-}
-
-void ds3_request_set_custom_header(ds3_request* _request, const char* header_name, const char* header_value) {
-   _set_header(_request, header_name, header_value);
-}
-
-void ds3_request_set_custom_query_param(ds3_request* _request, const char* param_name, const char* param_value) {
-    _set_query_param(_request, param_name, param_value);
-}
-
-void ds3_request_set_bucket_name(ds3_request* _request, const char* bucket_name) {
-    _set_query_param(_request, "bucket_id", bucket_name);
-}
-
-void ds3_request_set_creation_date(ds3_request* _request, const char* creation_date) {
-    _set_query_param(_request, "creation_date", creation_date);
 }
 
 void ds3_request_set_md5(ds3_request* _request, const char* md5) {
@@ -1022,63 +1071,554 @@ void ds3_request_set_crc32c(ds3_request* _request, const char* crc32c) {
     request->checksum = ds3_str_init(crc32c);
 }
 
-void ds3_request_set_delimiter(ds3_request* _request, const char* delimiter) {
-    _set_query_param(_request, "delimiter", delimiter);
+static void _set_query_param(const ds3_request* _request, const char* key, const char* value) {
+    const struct _ds3_request* request = (const struct _ds3_request*) _request;
+    _set_map_value(request->query_params, key, value);
 }
 
-void ds3_request_set_marker(ds3_request* _request, const char* marker) {
-    _set_query_param(_request, "marker", marker);
-}
-
-void ds3_request_set_max_keys(ds3_request* _request, uint32_t max_keys) {
-    int metadata_prefix_length = strlen(METADATA_PREFIX);
-    char max_keys_s[metadata_prefix_length];
-    memset(max_keys_s, 0, sizeof(char) * metadata_prefix_length);
-    g_snprintf(max_keys_s, sizeof(char) * metadata_prefix_length, "%u", max_keys);
-    _set_query_param(_request, "max-keys", max_keys_s);
-}
-static const char UNSIGNED_LONG_BASE_10[] = "4294967296";
-static const unsigned int UNSIGNED_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_BASE_10);
-
-void ds3_request_set_preferred_number_of_chunks(ds3_request* _request, uint32_t num_chunks) {
-    char num_chunks_s[UNSIGNED_LONG_BASE_10_STR_LEN];
-    memset(num_chunks_s, 0, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN);
-    g_snprintf(num_chunks_s, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN, "%u", num_chunks);
-    _set_query_param(_request, "preferred_number_of_chunks", num_chunks_s);
-}
-
-void ds3_request_set_max_upload_size(ds3_request* _request, uint32_t max_upload_size) {
-    char max_size_s[UNSIGNED_LONG_BASE_10_STR_LEN];
-    memset(max_size_s, 0, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN);
-    g_snprintf(max_size_s, sizeof(char) * UNSIGNED_LONG_BASE_10_STR_LEN, "%u", max_upload_size);
-    _set_query_param(_request, "max_upload_size", max_size_s);
-}
-
-void ds3_request_set_name(ds3_request* _request, const char* name) {
-    _set_query_param(_request, "name", name);
-}
-
-void ds3_request_set_id(ds3_request* _request, const char* id) {
-    _set_query_param(_request, "id", id);
-}
-
-void ds3_request_set_type(ds3_request* _request, ds3_s3_object_type type) {
-    const char* type_as_string = _get_ds3_s3_object_type_str(type);
-    if (type_as_string != NULL) {
-        _set_query_param(_request, "type", type_as_string);
+static void _set_query_param_flag(const ds3_request* _request, const char* key, ds3_bool value) {
+    if (value == False) {
+        g_hash_table_remove(_request->headers, key);
+    } else {
+        _set_query_param(_request, key, NULL);
     }
 }
 
-void ds3_request_set_page_length(ds3_request* _request, const char* page_length) {
-    _set_query_param(_request, "page_length", page_length);
+static void _set_query_param_uint64_t(const ds3_request* _request, const char* key, uint64_t value) {
+    char string_buffer[UNSIGNED_LONG_BASE_10_STR_LEN];
+    memset(string_buffer, 0, sizeof(string_buffer));
+    snprintf(string_buffer, sizeof(string_buffer), "%lu", value);
+    _set_query_param(_request, key, string_buffer);
 }
 
-void ds3_request_set_page_offset(ds3_request* _request, const char* page_offset) {
-    _set_query_param(_request, "page_offset", page_offset);
+static void _set_query_param_int(const ds3_request* _request, const char* key, int value) {
+    char string_buffer[UNSIGNED_LONG_BASE_10_STR_LEN];
+    memset(string_buffer, 0, sizeof(string_buffer));
+    snprintf(string_buffer, sizeof(string_buffer), "%d", value);
+    _set_query_param(_request, key, string_buffer);
 }
 
-void ds3_request_set_version(ds3_request* _request, const char* version) {
-    _set_query_param(_request, "version", version);
+static void _set_query_param_float(const ds3_request* _request, const char* key, float value) {
+    char string_buffer[UNSIGNED_LONG_BASE_10_STR_LEN];
+    memset(string_buffer, 0, sizeof(string_buffer));
+    snprintf(string_buffer, sizeof(string_buffer), "%f", value);
+    _set_query_param(_request, key, string_buffer);
+}
+void ds3_request_set_activated(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "activated", value);
+
+}
+void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "aggregating", value);
+
+}
+void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "assigned_to_storage_domain", value);
+
+}
+void ds3_request_set_auth_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "auth_id", value);
+
+}
+void ds3_request_set_auto_activate_timeout_in_mins(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "auto_activate_timeout_in_mins", value);
+
+}
+void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char* value) {
+    _set_query_param(request, "auto_eject_upon_cron", value);
+
+}
+void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "auto_eject_upon_job_cancellation", value);
+
+}
+void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "auto_eject_upon_job_completion", value);
+
+}
+void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "auto_eject_upon_media_full", value);
+
+}
+void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* request, const ds3_auto_inspect_mode value) {
+    _set_query_param(request, "auto_inspect", (const char*)_get_ds3_auto_inspect_mode_str(value));
+
+}
+void ds3_request_set_auto_reclaim_initiate_threshold(const ds3_request* request, const float value) {
+    _set_query_param_float(request, "auto_reclaim_initiate_threshold", value);
+
+}
+void ds3_request_set_auto_reclaim_terminate_threshold(const ds3_request* request, const float value) {
+    _set_query_param_float(request, "auto_reclaim_terminate_threshold", value);
+
+}
+void ds3_request_set_bar_code(const ds3_request* request, const char* value) {
+    _set_query_param(request, "bar_code", value);
+
+}
+void ds3_request_set_blobbing_enabled(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "blobbing_enabled", value);
+
+}
+void ds3_request_set_bucket_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "bucket_id", value);
+
+}
+void ds3_request_set_built_in(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "built_in", value);
+
+}
+void ds3_request_set_burst_threshold(const ds3_request* request, const float value) {
+    _set_query_param_float(request, "burst_threshold", value);
+
+}
+void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request, const ds3_checksum_type value) {
+    _set_query_param(request, "checksum_type", (const char*)_get_ds3_checksum_type_str(value));
+
+}
+void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value) {
+    _set_query_param(request, "chunk_client_processing_order_guarantee", (const char*)_get_ds3_job_chunk_client_processing_order_guarantee_str(value));
+
+}
+void ds3_request_set_conflict_resolution_mode_ds3_replication_conflict_resolution_mode(const ds3_request* request, const ds3_replication_conflict_resolution_mode value) {
+    _set_query_param(request, "conflict_resolution_mode", (const char*)_get_ds3_replication_conflict_resolution_mode_str(value));
+
+}
+void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value) {
+    _set_query_param(request, "conflict_resolution_mode", (const char*)_get_ds3_import_conflict_resolution_mode_str(value));
+
+}
+void ds3_request_set_created_at(const ds3_request* request, const char* value) {
+    _set_query_param(request, "created_at", value);
+
+}
+void ds3_request_set_data_policy_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "data_policy_id", value);
+
+}
+void ds3_request_set_default_blob_size(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "default_blob_size", value);
+
+}
+void ds3_request_set_default_data_policy_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "default_data_policy_id", value);
+
+}
+void ds3_request_set_default_get_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "default_get_job_priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value) {
+    _set_query_param(request, "default_import_conflict_resolution_mode", (const char*)_get_ds3_import_conflict_resolution_mode_str(value));
+
+}
+void ds3_request_set_default_put_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "default_put_job_priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "default_verify_job_priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_delimiter(const ds3_request* request, const char* value) {
+    _set_query_param(request, "delimiter", value);
+
+}
+void ds3_request_set_density_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value) {
+    _set_query_param(request, "density", (const char*)_get_ds3_tape_drive_type_str(value));
+
+}
+void ds3_request_set_dns_name(const ds3_request* request, const char* value) {
+    _set_query_param(request, "dns_name", value);
+
+}
+void ds3_request_set_eject_label(const ds3_request* request, const char* value) {
+    _set_query_param(request, "eject_label", value);
+
+}
+void ds3_request_set_eject_location(const ds3_request* request, const char* value) {
+    _set_query_param(request, "eject_location", value);
+
+}
+void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "end_to_end_crc_required", value);
+
+}
+void ds3_request_set_error_message(const ds3_request* request, const char* value) {
+    _set_query_param(request, "error_message", value);
+
+}
+void ds3_request_set_folder(const ds3_request* request, const char* value) {
+    _set_query_param(request, "folder", value);
+
+}
+void ds3_request_set_force(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "force", value);
+
+}
+void ds3_request_set_format_ds3_http_response_format_type(const ds3_request* request, const ds3_http_response_format_type value) {
+    _set_query_param(request, "format", (const char*)_get_ds3_http_response_format_type_str(value));
+
+}
+void ds3_request_set_full_details(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "full_details", value);
+
+}
+void ds3_request_set_full_of_data(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "full_of_data", value);
+
+}
+void ds3_request_set_group_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "group_id", value);
+
+}
+void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value) {
+    _set_query_param(request, "health", (const char*)_get_ds3_pool_health_str(value));
+
+}
+void ds3_request_set_ignore_naming_conflicts(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "ignore_naming_conflicts", value);
+
+}
+void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value) {
+    _set_query_param(request, "import_export_configuration", (const char*)_get_ds3_import_export_configuration_str(value));
+
+}
+void ds3_request_set_include_physical_placement(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "include_physical_placement", value);
+
+}
+void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value) {
+    _set_query_param(request, "isolation_level", (const char*)_get_ds3_data_isolation_level_str(value));
+
+}
+void ds3_request_set_job(const ds3_request* request, const char* value) {
+    _set_query_param(request, "job", value);
+
+}
+void ds3_request_set_job_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "job_id", value);
+
+}
+void ds3_request_set_key_marker(const ds3_request* request, const char* value) {
+    _set_query_param(request, "key_marker", value);
+
+}
+void ds3_request_set_last_page(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "last_page", value);
+
+}
+void ds3_request_set_latest(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "latest", value);
+
+}
+void ds3_request_set_library_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "library_id", value);
+
+}
+void ds3_request_set_ltfs_file_naming_ds3_ltfs_file_naming_mode(const ds3_request* request, const ds3_ltfs_file_naming_mode value) {
+    _set_query_param(request, "ltfs_file_naming", (const char*)_get_ds3_ltfs_file_naming_mode_str(value));
+
+}
+void ds3_request_set_management_url(const ds3_request* request, const char* value) {
+    _set_query_param(request, "management_url", value);
+
+}
+void ds3_request_set_marker(const ds3_request* request, const char* value) {
+    _set_query_param(request, "marker", value);
+
+}
+void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "max_capacity_in_bytes", value);
+
+}
+void ds3_request_set_max_keys(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_keys", value);
+
+}
+void ds3_request_set_max_parts(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_parts", value);
+
+}
+void ds3_request_set_max_tape_fragmentation_percent(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_tape_fragmentation_percent", value);
+
+}
+void ds3_request_set_max_upload_size(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "max_upload_size", value);
+
+}
+void ds3_request_set_max_uploads(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_uploads", value);
+
+}
+void ds3_request_set_maximum_auto_verification_frequency_in_days(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "maximum_auto_verification_frequency_in_days", value);
+
+}
+void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "media_ejection_allowed", value);
+
+}
+void ds3_request_set_member_group_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "member_group_id", value);
+
+}
+void ds3_request_set_member_user_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "member_user_id", value);
+
+}
+void ds3_request_set_minimum_days_to_retain(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "minimum_days_to_retain", value);
+
+}
+void ds3_request_set_name(const ds3_request* request, const char* value) {
+    _set_query_param(request, "name", value);
+
+}
+void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value) {
+    _set_query_param(request, "naming_convention", (const char*)_get_ds3_naming_convention_type_str(value));
+
+}
+void ds3_request_set_node_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "node_id", value);
+
+}
+void ds3_request_set_notification_http_method_ds3_request_type(const ds3_request* request, const ds3_request_type value) {
+    _set_query_param(request, "notification_http_method", (const char*)_get_ds3_request_type_str(value));
+
+}
+void ds3_request_set_offset(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "offset", value);
+
+}
+void ds3_request_set_page_length(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "page_length", value);
+
+}
+void ds3_request_set_page_offset(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "page_offset", value);
+
+}
+void ds3_request_set_page_start_marker(const ds3_request* request, const char* value) {
+    _set_query_param(request, "page_start_marker", value);
+
+}
+void ds3_request_set_part_number_marker(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "part_number_marker", value);
+
+}
+void ds3_request_set_partition_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "partition_id", value);
+
+}
+void ds3_request_set_permission_ds3_bucket_acl_permission(const ds3_request* request, const ds3_bucket_acl_permission value) {
+    _set_query_param(request, "permission", (const char*)_get_ds3_bucket_acl_permission_str(value));
+
+}
+void ds3_request_set_pool_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value) {
+    _set_query_param(request, "pool_health", (const char*)_get_ds3_pool_health_str(value));
+
+}
+void ds3_request_set_pool_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "pool_id", value);
+
+}
+void ds3_request_set_pool_partition_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "pool_partition_id", value);
+
+}
+void ds3_request_set_pool_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value) {
+    _set_query_param(request, "pool_state", (const char*)_get_ds3_pool_state_str(value));
+
+}
+void ds3_request_set_pool_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value) {
+    _set_query_param(request, "pool_type", (const char*)_get_ds3_pool_type_str(value));
+
+}
+void ds3_request_set_powered_on(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "powered_on", value);
+
+}
+void ds3_request_set_preferred_number_of_chunks(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "preferred_number_of_chunks", value);
+
+}
+void ds3_request_set_prefix(const ds3_request* request, const char* value) {
+    _set_query_param(request, "prefix", value);
+
+}
+void ds3_request_set_previous_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value) {
+    _set_query_param(request, "previous_state", (const char*)_get_ds3_tape_state_str(value));
+
+}
+void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value) {
+    _set_query_param(request, "quiesced", (const char*)_get_ds3_quiesced_str(value));
+
+}
+void ds3_request_set_rebuild_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "rebuild_priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_rechunked(const ds3_request* request, const char* value) {
+    _set_query_param(request, "rechunked", value);
+
+}
+void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value) {
+    _set_query_param(request, "request_type", (const char*)_get_ds3_job_request_type_str(value));
+
+}
+void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "roll_back", value);
+
+}
+void ds3_request_set_serial_number(const ds3_request* request, const char* value) {
+    _set_query_param(request, "serial_number", value);
+
+}
+void ds3_request_set_state_ds3_data_persistence_rule_state(const ds3_request* request, const ds3_data_persistence_rule_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_data_persistence_rule_state_str(value));
+
+}
+void ds3_request_set_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_pool_state_str(value));
+
+}
+void ds3_request_set_state_ds3_storage_domain_member_state(const ds3_request* request, const ds3_storage_domain_member_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_storage_domain_member_state_str(value));
+
+}
+void ds3_request_set_state_ds3_tape_drive_state(const ds3_request* request, const ds3_tape_drive_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_tape_drive_state_str(value));
+
+}
+void ds3_request_set_state_ds3_tape_partition_state(const ds3_request* request, const ds3_tape_partition_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_tape_partition_state_str(value));
+
+}
+void ds3_request_set_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_tape_state_str(value));
+
+}
+void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "storage_domain_id", value);
+
+}
+void ds3_request_set_tape_drive_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "tape_drive_id", value);
+
+}
+void ds3_request_set_tape_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "tape_id", value);
+
+}
+void ds3_request_set_tape_partition_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "tape_partition_id", value);
+
+}
+void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value) {
+    _set_query_param(request, "tape_state", (const char*)_get_ds3_tape_state_str(value));
+
+}
+void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value) {
+    _set_query_param(request, "tape_type", (const char*)_get_ds3_tape_type_str(value));
+
+}
+void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "task_priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_truncated(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "truncated", value);
+
+}
+void ds3_request_set_type_ds3_data_persistence_rule_type(const ds3_request* request, const ds3_data_persistence_rule_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_data_persistence_rule_type_str(value));
+
+}
+void ds3_request_set_type_ds3_s3_object_type(const ds3_request* request, const ds3_s3_object_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_s3_object_type_str(value));
+
+}
+void ds3_request_set_type_ds3_pool_failure_type(const ds3_request* request, const ds3_pool_failure_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_pool_failure_type_str(value));
+
+}
+void ds3_request_set_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_pool_type_str(value));
+
+}
+void ds3_request_set_type_ds3_storage_domain_failure_type(const ds3_request* request, const ds3_storage_domain_failure_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_storage_domain_failure_type_str(value));
+
+}
+void ds3_request_set_type_ds3_system_failure_type(const ds3_request* request, const ds3_system_failure_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_system_failure_type_str(value));
+
+}
+void ds3_request_set_type_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_tape_drive_type_str(value));
+
+}
+void ds3_request_set_type_ds3_tape_failure_type(const ds3_request* request, const ds3_tape_failure_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_tape_failure_type_str(value));
+
+}
+void ds3_request_set_type_ds3_tape_partition_failure_type(const ds3_request* request, const ds3_tape_partition_failure_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_tape_partition_failure_type_str(value));
+
+}
+void ds3_request_set_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_tape_type_str(value));
+
+}
+void ds3_request_set_unavailable_media_policy_ds3_unavailable_media_usage_policy(const ds3_request* request, const ds3_unavailable_media_usage_policy value) {
+    _set_query_param(request, "unavailable_media_policy", (const char*)_get_ds3_unavailable_media_usage_policy_str(value));
+
+}
+void ds3_request_set_unavailable_pool_max_job_retry_in_mins(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "unavailable_pool_max_job_retry_in_mins", value);
+
+}
+void ds3_request_set_unavailable_tape_partition_max_job_retry_in_mins(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "unavailable_tape_partition_max_job_retry_in_mins", value);
+
+}
+void ds3_request_set_upload_id_marker(const ds3_request* request, const char* value) {
+    _set_query_param(request, "upload_id_marker", value);
+
+}
+void ds3_request_set_user_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "user_id", value);
+
+}
+void ds3_request_set_verify_prior_to_auto_eject_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "verify_prior_to_auto_eject", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_version(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "version", value);
+
+}
+void ds3_request_set_versioning_ds3_versioning_level(const ds3_request* request, const ds3_versioning_level value) {
+    _set_query_param(request, "versioning", (const char*)_get_ds3_versioning_level_str(value));
+
+}
+void ds3_request_set_write_optimization_ds3_write_optimization(const ds3_request* request, const ds3_write_optimization value) {
+    _set_query_param(request, "write_optimization", (const char*)_get_ds3_write_optimization_str(value));
+
+}
+void ds3_request_set_write_preference_ds3_write_preference_level(const ds3_request* request, const ds3_write_preference_level value) {
+    _set_query_param(request, "write_preference", (const char*)_get_ds3_write_preference_level_str(value));
+
+}
+void ds3_request_set_write_protected(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "write_protected", value);
+
 }
 
 static struct _ds3_request* _common_request_init(http_verb verb, ds3_str* path) {
@@ -1221,7 +1761,7 @@ ds3_request* ds3_init_list_multi_part_uploads_request(const char* bucket_name) {
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_bucket_acl_for_group_spectra_s3_request(const char* bucket_id, const char* group_id, const ds3_bucket_acl_permission* permission) {
+ds3_request* ds3_init_put_bucket_acl_for_group_spectra_s3_request(const char* bucket_id, const char* group_id, const ds3_bucket_acl_permission permission) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/bucket_acl/", NULL, NULL));
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
@@ -1229,19 +1769,17 @@ ds3_request* ds3_init_put_bucket_acl_for_group_spectra_s3_request(const char* bu
     if (group_id != NULL) {
         _set_query_param((ds3_request*) request, "group_id", group_id);
     }
-    if (permission != NULL) {
-        _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
-    }
+    _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(permission));
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_bucket_acl_for_user_spectra_s3_request(const char* bucket_id, const ds3_bucket_acl_permission* permission, const char* user_id) {
+ds3_request* ds3_init_put_bucket_acl_for_user_spectra_s3_request(const char* bucket_id, const ds3_bucket_acl_permission permission, const char* user_id) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/bucket_acl/", NULL, NULL));
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
     }
-    if (permission != NULL) {
-        _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
-    }
+    _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(permission));
+
     if (user_id != NULL) {
         _set_query_param((ds3_request*) request, "user_id", user_id);
     }
@@ -1267,21 +1805,19 @@ ds3_request* ds3_init_put_data_policy_acl_for_user_spectra_s3_request(const char
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_global_bucket_acl_for_group_spectra_s3_request(const char* group_id, const ds3_bucket_acl_permission* permission) {
+ds3_request* ds3_init_put_global_bucket_acl_for_group_spectra_s3_request(const char* group_id, const ds3_bucket_acl_permission permission) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/bucket_acl/", NULL, NULL));
     if (group_id != NULL) {
         _set_query_param((ds3_request*) request, "group_id", group_id);
     }
-    if (permission != NULL) {
-        _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
-    }
+    _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(permission));
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_global_bucket_acl_for_user_spectra_s3_request(const ds3_bucket_acl_permission* permission, const char* user_id) {
+ds3_request* ds3_init_put_global_bucket_acl_for_user_spectra_s3_request(const ds3_bucket_acl_permission permission, const char* user_id) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/bucket_acl/", NULL, NULL));
-    if (permission != NULL) {
-        _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(*permission));
-    }
+    _set_query_param((ds3_request*) request, "permission", _get_ds3_bucket_acl_permission_str(permission));
+
     if (user_id != NULL) {
         _set_query_param((ds3_request*) request, "user_id", user_id);
     }
@@ -1403,20 +1939,18 @@ ds3_request* ds3_init_modify_data_path_backend_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_path_backend/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_data_persistence_rule_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level* isolation_level, const char* storage_domain_id, const ds3_data_persistence_rule_type* type) {
+ds3_request* ds3_init_put_data_persistence_rule_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level isolation_level, const char* storage_domain_id, const ds3_data_persistence_rule_type type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/data_persistence_rule/", NULL, NULL));
     if (data_policy_id != NULL) {
         _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
     }
-    if (isolation_level != NULL) {
-        _set_query_param((ds3_request*) request, "isolation_level", _get_ds3_data_isolation_level_str(*isolation_level));
-    }
+    _set_query_param((ds3_request*) request, "isolation_level", _get_ds3_data_isolation_level_str(isolation_level));
+
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_data_persistence_rule_type_str(*type));
-    }
+    _set_query_param((ds3_request*) request, "type", _get_ds3_data_persistence_rule_type_str(type));
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_data_policy_spectra_s3_request(const char* name) {
@@ -1913,14 +2447,13 @@ ds3_request* ds3_init_compact_pool_spectra_s3_request(const char* resource_id) {
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_pool_partition_spectra_s3_request(const char* name, const ds3_pool_type* type) {
+ds3_request* ds3_init_put_pool_partition_spectra_s3_request(const char* name, const ds3_pool_type type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/pool_partition/", NULL, NULL));
     if (name != NULL) {
         _set_query_param((ds3_request*) request, "name", name);
     }
-    if (type != NULL) {
-        _set_query_param((ds3_request*) request, "type", _get_ds3_pool_type_str(*type));
-    }
+    _set_query_param((ds3_request*) request, "type", _get_ds3_pool_type_str(type));
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_deallocate_pool_spectra_s3_request(const char* resource_id) {
@@ -1995,11 +2528,10 @@ ds3_request* ds3_init_import_pool_spectra_s3_request(const char* resource_id) {
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_all_pools_spectra_s3_request(const ds3_quiesced* quiesced) {
+ds3_request* ds3_init_modify_all_pools_spectra_s3_request(const ds3_quiesced quiesced) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
-    if (quiesced != NULL) {
-        _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
-    }
+    _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(quiesced));
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_modify_pool_partition_spectra_s3_request(const char* resource_id) {
@@ -2039,7 +2571,7 @@ ds3_request* ds3_init_put_storage_domain_spectra_s3_request(const char* name) {
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type* tape_type) {
+ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type tape_type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain_member/", NULL, NULL));
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
@@ -2047,9 +2579,8 @@ ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const ch
     if (tape_partition_id != NULL) {
         _set_query_param((ds3_request*) request, "tape_partition_id", tape_partition_id);
     }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
+    _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(tape_type));
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_storage_domain_failure_spectra_s3_request(const char* resource_id) {
@@ -2158,17 +2689,15 @@ ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char* resource_i
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type* density, const char* partition_id, const ds3_tape_type* tape_type) {
+ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type density, const char* partition_id, const ds3_tape_type tape_type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/tape_density_directive/", NULL, NULL));
-    if (density != NULL) {
-        _set_query_param((ds3_request*) request, "density", _get_ds3_tape_drive_type_str(*density));
-    }
+    _set_query_param((ds3_request*) request, "density", _get_ds3_tape_drive_type_str(density));
+
     if (partition_id != NULL) {
         _set_query_param((ds3_request*) request, "partition_id", partition_id);
     }
-    if (tape_type != NULL) {
-        _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(*tape_type));
-    }
+    _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(tape_type));
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_permanently_lost_tape_spectra_s3_request(const char* resource_id) {
@@ -2352,11 +2881,10 @@ ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char* resource_id) {
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_all_tape_partitions_spectra_s3_request(const ds3_quiesced* quiesced) {
+ds3_request* ds3_init_modify_all_tape_partitions_spectra_s3_request(const ds3_quiesced quiesced) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_partition/", NULL, NULL));
-    if (quiesced != NULL) {
-        _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(*quiesced));
-    }
+    _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(quiesced));
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char* resource_id) {
@@ -2408,34 +2936,6 @@ ds3_request* ds3_init_regenerate_user_secret_key_spectra_s3_request(const char* 
     _set_query_param((ds3_request*) request, "operation", "REGENERATE_SECRET_KEY");
 
     return (ds3_request*) request;
-}
-
-
-static ds3_error* _internal_request_dispatcher(
-        const ds3_client* client,
-        const ds3_request* request,
-        void* read_user_struct,
-        size_t (*read_handler_func)(void*, size_t, size_t, void*),
-        void* write_user_struct,
-        size_t (*write_handler_func)(void*, size_t, size_t, void*),
-        ds3_string_multimap** return_headers) {
-    if (client == NULL || request == NULL) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
-    }
-    return net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, return_headers);
-}
-
-static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
-    int num_matches = 0;
-    int index;
-
-    for (index = 0; index < str->size; index++) {
-        if (str->value[index] == '/') {
-            num_matches++;
-        }
-    }
-
-    return num_matches;
 }
 
 static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name) {
@@ -2513,6 +3013,34 @@ static ds3_bool xml_get_bool(const ds3_log* log, xmlDocPtr doc, const xmlNodePtr
 
 static uint64_t xml_get_bool_from_attribute(const ds3_log* log, xmlDocPtr doc, struct _xmlAttr* attribute) {
     return xml_get_bool(log, doc, (xmlNodePtr) attribute);
+}
+
+
+static ds3_error* _internal_request_dispatcher(
+        const ds3_client* client,
+        const ds3_request* request,
+        void* read_user_struct,
+        size_t (*read_handler_func)(void*, size_t, size_t, void*),
+        void* write_user_struct,
+        size_t (*write_handler_func)(void*, size_t, size_t, void*),
+        ds3_string_multimap** return_headers) {
+    if (client == NULL || request == NULL) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
+    }
+    return net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, return_headers);
+}
+
+static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
+    int num_matches = 0;
+    int index;
+
+    for (index = 0; index < str->size; index++) {
+        if (str->value[index] == '/') {
+            num_matches++;
+        }
+    }
+
+    return num_matches;
 }
 
 static ds3_error* _get_request_xml_nodes(
@@ -16734,30 +17262,6 @@ ds3_error* ds3_regenerate_user_secret_key_spectra_s3_request(const ds3_client* c
     return _parse_top_level_ds3_spectra_user_response(client, request, response, xml_blob);
 }
 
-
-void ds3_creds_free(ds3_creds* creds) {
-    if (creds == NULL) {
-        return;
-    }
-
-    ds3_str_free(creds->access_id);
-    ds3_str_free(creds->secret_key);
-    g_free(creds);
-}
-
-void ds3_client_free(ds3_client* client) {
-    if (client == NULL) {
-      return;
-    }
-
-    ds3_str_free(client->endpoint);
-    ds3_str_free(client->proxy);
-    if (client->log != NULL) {
-        g_free(client->log);
-    }
-    g_free(client);
-}
-
 void ds3_multipart_upload_part_response_free(ds3_multipart_upload_part_response* response) {
     if (response == NULL) {
         return;
@@ -16815,50 +17319,6 @@ void ds3_request_free(ds3_request* _request) {
     g_free(request);
 }
 
-void ds3_metadata_free(ds3_metadata* _metadata) {
-    struct _ds3_metadata* metadata;
-    if (_metadata == NULL) return;
-
-    metadata = (struct _ds3_metadata*) _metadata;
-
-    if (metadata->metadata == NULL) return;
-
-    g_hash_table_destroy(metadata->metadata);
-
-    g_free(metadata);
-}
-
-void ds3_metadata_entry_free(ds3_metadata_entry* entry) {
-    int value_index;
-    ds3_str* value;
-    if (entry->name != NULL) {
-        ds3_str_free(entry->name);
-    }
-    if (entry->values != NULL) {
-        for (value_index = 0; value_index < entry->num_values; value_index++) {
-            value = entry->values[value_index];
-            ds3_str_free(value);
-        }
-        g_free(entry->values);
-    }
-    g_free(entry);
-}
-
-void ds3_metadata_keys_free(ds3_metadata_keys_result* metadata_keys) {
-    uint64_t key_index;
-    if (metadata_keys == NULL) {
-        return;
-    }
-
-    if (metadata_keys->keys != NULL) {
-        for (key_index = 0; key_index < metadata_keys->num_keys; key_index++) {
-            ds3_str_free(metadata_keys->keys[key_index]);
-        }
-        g_free(metadata_keys->keys);
-    }
-    g_free(metadata_keys);
-}
-
 void ds3_error_free(ds3_error* error) {
     if (error == NULL) {
         return;
@@ -16874,96 +17334,6 @@ void ds3_error_free(ds3_error* error) {
 void ds3_cleanup(void) {
     net_cleanup();
     xmlCleanupParser();
-}
-
-size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return fwrite(buffer, size, nmemb, (FILE*) user_data);
-}
-
-size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return fread(buffer, size, nmemb, (FILE*) user_data);
-}
-
-size_t ds3_write_to_fd(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return write(*(int*)user_data, buffer, size * nmemb);
-}
-
-size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    return read(*(int*)user_data, buffer, size * nmemb);
-}
-
-static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_name, const char* base_path) {
-    struct stat file_info;
-    int result;
-    ds3_bulk_object_response* obj = g_new0(ds3_bulk_object_response, 1);
-    char* file_to_stat;
-    memset(&file_info, 0, sizeof(struct stat));
-
-    if (base_path != NULL) {
-        file_to_stat = g_strconcat(base_path, file_name, NULL);
-    } else {
-        file_to_stat = g_strdup(file_name);
-    }
-
-    result = stat(file_to_stat, &file_info);
-    if (result != 0) {
-        fprintf(stderr, "Failed to get file info for %s\n", file_name);
-    }
-
-    obj->name = ds3_str_init(file_name);
-
-    if (S_ISDIR(file_info.st_mode)) {
-        obj->length = 0;
-    } else {
-        obj->length = file_info.st_size;
-    }
-
-    g_free(file_to_stat);
-
-    return obj;
-}
-
-ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, size_t num_files) {
-    return ds3_convert_file_list_with_basepath(file_list, num_files, NULL);
-}
-
-ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, size_t num_files, const char* base_path) {
-    size_t file_index;
-    ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
-
-    GPtrArray* ds3_bulk_object_response_array = g_ptr_array_new();
-    for (file_index = 0; file_index < num_files; file_index++) {
-        g_ptr_array_add(ds3_bulk_object_response_array, _ds3_bulk_object_from_file(file_list[file_index], base_path));
-    }
-
-    obj_list->objects = (ds3_bulk_object_response**)ds3_bulk_object_response_array->pdata;
-    obj_list->num_objects = ds3_bulk_object_response_array->len;
-    g_ptr_array_free(ds3_bulk_object_response_array, FALSE);
-
-    return obj_list;
-}
-
-ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, size_t num_objects) {
-    size_t object_index;
-    ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
-
-    GPtrArray* ds3_bulk_object_response_array = g_ptr_array_new();
-
-    for (object_index = 0; object_index < num_objects; object_index++) {
-        ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
-        response->name = ds3_str_dup(objects[object_index]->key);
-        g_ptr_array_add(ds3_bulk_object_response_array, response);
-    }
-
-    obj_list->objects = (ds3_bulk_object_response**)ds3_bulk_object_response_array->pdata;
-    obj_list->num_objects = ds3_bulk_object_response_array->len;
-    g_ptr_array_free(ds3_bulk_object_response_array, FALSE);
-
-    return obj_list;
-}
-
-ds3_bulk_object_list_response* ds3_init_bulk_object_list() {
-    return g_new0(ds3_bulk_object_list_response, 1);
 }
 
 
@@ -18778,3 +19148,93 @@ void ds3_list_multi_part_uploads_result_response_free(ds3_list_multi_part_upload
     g_free(response);
 }
 
+
+size_t ds3_write_to_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return fwrite(buffer, size, nmemb, (FILE*) user_data);
+}
+
+size_t ds3_read_from_file(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return fread(buffer, size, nmemb, (FILE*) user_data);
+}
+
+size_t ds3_write_to_fd(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return write(*(int*)user_data, buffer, size * nmemb);
+}
+
+size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    return read(*(int*)user_data, buffer, size * nmemb);
+}
+
+static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_name, const char* base_path) {
+    struct stat file_info;
+    int result;
+    ds3_bulk_object_response* obj = g_new0(ds3_bulk_object_response, 1);
+    char* file_to_stat;
+    memset(&file_info, 0, sizeof(struct stat));
+
+    if (base_path != NULL) {
+        file_to_stat = g_strconcat(base_path, file_name, NULL);
+    } else {
+        file_to_stat = g_strdup(file_name);
+    }
+
+    result = stat(file_to_stat, &file_info);
+    if (result != 0) {
+        fprintf(stderr, "Failed to get file info for %s\n", file_name);
+    }
+
+    obj->name = ds3_str_init(file_name);
+
+    if (S_ISDIR(file_info.st_mode)) {
+        obj->length = 0;
+    } else {
+        obj->length = file_info.st_size;
+    }
+
+    g_free(file_to_stat);
+
+    return obj;
+}
+
+ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, size_t num_files) {
+    return ds3_convert_file_list_with_basepath(file_list, num_files, NULL);
+}
+
+ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, size_t num_files, const char* base_path) {
+    size_t file_index;
+    ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
+
+    GPtrArray* ds3_bulk_object_response_array = g_ptr_array_new();
+    for (file_index = 0; file_index < num_files; file_index++) {
+        g_ptr_array_add(ds3_bulk_object_response_array, _ds3_bulk_object_from_file(file_list[file_index], base_path));
+    }
+
+    obj_list->objects = (ds3_bulk_object_response**)ds3_bulk_object_response_array->pdata;
+    obj_list->num_objects = ds3_bulk_object_response_array->len;
+    g_ptr_array_free(ds3_bulk_object_response_array, FALSE);
+
+    return obj_list;
+}
+
+ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, size_t num_objects) {
+    size_t object_index;
+    ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
+
+    GPtrArray* ds3_bulk_object_response_array = g_ptr_array_new();
+
+    for (object_index = 0; object_index < num_objects; object_index++) {
+        ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
+        response->name = ds3_str_dup(objects[object_index]->key);
+        g_ptr_array_add(ds3_bulk_object_response_array, response);
+    }
+
+    obj_list->objects = (ds3_bulk_object_response**)ds3_bulk_object_response_array->pdata;
+    obj_list->num_objects = ds3_bulk_object_response_array->len;
+    g_ptr_array_free(ds3_bulk_object_response_array, FALSE);
+
+    return obj_list;
+}
+
+ds3_bulk_object_list_response* ds3_init_bulk_object_list() {
+    return g_new0(ds3_bulk_object_list_response, 1);
+}

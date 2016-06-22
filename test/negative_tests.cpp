@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job) {
     ds3_str* job_id = populate_with_objects_return_job(client, bucket_name);
 
     request = ds3_init_cancel_job_spectra_s3_request(job_id->value);
-    ds3_request_set_custom_query_param(request, "force", NULL);
+    ds3_request_set_force(request, True);
     error = ds3_cancel_job_spectra_s3_request(client,request);
     ds3_str_free(job_id);
     handle_error(error);

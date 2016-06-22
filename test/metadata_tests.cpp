@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
     handle_error(error);
 
     request = ds3_init_put_object_request(bucket_name, "resources/beowulf.txt", obj_list->objects[0]->length);
-    ds3_request_set_custom_query_param(request, "job", bulk_response->job_id->value);
+    ds3_request_set_job(request, bulk_response->job_id->value);
     file = fopen(obj_list->objects[0]->name->value, "r");
     ds3_bulk_object_list_response_free(obj_list);
 
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE( put_multiple_metadata_items ) {
     handle_error(error);
 
     request = ds3_init_put_object_request(bucket_name, "resources/beowulf.txt", obj_list->objects[0]->length);
-    ds3_request_set_custom_query_param(request, "job", bulk_response->job_id->value);
+    ds3_request_set_job(request, bulk_response->job_id->value);
     file = fopen(obj_list->objects[0]->name->value, "r");
     ds3_bulk_object_list_response_free(obj_list);
 
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
     handle_error(error);
 
     request = ds3_init_put_object_request(bucket_name, "resources/beowulf.txt", obj_list->objects[0]->length);
-    ds3_request_set_custom_query_param(request, "job", bulk_response->job_id->value);
+    ds3_request_set_job(request, bulk_response->job_id->value);
     file = fopen(obj_list->objects[0]->name->value, "r");
     ds3_bulk_object_list_response_free(obj_list);
 
@@ -294,14 +294,14 @@ BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
     ds3_master_object_list_response_free(bulk_response);
 
     request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, obj_list);
-    ds3_request_set_custom_query_param(request, "chunkClientProcessingOrderGuarantee", "NONE");
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE);
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(obj_list);
     handle_error(error);
 
     request = ds3_init_get_object_request(bucket_name, "resources/beowulf.txt", 0);
-    ds3_request_set_custom_query_param(request, "job", bulk_response->job_id->value);
+    ds3_request_set_job(request, bulk_response->job_id->value);
     file = fopen("/dev/null", "w");
     error = ds3_get_object_with_metadata(client, request, file, ds3_write_to_file, &metadata_result);
     ds3_request_free(request);
