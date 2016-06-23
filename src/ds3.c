@@ -200,10 +200,6 @@ static char* _get_ds3_import_conflict_resolution_mode_str(ds3_import_conflict_re
         return "CANCEL";
     } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_MOST_RECENT) {
         return "ACCEPT_MOST_RECENT";
-    } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_HIGHEST_VERSION) {
-        return "ACCEPT_HIGHEST_VERSION";
-    } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_IMPORT) {
-        return "ACCEPT_IMPORT";
     } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_EXISTING) {
         return "ACCEPT_EXISTING";
     } else {
@@ -228,8 +224,6 @@ static char* _get_ds3_data_isolation_level_str(ds3_data_isolation_level input) {
         return "STANDARD";
     } else if (input == DS3_DATA_ISOLATION_LEVEL_BUCKET_ISOLATED) {
         return "BUCKET_ISOLATED";
-    } else if (input == DS3_DATA_ISOLATION_LEVEL_SECURE_BUCKET_ISOLATED) {
-        return "SECURE_BUCKET_ISOLATED";
     } else {
         return "";
     }
@@ -1474,6 +1468,10 @@ void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* reques
 }
 void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "roll_back", value);
+
+}
+void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "secure_media_allocation", value);
 
 }
 void ds3_request_set_serial_number(const ds3_request* request, const char* value) {
@@ -3269,8 +3267,6 @@ static ds3_data_isolation_level _match_ds3_data_isolation_level(const ds3_log* l
         return DS3_DATA_ISOLATION_LEVEL_STANDARD;
     } else if (xmlStrcmp(text, (const xmlChar*) "BUCKET_ISOLATED") == 0) {
         return DS3_DATA_ISOLATION_LEVEL_BUCKET_ISOLATED;
-    } else if (xmlStrcmp(text, (const xmlChar*) "SECURE_BUCKET_ISOLATED") == 0) {
-        return DS3_DATA_ISOLATION_LEVEL_SECURE_BUCKET_ISOLATED;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_DATA_ISOLATION_LEVEL_STANDARD for safety.", text);
         return DS3_DATA_ISOLATION_LEVEL_STANDARD;
@@ -3491,10 +3487,6 @@ static ds3_import_conflict_resolution_mode _match_ds3_import_conflict_resolution
         return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_CANCEL;
     } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_MOST_RECENT") == 0) {
         return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_MOST_RECENT;
-    } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_HIGHEST_VERSION") == 0) {
-        return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_HIGHEST_VERSION;
-    } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_IMPORT") == 0) {
-        return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_IMPORT;
     } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_EXISTING") == 0) {
         return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_EXISTING;
     } else {
@@ -4998,6 +4990,8 @@ static ds3_error* _parse_ds3_storage_domain_response(const ds3_client* client, c
             response->media_ejection_allowed = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "SecureMediaAllocation")) {
+            response->secure_media_allocation = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "VerifyPriorToAutoEject")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8916,6 +8910,8 @@ static ds3_error* _parse_top_level_ds3_storage_domain_response(const ds3_client*
             response->media_ejection_allowed = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "SecureMediaAllocation")) {
+            response->secure_media_allocation = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "VerifyPriorToAutoEject")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
