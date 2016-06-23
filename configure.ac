@@ -1,4 +1,4 @@
-AC_INIT([ds3], [1.2.0], [SDKDeveloper@spectralogic.com])
+AC_INIT([ds3], [3.0.0], [SDKDeveloper@spectralogic.com])
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
 
