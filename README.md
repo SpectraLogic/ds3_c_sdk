@@ -157,6 +157,10 @@ To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and o
     $ make run-get-bucket   # list contents of "books" bucket
     $ make run-get-object   # get first book and write to temp file
 
+Documentation
+-------------
+For the list of API calls in the C SDK please see the documentation [here](http://spectralogic.github.io/ds3_c_sdk/3.0.0/ds3_8h.html)
+
 Code Samples
 ------------
 
