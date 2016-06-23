@@ -136,8 +136,7 @@ typedef enum {
 }ds3_bucket_acl_permission;
 typedef enum {
     DS3_DATA_ISOLATION_LEVEL_STANDARD,
-    DS3_DATA_ISOLATION_LEVEL_BUCKET_ISOLATED,
-    DS3_DATA_ISOLATION_LEVEL_SECURE_BUCKET_ISOLATED
+    DS3_DATA_ISOLATION_LEVEL_BUCKET_ISOLATED
 }ds3_data_isolation_level;
 typedef enum {
     DS3_DATA_PERSISTENCE_RULE_STATE_NORMAL,
@@ -230,8 +229,6 @@ typedef enum {
 typedef enum {
     DS3_IMPORT_CONFLICT_RESOLUTION_MODE_CANCEL,
     DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_MOST_RECENT,
-    DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_HIGHEST_VERSION,
-    DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_IMPORT,
     DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_EXISTING
 }ds3_import_conflict_resolution_mode;
 typedef enum {
@@ -659,6 +656,7 @@ typedef struct {
     int maximum_auto_verification_frequency_in_days;
     ds3_bool media_ejection_allowed;
     ds3_str* name;
+    ds3_bool secure_media_allocation;
     ds3_priority verify_prior_to_auto_eject;
     ds3_write_optimization write_optimization;
 }ds3_storage_domain_response;
@@ -1846,6 +1844,7 @@ LIBRARY_API void ds3_request_set_rebuild_priority_ds3_priority(const ds3_request
 LIBRARY_API void ds3_request_set_rechunked(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value);
 LIBRARY_API void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value);
+LIBRARY_API void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_serial_number(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_state_ds3_data_persistence_rule_state(const ds3_request* request, const ds3_data_persistence_rule_state value);
 LIBRARY_API void ds3_request_set_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value);
@@ -2777,6 +2776,7 @@ LIBRARY_API ds3_error* ds3_put_pool_storage_domain_member_spectra_s3_request(con
 // void ds3_request_set_max_tape_fragmentation_percent(const ds3_request* request, const int value)
 // void ds3_request_set_maximum_auto_verification_frequency_in_days(const ds3_request* request, const int value)
 // void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value)
+// void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value)
 // void ds3_request_set_verify_prior_to_auto_eject_ds3_priority(const ds3_request* request, const ds3_priority value)
 // void ds3_request_set_write_optimization_ds3_write_optimization(const ds3_request* request, const ds3_write_optimization value)
 LIBRARY_API ds3_request* ds3_init_put_storage_domain_spectra_s3_request(const char* name);
@@ -2833,6 +2833,7 @@ LIBRARY_API ds3_error* ds3_get_storage_domain_spectra_s3_request(const ds3_clien
 // void ds3_request_set_page_length(const ds3_request* request, const int value)
 // void ds3_request_set_page_offset(const ds3_request* request, const int value)
 // void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+// void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value)
 // void ds3_request_set_write_optimization_ds3_write_optimization(const ds3_request* request, const ds3_write_optimization value)
 LIBRARY_API ds3_request* ds3_init_get_storage_domains_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_storage_domains_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_list_response** response);
@@ -2852,6 +2853,7 @@ LIBRARY_API ds3_error* ds3_modify_storage_domain_member_spectra_s3_request(const
 // void ds3_request_set_maximum_auto_verification_frequency_in_days(const ds3_request* request, const int value)
 // void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value)
 // void ds3_request_set_name(const ds3_request* request, const char* value)
+// void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value)
 // void ds3_request_set_verify_prior_to_auto_eject_ds3_priority(const ds3_request* request, const ds3_priority value)
 // void ds3_request_set_write_optimization_ds3_write_optimization(const ds3_request* request, const ds3_write_optimization value)
 LIBRARY_API ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char* resource_id);
