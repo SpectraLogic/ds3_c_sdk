@@ -43,6 +43,8 @@ void free_client(ds3_client* client);
 
 ds3_bulk_object_list_response* default_object_list();
 
+ds3_error* create_bucket_with_data_policy(const ds3_client* client, const char* bucket_id, const char* data_policy_id);
+
 // caller must free data_policy_id
 ds3_error* get_bucket_data_policy_id(const ds3_client* client, const char* bucket_name, ds3_str* data_policy_id);
 ds3_error* get_bucket_data_policy_checksum_type(const ds3_client* client, const char* bucket_name, ds3_checksum_type* checksum_type);

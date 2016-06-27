@@ -26,18 +26,13 @@ BOOST_AUTO_TEST_CASE( get_service_one_bucket ) {
     uint64_t bucket_index;
     bool found = false;
     const char* bucket_name = "test_put_bucket";
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-    ds3_bucket_response* bucket_response;
     ds3_list_all_my_buckets_result_response* service_response;
 
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     BOOST_CHECK(error == NULL);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
     ds3_error_free(error);
 
-    request = ds3_init_get_service_request();
+    ds3_request* request = ds3_init_get_service_request();
     error = ds3_get_service_request(client, request, &service_response);
     BOOST_CHECK(error == NULL);
     ds3_request_free(request);

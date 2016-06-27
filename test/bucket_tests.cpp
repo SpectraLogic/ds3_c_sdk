@@ -37,16 +37,10 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
     ds3_client* client = get_client();
     const char* bucket_name = "test_put_empty_folder_bucket";
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
-    request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
+    ds3_request* request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
     error   = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
     handle_error(error);

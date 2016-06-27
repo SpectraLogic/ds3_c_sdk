@@ -18,17 +18,11 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
     const char* bucket_name = "metadata_test";
     FILE* file;
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
-    request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
-    error   = ds3_put_object_request(client, request, NULL, NULL);
+    ds3_request* request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
+    error = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
     handle_error(error);
 
@@ -79,16 +73,10 @@ BOOST_AUTO_TEST_CASE( head_bucket ) {
     ds3_client* client = get_client();
     const char* bucket_name = "metadata_test";
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
-    request = ds3_init_head_bucket_request(bucket_name);
+    ds3_request* request = ds3_init_head_bucket_request(bucket_name);
 
     error = ds3_head_bucket_request(client, request);
     ds3_request_free(request);
@@ -104,17 +92,11 @@ BOOST_AUTO_TEST_CASE( head_folder ) {
     ds3_client* client = get_client();
     const char* bucket_name = "head_folder_test";
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
     const char* test_folder = "test_folder/";
-    request = ds3_init_put_object_request(bucket_name, test_folder, 0);
+    ds3_request* request = ds3_init_put_object_request(bucket_name, test_folder, 0);
     error   = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
     handle_error(error);
@@ -145,18 +127,12 @@ BOOST_AUTO_TEST_CASE( put_multiple_metadata_items ) {
     const char* bucket_name = "multi_metadata_test";
     FILE* file;
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
     obj_list = ds3_convert_file_list(file_name, 1);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     handle_error(error);
@@ -225,18 +201,12 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
     const char* bucket_name = "key_metadata_test";
     FILE* file;
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
     obj_list = ds3_convert_file_list(file_name, 1);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     handle_error(error);
@@ -291,18 +261,12 @@ BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
     const char* bucket_name = "get_object_metadata_test";
     FILE* file;
 
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
     obj_list = ds3_convert_file_list(file_name, 1);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     handle_error(error);

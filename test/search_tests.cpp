@@ -100,13 +100,7 @@ BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     const char* bucket_name = "get_objects_with_plus_query_param";
     const char* plus_object = "Plus+Object";
 
-    ds3_request* put_bucket_request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(put_bucket_request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* bucket_error = ds3_put_bucket_spectra_s3_request(client, put_bucket_request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(put_bucket_request);
+    ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(bucket_error);
 
     ds3_request* put_request = ds3_init_put_object_request(bucket_name, plus_object, 1024);
@@ -142,13 +136,7 @@ BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     const char* bucket_name = "TestSpecialCharacterInObjectName";
     const char* special_char_object = "varsity1314/_projects/VARSITY 13-14/_versions/Varsity 13-14 (2015-10-05 1827)/_project/Trash/PCMAC HD.avb";
 
-    ds3_request* put_bucket_request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(put_bucket_request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response = NULL;
-    ds3_error* bucket_error = ds3_put_bucket_spectra_s3_request(client, put_bucket_request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(put_bucket_request);
+    ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(bucket_error);
 
     ds3_request* put_request = ds3_init_put_object_request(bucket_name, special_char_object, 1024);

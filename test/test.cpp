@@ -212,16 +212,10 @@ ds3_bulk_object_list_response* default_object_list() {
 }
 
 ds3_request* populate_bulk_return_request(const ds3_client* client, const char* bucket_name, ds3_bulk_object_list_response* obj_list) {
-    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
-    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
-
-    ds3_bucket_response* bucket_response;
-    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
-    ds3_bucket_response_free(bucket_response);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     ds3_error_free(error);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     return request;
 }
 
@@ -322,6 +316,17 @@ bool contains_object(ds3_list_bucket_result_response* bucket_list, const char* k
         }
     }
     return false;
+}
+
+ds3_error* create_bucket_with_data_policy(const ds3_client* client, const char* bucket_id, const char* data_policy_id) {
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_id);
+    ds3_request_set_data_policy_id(request, data_policy_id);
+
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
+    ds3_request_free(request);
+    return error;
 }
 
 ds3_error* get_bucket_data_policy_id(const ds3_client* client, const char* bucket_name, ds3_str* data_policy_id) {
