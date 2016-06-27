@@ -4,7 +4,7 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE( get_service ) {
+BOOST_AUTO_TEST_CASE( get_service_no_buckets ) {
     ds3_client* client = get_client();
     ds3_request* request = ds3_init_get_service_request();
     ds3_list_all_my_buckets_result_response* response;
@@ -19,43 +19,47 @@ BOOST_AUTO_TEST_CASE( get_service ) {
     free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE( put_bucket ) {
-    ds3_client* client = get_client();
-    uint64_t i;
-    bool found = false;
-    const char* bucket_name = "test_put_bucket";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_list_all_my_buckets_result_response* response;
-
+BOOST_AUTO_TEST_CASE( get_service_one_bucket ) {
     printf("-----Testing GET service after PUT bucket-------\n");
 
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    handle_error(error);
+    ds3_client* client = get_client();
+    uint64_t bucket_index;
+    bool found = false;
+    const char* bucket_name = "test_put_bucket";
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
+    ds3_bucket_response* bucket_response;
+    ds3_list_all_my_buckets_result_response* service_response;
+
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    BOOST_CHECK(error == NULL);
+    ds3_bucket_response_free(bucket_response);
     ds3_request_free(request);
+    ds3_error_free(error);
 
     request = ds3_init_get_service_request();
-    error = ds3_get_service_request(client, request, &response);
+    error = ds3_get_service_request(client, request, &service_response);
     BOOST_CHECK(error == NULL);
+    ds3_request_free(request);
+    ds3_error_free(error);
 
-    for (i = 0; i < response->num_buckets; i++) {
-        fprintf(stderr, "Expected Name (%s) actual (%s)\n", bucket_name, response->buckets[i]->name->value);
-        if (strcmp(bucket_name, response->buckets[i]->name->value) == 0) {
+    for (bucket_index = 0; bucket_index < service_response->num_buckets; bucket_index++) {
+        fprintf(stderr, "Expected Name (%s) actual (%s)\n", bucket_name, service_response->buckets[bucket_index]->name->value);
+        if (strcmp(bucket_name, service_response->buckets[bucket_index]->name->value) == 0) {
             found = true;
             break;
         }
     }
-
-    ds3_request_free(request);
-    ds3_list_all_my_buckets_result_response_free(response);
-
     BOOST_CHECK(found);
+    ds3_list_all_my_buckets_result_response_free(service_response);
 
     request = ds3_init_delete_bucket_request(bucket_name);
     error = ds3_delete_bucket_request(client, request);
+    BOOST_CHECK(error == NULL);
     ds3_request_free(request);
+    ds3_error_free(error);
 
     free_client(client);
-    BOOST_CHECK(error == NULL);
 }
 
 BOOST_AUTO_TEST_CASE( get_system_information ) {
@@ -100,3 +104,4 @@ BOOST_AUTO_TEST_CASE( verify_system_health ) {
     ds3_health_verification_result_response_free(response);
     BOOST_CHECK(error == NULL);
 }
+

@@ -6,7 +6,8 @@
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE( put_metadata ) {
-    ds3_error* error;
+    printf("-----Testing put_metadata-------\n");
+
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
@@ -17,11 +18,17 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
     const char* bucket_name = "metadata_test";
     FILE* file;
 
-    printf("-----Testing put_metadata-------\n");
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
 
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
+    ds3_request_free(request);
+    handle_error(error);
 
-    error = ds3_put_bucket_request(client, request);
+    request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
+    error   = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
     handle_error(error);
 
@@ -68,12 +75,16 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
 
 BOOST_AUTO_TEST_CASE( head_bucket ) {
     printf("-----Testing head_bucket-------\n");
-    ds3_error* error;
+
     ds3_client* client = get_client();
     const char* bucket_name = "metadata_test";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
 
-    error = ds3_put_bucket_request(client, request);
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
+
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
     ds3_request_free(request);
     handle_error(error);
 
@@ -88,12 +99,17 @@ BOOST_AUTO_TEST_CASE( head_bucket ) {
 
 BOOST_AUTO_TEST_CASE( head_folder ) {
     printf("-----Testing head_folder-------\n");
+
     ds3_metadata* metadata_result;
-    ds3_error* error;
     ds3_client* client = get_client();
     const char* bucket_name = "head_folder_test";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    error = ds3_put_bucket_request(client, request);
+
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
+
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
     ds3_request_free(request);
     handle_error(error);
 
@@ -116,22 +132,25 @@ BOOST_AUTO_TEST_CASE( head_folder ) {
 }
 
 BOOST_AUTO_TEST_CASE( put_multiple_metadata_items ) {
-    ds3_error* error;
+    printf("-----Testing put_multiple_metadata_items-------\n");
+
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
     ds3_metadata* metadata_result;
     ds3_metadata_entry* metadata_entry;
     const char* file_name[1] = {"resources/beowulf.txt"};
-    ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
+    //ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
+    ds3_client* client = get_client();
     const char* bucket_name = "multi_metadata_test";
     FILE* file;
 
-    printf("-----Testing put_multiple_metadata_items-------\n");
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
 
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-
-    error = ds3_put_bucket_request(client, request);
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
     ds3_request_free(request);
     handle_error(error);
 
@@ -192,7 +211,8 @@ static bool contains_key(const ds3_metadata_keys_result* metadata_keys, const ch
 }
 
 BOOST_AUTO_TEST_CASE( metadata_keys ) {
-    ds3_error* error;
+    printf("-----Testing metadata_keys-------\n");
+
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
@@ -200,15 +220,17 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
     ds3_metadata_keys_result* metadata_keys = NULL;
 
     const char* file_name[1] = {"resources/beowulf.txt"};
-    ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
+    //ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
+    ds3_client* client = get_client();
     const char* bucket_name = "key_metadata_test";
     FILE* file;
 
-    printf("-----Testing metadata_keys-------\n");
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
 
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-
-    error = ds3_put_bucket_request(client, request);
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
     ds3_request_free(request);
     handle_error(error);
 
@@ -257,7 +279,8 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
 }
 
 BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
-    ds3_error* error;
+    printf("-----Testing put_metadata_using_get_object_retrieval-------\n");
+
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
@@ -268,11 +291,12 @@ BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
     const char* bucket_name = "get_object_metadata_test";
     FILE* file;
 
-    printf("-----Testing put_metadata_using_get_object_retrieval-------\n");
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_name);
+    ds3_request_set_data_policy_id(request, ids.data_policy_id->value);
 
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-
-    error = ds3_put_bucket_request(client, request);
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
     ds3_request_free(request);
     handle_error(error);
 
