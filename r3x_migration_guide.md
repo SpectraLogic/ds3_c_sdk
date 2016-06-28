@@ -5,17 +5,21 @@ API Requests
 ==============================
 | r1.x Request Name | r3.x AWS Request Name | r3.x DS3 Request Name |
 |---|---|---|
+| ds3_get_system_information | | ds3_get_system_information_spectra_s3_request |
+| ds3_verify_system_health | | ds3_verify_system_health_spectra_s3_request |
+| ds3_get_bucket | ds3_get_bucket_request | ds3_get_bucket_spectra_s3_request |
 | ds3_get_service | | ds3_get_service_request |
 | ds3_put_bucket | ds3_put_bucket_request | ds3_put_bucket_spectra_s3_request |
-| ds3_get_bucket | ds3_get_bucket_request | ds3_get_bucket_spectra_s3_request |
 | ds3_put_object | ds3_put_object_request | |
 | ds3_delete_folder | | ds3_delete_folder_recursively_spectra_s3_request |
-| ds3_put_bulk | | ds3_put_bulk_job_spectra_s3_request |
+| ds3_bulk | | ds3_put_bulk_job_spectra_s3_request |
+| ds3_bulk | | ds3_get_bulk_job_spectra_s3_request |
+| ds3_allocate_chunk | | ds3_allocate_job_chunk_spectra_s3_request (*Deprecated in favor of get_job_chunks_ready_for_client_processing) |
+| ds3_get_available_chunks | | 
 | ds3_put_object_for_job | | ds3_put_object_request |
 | ds3_get_physical_placement | | ds3_get_physical_placement_for_objects_spectra_s3_request |
 | ds3_free_available_chunks_response | | ds3_master_object_list_response_free |
 | ds3_free_bulk_object_list | | ds3_bulk_object_list_response_free |
-| ds3_allocate_chunk | | ds3_allocate_job_chunk_spectra_s3_request (*Deprecated in favor of get_job_chunks_ready_for_client_processing) |
 | ds3_free_error | | ds3_error_free |
 | ds3_free_request | | ds3_request_free |
 
