@@ -1,4 +1,9 @@
-All Requests have a related ds3_init_* request to configure the request before sending.  ds3.h [doxygen comments] (http://spectralogic.github.io/ds3_c_sdk/3.0.0/ds3_8h.html) list the request modifiers that can be applied to each respective request.
+DS3 C_SDK r1.x to r3.x DS3 API Migration Guide
+==============================
+
+All requests have a related ds3_init_* request to configure the request before sending.
+
+Refer to the ds3.h [doxygen comments] (http://spectralogic.github.io/ds3_c_sdk/3.0.0/ds3_8h.html) list the request modifiers that can be applied to each respective request.
 
 
 API Requests
@@ -14,8 +19,8 @@ API Requests
 | ds3_delete_folder | | ds3_delete_folder_recursively_spectra_s3_request |
 | ds3_bulk | | ds3_put_bulk_job_spectra_s3_request |
 | ds3_bulk | | ds3_get_bulk_job_spectra_s3_request |
-| ds3_allocate_chunk | | ds3_allocate_job_chunk_spectra_s3_request (*Deprecated in favor of get_job_chunks_ready_for_client_processing) |
-| ds3_get_available_chunks | | 
+| ds3_allocate_chunk | | ds3_allocate_job_chunk_spectra_s3_request (*Deprecated in favor of ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request) |
+| ds3_get_available_chunks | | ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request |
 | ds3_put_object_for_job | | ds3_put_object_request |
 | ds3_get_physical_placement | | ds3_get_physical_placement_for_objects_spectra_s3_request |
 | ds3_free_available_chunks_response | | ds3_master_object_list_response_free |
