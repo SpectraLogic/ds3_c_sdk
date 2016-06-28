@@ -200,6 +200,10 @@ static char* _get_ds3_import_conflict_resolution_mode_str(ds3_import_conflict_re
         return "CANCEL";
     } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_MOST_RECENT) {
         return "ACCEPT_MOST_RECENT";
+    } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_HIGHEST_VERSION) {
+        return "ACCEPT_HIGHEST_VERSION";
+    } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_IMPORT) {
+        return "ACCEPT_IMPORT";
     } else if (input == DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_EXISTING) {
         return "ACCEPT_EXISTING";
     } else {
@@ -224,6 +228,8 @@ static char* _get_ds3_data_isolation_level_str(ds3_data_isolation_level input) {
         return "STANDARD";
     } else if (input == DS3_DATA_ISOLATION_LEVEL_BUCKET_ISOLATED) {
         return "BUCKET_ISOLATED";
+    } else if (input == DS3_DATA_ISOLATION_LEVEL_SECURE_BUCKET_ISOLATED) {
+        return "SECURE_BUCKET_ISOLATED";
     } else {
         return "";
     }
@@ -1468,10 +1474,6 @@ void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* reques
 }
 void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "roll_back", value);
-
-}
-void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "secure_media_allocation", value);
 
 }
 void ds3_request_set_serial_number(const ds3_request* request, const char* value) {
@@ -3159,9 +3161,9 @@ static xmlDocPtr _generate_xml_delete_objects(ds3_delete_objects_response* keys_
     return doc;
 }
 
-ds3_error* _init_request_payload(const ds3_request* _request,
-                                 ds3_xml_send_buff* send_buff,
-                                 const object_list_type operation_type) {
+static ds3_error* _init_request_payload(const ds3_request* _request,
+                                        ds3_xml_send_buff* send_buff,
+                                        const object_list_type operation_type) {
     xmlDocPtr doc;
 
     struct _ds3_request* request = (struct _ds3_request*) _request;
@@ -3267,6 +3269,8 @@ static ds3_data_isolation_level _match_ds3_data_isolation_level(const ds3_log* l
         return DS3_DATA_ISOLATION_LEVEL_STANDARD;
     } else if (xmlStrcmp(text, (const xmlChar*) "BUCKET_ISOLATED") == 0) {
         return DS3_DATA_ISOLATION_LEVEL_BUCKET_ISOLATED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "SECURE_BUCKET_ISOLATED") == 0) {
+        return DS3_DATA_ISOLATION_LEVEL_SECURE_BUCKET_ISOLATED;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_DATA_ISOLATION_LEVEL_STANDARD for safety.", text);
         return DS3_DATA_ISOLATION_LEVEL_STANDARD;
@@ -3487,6 +3491,10 @@ static ds3_import_conflict_resolution_mode _match_ds3_import_conflict_resolution
         return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_CANCEL;
     } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_MOST_RECENT") == 0) {
         return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_MOST_RECENT;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_HIGHEST_VERSION") == 0) {
+        return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_HIGHEST_VERSION;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_IMPORT") == 0) {
+        return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_IMPORT;
     } else if (xmlStrcmp(text, (const xmlChar*) "ACCEPT_EXISTING") == 0) {
         return DS3_IMPORT_CONFLICT_RESOLUTION_MODE_ACCEPT_EXISTING;
     } else {
@@ -4990,8 +4998,6 @@ static ds3_error* _parse_ds3_storage_domain_response(const ds3_client* client, c
             response->media_ejection_allowed = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "SecureMediaAllocation")) {
-            response->secure_media_allocation = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "VerifyPriorToAutoEject")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -7830,7 +7836,9 @@ static ds3_error* _parse_ds3_bulk_object_response(const ds3_client* client, cons
     }
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "PhysicalPlacement")) {
+        if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PhysicalPlacement")) {
             error = _parse_ds3_physical_placement_response(client, doc, child_node, &response->physical_placement);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_bulk_object_response [%s]\n", child_node->name, root->name);
@@ -8910,8 +8918,6 @@ static ds3_error* _parse_top_level_ds3_storage_domain_response(const ds3_client*
             response->media_ejection_allowed = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "SecureMediaAllocation")) {
-            response->secure_media_allocation = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "VerifyPriorToAutoEject")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -13014,13 +13020,6 @@ static ds3_error* _parse_top_level_ds3_master_object_list_response(const ds3_cli
             response->user_id = xml_get_string_from_attribute(doc, attribute);
         } else if (attribute_equal(attribute, "UserName") == true) {
             response->user_name = xml_get_string_from_attribute(doc, attribute);
-        } else if (attribute_equal(attribute, "WriteOptimization") == true) {
-            xmlChar* text = xmlNodeListGetString(doc, attribute->children, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->write_optimization = _match_ds3_write_optimization(client->log, text);
-            xmlFree(text);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_master_object_list_response [%s]\n", attribute->name, root->name);
         }
@@ -18835,6 +18834,7 @@ void ds3_bulk_object_response_free(ds3_bulk_object_response* response) {
         return;
     }
 
+    ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_physical_placement_response_free(response->physical_placement);
 
