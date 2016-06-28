@@ -5,14 +5,14 @@
 #include <glib.h>
 
 BOOST_AUTO_TEST_CASE( bulk_put ) {
+    printf("-----Testing Bulk PUT-------\n");
+
     ds3_request* request;
     ds3_error* error;
     ds3_list_bucket_result_response* response;
     ds3_client* client = get_client();
     const char* bucket_name = "test_bulk_put_bucket";
     uint64_t num_objs;
-
-    printf("-----Testing Bulk PUT-------\n");
 
     populate_with_objects(client, bucket_name);
 
@@ -36,14 +36,11 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
 
     ds3_client* client = get_client();
     const char* bucket_name = "test_put_empty_folder_bucket";
-    uint64_t num_objs;
 
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
-    request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
+    ds3_request* request = ds3_init_put_object_request(bucket_name, "empty-folder/", 0);
     error   = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
     handle_error(error);
@@ -54,9 +51,7 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
     ds3_request_free(request);
     handle_error(error);
 
-    num_objs = response->num_objects;
-
-    BOOST_CHECK_EQUAL(num_objs, 1);
+    BOOST_CHECK_EQUAL(response->num_objects, 1);
     BOOST_CHECK(contains_object(response, "empty-folder/"));
 
     ds3_list_bucket_result_response_free(response);
@@ -66,14 +61,13 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
 }
 
 BOOST_AUTO_TEST_CASE( prefix ) {
+    printf("-----Testing Prefix-------\n");
+
     ds3_request* request;
     ds3_error* error;
     ds3_list_bucket_result_response* response;
     ds3_client* client = get_client();
     const char* bucket_name = "test_prefix_bucket";
-    uint64_t num_objs;
-
-    printf("-----Testing Prefix-------\n");
 
     populate_with_objects(client, bucket_name);
 
@@ -81,28 +75,24 @@ BOOST_AUTO_TEST_CASE( prefix ) {
     ds3_request_set_prefix(request, "resources/beo");
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
-
     handle_error(error);
-    num_objs = response->num_objects;
-    BOOST_CHECK_EQUAL(num_objs, 1);
 
+    BOOST_CHECK_EQUAL(response->num_objects, 1);
     BOOST_CHECK(contains_object(response, "resources/beowulf.txt"));
 
     ds3_list_bucket_result_response_free(response);
-
     clear_bucket(client, bucket_name);
     free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE( delimiter ) {
+    printf("-----Testing Delimiter-------\n");
+
     ds3_request* request;
     ds3_error* error;
     ds3_list_bucket_result_response* response;
     ds3_client* client = get_client();
     const char* bucket_name = "test_delimiter_bucket";
-    uint64_t num_objs;
-
-    printf("-----Testing Delimiter-------\n");
 
     populate_with_objects(client, bucket_name);
 
@@ -110,29 +100,25 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     ds3_request_set_delimiter(request, "/");
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
-
     handle_error(error);
-    num_objs = response->num_objects;
-    BOOST_CHECK_EQUAL(num_objs, 0);
 
+    BOOST_CHECK_EQUAL(response->num_objects, 0);
     BOOST_CHECK_EQUAL(response->num_common_prefixes, 1);
     BOOST_CHECK_EQUAL(strcmp(response->common_prefixes[0]->value, "resources/"), 0);
 
     ds3_list_bucket_result_response_free(response);
-
     clear_bucket(client, bucket_name);
     free_client(client);
 }
 
 BOOST_AUTO_TEST_CASE(marker) {
+    printf("-----Testing Marker-------\n");
+
     ds3_request* request;
     ds3_error* error;
     ds3_list_bucket_result_response* response;
     ds3_client* client = get_client();
     const char* bucket_name = "test_marker_bucket";
-    uint64_t num_objs;
-
-    printf("-----Testing Marker-------\n");
 
     populate_with_objects(client,bucket_name);
 
@@ -140,11 +126,9 @@ BOOST_AUTO_TEST_CASE(marker) {
     ds3_request_set_marker(request, "resources/sherlock_holmes.txt");
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
-
     handle_error(error);
-    num_objs = response->num_objects;
 
-    BOOST_CHECK_EQUAL(num_objs, 3);
+    BOOST_CHECK_EQUAL(response->num_objects, 3);
     BOOST_CHECK(contains_object(response, "resources/tale_of_two_cities.txt"));
     BOOST_CHECK(contains_object(response, "resources/ulysses.txt"));
     BOOST_CHECK(contains_object(response, "resources/ulysses_large.txt"));
@@ -156,14 +140,13 @@ BOOST_AUTO_TEST_CASE(marker) {
 }
 
 BOOST_AUTO_TEST_CASE(max_keys) {
+    printf("-----Testing Max-Keys-------\n");
+
     ds3_request* request;
     ds3_error* error;
     ds3_list_bucket_result_response* response;
     ds3_client* client = get_client();
     const char* bucket_name = "test_max_keys_bucket";
-    uint64_t num_objs;
-
-    printf("-----Testing Max-Keys-------\n");
 
     populate_with_objects(client, bucket_name);
 
@@ -171,11 +154,9 @@ BOOST_AUTO_TEST_CASE(max_keys) {
     ds3_request_set_max_keys(request, 2);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
-
     handle_error(error);
-    num_objs = response->num_objects;
 
-    BOOST_CHECK_EQUAL(num_objs, 2);
+    BOOST_CHECK_EQUAL(response->num_objects, 2);
     BOOST_CHECK(contains_object(response, "resources/beowulf.txt"));
     BOOST_CHECK(contains_object(response, "resources/sherlock_holmes.txt"));
     ds3_list_bucket_result_response_free(response);
@@ -184,30 +165,8 @@ BOOST_AUTO_TEST_CASE(max_keys) {
     free_client(client);
 }
 
-BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
-    printf("-----Testing get_bucket with bucket_name/ with trailing slash-------\n");
-    ds3_client* client = get_client();
-    const char* bucket_name = "trailing_slash/";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
-    handle_error(error);
-
-    request = ds3_init_get_bucket_request(bucket_name);
-    ds3_list_bucket_result_response* response;
-    error = ds3_get_bucket_request(client, request, &response);
-    ds3_request_free(request);
-
-    handle_error(error);
-    BOOST_CHECK_EQUAL( g_strcmp0(response->name->value, "trailing_slash"), 0);
-    ds3_list_bucket_result_response_free(response);
-
-    clear_bucket(client, bucket_name);
-    free_client(client);
-}
-
-// This test case is no longer valid as checksums types can only be set on a per data-policy
-// basis rather than per object.
+// This test case is no longer valid for r3x since checksums types can only be 
+// set on a per data-policy basis rather than per object.
 /*
 BOOST_AUTO_TEST_CASE(checksum) {
     uint64_t checksums, chunk_index, object_index;

@@ -26,34 +26,30 @@ BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
     size_t bucket_index;
     bool found = false;
     const char* bucket_name = "negative_test_duplicate_bucket_name_bucket";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_list_all_my_buckets_result_response* response = NULL;
 
-    ds3_error* error = ds3_put_bucket_request(client, request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
+    handle_error(error);
+
+    ds3_request* request = ds3_init_get_service_request();
+    ds3_list_all_my_buckets_result_response* service_response = NULL;
+    error = ds3_get_service_request(client, request, &service_response);
     ds3_request_free(request);
     handle_error(error);
 
-    request = ds3_init_get_service_request();
-    error = ds3_get_service_request(client, request, &response);
-    ds3_request_free(request);
-    handle_error(error);
-
-    for (bucket_index = 0; bucket_index < response->num_buckets; bucket_index++) {
-        ds3_bucket_details_response* currentBucket = response->buckets[bucket_index];
+    for (bucket_index = 0; bucket_index < service_response->num_buckets; bucket_index++) {
+        ds3_bucket_details_response* currentBucket = service_response->buckets[bucket_index];
         if (strcmp(bucket_name, currentBucket->name->value) == 0) {
             found = true;
             break;
         }
     }
 
-    ds3_list_all_my_buckets_result_response_free(response);
+    ds3_list_all_my_buckets_result_response_free(service_response);
 
     BOOST_CHECK(found);
 
     //Putting Duplicate Bucket
-    request = ds3_init_put_bucket_request(bucket_name);
-    error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
+    error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     BOOST_CHECK(error!=NULL);
     BOOST_CHECK(error->error->http_error_code == 409);
     BOOST_CHECK(strcmp(error->error->code->value ,"Conflict")==0);
@@ -132,9 +128,7 @@ BOOST_AUTO_TEST_CASE(head_object_with_empty_object_name){
     ds3_client* client = get_client();
     const char* bucket_name = "test_head_object_with_empty_object_name";
 
-    ds3_request* put_request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, put_request);
-    ds3_request_free(put_request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
     ds3_request* request = ds3_init_head_object_request(bucket_name, "");
@@ -157,9 +151,7 @@ BOOST_AUTO_TEST_CASE(head_object_with_null_object_name){
     ds3_client* client = get_client();
     const char* bucket_name = "test_head_object_with_null_object_name";
 
-    ds3_request* put_request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, put_request);
-    ds3_request_free(put_request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
     ds3_request* request = ds3_init_head_object_request(bucket_name, NULL);
@@ -178,7 +170,7 @@ BOOST_AUTO_TEST_CASE(head_object_with_null_object_name){
 
 //testing Head bucket of non existing bucket
 BOOST_AUTO_TEST_CASE(head_bucket_non_existing_bucket){
-    printf("-----Testing Non Existing Head Bucket-------\n");
+    printf("-----Negative Testing Non Existing Head Bucket-------\n");
     ds3_error* error;
     ds3_client* client = get_client();
     const char* bucket_name = "metadata_test";
@@ -201,26 +193,24 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_object) {
     uint64_t bucket_index;
     bool found = false;
     const char* bucket_name = "test_bucket";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_list_all_my_buckets_result_response* response = NULL;
 
-    ds3_error* error = ds3_put_bucket_request(client, request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
+    handle_error(error);
+
+    ds3_request* request = ds3_init_get_service_request();
+    ds3_list_all_my_buckets_result_response* service_response = NULL;
+    error = ds3_get_service_request(client, request, &service_response);
     ds3_request_free(request);
     handle_error(error);
 
-    request = ds3_init_get_service_request();
-    error = ds3_get_service_request(client, request, &response);
-    ds3_request_free(request);
-    handle_error(error);
-
-    for (bucket_index = 0; bucket_index < response->num_buckets; bucket_index++) {
-        if (strcmp(bucket_name, response->buckets[bucket_index]->name->value) == 0) {
+    for (bucket_index = 0; bucket_index < service_response->num_buckets; bucket_index++) {
+        if (strcmp(bucket_name, service_response->buckets[bucket_index]->name->value) == 0) {
             found = true;
             break;
         }
     }
 
-    ds3_list_all_my_buckets_result_response_free(response);
+    ds3_list_all_my_buckets_result_response_free(service_response);
     BOOST_CHECK(found);
 
     //Deleting Non Existing Object
@@ -245,15 +235,32 @@ BOOST_AUTO_TEST_CASE(bad_bucket_name) {
     printf("-----Negative Testing Bad Bucket Name creation-------\n");
     ds3_client* client = get_client();
     const char* bucket_name = "bad:bucket";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
-    free_client(client);
+
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 400);
     BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
     ds3_error_free(error);
+
+    free_client(client);
+}
+
+BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
+    printf("-----Negative Testing get_bucket with bucket_name/ with trailing slash-------\n");
+    ds3_client* client = get_client();
+    const char* bucket_name = "trailing_slash/";
+
+    ds3_error* put_bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
+
+    BOOST_CHECK(put_bucket_error != NULL);
+    BOOST_CHECK(put_bucket_error->code == DS3_ERROR_BAD_STATUS_CODE);
+    BOOST_CHECK(put_bucket_error->error->http_error_code == 400);
+    BOOST_CHECK_EQUAL( g_strcmp0(put_bucket_error->error->code->value, "Bad Request"), 0);
+
+    ds3_error_free(put_bucket_error);
+    clear_bucket(client, bucket_name);
+    free_client(client);
 }
 
 //testing creation of object list with duplicate objects
@@ -266,13 +273,13 @@ BOOST_AUTO_TEST_CASE(put_duplicate_object_list){
     const char* books[] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/beowulf.txt"};
     ds3_bulk_object_list_response* obj_list = NULL;
     ds3_master_object_list_response* response = NULL;
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
+
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
+
     obj_list = ds3_convert_file_list(books, 3);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(obj_list);
@@ -339,12 +346,11 @@ BOOST_AUTO_TEST_CASE(put_empty_object_list) {
     ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
     ds3_master_object_list_response* response = NULL;
     const char* bucket_name = "Bucket_with_empty_list";
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
+
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(error);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(obj_list);
@@ -422,9 +428,7 @@ BOOST_AUTO_TEST_CASE(bad_checksum) {
     obj_list = ds3_convert_file_list(books, 1);
 
     for (checksums = 0; checksums < 5; checksums ++) {
-        request = ds3_init_put_bucket(bucket_name);
-        error = ds3_put_bucket(client, request);
-        ds3_free_request(request);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
         handle_error(error);
 
 

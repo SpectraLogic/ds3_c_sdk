@@ -7,14 +7,24 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
-struct TestCleanup {
-    TestCleanup() {}
-    ~TestCleanup() {
+TempStorageIds ids;
+
+struct BoostTestFixture {
+    BoostTestFixture() {
+        configure_for_tests();
+    }
+    ~BoostTestFixture() {
+        teardown_after_tests();
+
+        ds3_str_free(ids.data_policy_id);
+        ds3_str_free(ids.data_persistence_rule_id);
+        ds3_str_free(ids.storage_domain_member_id);
+
         ds3_cleanup();
     }
 };
 
-BOOST_GLOBAL_FIXTURE( TestCleanup );
+BOOST_GLOBAL_FIXTURE( BoostTestFixture );
 
 void test_log(const char* message, void* user_data) {
     fprintf(stderr, "Log Message: %s\n", message);
@@ -38,6 +48,120 @@ ds3_client* get_client_at_loglvl(ds3_log_lvl log_lvl) {
 
 ds3_client* get_client() {
     return get_client_at_loglvl(DS3_INFO);
+}
+
+void free_client(ds3_client* client) {
+    ds3_creds_free(client->creds);
+    ds3_client_free(client);
+}
+
+void configure_for_tests() {
+    ds3_client* client = get_client();
+
+    ds3_data_policy_response* put_dp_response = NULL;
+    ds3_storage_domain_response* put_sd_response = NULL;
+    ds3_pool_partition_response* put_pp_response = NULL;
+    ds3_storage_domain_member_response* put_sd_member_response = NULL;
+    ds3_data_persistence_rule_response* put_data_persistence_rule_response = NULL;
+
+    ds3_str* data_policy_id;
+    ds3_str* storage_domain_id;
+    ds3_str* pool_partition_id;
+    ds3_str* storage_domain_member_id;
+    ds3_str* data_persistence_rule_id;
+
+    // Create DataPolicy
+    ds3_request* put_dp_request = ds3_init_put_data_policy_spectra_s3_request(TEST_DP_NAME);
+    ds3_error* error = ds3_put_data_policy_spectra_s3_request(client, put_dp_request, &put_dp_response);
+    data_policy_id = ds3_str_init(put_dp_response->id->value);
+
+    ds3_request_free(put_dp_request);
+    ds3_data_policy_response_free(put_dp_response);
+    ds3_error_free(error);
+
+    // Create StorageDomain
+    ds3_request* put_sd_request = ds3_init_put_storage_domain_spectra_s3_request(TEST_SD_NAME);
+    error = ds3_put_storage_domain_spectra_s3_request(client, put_sd_request, &put_sd_response);
+    storage_domain_id = ds3_str_init(put_sd_response->id->value);
+
+    ds3_request_free(put_sd_request);
+    ds3_storage_domain_response_free(put_sd_response);
+    ds3_error_free(error);
+
+    // Create pool partition
+    ds3_request* put_pp_request = ds3_init_put_pool_partition_spectra_s3_request(TEST_PP_NAME, DS3_POOL_TYPE_ONLINE);
+    error = ds3_put_pool_partition_spectra_s3_request(client, put_pp_request, &put_pp_response);
+    pool_partition_id = ds3_str_init(put_pp_response->id->value);
+
+    ds3_request_free(put_pp_request);
+    ds3_pool_partition_response_free(put_pp_response);
+    ds3_error_free(error);
+
+    // Create storage domain member linking pool partition to storage domain
+    ds3_request* put_pool_sd_member_request = ds3_init_put_pool_storage_domain_member_spectra_s3_request(pool_partition_id->value, storage_domain_id->value);
+    error = ds3_put_pool_storage_domain_member_spectra_s3_request(client, put_pool_sd_member_request, &put_sd_member_response);
+    storage_domain_member_id = ds3_str_init(put_sd_member_response->id->value);
+
+    ds3_request_free(put_pool_sd_member_request);
+    ds3_storage_domain_member_response_free(put_sd_member_response);
+    ds3_str_free(pool_partition_id);
+    ds3_error_free(error);
+
+    // Create data persistence rule
+    ds3_request* put_data_persistence_rule_request = ds3_init_put_data_persistence_rule_spectra_s3_request(data_policy_id->value,
+        DS3_DATA_ISOLATION_LEVEL_STANDARD,
+        storage_domain_id->value,
+        DS3_DATA_PERSISTENCE_RULE_TYPE_PERMANENT);
+    error = ds3_put_data_persistence_rule_spectra_s3_request(client, put_data_persistence_rule_request, &put_data_persistence_rule_response);
+    data_persistence_rule_id = ds3_str_init(put_data_persistence_rule_response->id->value);
+
+    ds3_request_free(put_data_persistence_rule_request);
+    ds3_data_persistence_rule_response_free(put_data_persistence_rule_response);
+    ds3_str_free(storage_domain_id);
+    ds3_error_free(error);
+
+    free_client(client);
+
+    ids.data_policy_id = data_policy_id;
+    ids.data_persistence_rule_id = data_persistence_rule_id;
+    ids.storage_domain_member_id = storage_domain_member_id;
+}
+
+void teardown_after_tests() {
+    ds3_client* client = get_client();
+    ds3_error* error;
+
+    // Delete DataPersistenceRule
+    ds3_request* delete_data_persistence_rule_request = ds3_init_delete_data_persistence_rule_spectra_s3_request(ids.data_persistence_rule_id->value);
+    error = ds3_delete_data_persistence_rule_spectra_s3_request(client, delete_data_persistence_rule_request);
+    ds3_request_free(delete_data_persistence_rule_request);
+    ds3_error_free(error);
+
+    // Delete DataPolicy
+    ds3_request* delete_data_policy_request = ds3_init_delete_data_policy_spectra_s3_request(TEST_DP_NAME);
+    error = ds3_delete_data_policy_spectra_s3_request(client, delete_data_policy_request);
+    ds3_request_free(delete_data_policy_request);
+    ds3_error_free(error);
+
+    // Delete StorageDomainMember
+    ds3_request* delete_storage_domain_member_request = ds3_init_delete_storage_domain_member_spectra_s3_request(ids.storage_domain_member_id->value);
+    error = ds3_delete_storage_domain_member_spectra_s3_request(client, delete_storage_domain_member_request);
+    ds3_request_free(delete_storage_domain_member_request);
+    ds3_error_free(error);
+
+    // Delete StorageDomain
+    ds3_request* delete_storage_domain_request = ds3_init_delete_storage_domain_spectra_s3_request(TEST_SD_NAME);
+    error = ds3_delete_storage_domain_spectra_s3_request(client, delete_storage_domain_request);
+    ds3_request_free(delete_storage_domain_request);
+    ds3_error_free(error);
+
+    // Delete PoolPartition
+    ds3_request* delete_pool_partition_request = ds3_init_delete_pool_partition_spectra_s3_request(TEST_PP_NAME);
+    error = ds3_delete_pool_partition_spectra_s3_request(client, delete_pool_partition_request);
+    ds3_request_free(delete_pool_partition_request);
+    ds3_error_free(error);
+
+    free_client(client);
 }
 
 void print_error(const ds3_error* error) {
@@ -74,7 +198,7 @@ void clear_bucket(const ds3_client* client, const char* bucket_name) {
 
     error = ds3_delete_bucket_spectra_s3_request(client, request);
     ds3_request_free(request);
-    handle_error(error);
+    ds3_error_free(error);
 }
 
 void populate_with_objects(const ds3_client* client, const char* bucket_name) {
@@ -88,12 +212,10 @@ ds3_bulk_object_list_response* default_object_list() {
 }
 
 ds3_request* populate_bulk_return_request(const ds3_client* client, const char* bucket_name, ds3_bulk_object_list_response* obj_list) {
-    ds3_request* request = ds3_init_put_bucket_request(bucket_name);
-    ds3_error* error = ds3_put_bucket_request(client, request);
-    ds3_request_free(request);
-    handle_error(error);
+    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
+    ds3_error_free(error);
 
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
+    ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
     return request;
 }
 
@@ -196,12 +318,17 @@ bool contains_object(ds3_list_bucket_result_response* bucket_list, const char* k
     return false;
 }
 
-void free_client(ds3_client* client) {
-    ds3_creds_free(client->creds);
-    ds3_client_free(client);
+ds3_error* create_bucket_with_data_policy(const ds3_client* client, const char* bucket_id, const char* data_policy_id) {
+    ds3_request* request = ds3_init_put_bucket_spectra_s3_request(bucket_id);
+    ds3_request_set_data_policy_id(request, data_policy_id);
+
+    ds3_bucket_response* bucket_response = NULL;
+    ds3_error* error = ds3_put_bucket_spectra_s3_request(client, request, &bucket_response);
+    ds3_bucket_response_free(bucket_response);
+    ds3_request_free(request);
+    return error;
 }
 
-// caller must free data_policy_id
 ds3_error* get_bucket_data_policy_id(const ds3_client* client, const char* bucket_name, ds3_str* data_policy_id) {
     ds3_request* request;
     ds3_error* error;
@@ -221,7 +348,7 @@ ds3_error* get_bucket_data_policy_id(const ds3_client* client, const char* bucke
     return NULL;
 }
 
-ds3_error* get_bucket_data_policy_checksum(ds3_client* client, const char* bucket_name, ds3_checksum_type* checksum_type) {
+ds3_error* get_bucket_data_policy_checksum_type(ds3_client* client, const char* bucket_name, ds3_checksum_type* checksum_type) {
     ds3_request* request;
     ds3_error* error;
     ds3_str* data_policy_id = NULL;
