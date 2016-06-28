@@ -1,14 +1,13 @@
-DS3 C_SDK r1.x to r3.x DS3 API Migration Guide
+Spectra S3 API C_SDK r1.x to r3.x Migration Guide
 ==============================
 
 All requests have a related ds3_init_* request to configure the request before sending.
 
 Refer to the ds3.h [doxygen comments] (http://spectralogic.github.io/ds3_c_sdk/3.0.0/ds3_8h.html) list the request modifiers that can be applied to each respective request.
 
-
 API Requests
 ==============================
-| r1.x Request Name | r3.x AWS Request Name | r3.x DS3 Request Name |
+| r1.x Request Name | r3.x AWS Request Name | r3.x Spectra S3 Request Name |
 |---|---|---|
 | ds3_get_system_information | | ds3_get_system_information_spectra_s3_request |
 | ds3_verify_system_health | | ds3_verify_system_health_spectra_s3_request |
