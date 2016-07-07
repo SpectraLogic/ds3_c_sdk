@@ -93,6 +93,8 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     free_client(client);
 }
 
+/* Disabling from nightly test until network timeout failure is resolved */
+/*
 BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     printf("-----Testing Search Object with +-------\n");
 
@@ -128,7 +130,10 @@ BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
+*/
 
+/* Disabling from nightly test until network timeout failure is resolved */
+/*
 BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     printf("-----Testing Search Object with special char-------\n");
 
@@ -164,6 +169,7 @@ BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
+*/
 
 BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     uint64_t num_objs;
@@ -206,3 +212,4 @@ BOOST_AUTO_TEST_CASE( get_incorrect_bucket_name ) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
+
