@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(put_duplicate_object_list){
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 400);
-    BOOST_CHECK(strcmp(error->error->code->value ,"BAD_REQUEST") == 0);
+    BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
     ds3_error_free(error);
 }
 
