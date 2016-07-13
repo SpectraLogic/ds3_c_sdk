@@ -287,8 +287,8 @@ BOOST_AUTO_TEST_CASE(put_duplicate_object_list){
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
-    BOOST_CHECK(error->error->http_error_code == 409);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Conflict") == 0);
+    BOOST_CHECK(error->error->http_error_code == 400);
+    BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
     ds3_error_free(error);
 }
 
