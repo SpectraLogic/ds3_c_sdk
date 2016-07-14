@@ -2741,7 +2741,7 @@ ds3_request* ds3_init_get_blob_persistence_spectra_s3_request(const char* payloa
         request->delete_objects->strings_list[0]->size = strlen(payload);    }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_object_spectra_s3_request(const char* resource_id, const char* bucket_id) {
+ds3_request* ds3_init_get_object_details_spectra_s3_request(const char* resource_id, const char* bucket_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object/", resource_id, NULL));
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
@@ -3644,7 +3644,7 @@ static xmlDocPtr _generate_xml_delete_objects(ds3_delete_objects_response* keys_
     return doc;
 }
 
-ds3_error* _init_request_payload(const ds3_request* _request,
+static ds3_error* _init_request_payload(const ds3_request* _request,
                                  ds3_xml_send_buff* send_buff,
                                  const object_list_type operation_type) {
     xmlDocPtr doc;
@@ -18300,7 +18300,7 @@ ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client,
     g_byte_array_free(xml_blob, FALSE);
     return error;
 }
-ds3_error* ds3_get_object_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_response** response) {
+ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
