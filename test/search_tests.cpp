@@ -11,10 +11,10 @@ BOOST_AUTO_TEST_CASE( get_all_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%txt%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
 
     handle_error(error);
     num_objs = response->num_s3_objects;
@@ -34,10 +34,10 @@ BOOST_AUTO_TEST_CASE( get_no_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%frankenstein.txt%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 0);
@@ -56,10 +56,10 @@ BOOST_AUTO_TEST_CASE( get_two_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%ulysses%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 2);
@@ -78,10 +78,10 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%ulysses.txt%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 1);
@@ -178,10 +178,10 @@ BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%resources%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 5);
@@ -199,10 +199,10 @@ BOOST_AUTO_TEST_CASE( get_incorrect_bucket_name ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, "fake_bucket");
     ds3_request_set_name(request, "%resources%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     BOOST_CHECK(error!=NULL);
     BOOST_CHECK(error->error->http_error_code == 400);
     BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
