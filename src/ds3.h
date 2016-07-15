@@ -3149,7 +3149,7 @@ LIBRARY_API ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_cli
 LIBRARY_API ds3_request* ds3_init_get_object_details_spectra_s3_request(const char* resource_id, const char* bucket_id);
 LIBRARY_API ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_response** response);
 
-/** Optional Request Modifiers for ds3_init_get_objects_spectra_s3_request
+/** Optional Request Modifiers for ds3_init_get_objects_details_spectra_s3_request
  * void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
  * void ds3_request_set_folder(const ds3_request* request, const char* value)
  * void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
@@ -3161,8 +3161,8 @@ LIBRARY_API ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_clien
  * void ds3_request_set_type_ds3_s3_object_type(const ds3_request* request, const ds3_s3_object_type value)
  * void ds3_request_set_version(const ds3_request* request, const uint64_t value)
  */
-LIBRARY_API ds3_request* ds3_init_get_objects_spectra_s3_request(void);
-LIBRARY_API ds3_error* ds3_get_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response);
+LIBRARY_API ds3_request* ds3_init_get_objects_details_spectra_s3_request(void);
+LIBRARY_API ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response);
 
 /** Optional Request Modifiers for ds3_init_get_objects_with_full_details_spectra_s3_request
  * void ds3_request_set_bucket_id(const ds3_request* request, const char* value)

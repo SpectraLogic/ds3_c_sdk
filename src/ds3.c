@@ -2748,7 +2748,7 @@ ds3_request* ds3_init_get_object_details_spectra_s3_request(const char* resource
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_objects_spectra_s3_request(void) {
+ds3_request* ds3_init_get_objects_details_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object/", NULL, NULL));
     return (ds3_request*) request;
 }
@@ -18320,7 +18320,7 @@ ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, c
 
     return _parse_top_level_ds3_s3_object_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_get_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
+ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
