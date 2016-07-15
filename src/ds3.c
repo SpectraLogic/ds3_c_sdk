@@ -3645,8 +3645,8 @@ static xmlDocPtr _generate_xml_delete_objects(ds3_delete_objects_response* keys_
 }
 
 static ds3_error* _init_request_payload(const ds3_request* _request,
-                                 ds3_xml_send_buff* send_buff,
-                                 const object_list_type operation_type) {
+                                        ds3_xml_send_buff* send_buff,
+                                        const object_list_type operation_type) {
     xmlDocPtr doc;
 
     struct _ds3_request* request = (struct _ds3_request*) _request;
