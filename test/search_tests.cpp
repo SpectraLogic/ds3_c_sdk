@@ -204,7 +204,8 @@ BOOST_AUTO_TEST_CASE( get_incorrect_bucket_name ) {
     ds3_request_set_name(request, "%resources%");
     ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
     BOOST_CHECK(error!=NULL);
-    BOOST_CHECK(error->error->http_error_code == 404);
+    BOOST_CHECK(error->error->http_error_code == 400);
+    BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
 
     ds3_request_free(request);
     ds3_error_free(error);
