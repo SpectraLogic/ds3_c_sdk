@@ -849,11 +849,16 @@ void ds3_metadata_free(ds3_metadata* _metadata) {
 }
 
 void ds3_metadata_entry_free(ds3_metadata_entry* entry) {
+    if (entry == NULL) {
+        return;
+    }
+
     int value_index;
     ds3_str* value;
     if (entry->name != NULL) {
         ds3_str_free(entry->name);
     }
+
     if (entry->values != NULL) {
         for (value_index = 0; value_index < entry->num_values; value_index++) {
             value = entry->values[value_index];
@@ -1066,6 +1071,12 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
 }
 
 void ds3_request_set_metadata(ds3_request* _request, const char* name, const char* value) {
+    if ((value == NULL)
+      ||(strlen(value) == 0)) {
+        fprintf(stderr, "Ignoring NULL or empty entry for key %s\n", name);
+        return;
+    }
+
     char* prefixed_name = g_strconcat("x-amz-meta-", name, NULL);
 
     _set_header(_request, prefixed_name, value);
