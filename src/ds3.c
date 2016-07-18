@@ -1072,7 +1072,7 @@ void ds3_request_set_custom_header(ds3_request* _request, const char* header_nam
 
 void ds3_request_set_metadata(ds3_request* _request, const char* name, const char* value) {
     if ((value == NULL)
-      ||(strlen(value) == 0)) {
+     || (strlen(value) == 0)) {
         fprintf(stderr, "Ignoring metadata key \"%s\" which has a NULL or empty value.\n", name);
         return;
     }
