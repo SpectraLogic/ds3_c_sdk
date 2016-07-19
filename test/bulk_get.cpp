@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    BOOST_CHECK(handle_error_and_return_is_null(error));
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
     BOOST_REQUIRE(handle_error_and_return_is_null(error));

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "ds3.h"
 #include "test.h"
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 TempStorageIds ids;
 
@@ -176,17 +176,11 @@ void print_error(const ds3_error* error) {
 }
 
 void handle_error(ds3_error* error) {
+    BOOST_CHECK(error == NULL);
     if (error != NULL) {
         print_error(error);
         ds3_error_free(error);
-        BOOST_FAIL("Test failed with a ds3_error");
     }
-}
-
-bool handle_error_and_return_is_null(ds3_error* error){
-    bool result = (error == NULL);
-    handle_error(error);
-    return result;
 }
 
 void clear_bucket(const ds3_client* client, const char* bucket_name) {
@@ -250,8 +244,8 @@ ds3_master_object_list_response* ensure_available_chunks(const ds3_client* clien
         error = ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request(client, request, &chunk_response);
         ds3_request_free(request);
 
-        BOOST_REQUIRE(handle_error_and_return_is_null(error));
-        BOOST_REQUIRE(chunk_response != NULL);
+        handle_error(error);
+        BOOST_CHECK(chunk_response != NULL);
 
         if (chunk_response->num_objects == 0) {
             // if this happens we need to try the request
