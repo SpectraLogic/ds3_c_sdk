@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(get_job){
     request = ds3_init_get_bucket_request(bucket_name);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     object_list = ds3_convert_object_list((const ds3_contents_response**)response->objects, response->num_objects);
     ds3_list_bucket_result_response_free(response);
@@ -65,14 +65,14 @@ BOOST_AUTO_TEST_CASE(cancel_job){
 
     request = ds3_init_get_job_spectra_s3_request(job_id->value);
     error = ds3_get_job_spectra_s3_request(client, request, &bulk_response);
+    ds3_str_free(job_id);
+    ds3_request_free(request);
     handle_error(error);
 
     BOOST_CHECK(bulk_response->status == DS3_JOB_STATUS_CANCELED);
-    ds3_request_free(request);
     ds3_master_object_list_response_free(bulk_response);
 
     clear_bucket(client, bucket_name);
-    ds3_str_free(job_id);
     free_client(client);
 }
 
@@ -150,11 +150,11 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     uint8_t job_index;
     for( job_index = 0; job_index < get_jobs_response->num_jobs; job_index++ ) {
         ds3_job_response* job_response = get_jobs_response->jobs[job_index];
-        BOOST_CHECK( job_response->bucket_name->value != NULL);
-        BOOST_CHECK( job_response->job_id->value != NULL);
-        BOOST_CHECK( job_response->start_date->value != NULL);
-        BOOST_CHECK( job_response->user_id->value != NULL);
-        BOOST_CHECK( job_response->user_name->value != NULL);
+        BOOST_CHECK(job_response->bucket_name->value != NULL);
+        BOOST_CHECK(job_response->job_id->value != NULL);
+        BOOST_CHECK(job_response->start_date->value != NULL);
+        BOOST_CHECK(job_response->user_id->value != NULL);
+        BOOST_CHECK(job_response->user_name->value != NULL);
         if(0 == strcmp(job_response->job_id->value, bucket1_job_id->value)) {
             found_bucket1_job = True;
         } else if(0 == strcmp(job_response->job_id->value, bucket2_job_id->value)) {
@@ -169,8 +169,8 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     ds3_str_free(bucket1_job_id);
     ds3_str_free(bucket2_job_id);
     ds3_job_list_response_free(get_jobs_response);
-    BOOST_REQUIRE(True == found_bucket1_job);
-    BOOST_REQUIRE(True == found_bucket2_job);
+    BOOST_CHECK(True == found_bucket1_job);
+    BOOST_CHECK(True == found_bucket2_job);
 }
 
 BOOST_AUTO_TEST_CASE( GetJobToReplicateRequestHandler_response_type_not_parsed ) {
