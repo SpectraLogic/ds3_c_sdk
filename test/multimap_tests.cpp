@@ -17,8 +17,8 @@ BOOST_AUTO_TEST_CASE( string_multimap_insert_and_lookup ) {
     BOOST_CHECK(ds3_string_multimap_entry_get_num_values(entry) == 1);
     ds3_str* entry_key = ds3_string_multimap_entry_get_key(entry);
     ds3_str* entry_value = ds3_string_multimap_entry_get_value_by_index(entry, 0);
-    BOOST_CHECK(g_strcmp0(entry_key->value, key->value) == 0);
-    BOOST_CHECK(g_strcmp0(entry_value->value, value->value) == 0);
+    BOOST_CHECK_EQUAL(0, g_strcmp0(entry_key->value, key->value));
+    BOOST_CHECK_EQUAL(0, g_strcmp0(entry_value->value, value->value));
 
     ds3_str_free(key);
     ds3_str_free(value);

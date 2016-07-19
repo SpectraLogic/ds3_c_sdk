@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "ds3.h"
 #include "test.h"
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 TempStorageIds ids;
 
