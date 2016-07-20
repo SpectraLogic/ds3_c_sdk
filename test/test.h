@@ -37,7 +37,6 @@ void populate_with_objects_from_bulk(const ds3_client* client, const char* bucke
 ds3_master_object_list_response* ensure_available_chunks(const ds3_client* client, ds3_str* job_id);
 
 void handle_error(ds3_error* error);
-bool handle_error_and_return_is_null(ds3_error* error);
 
 void free_client(ds3_client* client);
 

@@ -24,16 +24,14 @@ BOOST_AUTO_TEST_CASE( delete_objects ) {
     ds3_request* request = ds3_init_delete_objects_request(bucket_name, obj_list);
     ds3_delete_result_response* response;
     ds3_error* error = ds3_delete_objects_request(client, request, &response);
-
-    BOOST_CHECK(response->num_deleted_objects == 5);
-
-    clear_bucket(client, bucket_name);
-
+    ds3_delete_objects_response_free(obj_list);
+    ds3_request_free(request);
     handle_error(error);
 
-    ds3_delete_objects_response_free(obj_list);
+    BOOST_CHECK(response->num_deleted_objects == 5);
     ds3_delete_result_response_free(response);
-    ds3_request_free(request);
+
+    clear_bucket(client, bucket_name);
     free_client(client);
 }
 
@@ -53,15 +51,14 @@ BOOST_AUTO_TEST_CASE( delete_non_existant_object ) {
     ds3_request* request = ds3_init_delete_objects_request(bucket_name, obj_list);
     ds3_delete_result_response* response;
     ds3_error* error = ds3_delete_objects_request(client, request, &response);
-    clear_bucket(client, bucket_name);
-
-    BOOST_CHECK(response->num_deleted_objects == 0);
-
+    ds3_delete_objects_response_free(obj_list);
+    ds3_request_free(request);
     handle_error(error);
 
-    ds3_delete_objects_response_free(obj_list);
+    BOOST_CHECK(response->num_deleted_objects == 0);
     ds3_delete_result_response_free(response);
-    ds3_request_free(request);
+
+    clear_bucket(client, bucket_name);
     free_client(client);
 }
 
@@ -72,11 +69,10 @@ BOOST_AUTO_TEST_CASE( delete_folder ) {
 
     ds3_request* request = ds3_init_delete_folder_recursively_spectra_s3_request("resources", bucket_name);
     ds3_error* error = ds3_delete_folder_recursively_spectra_s3_request(client, request);
-    clear_bucket(client, bucket_name);
-
+    ds3_request_free(request);
     handle_error(error);
 
-    ds3_request_free(request);
+    clear_bucket(client, bucket_name);
     free_client(client);
 }
 
@@ -88,12 +84,12 @@ BOOST_AUTO_TEST_CASE( delete_non_existant_folder ) {
     ds3_request* request = ds3_init_delete_folder_recursively_spectra_s3_request(fake_folder, bucket_name);
 
     ds3_error* error = ds3_delete_folder_recursively_spectra_s3_request(client, request);
-    clear_bucket(client, bucket_name);
-
     ds3_request_free(request);
-    free_client(client);
-
-    BOOST_CHECK(error!=NULL);
+    BOOST_CHECK(error != NULL);
+    BOOST_CHECK(error->error != NULL);
     BOOST_CHECK(error->error->http_error_code == 404);
     ds3_error_free(error);
+
+    clear_bucket(client, bucket_name);
+    free_client(client);
 }
