@@ -1893,6 +1893,7 @@ LIBRARY_API void ds3_request_set_sha256(ds3_request* request, const char* sha256
 LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char* sha512);
 LIBRARY_API void ds3_request_set_crc32(ds3_request* request, const char* crc32);
 LIBRARY_API void ds3_request_set_crc32c(ds3_request* request, const char* crc32c);
+// Any attempt to set a key with an empty or NULL value will be ignored.
 LIBRARY_API void ds3_request_set_metadata(ds3_request* request, const char* name, const char* value);
 
 LIBRARY_API void ds3_creds_free(ds3_creds* client);
