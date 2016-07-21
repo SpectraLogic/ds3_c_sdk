@@ -12508,7 +12508,7 @@ static ds3_error* _parse_top_level_ds3_named_detailed_tape_partition_list_respon
     response = g_new0(ds3_named_detailed_tape_partition_list_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "NamedDetailedTapePartition")) {
+        if (element_equal(child_node, "TapePartition")) {
             ds3_named_detailed_tape_partition_response* named_detailed_tape_partitions_response = NULL;
             error = _parse_ds3_named_detailed_tape_partition_response(client, doc, child_node, &named_detailed_tape_partitions_response);
             response->named_detailed_tape_partitions = (ds3_named_detailed_tape_partition_response**)named_detailed_tape_partitions_array->pdata;
@@ -13199,7 +13199,7 @@ static ds3_error* _parse_top_level_ds3_detailed_s3_object_list_response(const ds
     response = g_new0(ds3_detailed_s3_object_list_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "DetailedS3Object")) {
+        if (element_equal(child_node, "Object")) {
             ds3_detailed_s3_object_response* detailed_s3_objects_response = NULL;
             error = _parse_ds3_detailed_s3_object_response(client, doc, child_node, &detailed_s3_objects_response);
             response->detailed_s3_objects = (ds3_detailed_s3_object_response**)detailed_s3_objects_array->pdata;
