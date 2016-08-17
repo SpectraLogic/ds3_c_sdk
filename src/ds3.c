@@ -17350,9 +17350,10 @@ ds3_error* ds3_get_job_spectra_s3_request(const ds3_client* client, const ds3_re
 
     return _parse_top_level_ds3_master_object_list_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str* response) {
+ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_str* _response;
 
     int num_slashes = num_chars_in_ds3_str(request->path, '/');
     if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
@@ -17368,9 +17369,10 @@ ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client,
         return error;
     }
 
-    response->value = (char*)xml_blob->data;
-    response->size = xml_blob->len;
-    g_byte_array_free(xml_blob, FALSE);
+    _response = ds3_str_init_with_size((char*)xml_blob->data, xml_blob->len);
+    g_byte_array_free(xml_blob, TRUE);
+
+    *response = _response;
     return error;
 }
 ds3_error* ds3_get_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_list_response** response) {
@@ -18283,10 +18285,11 @@ ds3_error* ds3_delete_folder_recursively_spectra_s3_request(const ds3_client* cl
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str* response) {
+ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response) {
     ds3_error* error;
     ds3_xml_send_buff send_buff;
     GByteArray* xml_blob;
+    ds3_str* _response;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
@@ -18306,9 +18309,10 @@ ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client,
         return error;
     }
 
-    response->value = (char*)xml_blob->data;
-    response->size = xml_blob->len;
-    g_byte_array_free(xml_blob, FALSE);
+    _response = ds3_str_init_with_size((char*)xml_blob->data, xml_blob->len);
+    g_byte_array_free(xml_blob, TRUE);
+
+    *response = _response;
     return error;
 }
 ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_response** response) {

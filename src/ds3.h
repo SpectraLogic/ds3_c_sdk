@@ -2803,7 +2803,7 @@ LIBRARY_API ds3_error* ds3_get_job_chunks_ready_for_client_processing_spectra_s3
 LIBRARY_API ds3_request* ds3_init_get_job_spectra_s3_request(const char* resource_id);
 LIBRARY_API ds3_error* ds3_get_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
 LIBRARY_API ds3_request* ds3_init_get_job_to_replicate_spectra_s3_request(const char* resource_id);
-LIBRARY_API ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str* response);
+LIBRARY_API ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response);
 
 /** Optional Request Modifiers for ds3_init_get_jobs_spectra_s3_request
  * void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
@@ -3146,7 +3146,7 @@ LIBRARY_API ds3_error* ds3_get_tape_partition_failure_notification_registrations
 LIBRARY_API ds3_request* ds3_init_delete_folder_recursively_spectra_s3_request(const char* resource_id, const char* bucket_id);
 LIBRARY_API ds3_error* ds3_delete_folder_recursively_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_get_blob_persistence_spectra_s3_request(const char* payload);
-LIBRARY_API ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str* response);
+LIBRARY_API ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response);
 LIBRARY_API ds3_request* ds3_init_get_object_details_spectra_s3_request(const char* resource_id, const char* bucket_id);
 LIBRARY_API ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_response** response);
 
