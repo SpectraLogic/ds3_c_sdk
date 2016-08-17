@@ -2388,7 +2388,7 @@ ds3_request* ds3_init_get_object_details_spectra_s3_request(const char* resource
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_objects_spectra_s3_request(void) {
+ds3_request* ds3_init_get_objects_details_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/object/", NULL, NULL));
     return (ds3_request*) request;
 }
@@ -14784,9 +14784,10 @@ ds3_error* ds3_get_jobs_spectra_s3_request(const ds3_client* client, const ds3_r
 
     return _parse_top_level_ds3_job_list_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_get_put_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str* response) {
+ds3_error* ds3_get_put_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_str* _response;
 
     int num_slashes = num_chars_in_ds3_str(request->path, '/');
     if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
@@ -14802,9 +14803,10 @@ ds3_error* ds3_get_put_job_to_replicate_spectra_s3_request(const ds3_client* cli
         return error;
     }
 
-    response->value = (char*)xml_blob->data;
-    response->size = xml_blob->len;
-    g_byte_array_free(xml_blob, FALSE);
+    _response = ds3_str_init_with_size((char*)xml_blob->data, xml_blob->len);
+    g_byte_array_free(xml_blob, TRUE);
+
+    *response = _response;
     return error;
 }
 ds3_error* ds3_modify_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response) {
@@ -15533,7 +15535,7 @@ ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, c
 
     return _parse_top_level_ds3_s3_object_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_get_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
+ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
@@ -19203,11 +19205,11 @@ static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_nam
     return obj;
 }
 
-ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, size_t num_files) {
+ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, uint64_t num_files) {
     return ds3_convert_file_list_with_basepath(file_list, num_files, NULL);
 }
 
-ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, size_t num_files, const char* base_path) {
+ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, uint64_t num_files, const char* base_path) {
     size_t file_index;
     ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
 
@@ -19223,7 +19225,7 @@ ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** 
     return obj_list;
 }
 
-ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, size_t num_objects) {
+ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, uint64_t num_objects) {
     size_t object_index;
     ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
 

@@ -11,10 +11,10 @@ BOOST_AUTO_TEST_CASE( get_all_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%txt%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
 
     handle_error(error);
     num_objs = response->num_s3_objects;
@@ -59,10 +59,10 @@ BOOST_AUTO_TEST_CASE( get_no_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%frankenstein.txt%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 0);
@@ -81,10 +81,10 @@ BOOST_AUTO_TEST_CASE( get_two_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%ulysses%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 2);
@@ -103,10 +103,10 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%ulysses.txt%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 1);
@@ -120,11 +120,11 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
 
 /* Disabling from nightly test until network timeout failure is resolved */
 /*
-BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
+BOOST_AUTO_TEST_CASE(get_objects_details_with_plus_query_param) {
     printf("-----Testing Search Object with +-------\n");
 
     ds3_client* client = get_client();
-    const char* bucket_name = "get_objects_with_plus_query_param";
+    const char* bucket_name = "get_objects_details_with_plus_query_param";
     const char* plus_object = "Plus+Object";
 
     ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
@@ -138,11 +138,11 @@ BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     fclose(obj_file);
     handle_error(error);
 
-    ds3_request* get_obj_request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* get_obj_request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(get_obj_request, bucket_name);
     ds3_request_set_name(get_obj_request, plus_object);
     ds3_s3_object_list_response* objects_response = NULL;
-    error = ds3_get_objects_spectra_s3_request(client, get_obj_request, &objects_response);
+    error = ds3_get_objects_details_spectra_s3_request(client, get_obj_request, &objects_response);
     handle_error(error);
 
     BOOST_CHECK_EQUAL(objects_response->num_s3_objects, 1);
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
 
 /* Disabling from nightly test until network timeout failure is resolved */
 /*
-BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
+BOOST_AUTO_TEST_CASE(get_objects_details_with_special_chars_query_param) {
     printf("-----Testing Search Object with special char-------\n");
 
     ds3_client* client = get_client();
@@ -177,11 +177,11 @@ BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     fclose(obj_file);
     handle_error(error);
 
-    ds3_request* get_obj_request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* get_obj_request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(get_obj_request, bucket_name);
     ds3_request_set_name(get_obj_request, special_char_object);
     ds3_s3_object_list_response* objects_response = NULL;
-    error = ds3_get_objects_spectra_s3_request(client, get_obj_request, &objects_response);
+    error = ds3_get_objects_details_spectra_s3_request(client, get_obj_request, &objects_response);
     ds3_request_free(get_obj_request);
     handle_error(error);
 
@@ -203,10 +203,10 @@ BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, bucket_name);
     ds3_request_set_name(request, "%resources%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     handle_error(error);
     num_objs = response->num_s3_objects;
     BOOST_CHECK_EQUAL(num_objs, 5);
@@ -224,10 +224,10 @@ BOOST_AUTO_TEST_CASE( get_incorrect_bucket_name ) {
     const char* bucket_name = "search_bucket_test";
     populate_with_objects(client, bucket_name);
 
-    ds3_request* request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(request, "fake_bucket");
     ds3_request_set_name(request, "%resources%");
-    ds3_error* error = ds3_get_objects_spectra_s3_request(client, request, &response);
+    ds3_error* error = ds3_get_objects_details_spectra_s3_request(client, request, &response);
     BOOST_CHECK(error!=NULL);
     BOOST_CHECK(error->error->http_error_code == 404);
 
