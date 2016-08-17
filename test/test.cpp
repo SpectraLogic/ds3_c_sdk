@@ -36,7 +36,7 @@ ds3_client* get_client_at_loglvl(ds3_log_lvl log_lvl) {
     ds3_error* error = ds3_create_client_from_env(&client);
 
     if (error != NULL) {
-        fprintf(stderr, "Failed to construct ds3_client from enviornment variables: %s\n", error->message->value);
+        fprintf(stderr, "Failed to construct ds3_client from environment variables: %s\n", error->message->value);
         ds3_error_free(error);
         BOOST_FAIL("Failed to setup client.");
     }
