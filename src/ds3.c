@@ -22560,11 +22560,11 @@ static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_nam
     return obj;
 }
 
-ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, size_t num_files) {
+ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, uint64_t num_files) {
     return ds3_convert_file_list_with_basepath(file_list, num_files, NULL);
 }
 
-ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, size_t num_files, const char* base_path) {
+ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, uint64_t num_files, const char* base_path) {
     size_t file_index;
     ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
 
@@ -22580,7 +22580,7 @@ ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** 
     return obj_list;
 }
 
-ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, size_t num_objects) {
+ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, uint64_t num_objects) {
     size_t object_index;
     ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
 
