@@ -111,6 +111,44 @@ BOOST_AUTO_TEST_CASE( delimiter ) {
     free_client(client);
 }
 
+BOOST_AUTO_TEST_CASE( common_prefixes ) {
+    printf("-----Testing CommonPrefixes-------\n");
+
+    ds3_request* request;
+    ds3_error* error;
+    ds3_list_bucket_result_response* response;
+    ds3_client* client = get_client();
+    const char* bucket_name = "test_common_prefixes_bucket";
+    ds3_bool found_resources = False;
+    ds3_bool found_resources_2 = False;
+    size_t common_prefix_index;
+
+    populate_with_multi_dir_objects(client, bucket_name);
+
+    request = ds3_init_get_bucket_request(bucket_name);
+    ds3_request_set_delimiter(request, "/");
+    ds3_request_set_prefix(request, "resources");
+    error = ds3_get_bucket_request(client, request, &response);
+    ds3_request_free(request);
+    handle_error(error);
+
+    BOOST_CHECK_EQUAL(response->num_objects, 0);
+    BOOST_CHECK_EQUAL(response->num_common_prefixes, 2);
+    for(common_prefix_index = 0; common_prefix_index < response->num_common_prefixes; common_prefix_index++) {
+        if(strcmp(response->common_prefixes[common_prefix_index]->value, "resources/") == 0) {
+            found_resources = True;
+        } else if (strcmp(response->common_prefixes[common_prefix_index]->value, "resources_2/") == 0) {
+            found_resources_2 = True;
+        }
+    }
+    BOOST_CHECK_EQUAL(found_resources, True);
+    BOOST_CHECK_EQUAL(found_resources_2, True);
+
+    ds3_list_bucket_result_response_free(response);
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
 BOOST_AUTO_TEST_CASE(marker) {
     printf("-----Testing Marker-------\n");
 

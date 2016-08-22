@@ -25,6 +25,10 @@ void teardown_after_tests();
 void clear_bucket(const ds3_client* client, const char* bucket_name);
 
 void populate_with_objects(const ds3_client* client, const char* bucket_name);
+void populate_with_multi_dir_objects(const ds3_client* client, const char* bucket_name);
+ds3_str* populate_with_object_list_return_job( const ds3_client* client,
+                                               const char* bucket_name,
+                                               ds3_bulk_object_list_response* object_list);
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name);
 ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucket_name);
 
@@ -41,6 +45,7 @@ void handle_error(ds3_error* error);
 void free_client(ds3_client* client);
 
 ds3_bulk_object_list_response* default_object_list();
+ds3_bulk_object_list_response* multi_dirs_object_list();
 
 ds3_error* create_bucket_with_data_policy(const ds3_client* client, const char* bucket_id, const char* data_policy_id);
 
