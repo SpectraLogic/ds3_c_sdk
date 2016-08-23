@@ -15449,6 +15449,7 @@ static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_cli
     xmlNodePtr child_node;
     ds3_list_bucket_result_response* response;
     ds3_error* error = NULL;
+    GPtrArray* common_prefixes_array = g_ptr_array_new();
     GPtrArray* objects_array = g_ptr_array_new();
 
     error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListBucketResult");
@@ -15461,15 +15462,11 @@ static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_cli
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "CommonPrefixes")) {
             xmlNodePtr loop_node;
-            GPtrArray* common_prefixes_array = g_ptr_array_new();
             int num_nodes = 0;
             for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
                 ds3_str* common_prefixes = xml_get_string(doc, loop_node);
                 g_ptr_array_add(common_prefixes_array, common_prefixes);
             }
-            response->common_prefixes = (ds3_str**)common_prefixes_array->pdata;
-            response->num_common_prefixes = common_prefixes_array->len;
-            g_ptr_array_free(common_prefixes_array, FALSE);
         } else if (element_equal(child_node, "CreationDate")) {
             response->creation_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Delimiter")) {
@@ -15501,6 +15498,9 @@ static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_cli
 
     }
 
+    response->common_prefixes = (ds3_str**)common_prefixes_array->pdata;
+    response->num_common_prefixes = common_prefixes_array->len;
+    g_ptr_array_free(common_prefixes_array, FALSE);
     response->objects = (ds3_contents_response**)objects_array->pdata;
     response->num_objects = objects_array->len;
     g_ptr_array_free(objects_array, FALSE);
@@ -15521,6 +15521,7 @@ static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(c
     xmlNodePtr child_node;
     ds3_list_multi_part_uploads_result_response* response;
     ds3_error* error = NULL;
+    GPtrArray* common_prefixes_array = g_ptr_array_new();
     GPtrArray* uploads_array = g_ptr_array_new();
 
     error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListMultipartUploadsResult");
@@ -15535,15 +15536,11 @@ static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(c
             response->bucket = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "CommonPrefixes")) {
             xmlNodePtr loop_node;
-            GPtrArray* common_prefixes_array = g_ptr_array_new();
             int num_nodes = 0;
             for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
                 ds3_str* common_prefixes = xml_get_string(doc, loop_node);
                 g_ptr_array_add(common_prefixes_array, common_prefixes);
             }
-            response->common_prefixes = (ds3_str**)common_prefixes_array->pdata;
-            response->num_common_prefixes = common_prefixes_array->len;
-            g_ptr_array_free(common_prefixes_array, FALSE);
         } else if (element_equal(child_node, "Delimiter")) {
             response->delimiter = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "KeyMarker")) {
@@ -15575,6 +15572,9 @@ static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(c
 
     }
 
+    response->common_prefixes = (ds3_str**)common_prefixes_array->pdata;
+    response->num_common_prefixes = common_prefixes_array->len;
+    g_ptr_array_free(common_prefixes_array, FALSE);
     response->uploads = (ds3_multi_part_upload_response**)uploads_array->pdata;
     response->num_uploads = uploads_array->len;
     g_ptr_array_free(uploads_array, FALSE);
