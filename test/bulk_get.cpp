@@ -47,9 +47,6 @@ uint32_t get_sum_of_chunks(uint32_t num_files, checksum_result* results) {
 }
 
 uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_name, checksum_result* results) {
-    printf("getFileIndexForChunk\n");
-    printf("  curr_obj_name[%s]\n", current_obj_name->value);
-    printf("max_file_index: %lu\n", *max_file_index);
     int64_t file_index = -1;
     for (uint64_t current_file_index = 0; current_file_index < *max_file_index; current_file_index++) {
         if (g_strcmp0(current_obj_name->value, results[current_file_index].original_name) == 0) {
@@ -58,20 +55,16 @@ uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_nam
         }
     }
 
-    printf("file_index: %lu\n", file_index);
     if (file_index == -1) {
 
         file_index = *max_file_index;
-        printf("  file_index: %lu\n", file_index);
         (*max_file_index)++;
-        printf("  max_file_index: %lu\n", *max_file_index);
 
         memcpy(results[file_index].original_name, current_obj_name->value, current_obj_name->size);
 
         memcpy(results[file_index].tmp_name, FOLDER_PREFIX, LENGTH_OF_FOLDER_PREFIX); // "resources/"
         memcpy(results[file_index].tmp_name+LENGTH_OF_FOLDER_PREFIX-1, TEMP_PREFIX, LENGTH_OF_TEMP_PREFIX); // "resources/temp-"
         memcpy(results[file_index].tmp_name+LENGTH_OF_FOLDER_PREFIX+LENGTH_OF_TEMP_PREFIX-2, current_obj_name->value+LENGTH_OF_FOLDER_PREFIX-1, current_obj_name->size-LENGTH_OF_FOLDER_PREFIX+1);
-        printf("  tmp_name[%s]\n", results[file_index].tmp_name);
     }
     results[file_index].num_chunks++;
     return file_index;
@@ -88,14 +81,14 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_master_objec
         for (uint64_t chunk_object_index = 0; chunk_object_index < chunk_object_list->num_objects; chunk_object_index++) {
             FILE* w_file;
             ds3_bulk_object_response* current_obj = chunk_object_list->objects[chunk_object_index];
-            printf("checkChunkResponse: obj %s in bucket %s\n", current_obj->name->value, chunk_response->bucket_name->value);
             file_index = getFileIndexForChunk(&max_file_index, current_obj->name, results);
 
             const uint64_t length = current_obj->length;
-            printf("checkChunkResponse length: %lu\n", length);
             const uint64_t offset = current_obj->offset;
-            printf("checkChunkResponse offset: %lu\n", offset);
-            request = ds3_init_get_object_request(chunk_response->bucket_name->value, current_obj->name->value, &length, chunk_response->job_id->value, &offset);
+
+            request = ds3_init_get_object_request(chunk_response->bucket_name->value, current_obj->name->value, length);
+            ds3_request_set_job(request, chunk_response->job_id->value);
+            ds3_request_set_offset(request, offset);
 
             w_file = fopen(results[file_index].tmp_name, "a+");
             fseek(w_file, current_obj->offset, SEEK_SET);
@@ -129,7 +122,9 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_mast
 
             const uint64_t length = current_obj->length;
             const uint64_t offset = current_obj->offset;
-            request = ds3_init_get_object_request(chunk_response->bucket_name->value, current_obj->name->value, &length, chunk_response->job_id->value, &offset);
+            request = ds3_init_get_object_request(chunk_response->bucket_name->value, current_obj->name->value, length);
+            ds3_request_set_job(request, chunk_response->job_id->value);
+            ds3_request_set_offset(request, offset);
 
             ds3_request_set_byte_range(request, segment_size, segment_size*2-1);
             ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
@@ -168,8 +163,10 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
 
     populate_with_objects(client, bucket_name);
 
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
     ds3_job_chunk_client_processing_order_guarantee chunk_order = DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, NULL, &chunk_order, NULL, NULL, object_list);
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, chunk_order);
+
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
@@ -226,8 +223,10 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     populate_with_objects_from_bulk(client, bucket_name, bulk_response);
     ds3_master_object_list_response_free(bulk_response);
 
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
     ds3_job_chunk_client_processing_order_guarantee chunk_order = DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, NULL, &chunk_order, NULL, NULL, object_list);
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, chunk_order);
+
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
@@ -286,8 +285,10 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
 
     populate_with_objects(client, bucket_name);
 
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
     ds3_job_chunk_client_processing_order_guarantee chunk_order = DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, NULL, &chunk_order, NULL, NULL, object_list);
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, chunk_order);
+
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
@@ -295,7 +296,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
 
     do {
         retry_get = false;
-        request =  ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request(bulk_response->job_id->value, NULL);
+        request =  ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request(bulk_response->job_id->value);
         error = ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request(client, request, &chunk_response);
         ds3_request_free(request);
 
@@ -359,8 +360,10 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
 
     populate_with_objects(client, bucket_name);
 
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
     ds3_job_chunk_client_processing_order_guarantee chunk_order = DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
-    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, NULL, &chunk_order, NULL, NULL, object_list);
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, chunk_order);
+
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
