@@ -625,6 +625,7 @@ typedef struct {
     ds3_str* id;
     ds3_str* instance_id;
     ds3_str* last_heartbeat;
+    int partially_verify_last_percent_of_tapes;
     ds3_unavailable_media_usage_policy unavailable_media_policy;
     int unavailable_pool_max_job_retry_in_mins;
     int unavailable_tape_partition_max_job_retry_in_mins;
@@ -1035,6 +1036,7 @@ typedef struct {
     ds3_str* last_checkpoint;
     ds3_str* last_modified;
     ds3_str* last_verified;
+    ds3_str* partially_verified_end_of_tape;
     ds3_str* partition_id;
     ds3_tape_state previous_state;
     ds3_str* serial_number;
@@ -2043,6 +2045,8 @@ LIBRARY_API void ds3_request_set_page_length(const ds3_request* request, const i
 LIBRARY_API void ds3_request_set_page_offset(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_page_start_marker(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_part_number_marker(const ds3_request* request, const int value);
+LIBRARY_API void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_partition_id(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_permission_ds3_bucket_acl_permission(const ds3_request* request, const ds3_bucket_acl_permission value);
 LIBRARY_API void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value);
@@ -2359,6 +2363,7 @@ LIBRARY_API ds3_error* ds3_get_data_planner_blob_store_tasks_spectra_s3_request(
  * void ds3_request_set_auto_activate_timeout_in_mins(const ds3_request* request, const int value)
  * void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* request, const ds3_auto_inspect_mode value)
  * void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
+ * void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* request, const int value)
  * void ds3_request_set_unavailable_media_policy_ds3_unavailable_media_usage_policy(const ds3_request* request, const ds3_unavailable_media_usage_policy value)
  * void ds3_request_set_unavailable_pool_max_job_retry_in_mins(const ds3_request* request, const int value)
  * void ds3_request_set_unavailable_tape_partition_max_job_retry_in_mins(const ds3_request* request, const int value)
@@ -3657,6 +3662,7 @@ LIBRARY_API ds3_error* ds3_get_tape_spectra_s3_request(const ds3_client* client,
  * void ds3_request_set_page_length(const ds3_request* request, const int value)
  * void ds3_request_set_page_offset(const ds3_request* request, const int value)
  * void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ * void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char* value)
  * void ds3_request_set_partition_id(const ds3_request* request, const char* value)
  * void ds3_request_set_previous_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
  * void ds3_request_set_serial_number(const ds3_request* request, const char* value)

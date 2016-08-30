@@ -1545,6 +1545,14 @@ void ds3_request_set_part_number_marker(const ds3_request* request, const int va
     _set_query_param_int(request, "part_number_marker", value);
 
 }
+void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char* value) {
+    _set_query_param(request, "partially_verified_end_of_tape", value);
+
+}
+void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "partially_verify_last_percent_of_tapes", value);
+
+}
 void ds3_request_set_partition_id(const ds3_request* request, const char* value) {
     _set_query_param(request, "partition_id", value);
 
@@ -7472,6 +7480,8 @@ static ds3_error* _parse_ds3_tape_response(const ds3_client* client, const xmlDo
             response->last_modified = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastVerified")) {
             response->last_verified = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PartiallyVerifiedEndOfTape")) {
+            response->partially_verified_end_of_tape = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PartitionId")) {
             response->partition_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PreviousState")) {
@@ -9863,6 +9873,8 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             response->instance_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastHeartbeat")) {
             response->last_heartbeat = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PartiallyVerifyLastPercentOfTapes")) {
+            response->partially_verify_last_percent_of_tapes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "UnavailableMediaPolicy")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -11811,6 +11823,8 @@ static ds3_error* _parse_top_level_ds3_tape_response(const ds3_client* client, c
             response->last_modified = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastVerified")) {
             response->last_verified = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PartiallyVerifiedEndOfTape")) {
+            response->partially_verified_end_of_tape = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PartitionId")) {
             response->partition_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PreviousState")) {
@@ -21010,6 +21024,7 @@ void ds3_tape_response_free(ds3_tape_response* response) {
     ds3_str_free(response->last_checkpoint);
     ds3_str_free(response->last_modified);
     ds3_str_free(response->last_verified);
+    ds3_str_free(response->partially_verified_end_of_tape);
     ds3_str_free(response->partition_id);
     ds3_str_free(response->serial_number);
     ds3_str_free(response->storage_domain_id);
