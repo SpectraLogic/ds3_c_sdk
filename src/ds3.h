@@ -46,6 +46,11 @@ extern "C" {
 
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
 
+typedef struct {
+    int page_truncated;
+    int total_result_count;
+}ds3_paging;
+
 typedef struct _ds3_request ds3_request;
 
 typedef struct {
@@ -1460,6 +1465,7 @@ typedef struct {
 typedef struct {
     ds3_s3_object_response** s3_objects;
     size_t num_s3_objects;
+    ds3_paging* paging;
 }ds3_s3_object_list_response;
 typedef struct {
     ds3_pool_failure_response** pool_failures;
@@ -1536,6 +1542,7 @@ typedef struct {
 typedef struct {
     ds3_spectra_user_response** spectra_users;
     size_t num_spectra_users;
+    ds3_paging* paging;
 }ds3_spectra_user_list_response;
 typedef struct {
     ds3_target_response** ds3_targets;
