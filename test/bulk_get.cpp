@@ -170,10 +170,10 @@ BOOST_AUTO_TEST_CASE( bulk_get ) {
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
-    BOOST_CHECK(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -231,11 +231,11 @@ BOOST_AUTO_TEST_CASE( max_upload_size ) {
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
 
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     do {
         retry_get = false;
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
         error = ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request(client, request, &chunk_response);
         ds3_request_free(request);
 
-        BOOST_REQUIRE(handle_error_and_return_is_null(error));
+        handle_error(error);
         BOOST_REQUIRE(chunk_response != NULL);
 
         if (chunk_response->num_objects == 0) {
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
         }
     } while(retry_get);
 
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponse(client, num_files, chunk_response, checksum_results);
@@ -367,10 +367,10 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
     error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
     ds3_request_free(request);
     ds3_bulk_object_list_response_free(object_list);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     chunk_response = ensure_available_chunks(client, bulk_response->job_id);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     checksum_result* checksum_results = (checksum_result*) calloc(num_files, sizeof(checksum_result));
     checkChunkResponsePartials(client, num_files, chunk_response, checksum_results, 3200);
