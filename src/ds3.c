@@ -13985,7 +13985,6 @@ static ds3_error* _parse_top_level_ds3_tape_partition_failure_notification_regis
 static ds3_error* _parse_top_level_ds3_s3_object_list_response(const ds3_client* client,
                                                                const ds3_request* request,
                                                                ds3_s3_object_list_response** _response,
-                                                               ds3_string_multimap* response_headers,
                                                                GByteArray* xml_blob) {
     ds3_error* error;
 
@@ -13993,11 +13992,6 @@ static ds3_error* _parse_top_level_ds3_s3_object_list_response(const ds3_client*
     xmlNodePtr root;
     xmlNodePtr child_node;
     ds3_s3_object_list_response* response;
-    ds3_str* page_truncated_key = ds3_str_init("Page-Truncated");
-    ds3_str* total_result_count_key = ds3_str_init("Total-Result-Count");
-
-    ds3_string_multimap_entry* page_truncated_entry = ds3_string_multimap_lookup(response_headers, page_truncated_key);
-    ds3_string_multimap_entry* total_result_count_entry = ds3_string_multimap_lookup(response_headers, total_result_count_key);
 
     GPtrArray* s3_objects_array = g_ptr_array_new();
 
@@ -14007,24 +14001,6 @@ static ds3_error* _parse_top_level_ds3_s3_object_list_response(const ds3_client*
     }
 
     response = g_new0(ds3_s3_object_list_response, 1);
-    if ((page_truncated_entry != NULL) || (total_result_count_entry != NULL)) {
-        ds3_str* page_truncated_ds3_str = ds3_string_multimap_entry_get_value_by_index(page_truncated_entry, 0);
-        ds3_str* total_result_count_ds3_str = ds3_string_multimap_entry_get_value_by_index(total_result_count_entry, 0);
-
-        response->paging = g_new0(ds3_paging, 1);
-        if (page_truncated_ds3_str != NULL) {
-            response->paging->page_truncated = g_ascii_strtoll(page_truncated_ds3_str->value, NULL, 10);
-            ds3_str_free(page_truncated_ds3_str);
-        } else {
-            response->paging->page_truncated = 0;
-        }
-        if (total_result_count_ds3_str != NULL) {
-            response->paging->total_result_count = g_ascii_strtoll(total_result_count_ds3_str->value, NULL, 10);
-            ds3_str_free(total_result_count_ds3_str);
-        } else {
-            response->paging->total_result_count = 0;
-        }
-    }
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "S3Object")) {
@@ -14047,12 +14023,6 @@ static ds3_error* _parse_top_level_ds3_s3_object_list_response(const ds3_client*
     g_ptr_array_free(s3_objects_array, FALSE);
 
     xmlFreeDoc(doc);
-
-    ds3_str_free(page_truncated_key);
-    ds3_str_free(total_result_count_key);
-    ds3_string_multimap_entry_free(page_truncated_entry);
-    ds3_string_multimap_entry_free(total_result_count_entry);
-    ds3_string_multimap_free(response_headers);
 
     if (error == NULL) {
         *_response = response;
@@ -18395,6 +18365,43 @@ ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, c
 
     return _parse_top_level_ds3_s3_object_response(client, request, response, xml_blob);
 }
+
+ds3_paging* _parse_paging_headers(ds3_string_multimap* response_headers) {
+    ds3_paging* response_paging = NULL;
+
+    ds3_str* page_truncated_key = ds3_str_init("Page-Truncated");
+    ds3_str* total_result_count_key = ds3_str_init("Total-Result-Count");
+
+    ds3_string_multimap_entry* page_truncated_entry = ds3_string_multimap_lookup(response_headers, page_truncated_key);
+    ds3_string_multimap_entry* total_result_count_entry = ds3_string_multimap_lookup(response_headers, total_result_count_key);
+
+    if ((page_truncated_entry != NULL) || (total_result_count_entry != NULL)) {
+        ds3_str* page_truncated_ds3_str = ds3_string_multimap_entry_get_value_by_index(page_truncated_entry, 0);
+        ds3_str* total_result_count_ds3_str = ds3_string_multimap_entry_get_value_by_index(total_result_count_entry, 0);
+
+        response_paging = g_new0(ds3_paging, 1);
+        if (page_truncated_ds3_str != NULL) {
+            response_paging->page_truncated = g_ascii_strtoll(page_truncated_ds3_str->value, NULL, 10);
+            ds3_str_free(page_truncated_ds3_str);
+        } else {
+            response_paging->page_truncated = 0;
+        }
+        if (total_result_count_ds3_str != NULL) {
+            response_paging->total_result_count = g_ascii_strtoll(total_result_count_ds3_str->value, NULL, 10);
+            ds3_str_free(total_result_count_ds3_str);
+        } else {
+            response_paging->total_result_count = 0;
+        }
+    }
+
+    ds3_str_free(page_truncated_key);
+    ds3_str_free(total_result_count_key);
+    ds3_string_multimap_entry_free(page_truncated_entry);
+    ds3_string_multimap_entry_free(total_result_count_entry);
+
+    return response_paging;
+}
+
 ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -18412,7 +18419,12 @@ ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, 
         return error;
     }
 
-    return _parse_top_level_ds3_s3_object_list_response(client, request, response, return_headers, xml_blob);
+    error = _parse_top_level_ds3_s3_object_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_objects_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_detailed_s3_object_list_response** response) {
     ds3_error* error;
