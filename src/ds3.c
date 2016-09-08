@@ -15603,6 +15603,41 @@ static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(c
 
     return error;
 }
+static ds3_paging* _parse_paging_headers(ds3_string_multimap* response_headers) {
+    ds3_paging* response_paging = NULL;
+
+    ds3_str* page_truncated_key = ds3_str_init("Page-Truncated");
+    ds3_str* total_result_count_key = ds3_str_init("Total-Result-Count");
+
+    ds3_string_multimap_entry* page_truncated_entry = ds3_string_multimap_lookup(response_headers, page_truncated_key);
+    ds3_string_multimap_entry* total_result_count_entry = ds3_string_multimap_lookup(response_headers, total_result_count_key);
+
+    if ((page_truncated_entry != NULL) || (total_result_count_entry != NULL)) {
+        ds3_str* page_truncated_ds3_str = ds3_string_multimap_entry_get_value_by_index(page_truncated_entry, 0);
+        ds3_str* total_result_count_ds3_str = ds3_string_multimap_entry_get_value_by_index(total_result_count_entry, 0);
+
+        response_paging = g_new0(ds3_paging, 1);
+        if (page_truncated_ds3_str != NULL) {
+            response_paging->page_truncated = g_ascii_strtoll(page_truncated_ds3_str->value, NULL, 10);
+            ds3_str_free(page_truncated_ds3_str);
+        } else {
+            response_paging->page_truncated = 0;
+        }
+        if (total_result_count_ds3_str != NULL) {
+            response_paging->total_result_count = g_ascii_strtoll(total_result_count_ds3_str->value, NULL, 10);
+            ds3_str_free(total_result_count_ds3_str);
+        } else {
+            response_paging->total_result_count = 0;
+        }
+    }
+
+    ds3_str_free(page_truncated_key);
+    ds3_str_free(total_result_count_key);
+    ds3_string_multimap_entry_free(page_truncated_entry);
+    ds3_string_multimap_entry_free(total_result_count_entry);
+
+    return response_paging;
+}
 
 
 ds3_error* ds3_abort_multi_part_upload_request(const ds3_client* client, const ds3_request* request) {
@@ -16059,19 +16094,26 @@ ds3_error* ds3_get_bucket_acl_spectra_s3_request(const ds3_client* client, const
 ds3_error* ds3_get_bucket_acls_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_acl_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_bucket_acl_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_bucket_acl_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_data_policy_acl_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_acl_response** response) {
     ds3_error* error;
@@ -16096,19 +16138,26 @@ ds3_error* ds3_get_data_policy_acl_spectra_s3_request(const ds3_client* client, 
 ds3_error* ds3_get_data_policy_acls_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_acl_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_data_policy_acl_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_data_policy_acl_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_put_bucket_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_response** response) {
     ds3_error* error;
@@ -16161,19 +16210,26 @@ ds3_error* ds3_get_bucket_spectra_s3_request(const ds3_client* client, const ds3
 ds3_error* ds3_get_buckets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_bucket_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_response** response) {
     ds3_error* error;
@@ -16226,19 +16282,26 @@ ds3_error* ds3_get_cache_filesystem_spectra_s3_request(const ds3_client* client,
 ds3_error* ds3_get_cache_filesystems_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_filesystem_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_cache_filesystem_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_cache_filesystem_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_cache_state_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_information_response** response) {
     ds3_error* error;
@@ -16476,36 +16539,50 @@ ds3_error* ds3_get_data_persistence_rule_spectra_s3_request(const ds3_client* cl
 ds3_error* ds3_get_data_persistence_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_data_persistence_rule_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_data_persistence_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_data_policies_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_data_policy_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_data_policy_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_data_policy_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_response** response) {
     ds3_error* error;
@@ -16550,19 +16627,26 @@ ds3_error* ds3_get_data_replication_rule_spectra_s3_request(const ds3_client* cl
 ds3_error* ds3_get_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_response** response) {
     ds3_error* error;
@@ -16651,138 +16735,194 @@ ds3_error* ds3_clear_suspect_blob_targets_spectra_s3_request(const ds3_client* c
 ds3_error* ds3_get_degraded_blobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_degraded_blob_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_degraded_blob_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_degraded_blob_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_degraded_buckets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_degraded_data_persistence_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_data_persistence_rule_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_data_persistence_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_degraded_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_suspect_blob_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_pool_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_suspect_blob_pool_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_suspect_blob_pool_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_suspect_blob_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_tape_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_suspect_blob_tape_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_suspect_blob_tape_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_suspect_blob_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_target_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_suspect_blob_target_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_suspect_blob_target_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_suspect_buckets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_suspect_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_physical_placement_response** response) {
     ds3_error* error;
@@ -16938,19 +17078,26 @@ ds3_error* ds3_get_group_member_spectra_s3_request(const ds3_client* client, con
 ds3_error* ds3_get_group_members_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_member_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_group_member_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_group_member_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_response** response) {
     ds3_error* error;
@@ -16975,19 +17122,26 @@ ds3_error* ds3_get_group_spectra_s3_request(const ds3_client* client, const ds3_
 ds3_error* ds3_get_groups_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_group_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_group_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_response** response) {
     ds3_error* error;
@@ -17210,19 +17364,26 @@ ds3_error* ds3_get_active_job_spectra_s3_request(const ds3_client* client, const
 ds3_error* ds3_get_active_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_active_job_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_active_job_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_active_job_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_canceled_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_canceled_job_response** response) {
     ds3_error* error;
@@ -17247,19 +17408,26 @@ ds3_error* ds3_get_canceled_job_spectra_s3_request(const ds3_client* client, con
 ds3_error* ds3_get_canceled_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_canceled_job_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_canceled_job_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_canceled_job_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_completed_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_completed_job_response** response) {
     ds3_error* error;
@@ -17284,19 +17452,26 @@ ds3_error* ds3_get_completed_job_spectra_s3_request(const ds3_client* client, co
 ds3_error* ds3_get_completed_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_completed_job_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_completed_job_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_completed_job_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_job_chunk_dao_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_chunk_response** response) {
     ds3_error* error;
@@ -17557,19 +17732,26 @@ ds3_error* ds3_get_node_spectra_s3_request(const ds3_client* client, const ds3_r
 ds3_error* ds3_get_nodes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_node_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_node_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_node_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_node_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_node_response** response) {
     ds3_error* error;
@@ -17911,19 +18093,26 @@ ds3_error* ds3_get_ds3_target_failure_notification_registration_spectra_s3_reque
 ds3_error* ds3_get_ds3_target_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_failure_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_target_failure_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_target_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_job_completed_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_completed_notification_registration_response** response) {
     ds3_error* error;
@@ -17945,19 +18134,26 @@ ds3_error* ds3_get_job_completed_notification_registration_spectra_s3_request(co
 ds3_error* ds3_get_job_completed_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_completed_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_job_completed_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_job_completed_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_job_created_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_created_notification_registration_response** response) {
     ds3_error* error;
@@ -17979,19 +18175,26 @@ ds3_error* ds3_get_job_created_notification_registration_spectra_s3_request(cons
 ds3_error* ds3_get_job_created_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_created_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_job_created_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_job_created_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_job_creation_failed_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_creation_failed_notification_registration_response** response) {
     ds3_error* error;
@@ -18013,19 +18216,26 @@ ds3_error* ds3_get_job_creation_failed_notification_registration_spectra_s3_requ
 ds3_error* ds3_get_job_creation_failed_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_creation_failed_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_job_creation_failed_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_job_creation_failed_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_object_cached_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_cached_notification_registration_response** response) {
     ds3_error* error;
@@ -18047,19 +18257,26 @@ ds3_error* ds3_get_object_cached_notification_registration_spectra_s3_request(co
 ds3_error* ds3_get_object_cached_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_cached_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_s3_object_cached_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_s3_object_cached_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_object_lost_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_lost_notification_registration_response** response) {
     ds3_error* error;
@@ -18081,19 +18298,26 @@ ds3_error* ds3_get_object_lost_notification_registration_spectra_s3_request(cons
 ds3_error* ds3_get_object_lost_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_lost_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_s3_object_lost_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_s3_object_lost_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_object_persisted_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_persisted_notification_registration_response** response) {
     ds3_error* error;
@@ -18115,19 +18339,26 @@ ds3_error* ds3_get_object_persisted_notification_registration_spectra_s3_request
 ds3_error* ds3_get_object_persisted_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_persisted_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_s3_object_persisted_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_s3_object_persisted_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_pool_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_failure_notification_registration_response** response) {
     ds3_error* error;
@@ -18149,19 +18380,26 @@ ds3_error* ds3_get_pool_failure_notification_registration_spectra_s3_request(con
 ds3_error* ds3_get_pool_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_failure_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_pool_failure_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_pool_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_storage_domain_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_notification_registration_response** response) {
     ds3_error* error;
@@ -18183,19 +18421,26 @@ ds3_error* ds3_get_storage_domain_failure_notification_registration_spectra_s3_r
 ds3_error* ds3_get_storage_domain_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_storage_domain_failure_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_storage_domain_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_system_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_system_failure_notification_registration_response** response) {
     ds3_error* error;
@@ -18217,19 +18462,26 @@ ds3_error* ds3_get_system_failure_notification_registration_spectra_s3_request(c
 ds3_error* ds3_get_system_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_system_failure_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_system_failure_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_system_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_notification_registration_response** response) {
     ds3_error* error;
@@ -18251,19 +18503,26 @@ ds3_error* ds3_get_tape_failure_notification_registration_spectra_s3_request(con
 ds3_error* ds3_get_tape_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_failure_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_partition_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_failure_notification_registration_response** response) {
     ds3_error* error;
@@ -18285,19 +18544,26 @@ ds3_error* ds3_get_tape_partition_failure_notification_registration_spectra_s3_r
 ds3_error* ds3_get_tape_partition_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_failure_notification_registration_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_partition_failure_notification_registration_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_partition_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_delete_folder_recursively_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
@@ -18363,36 +18629,50 @@ ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, c
 ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_s3_object_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_s3_object_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_objects_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_detailed_s3_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_detailed_s3_object_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_detailed_s3_object_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_physical_placement_for_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_physical_placement_response** response) {
     ds3_error* error;
@@ -18680,19 +18960,26 @@ ds3_error* ds3_get_blobs_on_pool_spectra_s3_request(const ds3_client* client, co
 ds3_error* ds3_get_pool_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_pool_failure_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_pool_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_pool_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_partition_response** response) {
     ds3_error* error;
@@ -18717,19 +19004,26 @@ ds3_error* ds3_get_pool_partition_spectra_s3_request(const ds3_client* client, c
 ds3_error* ds3_get_pool_partitions_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_partition_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_pool_partition_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_pool_partition_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response) {
     ds3_error* error;
@@ -18754,19 +19048,26 @@ ds3_error* ds3_get_pool_spectra_s3_request(const ds3_client* client, const ds3_r
 ds3_error* ds3_get_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_pool_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_pool_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_import_all_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
@@ -18970,19 +19271,26 @@ ds3_error* ds3_delete_storage_domain_spectra_s3_request(const ds3_client* client
 ds3_error* ds3_get_storage_domain_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_storage_domain_failure_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_storage_domain_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_response** response) {
     ds3_error* error;
@@ -19007,19 +19315,26 @@ ds3_error* ds3_get_storage_domain_member_spectra_s3_request(const ds3_client* cl
 ds3_error* ds3_get_storage_domain_members_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_storage_domain_member_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_storage_domain_member_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_storage_domain_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_response** response) {
     ds3_error* error;
@@ -19044,19 +19359,26 @@ ds3_error* ds3_get_storage_domain_spectra_s3_request(const ds3_client* client, c
 ds3_error* ds3_get_storage_domains_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_storage_domain_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_storage_domain_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_response** response) {
     ds3_error* error;
@@ -19101,19 +19423,26 @@ ds3_error* ds3_modify_storage_domain_spectra_s3_request(const ds3_client* client
 ds3_error* ds3_get_system_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_system_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_system_failure_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_system_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_system_information_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_system_information_response** response) {
     ds3_error* error;
@@ -19616,19 +19945,26 @@ ds3_error* ds3_get_tape_density_directive_spectra_s3_request(const ds3_client* c
 ds3_error* ds3_get_tape_density_directives_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_density_directive_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_density_directive_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_density_directive_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response) {
     ds3_error* error;
@@ -19653,53 +19989,74 @@ ds3_error* ds3_get_tape_drive_spectra_s3_request(const ds3_client* client, const
 ds3_error* ds3_get_tape_drives_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_drive_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_drive_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_detailed_tape_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_detailed_tape_failure_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_detailed_tape_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_libraries_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_library_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_library_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_library_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_library_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_library_response** response) {
     ds3_error* error;
@@ -19724,19 +20081,26 @@ ds3_error* ds3_get_tape_library_spectra_s3_request(const ds3_client* client, con
 ds3_error* ds3_get_tape_partition_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_partition_failure_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_partition_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_response** response) {
     ds3_error* error;
@@ -19781,36 +20145,50 @@ ds3_error* ds3_get_tape_partition_with_full_details_spectra_s3_request(const ds3
 ds3_error* ds3_get_tape_partitions_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_partition_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_partition_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_partitions_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_named_detailed_tape_partition_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_named_detailed_tape_partition_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_named_detailed_tape_partition_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response) {
     ds3_error* error;
@@ -19835,19 +20213,26 @@ ds3_error* ds3_get_tape_spectra_s3_request(const ds3_client* client, const ds3_r
 ds3_error* ds3_get_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_tape_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_tape_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_import_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
@@ -20117,19 +20502,26 @@ ds3_error* ds3_get_ds3_target_data_policies_spectra_s3_request(const ds3_client*
 ds3_error* ds3_get_ds3_target_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_target_failure_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_target_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_ds3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_response** response) {
     ds3_error* error;
@@ -20154,19 +20546,26 @@ ds3_error* ds3_get_ds3_target_read_preference_spectra_s3_request(const ds3_clien
 ds3_error* ds3_get_ds3_target_read_preferences_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_target_read_preference_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_target_read_preference_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_response** response) {
     ds3_error* error;
@@ -20191,19 +20590,26 @@ ds3_error* ds3_get_ds3_target_spectra_s3_request(const ds3_client* client, const
 ds3_error* ds3_get_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_target_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_target_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_all_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
@@ -20332,19 +20738,26 @@ ds3_error* ds3_get_user_spectra_s3_request(const ds3_client* client, const ds3_r
 ds3_error* ds3_get_users_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_spectra_user_list_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_spectra_user_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_modify_user_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_response** response) {
     ds3_error* error;
@@ -20421,6 +20834,10 @@ void ds3_delete_objects_response_free(ds3_delete_objects_response* response) {
     }
     g_free(response->strings_list);
     g_free(response);
+}
+
+void ds3_paging_free(ds3_paging* paging) {
+    g_free(paging);
 }
 
 void ds3_request_free(ds3_request* _request) {
@@ -21935,6 +22352,7 @@ void ds3_s3_object_list_response_free(ds3_s3_object_list_response* response) {
         ds3_s3_object_response_free(response->s3_objects[index]);
     }
     g_free(response->s3_objects);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22178,6 +22596,7 @@ void ds3_spectra_user_list_response_free(ds3_spectra_user_list_response* respons
         ds3_spectra_user_response_free(response->spectra_users[index]);
     }
     g_free(response->spectra_users);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
