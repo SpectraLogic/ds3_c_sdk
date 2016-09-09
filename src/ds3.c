@@ -21975,6 +21975,7 @@ void ds3_bucket_acl_list_response_free(ds3_bucket_acl_list_response* response) {
         ds3_bucket_acl_response_free(response->bucket_acls[index]);
     }
     g_free(response->bucket_acls);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -21988,6 +21989,7 @@ void ds3_data_policy_acl_list_response_free(ds3_data_policy_acl_list_response* r
         ds3_data_policy_acl_response_free(response->data_policy_acls[index]);
     }
     g_free(response->data_policy_acls);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22001,6 +22003,7 @@ void ds3_bucket_list_response_free(ds3_bucket_list_response* response) {
         ds3_bucket_response_free(response->buckets[index]);
     }
     g_free(response->buckets);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22014,6 +22017,7 @@ void ds3_cache_filesystem_list_response_free(ds3_cache_filesystem_list_response*
         ds3_cache_filesystem_response_free(response->cache_filesystems[index]);
     }
     g_free(response->cache_filesystems);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22027,6 +22031,7 @@ void ds3_data_persistence_rule_list_response_free(ds3_data_persistence_rule_list
         ds3_data_persistence_rule_response_free(response->data_persistence_rules[index]);
     }
     g_free(response->data_persistence_rules);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22040,6 +22045,7 @@ void ds3_data_policy_list_response_free(ds3_data_policy_list_response* response)
         ds3_data_policy_response_free(response->data_policies[index]);
     }
     g_free(response->data_policies);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22053,6 +22059,7 @@ void ds3_data_replication_rule_list_response_free(ds3_data_replication_rule_list
         ds3_data_replication_rule_response_free(response->data_replication_rules[index]);
     }
     g_free(response->data_replication_rules);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22066,6 +22073,7 @@ void ds3_degraded_blob_list_response_free(ds3_degraded_blob_list_response* respo
         ds3_degraded_blob_response_free(response->degraded_blobs[index]);
     }
     g_free(response->degraded_blobs);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22079,6 +22087,7 @@ void ds3_suspect_blob_pool_list_response_free(ds3_suspect_blob_pool_list_respons
         ds3_suspect_blob_pool_response_free(response->suspect_blob_pools[index]);
     }
     g_free(response->suspect_blob_pools);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22092,6 +22101,7 @@ void ds3_suspect_blob_tape_list_response_free(ds3_suspect_blob_tape_list_respons
         ds3_suspect_blob_tape_response_free(response->suspect_blob_tapes[index]);
     }
     g_free(response->suspect_blob_tapes);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22105,6 +22115,7 @@ void ds3_suspect_blob_target_list_response_free(ds3_suspect_blob_target_list_res
         ds3_suspect_blob_target_response_free(response->suspect_blob_targets[index]);
     }
     g_free(response->suspect_blob_targets);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22118,6 +22129,7 @@ void ds3_group_member_list_response_free(ds3_group_member_list_response* respons
         ds3_group_member_response_free(response->group_members[index]);
     }
     g_free(response->group_members);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22131,6 +22143,7 @@ void ds3_group_list_response_free(ds3_group_list_response* response) {
         ds3_group_response_free(response->groups[index]);
     }
     g_free(response->groups);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22144,6 +22157,7 @@ void ds3_active_job_list_response_free(ds3_active_job_list_response* response) {
         ds3_active_job_response_free(response->active_jobs[index]);
     }
     g_free(response->active_jobs);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22157,6 +22171,7 @@ void ds3_canceled_job_list_response_free(ds3_canceled_job_list_response* respons
         ds3_canceled_job_response_free(response->canceled_jobs[index]);
     }
     g_free(response->canceled_jobs);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22170,6 +22185,7 @@ void ds3_completed_job_list_response_free(ds3_completed_job_list_response* respo
         ds3_completed_job_response_free(response->completed_jobs[index]);
     }
     g_free(response->completed_jobs);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22183,6 +22199,7 @@ void ds3_node_list_response_free(ds3_node_list_response* response) {
         ds3_node_response_free(response->nodes[index]);
     }
     g_free(response->nodes);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22196,6 +22213,7 @@ void ds3_target_failure_notification_registration_list_response_free(ds3_target_
         ds3_target_failure_notification_registration_response_free(response->ds3_target_failure_notification_registrations[index]);
     }
     g_free(response->ds3_target_failure_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22209,6 +22227,7 @@ void ds3_job_completed_notification_registration_list_response_free(ds3_job_comp
         ds3_job_completed_notification_registration_response_free(response->job_completed_notification_registrations[index]);
     }
     g_free(response->job_completed_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22222,6 +22241,7 @@ void ds3_job_created_notification_registration_list_response_free(ds3_job_create
         ds3_job_created_notification_registration_response_free(response->job_created_notification_registrations[index]);
     }
     g_free(response->job_created_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22235,6 +22255,7 @@ void ds3_job_creation_failed_notification_registration_list_response_free(ds3_jo
         ds3_job_creation_failed_notification_registration_response_free(response->job_creation_failed_notification_registrations[index]);
     }
     g_free(response->job_creation_failed_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22248,6 +22269,7 @@ void ds3_s3_object_cached_notification_registration_list_response_free(ds3_s3_ob
         ds3_s3_object_cached_notification_registration_response_free(response->s3_object_cached_notification_registrations[index]);
     }
     g_free(response->s3_object_cached_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22261,6 +22283,7 @@ void ds3_s3_object_lost_notification_registration_list_response_free(ds3_s3_obje
         ds3_s3_object_lost_notification_registration_response_free(response->s3_object_lost_notification_registrations[index]);
     }
     g_free(response->s3_object_lost_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22274,6 +22297,7 @@ void ds3_s3_object_persisted_notification_registration_list_response_free(ds3_s3
         ds3_s3_object_persisted_notification_registration_response_free(response->s3_object_persisted_notification_registrations[index]);
     }
     g_free(response->s3_object_persisted_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22287,6 +22311,7 @@ void ds3_pool_failure_notification_registration_list_response_free(ds3_pool_fail
         ds3_pool_failure_notification_registration_response_free(response->pool_failure_notification_registrations[index]);
     }
     g_free(response->pool_failure_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22300,6 +22325,7 @@ void ds3_storage_domain_failure_notification_registration_list_response_free(ds3
         ds3_storage_domain_failure_notification_registration_response_free(response->storage_domain_failure_notification_registrations[index]);
     }
     g_free(response->storage_domain_failure_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22313,6 +22339,7 @@ void ds3_system_failure_notification_registration_list_response_free(ds3_system_
         ds3_system_failure_notification_registration_response_free(response->system_failure_notification_registrations[index]);
     }
     g_free(response->system_failure_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22326,6 +22353,7 @@ void ds3_tape_failure_notification_registration_list_response_free(ds3_tape_fail
         ds3_tape_failure_notification_registration_response_free(response->tape_failure_notification_registrations[index]);
     }
     g_free(response->tape_failure_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22339,6 +22367,7 @@ void ds3_tape_partition_failure_notification_registration_list_response_free(ds3
         ds3_tape_partition_failure_notification_registration_response_free(response->tape_partition_failure_notification_registrations[index]);
     }
     g_free(response->tape_partition_failure_notification_registrations);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22366,6 +22395,7 @@ void ds3_pool_failure_list_response_free(ds3_pool_failure_list_response* respons
         ds3_pool_failure_response_free(response->pool_failures[index]);
     }
     g_free(response->pool_failures);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22379,6 +22409,7 @@ void ds3_pool_partition_list_response_free(ds3_pool_partition_list_response* res
         ds3_pool_partition_response_free(response->pool_partitions[index]);
     }
     g_free(response->pool_partitions);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22392,6 +22423,7 @@ void ds3_pool_list_response_free(ds3_pool_list_response* response) {
         ds3_pool_response_free(response->pools[index]);
     }
     g_free(response->pools);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22405,6 +22437,7 @@ void ds3_storage_domain_failure_list_response_free(ds3_storage_domain_failure_li
         ds3_storage_domain_failure_response_free(response->storage_domain_failures[index]);
     }
     g_free(response->storage_domain_failures);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22418,6 +22451,7 @@ void ds3_storage_domain_member_list_response_free(ds3_storage_domain_member_list
         ds3_storage_domain_member_response_free(response->storage_domain_members[index]);
     }
     g_free(response->storage_domain_members);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22431,6 +22465,7 @@ void ds3_storage_domain_list_response_free(ds3_storage_domain_list_response* res
         ds3_storage_domain_response_free(response->storage_domains[index]);
     }
     g_free(response->storage_domains);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22444,6 +22479,7 @@ void ds3_system_failure_list_response_free(ds3_system_failure_list_response* res
         ds3_system_failure_response_free(response->system_failures[index]);
     }
     g_free(response->system_failures);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22457,6 +22493,7 @@ void ds3_tape_density_directive_list_response_free(ds3_tape_density_directive_li
         ds3_tape_density_directive_response_free(response->tape_density_directives[index]);
     }
     g_free(response->tape_density_directives);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22470,6 +22507,7 @@ void ds3_tape_drive_list_response_free(ds3_tape_drive_list_response* response) {
         ds3_tape_drive_response_free(response->tape_drives[index]);
     }
     g_free(response->tape_drives);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22483,6 +22521,7 @@ void ds3_detailed_tape_failure_list_response_free(ds3_detailed_tape_failure_list
         ds3_detailed_tape_failure_response_free(response->detailed_tape_failures[index]);
     }
     g_free(response->detailed_tape_failures);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22496,6 +22535,7 @@ void ds3_tape_library_list_response_free(ds3_tape_library_list_response* respons
         ds3_tape_library_response_free(response->tape_libraries[index]);
     }
     g_free(response->tape_libraries);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22509,6 +22549,7 @@ void ds3_tape_partition_failure_list_response_free(ds3_tape_partition_failure_li
         ds3_tape_partition_failure_response_free(response->tape_partition_failures[index]);
     }
     g_free(response->tape_partition_failures);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22522,6 +22563,7 @@ void ds3_tape_partition_list_response_free(ds3_tape_partition_list_response* res
         ds3_tape_partition_response_free(response->tape_partitions[index]);
     }
     g_free(response->tape_partitions);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22535,6 +22577,7 @@ void ds3_named_detailed_tape_partition_list_response_free(ds3_named_detailed_tap
         ds3_named_detailed_tape_partition_response_free(response->named_detailed_tape_partitions[index]);
     }
     g_free(response->named_detailed_tape_partitions);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22548,6 +22591,7 @@ void ds3_tape_list_response_free(ds3_tape_list_response* response) {
         ds3_tape_response_free(response->tapes[index]);
     }
     g_free(response->tapes);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22561,6 +22605,7 @@ void ds3_target_failure_list_response_free(ds3_target_failure_list_response* res
         ds3_target_failure_response_free(response->ds3_target_failures[index]);
     }
     g_free(response->ds3_target_failures);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22570,6 +22615,7 @@ void ds3_target_read_preference_list_response_free(ds3_target_read_preference_li
     }
 
     g_free(response->ds3_target_read_preferences);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22583,6 +22629,7 @@ void ds3_target_list_response_free(ds3_target_list_response* response) {
         ds3_target_response_free(response->ds3_targets[index]);
     }
     g_free(response->ds3_targets);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -22906,6 +22953,7 @@ void ds3_detailed_s3_object_list_response_free(ds3_detailed_s3_object_list_respo
         ds3_detailed_s3_object_response_free(response->detailed_s3_objects[index]);
     }
     g_free(response->detailed_s3_objects);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }

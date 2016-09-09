@@ -1351,118 +1351,147 @@ typedef struct {
 typedef struct {
     ds3_bucket_acl_response** bucket_acls;
     size_t num_bucket_acls;
+    ds3_paging* paging;
 }ds3_bucket_acl_list_response;
 typedef struct {
     ds3_data_policy_acl_response** data_policy_acls;
     size_t num_data_policy_acls;
+    ds3_paging* paging;
 }ds3_data_policy_acl_list_response;
 typedef struct {
     ds3_bucket_response** buckets;
     size_t num_buckets;
+    ds3_paging* paging;
 }ds3_bucket_list_response;
 typedef struct {
     ds3_cache_filesystem_response** cache_filesystems;
     size_t num_cache_filesystems;
+    ds3_paging* paging;
 }ds3_cache_filesystem_list_response;
 typedef struct {
     ds3_data_persistence_rule_response** data_persistence_rules;
     size_t num_data_persistence_rules;
+    ds3_paging* paging;
 }ds3_data_persistence_rule_list_response;
 typedef struct {
     ds3_data_policy_response** data_policies;
     size_t num_data_policies;
+    ds3_paging* paging;
 }ds3_data_policy_list_response;
 typedef struct {
     ds3_data_replication_rule_response** data_replication_rules;
     size_t num_data_replication_rules;
+    ds3_paging* paging;
 }ds3_data_replication_rule_list_response;
 typedef struct {
     ds3_degraded_blob_response** degraded_blobs;
     size_t num_degraded_blobs;
+    ds3_paging* paging;
 }ds3_degraded_blob_list_response;
 typedef struct {
     ds3_suspect_blob_pool_response** suspect_blob_pools;
     size_t num_suspect_blob_pools;
+    ds3_paging* paging;
 }ds3_suspect_blob_pool_list_response;
 typedef struct {
     ds3_suspect_blob_tape_response** suspect_blob_tapes;
     size_t num_suspect_blob_tapes;
+    ds3_paging* paging;
 }ds3_suspect_blob_tape_list_response;
 typedef struct {
     ds3_suspect_blob_target_response** suspect_blob_targets;
     size_t num_suspect_blob_targets;
+    ds3_paging* paging;
 }ds3_suspect_blob_target_list_response;
 typedef struct {
     ds3_group_member_response** group_members;
     size_t num_group_members;
+    ds3_paging* paging;
 }ds3_group_member_list_response;
 typedef struct {
     ds3_group_response** groups;
     size_t num_groups;
+    ds3_paging* paging;
 }ds3_group_list_response;
 typedef struct {
     ds3_active_job_response** active_jobs;
     size_t num_active_jobs;
+    ds3_paging* paging;
 }ds3_active_job_list_response;
 typedef struct {
     ds3_canceled_job_response** canceled_jobs;
     size_t num_canceled_jobs;
+    ds3_paging* paging;
 }ds3_canceled_job_list_response;
 typedef struct {
     ds3_completed_job_response** completed_jobs;
     size_t num_completed_jobs;
+    ds3_paging* paging;
 }ds3_completed_job_list_response;
 typedef struct {
     ds3_node_response** nodes;
     size_t num_nodes;
+    ds3_paging* paging;
 }ds3_node_list_response;
 typedef struct {
     ds3_target_failure_notification_registration_response** ds3_target_failure_notification_registrations;
     size_t num_ds3_target_failure_notification_registrations;
+    ds3_paging* paging;
 }ds3_target_failure_notification_registration_list_response;
 typedef struct {
     ds3_job_completed_notification_registration_response** job_completed_notification_registrations;
     size_t num_job_completed_notification_registrations;
+    ds3_paging* paging;
 }ds3_job_completed_notification_registration_list_response;
 typedef struct {
     ds3_job_created_notification_registration_response** job_created_notification_registrations;
     size_t num_job_created_notification_registrations;
+    ds3_paging* paging;
 }ds3_job_created_notification_registration_list_response;
 typedef struct {
     ds3_job_creation_failed_notification_registration_response** job_creation_failed_notification_registrations;
     size_t num_job_creation_failed_notification_registrations;
+    ds3_paging* paging;
 }ds3_job_creation_failed_notification_registration_list_response;
 typedef struct {
     ds3_s3_object_cached_notification_registration_response** s3_object_cached_notification_registrations;
     size_t num_s3_object_cached_notification_registrations;
+    ds3_paging* paging;
 }ds3_s3_object_cached_notification_registration_list_response;
 typedef struct {
     ds3_s3_object_lost_notification_registration_response** s3_object_lost_notification_registrations;
     size_t num_s3_object_lost_notification_registrations;
+    ds3_paging* paging;
 }ds3_s3_object_lost_notification_registration_list_response;
 typedef struct {
     ds3_s3_object_persisted_notification_registration_response** s3_object_persisted_notification_registrations;
     size_t num_s3_object_persisted_notification_registrations;
+    ds3_paging* paging;
 }ds3_s3_object_persisted_notification_registration_list_response;
 typedef struct {
     ds3_pool_failure_notification_registration_response** pool_failure_notification_registrations;
     size_t num_pool_failure_notification_registrations;
+    ds3_paging* paging;
 }ds3_pool_failure_notification_registration_list_response;
 typedef struct {
     ds3_storage_domain_failure_notification_registration_response** storage_domain_failure_notification_registrations;
     size_t num_storage_domain_failure_notification_registrations;
+    ds3_paging* paging;
 }ds3_storage_domain_failure_notification_registration_list_response;
 typedef struct {
     ds3_system_failure_notification_registration_response** system_failure_notification_registrations;
     size_t num_system_failure_notification_registrations;
+    ds3_paging* paging;
 }ds3_system_failure_notification_registration_list_response;
 typedef struct {
     ds3_tape_failure_notification_registration_response** tape_failure_notification_registrations;
     size_t num_tape_failure_notification_registrations;
+    ds3_paging* paging;
 }ds3_tape_failure_notification_registration_list_response;
 typedef struct {
     ds3_tape_partition_failure_notification_registration_response** tape_partition_failure_notification_registrations;
     size_t num_tape_partition_failure_notification_registrations;
+    ds3_paging* paging;
 }ds3_tape_partition_failure_notification_registration_list_response;
 typedef struct {
     ds3_s3_object_response** s3_objects;
@@ -1472,74 +1501,92 @@ typedef struct {
 typedef struct {
     ds3_pool_failure_response** pool_failures;
     size_t num_pool_failures;
+    ds3_paging* paging;
 }ds3_pool_failure_list_response;
 typedef struct {
     ds3_pool_partition_response** pool_partitions;
     size_t num_pool_partitions;
+    ds3_paging* paging;
 }ds3_pool_partition_list_response;
 typedef struct {
     ds3_pool_response** pools;
     size_t num_pools;
+    ds3_paging* paging;
 }ds3_pool_list_response;
 typedef struct {
     ds3_storage_domain_failure_response** storage_domain_failures;
     size_t num_storage_domain_failures;
+    ds3_paging* paging;
 }ds3_storage_domain_failure_list_response;
 typedef struct {
     ds3_storage_domain_member_response** storage_domain_members;
     size_t num_storage_domain_members;
+    ds3_paging* paging;
 }ds3_storage_domain_member_list_response;
 typedef struct {
     ds3_storage_domain_response** storage_domains;
     size_t num_storage_domains;
+    ds3_paging* paging;
 }ds3_storage_domain_list_response;
 typedef struct {
     ds3_system_failure_response** system_failures;
     size_t num_system_failures;
+    ds3_paging* paging;
 }ds3_system_failure_list_response;
 typedef struct {
     ds3_tape_density_directive_response** tape_density_directives;
     size_t num_tape_density_directives;
+    ds3_paging* paging;
 }ds3_tape_density_directive_list_response;
 typedef struct {
     ds3_tape_drive_response** tape_drives;
     size_t num_tape_drives;
+    ds3_paging* paging;
 }ds3_tape_drive_list_response;
 typedef struct {
     ds3_detailed_tape_failure_response** detailed_tape_failures;
     size_t num_detailed_tape_failures;
+    ds3_paging* paging;
 }ds3_detailed_tape_failure_list_response;
 typedef struct {
     ds3_tape_library_response** tape_libraries;
     size_t num_tape_libraries;
+    ds3_paging* paging;
 }ds3_tape_library_list_response;
 typedef struct {
     ds3_tape_partition_failure_response** tape_partition_failures;
     size_t num_tape_partition_failures;
+    ds3_paging* paging;
 }ds3_tape_partition_failure_list_response;
 typedef struct {
     ds3_tape_partition_response** tape_partitions;
     size_t num_tape_partitions;
+    ds3_paging* paging;
 }ds3_tape_partition_list_response;
 typedef struct {
     ds3_named_detailed_tape_partition_response** named_detailed_tape_partitions;
     size_t num_named_detailed_tape_partitions;
+    ds3_paging* paging;
 }ds3_named_detailed_tape_partition_list_response;
 typedef struct {
     ds3_tape_response** tapes;
     size_t num_tapes;
+    ds3_paging* paging;
 }ds3_tape_list_response;
 typedef struct {
     ds3_target_failure_response** ds3_target_failures;
     size_t num_ds3_target_failures;
+    ds3_paging* paging;
 }ds3_target_failure_list_response;
 typedef struct {
     ds3_target_read_preference* ds3_target_read_preferences;
     size_t num_ds3_target_read_preferences;
+    ds3_paging* paging;
 }ds3_target_read_preference_list_response;
 typedef struct {
     ds3_target_response** ds3_targets;
     size_t num_ds3_targets;
+    ds3_paging* paging;
 }ds3_target_list_response;
 typedef struct {
     ds3_spectra_user_response** spectra_users;
@@ -1715,6 +1762,7 @@ typedef struct {
 typedef struct {
     ds3_detailed_s3_object_response** detailed_s3_objects;
     size_t num_detailed_s3_objects;
+    ds3_paging* paging;
 }ds3_detailed_s3_object_list_response;
 typedef struct {
     ds3_str** common_prefixes;
