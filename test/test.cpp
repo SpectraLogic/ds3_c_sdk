@@ -259,7 +259,6 @@ ds3_master_object_list_response* ensure_available_chunks(const ds3_client* clien
         request =  ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request(job_id->value);
         error = ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request(client, request, &chunk_response);
         ds3_request_free(request);
-
         handle_error(error);
         BOOST_CHECK(chunk_response != NULL);
 
