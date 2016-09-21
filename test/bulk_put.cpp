@@ -104,11 +104,11 @@ BOOST_AUTO_TEST_CASE( bulk_put_10k_very_small_files ) {
     put_chunks_args->bucket_name = (char*)bucket_name;
     put_chunks_args->chunks_list = ensure_available_chunks(client, bulk_response->job_id);
 
-
     put_chunks(put_chunks_args);
 
     ds3_master_object_list_response_free(put_chunks_args->chunks_list);
     ds3_master_object_list_response_free(bulk_response);
+    g_free(put_chunks_args);
 
     clear_bucket(client, bucket_name);
     free_client(client);
@@ -165,6 +165,8 @@ BOOST_AUTO_TEST_CASE( bulk_put_200_very_small_files_multithreaded ) {
 
     ds3_master_object_list_response_free(chunk_response);
     ds3_master_object_list_response_free(bulk_response);
+    g_free(put_odd_chunks_args);
+    g_free(put_even_chunks_args);
 
     clear_bucket(client, bucket_name);
     free_client(client);
