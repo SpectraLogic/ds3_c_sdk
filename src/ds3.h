@@ -28,6 +28,7 @@
 #include <curl/curl.h>
 #include "ds3_string.h"
 #include "ds3_string_multimap.h"
+#include "ds3_connection.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,8 @@ extern "C" {
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
 
 typedef struct _ds3_request ds3_request;
+
+typedef struct _ds3_connection_pool  ds3_connection_pool;
 
 typedef struct {
     ds3_str*    name;
@@ -1586,7 +1589,14 @@ typedef struct _ds3_client {
                                 void* write_user_struct,
                                 size_t (*write_handler_func)(void*, size_t, size_t, void*),
                                 ds3_string_multimap** return_headers);
+    ds3_connection_pool* connection_pool;
 }ds3_client;
+
+LIBRARY_API ds3_connection_pool* ds3_connection_pool_init(void);
+LIBRARY_API void ds3_connection_pool_clear(ds3_connection_pool* pool);
+
+LIBRARY_API ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool);
+LIBRARY_API void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* handle);
 
 LIBRARY_API void ds3_blob_response_free(ds3_blob_response* response_data);
 LIBRARY_API void ds3_bucket_response_free(ds3_bucket_response* response_data);

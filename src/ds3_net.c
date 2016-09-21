@@ -24,6 +24,7 @@
 #include "ds3_utils.h"
 #include "ds3_string_multimap.h"
 #include "ds3_string_multimap_impl.h"
+#include "ds3_connection.h"
 
 static void _init_curl(void) {
     static ds3_bool initialized = False;
@@ -398,7 +399,7 @@ ds3_error* net_process_request(const ds3_client* client,
     }
 
     while (retry_count < client->num_redirects) {
-        handle = curl_easy_init();
+        handle = (CURL*)ds3_connection_acquire(client->connection_pool);
 
         if (handle) {
             char* amz_headers;
@@ -517,7 +518,8 @@ ds3_error* net_process_request(const ds3_client* client,
             g_free(signature);
             g_free(auth_header);
             curl_slist_free_all(headers);
-            curl_easy_cleanup(handle);
+            //curl_easy_cleanup(handle);
+            ds3_connection_release(client->connection_pool, handle);
 
             //process the response
             if (res != CURLE_OK) {
