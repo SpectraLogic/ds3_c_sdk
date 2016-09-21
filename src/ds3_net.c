@@ -429,9 +429,6 @@ ds3_error* net_process_request(const ds3_client* client,
 
             curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 0); // explicitly disable
 
-            curl_easy_setopt(handle, CURLOPT_FRESH_CONNECT, 1); // explicity disable re-using connections
-            curl_easy_setopt(handle, CURLOPT_FORBID_REUSE, 1); // explicity disable re-using connections
-
             // Setup header collection
             curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, _process_header_line);
             curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response_data);
