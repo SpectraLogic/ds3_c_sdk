@@ -515,7 +515,6 @@ ds3_error* net_process_request(const ds3_client* client,
             g_free(signature);
             g_free(auth_header);
             curl_slist_free_all(headers);
-            //curl_easy_cleanup(handle);
             ds3_connection_release(client->connection_pool, handle);
 
             //process the response
