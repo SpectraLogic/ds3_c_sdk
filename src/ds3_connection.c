@@ -17,7 +17,6 @@
 #include <string.h>
 #include <curl/curl.h>
 #include <glib.h>
-#include "ds3_connection.h"
 #include "ds3_net.h"
 
 ds3_connection_pool* ds3_connection_pool_init(void) {

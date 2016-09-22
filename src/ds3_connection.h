@@ -40,6 +40,12 @@ struct _ds3_connection_pool{
     ds3_condition available_connections;
 };
 
+ds3_connection_pool* ds3_connection_pool_init(void);
+void ds3_connection_pool_clear(ds3_connection_pool* pool);
+
+ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool);
+void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* handle);
+
 #ifdef __cplusplus
 }
 #endif
