@@ -894,7 +894,6 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
 
     ds3_client_register_net( client, net_process_request );
 
-    printf("init ds3_connection_pool for %s\n", endpoint);
     client->connection_pool = ds3_connection_pool_init();
 
     return client;

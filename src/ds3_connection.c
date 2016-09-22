@@ -35,7 +35,6 @@ void ds3_connection_pool_clear(ds3_connection_pool* pool) {
 
     for (index = 0; index < CONNECTION_POOL_SIZE; index++) {
         if (pool->connections[index] != NULL) {
-            printf("free connection %d\n", index);
             curl_easy_cleanup(pool->connections[index]);
         }
     }
@@ -62,12 +61,10 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
     }
 
     if (pool->connections[pool->next_out] == NULL) {
-        printf("init connection %d\n", pool->next_out);
         connection = curl_easy_init();
 
         pool->connections[pool->next_out] = connection;
     } else {
-        printf("re-use connection %d\n", pool->next_out);
         connection = pool->connections[pool->next_out];
     }
     pool->next_out = _pool_inc(pool, pool->next_out);
@@ -80,7 +77,6 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
 void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connection) {
     g_mutex_lock(&pool->mutex);
 
-    printf("release connection %d\n", pool->next_in);
     curl_easy_reset(connection);
     pool->next_in = _pool_inc(pool, pool->next_in);
 

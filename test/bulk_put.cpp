@@ -10,24 +10,15 @@
 
 #define BUFF_SIZE 16
 
-typedef struct {
-    uint8_t                              num_threads;
-    uint8_t                              thread_num;
-    ds3_client*                          client;
-    char*                                job_id;
-    char*                                src_object_name;
-    char*                                bucket_name;
-    ds3_master_object_list_response*     chunks_list;
-} test_put_chunks_args;
-
-
+/**
+ * Create a ds3_bulk_object_list_response with the same name many times, append a number
+ */
 ds3_bulk_object_list_response* create_bulk_object_list_single_file(const char* file_name, size_t num_files) {
     char put_filename[BUFF_SIZE];
 
     struct stat file_info;
     memset(&file_info, 0, sizeof(struct stat));
     stat(file_name, &file_info);
-    printf("%s: %ld\n", file_name, file_info.st_size);
 
     ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
 
@@ -48,6 +39,20 @@ ds3_bulk_object_list_response* create_bulk_object_list_single_file(const char* f
     return obj_list;
 }
 
+/**
+ * g_thread_new only takes a single parameter to pass to the spawned thread, so its necessary
+ * to wrap multiple parameters in a struct to be passed along.
+ */
+typedef struct {
+    uint8_t                              num_threads;
+    uint8_t                              thread_num;
+    ds3_client*                          client;
+    char*                                job_id;
+    char*                                src_object_name;
+    char*                                bucket_name;
+    ds3_master_object_list_response*     chunks_list;
+} test_put_chunks_args;
+
 void put_chunks(void* args) {
     test_put_chunks_args* put_chunks_args = (test_put_chunks_args*)args;
     ds3_objects_response* chunk_object_list = NULL;
@@ -59,6 +64,7 @@ void put_chunks(void* args) {
             // Work distribution
             if (object_index % put_chunks_args->num_threads == put_chunks_args->thread_num) {
                 ds3_bulk_object_response* object = chunk_object_list->objects[object_index];
+                // Send the same file every time, give it a different destination name
                 FILE* file = fopen(put_chunks_args->src_object_name, "r");
                 if (file == NULL) {
                     printf("Unable to open %s for read (FILE NULL), skipping put to bucket %s!\n", put_chunks_args->src_object_name, put_chunks_args->bucket_name);
@@ -67,7 +73,9 @@ void put_chunks(void* args) {
 
                 ds3_request* request = ds3_init_put_object_request(put_chunks_args->bucket_name, object->name->value, object->length);
                 ds3_request_set_job(request, put_chunks_args->job_id);
-                printf("Thread %d PUT %s\n", put_chunks_args->thread_num, object->name->value);
+                if (object->offset > 0) {
+                    fseek(file, object->offset, SEEK_SET);
+                }
                 ds3_error* error = ds3_put_object_request(put_chunks_args->client, request, file, ds3_read_from_file);
                 ds3_request_free(request);
 
@@ -116,7 +124,7 @@ BOOST_AUTO_TEST_CASE( bulk_put_10k_very_small_files ) {
 
 
 BOOST_AUTO_TEST_CASE( bulk_put_200_very_small_files_multithreaded ) {
-    printf("-----Testing Bulk PUT of 200 very small files in parallel-------\n");
+    printf("-----Testing Bulk PUT of 200 very small files multithreaded-------\n");
     const char* bucket_name = "test_bulk_put_200_very_small_files_multithreaded";
     const char* object_name = "resources/very_small_file.txt";
     ds3_request* request = NULL;
@@ -136,37 +144,36 @@ BOOST_AUTO_TEST_CASE( bulk_put_200_very_small_files_multithreaded ) {
     ds3_master_object_list_response* chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
     // send to child thread 1
-    test_put_chunks_args* put_odd_chunks_args = g_new0(test_put_chunks_args, 1);
-    put_odd_chunks_args->client = client;
-    put_odd_chunks_args->job_id = bulk_response->job_id->value;
-    put_odd_chunks_args->src_object_name = (char*)object_name;
-    put_odd_chunks_args->bucket_name = (char*)bucket_name;
-    put_odd_chunks_args->chunks_list = chunk_response;
-    put_odd_chunks_args->thread_num = 0;
-    put_odd_chunks_args->num_threads = 2;
+    test_put_chunks_args* put_odd_objects_args = g_new0(test_put_chunks_args, 1);
+    put_odd_objects_args->client = client;
+    put_odd_objects_args->job_id = bulk_response->job_id->value;
+    put_odd_objects_args->src_object_name = (char*)object_name;
+    put_odd_objects_args->bucket_name = (char*)bucket_name;
+    put_odd_objects_args->chunks_list = chunk_response;
+    put_odd_objects_args->thread_num = 0;
+    put_odd_objects_args->num_threads = 2;
 
     // send to child thread 2
-    test_put_chunks_args* put_even_chunks_args = g_new0(test_put_chunks_args, 1);
-    put_even_chunks_args->client = client;
-    put_even_chunks_args->job_id = bulk_response->job_id->value;
-    put_even_chunks_args->src_object_name = (char*)object_name;
-    put_even_chunks_args->bucket_name = (char*)bucket_name;
-    put_even_chunks_args->chunks_list = chunk_response;
-    put_even_chunks_args->thread_num = 1;
-    put_even_chunks_args->num_threads = 2;
+    test_put_chunks_args* put_even_objects_args = g_new0(test_put_chunks_args, 1);
+    put_even_objects_args->client = client;
+    put_even_objects_args->job_id = bulk_response->job_id->value;
+    put_even_objects_args->src_object_name = (char*)object_name;
+    put_even_objects_args->bucket_name = (char*)bucket_name;
+    put_even_objects_args->chunks_list = chunk_response;
+    put_even_objects_args->thread_num = 1;
+    put_even_objects_args->num_threads = 2;
 
-    GThread* even_chunks_thread = g_thread_new("even_chunks", (GThreadFunc)put_chunks, put_even_chunks_args);
-    GThread* odd_chunks_thread = g_thread_new("odd_chunks", (GThreadFunc)put_chunks, put_odd_chunks_args);
+    GThread* even_chunks_thread = g_thread_new("even_objects", (GThreadFunc)put_chunks, put_even_objects_args);
+    GThread* odd_chunks_thread = g_thread_new("odd_objects", (GThreadFunc)put_chunks, put_odd_objects_args);
 
+    // Block and cleanup GThreads
     g_thread_join(even_chunks_thread);
     g_thread_join(odd_chunks_thread);
 
-    printf("Children worker threads done\n");
-
     ds3_master_object_list_response_free(chunk_response);
     ds3_master_object_list_response_free(bulk_response);
-    g_free(put_odd_chunks_args);
-    g_free(put_even_chunks_args);
+    g_free(put_odd_objects_args);
+    g_free(put_even_objects_args);
 
     clear_bucket(client, bucket_name);
     free_client(client);
