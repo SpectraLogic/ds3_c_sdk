@@ -40,7 +40,7 @@ run_single: test
 deps:
 	./build_local.sh
 
-test: test.o get_physical_placement.o search_tests.o metadata_tests.o negative_tests.o checksum.o service_tests.o bucket_tests.o multimap_tests.o deletes_test.o job_tests.o get_object.o bulk_get.o
+test: test.o get_physical_placement.o search_tests.o metadata_tests.o negative_tests.o checksum.o service_tests.o bucket_tests.o multimap_tests.o deletes_test.o job_tests.o get_object.o bulk_get.o bulk_put.o
 	$(CPP) *.o $(CFLAGS) $(LIBS) -o test
 
 test.o: ../install/lib/pkgconfig/libds3.pc
@@ -66,6 +66,9 @@ job_tests.o:
 
 bulk_get.o:
 	$(CPP) -c bulk_get.cpp $(CFLAGS)
+
+bulk_put.o:
+	$(CPP) -c bulk_put.cpp $(CFLAGS)
 
 get_object.o:
 	$(CPP) -c get_object.cpp $(CFLAGS)
