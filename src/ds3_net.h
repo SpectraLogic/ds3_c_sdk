@@ -40,10 +40,6 @@ ds3_error* net_process_request(
 
 void net_cleanup(void);
 
-typedef _ds3_mutex ds3_mutex;
-typedef _ds3_condition ds3_condition;
-typedef _ds3_connection ds3_connection;
-
 ds3_connection_pool* ds3_connection_pool_init(void);
 void ds3_connection_pool_clear(ds3_connection_pool* pool);
 
