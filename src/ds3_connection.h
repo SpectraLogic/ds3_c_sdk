@@ -23,24 +23,22 @@ extern "C" {
 
 #include <curl/curl.h>
 #include <glib.h>
-#include "ds3.h"
 
 #define CONNECTION_POOL_SIZE 100
 
-typedef GMutex ds3_mutex;
-typedef GCond ds3_condition;
+typedef GMutex _ds3_mutex;
+typedef GCond _ds3_condition;
 
-typedef CURL ds3_connection;
+typedef CURL _ds3_connection;
 
 //-- Opaque struct
 struct _ds3_connection_pool{
-    ds3_connection* connections[CONNECTION_POOL_SIZE];
-    int next_in;
-    int next_out;
-    ds3_mutex mutex;
-    ds3_condition available_connections;
+    _ds3_connection* connections[CONNECTION_POOL_SIZE];
+    int head;
+    int tail;
+    _ds3_mutex mutex;
+    _ds3_condition available_connections;
 };
-
 
 #ifdef __cplusplus
 }

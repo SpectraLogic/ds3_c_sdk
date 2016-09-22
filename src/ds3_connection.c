@@ -15,23 +15,26 @@
  */
 
 #include <string.h>
-#include "ds3.h"
+#include <curl/curl.h>
+#include <glib.h>
+#include "ds3_connection.h"
+#include "ds3_net.h"
 
 ds3_connection_pool* ds3_connection_pool_init(void) {
     ds3_connection_pool* pool = g_new0(ds3_connection_pool, 1);
-    pool->next_in = 0;
-    pool->next_out = 0;
     g_mutex_init(&pool->mutex);
     g_cond_init(&pool->available_connections);
     return pool;
 }
 
 void ds3_connection_pool_clear(ds3_connection_pool* pool) {
+    int index;
+
     if (pool == NULL) {
         return;
     }
 
-    int index;
+    g_mutex_lock(&pool->mutex);
 
     for (index = 0; index < CONNECTION_POOL_SIZE; index++) {
         if (pool->connections[index] != NULL) {
@@ -39,6 +42,7 @@ void ds3_connection_pool_clear(ds3_connection_pool* pool) {
         }
     }
 
+    g_mutex_unlock(&pool->mutex);
     g_mutex_clear(&pool->mutex);
     g_cond_clear(&pool->available_connections);
 }
@@ -48,7 +52,7 @@ static int _pool_inc(ds3_connection_pool* pool, int index) {
 }
 
 static int _pool_full(ds3_connection_pool* pool) {
-    return (_pool_inc(pool, pool->next_in) == pool->next_out);
+    return (_pool_inc(pool, pool->tail) == pool->head);
 }
 
 
@@ -60,14 +64,14 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
         g_cond_wait(&pool->available_connections, &pool->mutex);
     }
 
-    if (pool->connections[pool->next_out] == NULL) {
+    if (pool->connections[pool->head] == NULL) {
         connection = curl_easy_init();
 
-        pool->connections[pool->next_out] = connection;
+        pool->connections[pool->head] = connection;
     } else {
-        connection = pool->connections[pool->next_out];
+        connection = pool->connections[pool->head];
     }
-    pool->next_out = _pool_inc(pool, pool->next_out);
+    pool->head = _pool_inc(pool, pool->head);
 
     g_mutex_unlock(&pool->mutex);
 
@@ -78,7 +82,7 @@ void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connectio
     g_mutex_lock(&pool->mutex);
 
     curl_easy_reset(connection);
-    pool->next_in = _pool_inc(pool, pool->next_in);
+    pool->tail = _pool_inc(pool, pool->tail);
 
     g_mutex_unlock(&pool->mutex);
     g_cond_signal(&pool->available_connections);

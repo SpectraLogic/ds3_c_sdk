@@ -22,6 +22,7 @@ extern "C" {
 
 #include "ds3.h"
 #include "ds3_string_multimap.h"
+#include "ds3_connection.h"
 
 char* escape_url(const char* url);
 char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters);
@@ -38,6 +39,16 @@ ds3_error* net_process_request(
    ds3_string_multimap** return_headers);
 
 void net_cleanup(void);
+
+typedef _ds3_mutex ds3_mutex;
+typedef _ds3_condition ds3_condition;
+typedef _ds3_connection ds3_connection;
+
+ds3_connection_pool* ds3_connection_pool_init(void);
+void ds3_connection_pool_clear(ds3_connection_pool* pool);
+
+ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool);
+void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* handle);
 
 #ifdef __cplusplus
 }
