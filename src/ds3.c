@@ -32,6 +32,7 @@
 #include "ds3_string_multimap_impl.h"
 #include "ds3_net.h"
 #include "ds3_utils.h"
+#include "ds3_connection.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -893,6 +894,8 @@ ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds) {
 
     ds3_client_register_net( client, net_process_request );
 
+    client->connection_pool = ds3_connection_pool_init();
+
     return client;
 }
 
@@ -949,9 +952,9 @@ void ds3_client_free(ds3_client* client) {
 
     ds3_str_free(client->endpoint);
     ds3_str_free(client->proxy);
-    if (client->log != NULL) {
-        g_free(client->log);
-    }
+    g_free(client->log);
+    ds3_connection_pool_clear(client->connection_pool);
+    g_free(client->connection_pool);
     g_free(client);
 }
 
