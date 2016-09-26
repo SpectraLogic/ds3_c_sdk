@@ -13,32 +13,37 @@
  * ****************************************************************************
  */
 
-#ifndef __DS3_NET_H__
-#define __DS3_NET_H__
+#ifndef __DS3_CONNECTION_H__
+#define __DS3_CONNECTION_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "ds3.h"
-#include "ds3_string_multimap.h"
-#include "ds3_connection.h"
+#include <curl/curl.h>
+#include <glib.h>
 
-char* escape_url(const char* url);
-char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters);
-char* escape_url_object_name(const char* url);
-char* escape_url_range_header(const char* url);
+#define CONNECTION_POOL_SIZE 100
 
-ds3_error* net_process_request(
-   const ds3_client* client,
-   const ds3_request* _request,
-   void* read_user_struct,
-   size_t (*read_handler_func)(void*, size_t, size_t, void*),
-   void* write_user_struct,
-   size_t (*write_handler_func)(void*, size_t, size_t, void*),
-   ds3_string_multimap** return_headers);
+typedef GMutex ds3_mutex;
+typedef GCond ds3_condition;
 
-void net_cleanup(void);
+typedef CURL ds3_connection;
+
+//-- Opaque struct
+struct _ds3_connection_pool{
+    ds3_connection* connections[CONNECTION_POOL_SIZE];
+    int head;
+    int tail;
+    ds3_mutex mutex;
+    ds3_condition available_connections;
+};
+
+ds3_connection_pool* ds3_connection_pool_init(void);
+void ds3_connection_pool_clear(ds3_connection_pool* pool);
+
+ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool);
+void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* handle);
 
 #ifdef __cplusplus
 }
