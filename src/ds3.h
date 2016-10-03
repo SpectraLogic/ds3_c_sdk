@@ -374,13 +374,13 @@ typedef enum {
     DS3_TARGET_FAILURE_TYPE_VERIFY_FAILED
 }ds3_target_failure_type;
 typedef enum {
-    DS3_TARGET_READ_PREFERENCE_MINIMUM_LATENCY,
-    DS3_TARGET_READ_PREFERENCE_AFTER_ONLINE_POOL,
-    DS3_TARGET_READ_PREFERENCE_AFTER_NEARLINE_POOL,
-    DS3_TARGET_READ_PREFERENCE_AFTER_NON_EJECTABLE_TAPE,
-    DS3_TARGET_READ_PREFERENCE_LAST_RESORT,
-    DS3_TARGET_READ_PREFERENCE_NEVER
-}ds3_target_read_preference;
+    DS3_TARGET_READ_PREFERENCE_TYPE_MINIMUM_LATENCY,
+    DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_ONLINE_POOL,
+    DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_NEARLINE_POOL,
+    DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_NON_EJECTABLE_TAPE,
+    DS3_TARGET_READ_PREFERENCE_TYPE_LAST_RESORT,
+    DS3_TARGET_READ_PREFERENCE_TYPE_NEVER
+}ds3_target_read_preference_type;
 typedef enum {
     DS3_TARGET_STATE_ONLINE,
     DS3_TARGET_STATE_LIMITED_ACCESS,
@@ -1113,7 +1113,7 @@ typedef struct {
     int data_path_port;
     ds3_str* data_path_proxy;
     ds3_bool data_path_verify_certificate;
-    ds3_target_read_preference default_read_preference;
+    ds3_target_read_preference_type default_read_preference;
     ds3_str* id;
     ds3_str* name;
     ds3_bool permit_going_out_of_sync;
@@ -1131,7 +1131,7 @@ typedef struct {
 typedef struct {
     ds3_str* bucket_id;
     ds3_str* id;
-    ds3_target_read_preference read_preference;
+    ds3_target_read_preference_type read_preference;
     ds3_str* target_id;
 }ds3_target_read_preference_response;
 typedef struct {
@@ -1581,7 +1581,7 @@ typedef struct {
     ds3_paging* paging;
 }ds3_target_failure_list_response;
 typedef struct {
-    ds3_target_read_preference* ds3_target_read_preferences;
+    ds3_target_read_preference_response** ds3_target_read_preferences;
     size_t num_ds3_target_read_preferences;
     ds3_paging* paging;
 }ds3_target_read_preference_list_response;
@@ -2049,7 +2049,7 @@ LIBRARY_API void ds3_request_set_default_data_policy_id(const ds3_request* reque
 LIBRARY_API void ds3_request_set_default_get_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value);
 LIBRARY_API void ds3_request_set_default_put_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
-LIBRARY_API void ds3_request_set_default_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value);
+LIBRARY_API void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value);
 LIBRARY_API void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_delimiter(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_density_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value);
@@ -2120,7 +2120,7 @@ LIBRARY_API void ds3_request_set_prefix(const ds3_request* request, const char* 
 LIBRARY_API void ds3_request_set_previous_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value);
 LIBRARY_API void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value);
-LIBRARY_API void ds3_request_set_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value);
+LIBRARY_API void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value);
 LIBRARY_API void ds3_request_set_rebuild_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_rechunked(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_replicate(const ds3_request* request, ds3_bool value);
@@ -3799,7 +3799,7 @@ LIBRARY_API ds3_error* ds3_verify_all_tapes_spectra_s3_request(const ds3_client*
  */
 LIBRARY_API ds3_request* ds3_init_verify_tape_spectra_s3_request(const char* resource_id);
 LIBRARY_API ds3_error* ds3_verify_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
-LIBRARY_API ds3_request* ds3_init_put_ds3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference read_preference, const char* target_id);
+LIBRARY_API ds3_request* ds3_init_put_ds3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id);
 LIBRARY_API ds3_error* ds3_put_ds3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_response** response);
 LIBRARY_API ds3_request* ds3_init_delete_ds3_target_failure_spectra_s3_request(const char* resource_id);
 LIBRARY_API ds3_error* ds3_delete_ds3_target_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -3832,7 +3832,7 @@ LIBRARY_API ds3_error* ds3_get_ds3_target_read_preference_spectra_s3_request(con
  * void ds3_request_set_page_length(const ds3_request* request, const int value)
  * void ds3_request_set_page_offset(const ds3_request* request, const int value)
  * void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- * void ds3_request_set_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value)
+ * void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  * void ds3_request_set_target_id(const ds3_request* request, const char* value)
  */
 LIBRARY_API ds3_request* ds3_init_get_ds3_target_read_preferences_spectra_s3_request(void);
@@ -3847,7 +3847,7 @@ LIBRARY_API ds3_error* ds3_get_ds3_target_spectra_s3_request(const ds3_client* c
  * void ds3_request_set_data_path_port(const ds3_request* request, const int value)
  * void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
  * void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
- * void ds3_request_set_default_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value)
+ * void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  * void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  * void ds3_request_set_name(const ds3_request* request, const char* value)
  * void ds3_request_set_page_length(const ds3_request* request, const int value)
@@ -3871,7 +3871,7 @@ LIBRARY_API ds3_error* ds3_modify_all_ds3_targets_spectra_s3_request(const ds3_c
  * void ds3_request_set_data_path_port(const ds3_request* request, const int value)
  * void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
  * void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
- * void ds3_request_set_default_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value)
+ * void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  * void ds3_request_set_name(const ds3_request* request, const char* value)
  * void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  * void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
@@ -3889,7 +3889,7 @@ LIBRARY_API ds3_error* ds3_modify_ds3_target_spectra_s3_request(const ds3_client
  * void ds3_request_set_data_path_port(const ds3_request* request, const int value)
  * void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
  * void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
- * void ds3_request_set_default_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value)
+ * void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  * void ds3_request_set_name(const ds3_request* request, const char* value)
  * void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  * void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value)
@@ -3903,7 +3903,7 @@ LIBRARY_API ds3_error* ds3_pair_back_registered_ds3_target_spectra_s3_request(co
  * void ds3_request_set_data_path_port(const ds3_request* request, const int value)
  * void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
  * void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
- * void ds3_request_set_default_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value)
+ * void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  * void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  * void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value)
  */
