@@ -624,18 +624,18 @@ static char* _get_ds3_tape_partition_state_str(ds3_tape_partition_state input) {
     }
 
 }
-static char* _get_ds3_target_read_preference_str(ds3_target_read_preference input) {
-    if (input == DS3_TARGET_READ_PREFERENCE_MINIMUM_LATENCY) {
+static char* _get_ds3_target_read_preference_type_str(ds3_target_read_preference_type input) {
+    if (input == DS3_TARGET_READ_PREFERENCE_TYPE_MINIMUM_LATENCY) {
         return "MINIMUM_LATENCY";
-    } else if (input == DS3_TARGET_READ_PREFERENCE_AFTER_ONLINE_POOL) {
+    } else if (input == DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_ONLINE_POOL) {
         return "AFTER_ONLINE_POOL";
-    } else if (input == DS3_TARGET_READ_PREFERENCE_AFTER_NEARLINE_POOL) {
+    } else if (input == DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_NEARLINE_POOL) {
         return "AFTER_NEARLINE_POOL";
-    } else if (input == DS3_TARGET_READ_PREFERENCE_AFTER_NON_EJECTABLE_TAPE) {
+    } else if (input == DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_NON_EJECTABLE_TAPE) {
         return "AFTER_NON_EJECTABLE_TAPE";
-    } else if (input == DS3_TARGET_READ_PREFERENCE_LAST_RESORT) {
+    } else if (input == DS3_TARGET_READ_PREFERENCE_TYPE_LAST_RESORT) {
         return "LAST_RESORT";
-    } else if (input == DS3_TARGET_READ_PREFERENCE_NEVER) {
+    } else if (input == DS3_TARGET_READ_PREFERENCE_TYPE_NEVER) {
         return "NEVER";
     } else {
         return "";
@@ -1332,8 +1332,8 @@ void ds3_request_set_default_put_job_priority_ds3_priority(const ds3_request* re
     _set_query_param(request, "default_put_job_priority", (const char*)_get_ds3_priority_str(value));
 
 }
-void ds3_request_set_default_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value) {
-    _set_query_param(request, "default_read_preference", (const char*)_get_ds3_target_read_preference_str(value));
+void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value) {
+    _set_query_param(request, "default_read_preference", (const char*)_get_ds3_target_read_preference_type_str(value));
 
 }
 void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -1616,8 +1616,8 @@ void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3
     _set_query_param(request, "quiesced", (const char*)_get_ds3_quiesced_str(value));
 
 }
-void ds3_request_set_read_preference_ds3_target_read_preference(const ds3_request* request, const ds3_target_read_preference value) {
-    _set_query_param(request, "read_preference", (const char*)_get_ds3_target_read_preference_str(value));
+void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value) {
+    _set_query_param(request, "read_preference", (const char*)_get_ds3_target_read_preference_type_str(value));
 
 }
 void ds3_request_set_rebuild_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -3323,12 +3323,12 @@ ds3_request* ds3_init_verify_tape_spectra_s3_request(const char* resource_id) {
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_ds3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference read_preference, const char* target_id) {
+ds3_request* ds3_init_put_ds3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/ds3_target_read_preference/", NULL, NULL));
     if (bucket_id != NULL) {
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
     }
-    _set_query_param((ds3_request*) request, "read_preference", _get_ds3_target_read_preference_str(read_preference));
+    _set_query_param((ds3_request*) request, "read_preference", _get_ds3_target_read_preference_type_str(read_preference));
 
     if (target_id != NULL) {
         _set_query_param((ds3_request*) request, "target_id", target_id);
@@ -4281,22 +4281,22 @@ static ds3_target_failure_type _match_ds3_target_failure_type(const ds3_log* log
         return DS3_TARGET_FAILURE_TYPE_NOT_ONLINE;
     }
 }
-static ds3_target_read_preference _match_ds3_target_read_preference(const ds3_log* log, const xmlChar* text) {
+static ds3_target_read_preference_type _match_ds3_target_read_preference_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "MINIMUM_LATENCY") == 0) {
-        return DS3_TARGET_READ_PREFERENCE_MINIMUM_LATENCY;
+        return DS3_TARGET_READ_PREFERENCE_TYPE_MINIMUM_LATENCY;
     } else if (xmlStrcmp(text, (const xmlChar*) "AFTER_ONLINE_POOL") == 0) {
-        return DS3_TARGET_READ_PREFERENCE_AFTER_ONLINE_POOL;
+        return DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_ONLINE_POOL;
     } else if (xmlStrcmp(text, (const xmlChar*) "AFTER_NEARLINE_POOL") == 0) {
-        return DS3_TARGET_READ_PREFERENCE_AFTER_NEARLINE_POOL;
+        return DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_NEARLINE_POOL;
     } else if (xmlStrcmp(text, (const xmlChar*) "AFTER_NON_EJECTABLE_TAPE") == 0) {
-        return DS3_TARGET_READ_PREFERENCE_AFTER_NON_EJECTABLE_TAPE;
+        return DS3_TARGET_READ_PREFERENCE_TYPE_AFTER_NON_EJECTABLE_TAPE;
     } else if (xmlStrcmp(text, (const xmlChar*) "LAST_RESORT") == 0) {
-        return DS3_TARGET_READ_PREFERENCE_LAST_RESORT;
+        return DS3_TARGET_READ_PREFERENCE_TYPE_LAST_RESORT;
     } else if (xmlStrcmp(text, (const xmlChar*) "NEVER") == 0) {
-        return DS3_TARGET_READ_PREFERENCE_NEVER;
+        return DS3_TARGET_READ_PREFERENCE_TYPE_NEVER;
     } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TARGET_READ_PREFERENCE_MINIMUM_LATENCY for safety.", text);
-        return DS3_TARGET_READ_PREFERENCE_MINIMUM_LATENCY;
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TARGET_READ_PREFERENCE_TYPE_MINIMUM_LATENCY for safety.", text);
+        return DS3_TARGET_READ_PREFERENCE_TYPE_MINIMUM_LATENCY;
     }
 }
 static ds3_target_state _match_ds3_target_state(const ds3_log* log, const xmlChar* text) {
@@ -4506,25 +4506,6 @@ static ds3_error* _parse_ds3_bucket_response(const ds3_client* client, const xml
     return error;
 }
 
-static ds3_error* _parse_ds3_bucket_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_bucket_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_bucket_response* response = NULL;
-        error = _parse_ds3_bucket_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_bucket_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_bucket_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_bucket_acl_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_bucket_acl_response** _response) {
     ds3_bucket_acl_response* response;
     xmlNodePtr child_node;
@@ -4565,25 +4546,6 @@ static ds3_error* _parse_ds3_bucket_acl_response(const ds3_client* client, const
     return error;
 }
 
-static ds3_error* _parse_ds3_bucket_acl_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_bucket_acl_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_bucket_acl_response* response = NULL;
-        error = _parse_ds3_bucket_acl_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_bucket_acl_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_bucket_acl_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_canceled_job_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_canceled_job_response** _response) {
     ds3_canceled_job_response* response;
     xmlNodePtr child_node;
@@ -4658,25 +4620,6 @@ static ds3_error* _parse_ds3_canceled_job_response(const ds3_client* client, con
     return error;
 }
 
-static ds3_error* _parse_ds3_canceled_job_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_canceled_job_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_canceled_job_response* response = NULL;
-        error = _parse_ds3_canceled_job_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_canceled_job_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_canceled_job_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_completed_job_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_completed_job_response** _response) {
     ds3_completed_job_response* response;
     xmlNodePtr child_node;
@@ -4749,25 +4692,6 @@ static ds3_error* _parse_ds3_completed_job_response(const ds3_client* client, co
     return error;
 }
 
-static ds3_error* _parse_ds3_completed_job_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_completed_job_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_completed_job_response* response = NULL;
-        error = _parse_ds3_completed_job_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_completed_job_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_completed_job_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_data_persistence_rule_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_persistence_rule_response** _response) {
     ds3_data_persistence_rule_response* response;
     xmlNodePtr child_node;
@@ -4822,25 +4746,6 @@ static ds3_error* _parse_ds3_data_persistence_rule_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_data_persistence_rule_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_data_persistence_rule_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_data_persistence_rule_response* response = NULL;
-        error = _parse_ds3_data_persistence_rule_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_data_persistence_rule_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_data_persistence_rule_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_data_policy_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_policy_response** _response) {
     ds3_data_policy_response* response;
     xmlNodePtr child_node;
@@ -4928,25 +4833,6 @@ static ds3_error* _parse_ds3_data_policy_response(const ds3_client* client, cons
     return error;
 }
 
-static ds3_error* _parse_ds3_data_policy_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_data_policy_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_data_policy_response* response = NULL;
-        error = _parse_ds3_data_policy_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_data_policy_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_data_policy_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_data_policy_acl_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_policy_acl_response** _response) {
     ds3_data_policy_acl_response* response;
     xmlNodePtr child_node;
@@ -4980,25 +4866,6 @@ static ds3_error* _parse_ds3_data_policy_acl_response(const ds3_client* client, 
     return error;
 }
 
-static ds3_error* _parse_ds3_data_policy_acl_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_data_policy_acl_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_data_policy_acl_response* response = NULL;
-        error = _parse_ds3_data_policy_acl_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_data_policy_acl_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_data_policy_acl_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_data_replication_rule_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_replication_rule_response** _response) {
     ds3_data_replication_rule_response* response;
     xmlNodePtr child_node;
@@ -5046,25 +4913,6 @@ static ds3_error* _parse_ds3_data_replication_rule_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_data_replication_rule_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_data_replication_rule_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_data_replication_rule_response* response = NULL;
-        error = _parse_ds3_data_replication_rule_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_data_replication_rule_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_data_replication_rule_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_degraded_blob_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_degraded_blob_response** _response) {
     ds3_degraded_blob_response* response;
     xmlNodePtr child_node;
@@ -5100,25 +4948,6 @@ static ds3_error* _parse_ds3_degraded_blob_response(const ds3_client* client, co
     return error;
 }
 
-static ds3_error* _parse_ds3_degraded_blob_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_degraded_blob_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_degraded_blob_response* response = NULL;
-        error = _parse_ds3_degraded_blob_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_degraded_blob_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_degraded_blob_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_group_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_group_response** _response) {
     ds3_group_response* response;
     xmlNodePtr child_node;
@@ -5150,25 +4979,6 @@ static ds3_error* _parse_ds3_group_response(const ds3_client* client, const xmlD
     return error;
 }
 
-static ds3_error* _parse_ds3_group_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_group_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_group_response* response = NULL;
-        error = _parse_ds3_group_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_group_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_group_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_group_member_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_group_member_response** _response) {
     ds3_group_member_response* response;
     xmlNodePtr child_node;
@@ -5202,25 +5012,6 @@ static ds3_error* _parse_ds3_group_member_response(const ds3_client* client, con
     return error;
 }
 
-static ds3_error* _parse_ds3_group_member_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_group_member_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_group_member_response* response = NULL;
-        error = _parse_ds3_group_member_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_group_member_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_group_member_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_active_job_response** _response) {
     ds3_active_job_response* response;
     xmlNodePtr child_node;
@@ -5295,25 +5086,6 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
     return error;
 }
 
-static ds3_error* _parse_ds3_active_job_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_active_job_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_active_job_response* response = NULL;
-        error = _parse_ds3_active_job_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_active_job_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_active_job_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_node_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_node_response** _response) {
     ds3_node_response* response;
     xmlNodePtr child_node;
@@ -5355,25 +5127,6 @@ static ds3_error* _parse_ds3_node_response(const ds3_client* client, const xmlDo
     return error;
 }
 
-static ds3_error* _parse_ds3_node_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_node_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_node_response* response = NULL;
-        error = _parse_ds3_node_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_node_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_node_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_s3_object_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_object_response** _response) {
     ds3_s3_object_response* response;
     xmlNodePtr child_node;
@@ -5418,25 +5171,6 @@ static ds3_error* _parse_ds3_s3_object_response(const ds3_client* client, const 
     return error;
 }
 
-static ds3_error* _parse_ds3_s3_object_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_s3_object_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_s3_object_response* response = NULL;
-        error = _parse_ds3_s3_object_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_s3_object_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_s3_object_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_storage_domain_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_storage_domain_response** _response) {
     ds3_storage_domain_response* response;
     xmlNodePtr child_node;
@@ -5505,25 +5239,6 @@ static ds3_error* _parse_ds3_storage_domain_response(const ds3_client* client, c
     return error;
 }
 
-static ds3_error* _parse_ds3_storage_domain_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_storage_domain_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_storage_domain_response* response = NULL;
-        error = _parse_ds3_storage_domain_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_storage_domain_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_storage_domain_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_storage_domain_capacity_summary_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_storage_domain_capacity_summary_response** _response) {
     ds3_storage_domain_capacity_summary_response* response;
     xmlNodePtr child_node;
@@ -5595,25 +5310,6 @@ static ds3_error* _parse_ds3_storage_domain_failure_response(const ds3_client* c
     return error;
 }
 
-static ds3_error* _parse_ds3_storage_domain_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_storage_domain_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_storage_domain_failure_response* response = NULL;
-        error = _parse_ds3_storage_domain_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_storage_domain_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_storage_domain_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_storage_domain_member_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_storage_domain_member_response** _response) {
     ds3_storage_domain_member_response* response;
     xmlNodePtr child_node;
@@ -5668,25 +5364,6 @@ static ds3_error* _parse_ds3_storage_domain_member_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_storage_domain_member_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_storage_domain_member_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_storage_domain_member_response* response = NULL;
-        error = _parse_ds3_storage_domain_member_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_storage_domain_member_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_storage_domain_member_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_system_failure_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_system_failure_response** _response) {
     ds3_system_failure_response* response;
     xmlNodePtr child_node;
@@ -5725,25 +5402,6 @@ static ds3_error* _parse_ds3_system_failure_response(const ds3_client* client, c
     return error;
 }
 
-static ds3_error* _parse_ds3_system_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_system_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_system_failure_response* response = NULL;
-        error = _parse_ds3_system_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_system_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_system_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_spectra_user_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_spectra_user_response** _response) {
     ds3_spectra_user_response* response;
     xmlNodePtr child_node;
@@ -5779,25 +5437,6 @@ static ds3_error* _parse_ds3_spectra_user_response(const ds3_client* client, con
     return error;
 }
 
-static ds3_error* _parse_ds3_spectra_user_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_spectra_user_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_spectra_user_response* response = NULL;
-        error = _parse_ds3_spectra_user_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_spectra_user_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_spectra_user_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_target_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_target_failure_notification_registration_response** _response) {
     ds3_target_failure_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -5860,25 +5499,6 @@ static ds3_error* _parse_ds3_target_failure_notification_registration_response(c
     return error;
 }
 
-static ds3_error* _parse_ds3_target_failure_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_target_failure_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_target_failure_notification_registration_response* response = NULL;
-        error = _parse_ds3_target_failure_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_target_failure_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_target_failure_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_job_completed_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_completed_notification_registration_response** _response) {
     ds3_job_completed_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -5943,25 +5563,6 @@ static ds3_error* _parse_ds3_job_completed_notification_registration_response(co
     return error;
 }
 
-static ds3_error* _parse_ds3_job_completed_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_job_completed_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_job_completed_notification_registration_response* response = NULL;
-        error = _parse_ds3_job_completed_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_job_completed_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_job_completed_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_job_created_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_created_notification_registration_response** _response) {
     ds3_job_created_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6024,25 +5625,6 @@ static ds3_error* _parse_ds3_job_created_notification_registration_response(cons
     return error;
 }
 
-static ds3_error* _parse_ds3_job_created_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_job_created_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_job_created_notification_registration_response* response = NULL;
-        error = _parse_ds3_job_created_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_job_created_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_job_created_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_job_creation_failed_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_creation_failed_notification_registration_response** _response) {
     ds3_job_creation_failed_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6105,25 +5687,6 @@ static ds3_error* _parse_ds3_job_creation_failed_notification_registration_respo
     return error;
 }
 
-static ds3_error* _parse_ds3_job_creation_failed_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_job_creation_failed_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_job_creation_failed_notification_registration_response* response = NULL;
-        error = _parse_ds3_job_creation_failed_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_job_creation_failed_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_job_creation_failed_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_pool_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_pool_failure_notification_registration_response** _response) {
     ds3_pool_failure_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6186,25 +5749,6 @@ static ds3_error* _parse_ds3_pool_failure_notification_registration_response(con
     return error;
 }
 
-static ds3_error* _parse_ds3_pool_failure_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_pool_failure_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_pool_failure_notification_registration_response* response = NULL;
-        error = _parse_ds3_pool_failure_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_pool_failure_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_pool_failure_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_s3_object_cached_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_object_cached_notification_registration_response** _response) {
     ds3_s3_object_cached_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6269,25 +5813,6 @@ static ds3_error* _parse_ds3_s3_object_cached_notification_registration_response
     return error;
 }
 
-static ds3_error* _parse_ds3_s3_object_cached_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_s3_object_cached_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_s3_object_cached_notification_registration_response* response = NULL;
-        error = _parse_ds3_s3_object_cached_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_s3_object_cached_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_s3_object_cached_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_s3_object_lost_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_object_lost_notification_registration_response** _response) {
     ds3_s3_object_lost_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6350,25 +5875,6 @@ static ds3_error* _parse_ds3_s3_object_lost_notification_registration_response(c
     return error;
 }
 
-static ds3_error* _parse_ds3_s3_object_lost_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_s3_object_lost_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_s3_object_lost_notification_registration_response* response = NULL;
-        error = _parse_ds3_s3_object_lost_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_s3_object_lost_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_s3_object_lost_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_s3_object_persisted_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_object_persisted_notification_registration_response** _response) {
     ds3_s3_object_persisted_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6433,25 +5939,6 @@ static ds3_error* _parse_ds3_s3_object_persisted_notification_registration_respo
     return error;
 }
 
-static ds3_error* _parse_ds3_s3_object_persisted_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_s3_object_persisted_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_s3_object_persisted_notification_registration_response* response = NULL;
-        error = _parse_ds3_s3_object_persisted_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_s3_object_persisted_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_s3_object_persisted_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_storage_domain_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_storage_domain_failure_notification_registration_response** _response) {
     ds3_storage_domain_failure_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6514,25 +6001,6 @@ static ds3_error* _parse_ds3_storage_domain_failure_notification_registration_re
     return error;
 }
 
-static ds3_error* _parse_ds3_storage_domain_failure_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_storage_domain_failure_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_storage_domain_failure_notification_registration_response* response = NULL;
-        error = _parse_ds3_storage_domain_failure_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_storage_domain_failure_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_storage_domain_failure_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_system_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_system_failure_notification_registration_response** _response) {
     ds3_system_failure_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6595,25 +6063,6 @@ static ds3_error* _parse_ds3_system_failure_notification_registration_response(c
     return error;
 }
 
-static ds3_error* _parse_ds3_system_failure_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_system_failure_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_system_failure_notification_registration_response* response = NULL;
-        error = _parse_ds3_system_failure_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_system_failure_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_system_failure_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_failure_notification_registration_response** _response) {
     ds3_tape_failure_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6676,25 +6125,6 @@ static ds3_error* _parse_ds3_tape_failure_notification_registration_response(con
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_failure_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_failure_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_failure_notification_registration_response* response = NULL;
-        error = _parse_ds3_tape_failure_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_failure_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_failure_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_partition_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_partition_failure_notification_registration_response** _response) {
     ds3_tape_partition_failure_notification_registration_response* response;
     xmlNodePtr child_node;
@@ -6757,25 +6187,6 @@ static ds3_error* _parse_ds3_tape_partition_failure_notification_registration_re
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_partition_failure_notification_registration_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_partition_failure_notification_registration_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_partition_failure_notification_registration_response* response = NULL;
-        error = _parse_ds3_tape_partition_failure_notification_registration_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_partition_failure_notification_registration_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_partition_failure_notification_registration_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_cache_filesystem_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_cache_filesystem_response** _response) {
     ds3_cache_filesystem_response* response;
     xmlNodePtr child_node;
@@ -6817,25 +6228,6 @@ static ds3_error* _parse_ds3_cache_filesystem_response(const ds3_client* client,
     return error;
 }
 
-static ds3_error* _parse_ds3_cache_filesystem_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_cache_filesystem_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_cache_filesystem_response* response = NULL;
-        error = _parse_ds3_cache_filesystem_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_cache_filesystem_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_cache_filesystem_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_pool_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_pool_response** _response) {
     ds3_pool_response* response;
     xmlNodePtr child_node;
@@ -6980,25 +6372,6 @@ static ds3_error* _parse_ds3_pool_failure_response(const ds3_client* client, con
     return error;
 }
 
-static ds3_error* _parse_ds3_pool_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_pool_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_pool_failure_response* response = NULL;
-        error = _parse_ds3_pool_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_pool_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_pool_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_pool_partition_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_pool_partition_response** _response) {
     ds3_pool_partition_response* response;
     xmlNodePtr child_node;
@@ -7035,25 +6408,6 @@ static ds3_error* _parse_ds3_pool_partition_response(const ds3_client* client, c
     return error;
 }
 
-static ds3_error* _parse_ds3_pool_partition_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_pool_partition_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_pool_partition_response* response = NULL;
-        error = _parse_ds3_pool_partition_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_pool_partition_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_pool_partition_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_suspect_blob_pool_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_suspect_blob_pool_response** _response) {
     ds3_suspect_blob_pool_response* response;
     xmlNodePtr child_node;
@@ -7091,25 +6445,6 @@ static ds3_error* _parse_ds3_suspect_blob_pool_response(const ds3_client* client
     return error;
 }
 
-static ds3_error* _parse_ds3_suspect_blob_pool_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_suspect_blob_pool_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_suspect_blob_pool_response* response = NULL;
-        error = _parse_ds3_suspect_blob_pool_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_suspect_blob_pool_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_suspect_blob_pool_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_suspect_blob_tape_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_suspect_blob_tape_response** _response) {
     ds3_suspect_blob_tape_response* response;
     xmlNodePtr child_node;
@@ -7143,25 +6478,6 @@ static ds3_error* _parse_ds3_suspect_blob_tape_response(const ds3_client* client
     return error;
 }
 
-static ds3_error* _parse_ds3_suspect_blob_tape_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_suspect_blob_tape_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_suspect_blob_tape_response* response = NULL;
-        error = _parse_ds3_suspect_blob_tape_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_suspect_blob_tape_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_suspect_blob_tape_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_response** _response) {
     ds3_tape_response* response;
     xmlNodePtr child_node;
@@ -7321,25 +6637,6 @@ static ds3_error* _parse_ds3_tape_density_directive_response(const ds3_client* c
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_density_directive_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_density_directive_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_density_directive_response* response = NULL;
-        error = _parse_ds3_tape_density_directive_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_density_directive_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_density_directive_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_drive_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_drive_response** _response) {
     ds3_tape_drive_response* response;
     xmlNodePtr child_node;
@@ -7393,25 +6690,6 @@ static ds3_error* _parse_ds3_tape_drive_response(const ds3_client* client, const
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_drive_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_drive_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_drive_response* response = NULL;
-        error = _parse_ds3_tape_drive_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_drive_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_drive_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_detailed_tape_failure_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_detailed_tape_failure_response** _response) {
     ds3_detailed_tape_failure_response* response;
     xmlNodePtr child_node;
@@ -7454,25 +6732,6 @@ static ds3_error* _parse_ds3_detailed_tape_failure_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_detailed_tape_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_detailed_tape_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_detailed_tape_failure_response* response = NULL;
-        error = _parse_ds3_detailed_tape_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_detailed_tape_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_detailed_tape_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_library_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_library_response** _response) {
     ds3_tape_library_response* response;
     xmlNodePtr child_node;
@@ -7506,25 +6765,6 @@ static ds3_error* _parse_ds3_tape_library_response(const ds3_client* client, con
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_library_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_library_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_library_response* response = NULL;
-        error = _parse_ds3_tape_library_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_library_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_library_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_partition_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_partition_response** _response) {
     ds3_tape_partition_response* response;
     xmlNodePtr child_node;
@@ -7588,25 +6828,6 @@ static ds3_error* _parse_ds3_tape_partition_response(const ds3_client* client, c
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_partition_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_partition_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_partition_response* response = NULL;
-        error = _parse_ds3_tape_partition_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_partition_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_partition_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_partition_failure_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_partition_failure_response** _response) {
     ds3_tape_partition_failure_response* response;
     xmlNodePtr child_node;
@@ -7647,25 +6868,6 @@ static ds3_error* _parse_ds3_tape_partition_failure_response(const ds3_client* c
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_partition_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_partition_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_partition_failure_response* response = NULL;
-        error = _parse_ds3_tape_partition_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_partition_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_partition_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_target_response** _response) {
     ds3_target_response* response;
     xmlNodePtr child_node;
@@ -7701,7 +6903,7 @@ static ds3_error* _parse_ds3_target_response(const ds3_client* client, const xml
             if (text == NULL) {
                 continue;
             }
-            response->default_read_preference = _match_ds3_target_read_preference(client->log, text);
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
@@ -7800,25 +7002,6 @@ static ds3_error* _parse_ds3_target_failure_response(const ds3_client* client, c
     return error;
 }
 
-static ds3_error* _parse_ds3_target_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_target_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_target_failure_response* response = NULL;
-        error = _parse_ds3_target_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_target_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_target_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_target_read_preference_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_target_read_preference_response** _response) {
     ds3_target_read_preference_response* response;
     xmlNodePtr child_node;
@@ -7837,7 +7020,7 @@ static ds3_error* _parse_ds3_target_read_preference_response(const ds3_client* c
             if (text == NULL) {
                 continue;
             }
-            response->read_preference = _match_ds3_target_read_preference(client->log, text);
+            response->read_preference = _match_ds3_target_read_preference_type(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "TargetId")) {
             response->target_id = xml_get_string(doc, child_node);
@@ -7888,25 +7071,6 @@ static ds3_error* _parse_ds3_suspect_blob_target_response(const ds3_client* clie
     return error;
 }
 
-static ds3_error* _parse_ds3_suspect_blob_target_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_suspect_blob_target_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_suspect_blob_target_response* response = NULL;
-        error = _parse_ds3_suspect_blob_target_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_suspect_blob_target_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_suspect_blob_target_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_build_information_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_build_information_response** _response) {
     ds3_build_information_response* response;
     xmlNodePtr child_node;
@@ -7978,25 +7142,6 @@ static ds3_error* _parse_ds3_set_of_tape_bar_codes_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_set_of_tape_bar_codes_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_set_of_tape_bar_codes_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_set_of_tape_bar_codes_response* response = NULL;
-        error = _parse_ds3_set_of_tape_bar_codes_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_set_of_tape_bar_codes_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_set_of_tape_bar_codes_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tapes_must_be_onlined_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tapes_must_be_onlined_response** _response) {
     ds3_tapes_must_be_onlined_response* response;
     xmlNodePtr child_node;
@@ -8092,25 +7237,6 @@ static ds3_error* _parse_ds3_blob_store_task_information_response(const ds3_clie
     return error;
 }
 
-static ds3_error* _parse_ds3_blob_store_task_information_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_blob_store_task_information_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_blob_store_task_information_response* response = NULL;
-        error = _parse_ds3_blob_store_task_information_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_blob_store_task_information_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_blob_store_task_information_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_cache_entry_information_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_cache_entry_information_response** _response) {
     ds3_cache_entry_information_response* response;
     xmlNodePtr child_node;
@@ -8149,25 +7275,6 @@ static ds3_error* _parse_ds3_cache_entry_information_response(const ds3_client* 
     return error;
 }
 
-static ds3_error* _parse_ds3_cache_entry_information_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_cache_entry_information_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_cache_entry_information_response* response = NULL;
-        error = _parse_ds3_cache_entry_information_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_cache_entry_information_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_cache_entry_information_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_cache_filesystem_information_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_cache_filesystem_information_response** _response) {
     ds3_cache_filesystem_information_response* response;
     xmlNodePtr child_node;
@@ -8218,25 +7325,6 @@ static ds3_error* _parse_ds3_cache_filesystem_information_response(const ds3_cli
     return error;
 }
 
-static ds3_error* _parse_ds3_cache_filesystem_information_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_cache_filesystem_information_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_cache_filesystem_information_response* response = NULL;
-        error = _parse_ds3_cache_filesystem_information_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_cache_filesystem_information_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_cache_filesystem_information_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_bucket_details_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_bucket_details_response** _response) {
     ds3_bucket_details_response* response;
     xmlNodePtr child_node;
@@ -8316,25 +7404,6 @@ static ds3_error* _parse_ds3_delete_object_error_response(const ds3_client* clie
     return error;
 }
 
-static ds3_error* _parse_ds3_delete_object_error_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_delete_object_error_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_delete_object_error_response* response = NULL;
-        error = _parse_ds3_delete_object_error_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_delete_object_error_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_delete_object_error_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_multi_part_upload_part_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_multi_part_upload_part_response** _response) {
     ds3_multi_part_upload_part_response* response;
     xmlNodePtr child_node;
@@ -8366,25 +7435,6 @@ static ds3_error* _parse_ds3_multi_part_upload_part_response(const ds3_client* c
     return error;
 }
 
-static ds3_error* _parse_ds3_multi_part_upload_part_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_multi_part_upload_part_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_multi_part_upload_part_response* response = NULL;
-        error = _parse_ds3_multi_part_upload_part_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_multi_part_upload_part_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_multi_part_upload_part_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_job_node_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_node_response** _response) {
     ds3_job_node_response* response;
     struct _xmlAttr* attribute;
@@ -8464,25 +7514,6 @@ static ds3_error* _parse_ds3_s3_object_to_delete_response(const ds3_client* clie
     return error;
 }
 
-static ds3_error* _parse_ds3_s3_object_to_delete_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_s3_object_to_delete_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_s3_object_to_delete_response* response = NULL;
-        error = _parse_ds3_s3_object_to_delete_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_s3_object_to_delete_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_s3_object_to_delete_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_user_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_user_response** _response) {
     ds3_user_response* response;
     xmlNodePtr child_node;
@@ -8611,25 +7642,6 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
     return error;
 }
 
-static ds3_error* _parse_ds3_named_detailed_tape_partition_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_named_detailed_tape_partition_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_named_detailed_tape_partition_response* response = NULL;
-        error = _parse_ds3_named_detailed_tape_partition_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_named_detailed_tape_partition_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_named_detailed_tape_partition_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_tape_failure_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_failure_response** _response) {
     ds3_tape_failure_response* response;
     xmlNodePtr child_node;
@@ -8663,25 +7675,6 @@ static ds3_error* _parse_ds3_tape_failure_response(const ds3_client* client, con
     return error;
 }
 
-static ds3_error* _parse_ds3_tape_failure_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_tape_failure_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_tape_failure_response* response = NULL;
-        error = _parse_ds3_tape_failure_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_tape_failure_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_tape_failure_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_type_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_type_response** _response) {
     ds3_type_response* response;
     xmlNodePtr child_node;
@@ -8713,25 +7706,6 @@ static ds3_error* _parse_ds3_type_response(const ds3_client* client, const xmlDo
     return error;
 }
 
-static ds3_error* _parse_ds3_type_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_type_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_type_response* response = NULL;
-        error = _parse_ds3_type_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_type_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_type_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_physical_placement_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_physical_placement_response** _response) {
     ds3_physical_placement_response* response;
     xmlNodePtr child_node;
@@ -9066,25 +8040,6 @@ static ds3_error* _parse_ds3_objects_response(const ds3_client* client, const xm
     return error;
 }
 
-static ds3_error* _parse_ds3_objects_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_objects_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_objects_response* response = NULL;
-        error = _parse_ds3_objects_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_objects_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_objects_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_multi_part_upload_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_multi_part_upload_response** _response) {
     ds3_multi_part_upload_response* response;
     xmlNodePtr child_node;
@@ -9122,25 +8077,6 @@ static ds3_error* _parse_ds3_multi_part_upload_response(const ds3_client* client
     return error;
 }
 
-static ds3_error* _parse_ds3_multi_part_upload_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_multi_part_upload_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_multi_part_upload_response* response = NULL;
-        error = _parse_ds3_multi_part_upload_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_multi_part_upload_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_multi_part_upload_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_contents_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_contents_response** _response) {
     ds3_contents_response* response;
     xmlNodePtr child_node;
@@ -9182,25 +8118,6 @@ static ds3_error* _parse_ds3_contents_response(const ds3_client* client, const x
     return error;
 }
 
-static ds3_error* _parse_ds3_contents_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_contents_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_contents_response* response = NULL;
-        error = _parse_ds3_contents_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_contents_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_contents_response_array;
-
-    return error;
-}
 static ds3_error* _parse_ds3_detailed_s3_object_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_detailed_s3_object_response** _response) {
     ds3_detailed_s3_object_response* response;
     xmlNodePtr child_node;
@@ -9265,25 +8182,6 @@ static ds3_error* _parse_ds3_detailed_s3_object_response(const ds3_client* clien
     return error;
 }
 
-static ds3_error* _parse_ds3_detailed_s3_object_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
-    ds3_error* error = NULL;
-    xmlNodePtr child_node;
-    GPtrArray* ds3_detailed_s3_object_response_array = g_ptr_array_new();
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        ds3_detailed_s3_object_response* response = NULL;
-        error = _parse_ds3_detailed_s3_object_response(client, doc, child_node, &response);
-        g_ptr_array_add(ds3_detailed_s3_object_response_array, response);
-
-        if (error != NULL) {
-            break;
-        }
-    }
-
-    *_response = ds3_detailed_s3_object_response_array;
-
-    return error;
-}
 
 //************ TOP LEVEL STRUCT PARSERS **************
 static ds3_error* _parse_top_level_ds3_bucket_response(const ds3_client* client, const ds3_request* request, ds3_bucket_response** _response, GByteArray* xml_blob) {
@@ -11884,7 +10782,7 @@ static ds3_error* _parse_top_level_ds3_target_response(const ds3_client* client,
             if (text == NULL) {
                 continue;
             }
-            response->default_read_preference = _match_ds3_target_read_preference(client->log, text);
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
@@ -11953,7 +10851,7 @@ static ds3_error* _parse_top_level_ds3_target_read_preference_response(const ds3
             if (text == NULL) {
                 continue;
             }
-            response->read_preference = _match_ds3_target_read_preference(client->log, text);
+            response->read_preference = _match_ds3_target_read_preference_type(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "TargetId")) {
             response->target_id = xml_get_string(doc, child_node);
@@ -14485,21 +13383,10 @@ static ds3_error* _parse_top_level_ds3_target_read_preference_list_response(cons
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "Ds3TargetReadPreference")) {
-            xmlNodePtr loop_node;
-            int num_nodes = 0;
-            GByteArray* enum_array = g_byte_array_new();
-            ds3_target_read_preference ds3_target_read_preferences;
-            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
-                if (text == NULL) {
-                    continue;
-                }
-                ds3_target_read_preferences = _match_ds3_target_read_preference(client->log, text);
-                g_byte_array_append(enum_array, (const guint8*) &ds3_target_read_preferences, sizeof(ds3_target_read_preference));
-            }
-            response->ds3_target_read_preferences = (ds3_target_read_preference*)enum_array->data;
-            response->num_ds3_target_read_preferences = enum_array->len;
-            g_byte_array_free(enum_array, FALSE);
+            ds3_target_read_preference_response* ds3_target_read_preferences_response = NULL;
+            error = _parse_ds3_target_read_preference_response(client, doc, child_node, &ds3_target_read_preferences_response);
+            response->ds3_target_read_preferences = (ds3_target_read_preference_response**)ds3_target_read_preferences_array->pdata;
+            g_ptr_array_add(ds3_target_read_preferences_array, ds3_target_read_preferences_response);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_target_read_preference_list_response [%s]\n", child_node->name, root->name);
         }
@@ -14510,7 +13397,7 @@ static ds3_error* _parse_top_level_ds3_target_read_preference_list_response(cons
 
     }
 
-    response->ds3_target_read_preferences = (ds3_target_read_preference**)ds3_target_read_preferences_array->pdata;
+    response->ds3_target_read_preferences = (ds3_target_read_preference_response**)ds3_target_read_preferences_array->pdata;
     response->num_ds3_target_read_preferences = ds3_target_read_preferences_array->len;
     g_ptr_array_free(ds3_target_read_preferences_array, FALSE);
 
@@ -22335,6 +21222,10 @@ void ds3_target_read_preference_list_response_free(ds3_target_read_preference_li
         return;
     }
 
+    size_t index;
+    for (index = 0; index < response->num_ds3_target_read_preferences; index++) {
+        ds3_target_read_preference_response_free(response->ds3_target_read_preferences[index]);
+    }
     g_free(response->ds3_target_read_preferences);
     ds3_paging_free(response->paging);
 
