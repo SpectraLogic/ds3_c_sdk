@@ -16,7 +16,7 @@ connection = Faraday.new(:url =>  "https://#{ENV["DS3_ENDPOINT"]}-mgmt.eng.sldom
 end
 
 # List all users
-response = connection.get("/users")
+response = connection.get("/api/users")
 # All GET responses are under a root "data"
 users = JSON.parse(response.body)["data"]
 
@@ -29,7 +29,7 @@ end
 # make a separate "/s3v/keys" request which is setup to return an array
 # of DS3 authid/secretkey pairs in case we ever allow more than one pair per
 # user.
-response = connection.get("/ds3/keys?user_id=#{spectra_user["id"]}")
+response = connection.get("/api/ds3/keys?user_id=#{spectra_user["id"]}")
 spectra_user_keys = JSON.parse(response.body)["data"][0]
 abort("Spectra User Keys not found.") if spectra_user.keys.nil?
 

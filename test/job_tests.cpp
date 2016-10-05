@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE( GetJobToReplicateRequestHandler_response_type_not_parsed )
     request = ds3_init_get_bucket_request(bucket_name);
     error = ds3_get_bucket_request(client, request, &response);
     ds3_request_free(request);
-    BOOST_REQUIRE(handle_error_and_return_is_null(error));
+    handle_error(error);
 
     object_list = ds3_convert_object_list((const ds3_contents_response**)response->objects, response->num_objects);
     ds3_list_bucket_result_response_free(response);
