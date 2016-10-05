@@ -93,8 +93,8 @@ char* escape_url_extended(const char* url, const char** delimiters, uint32_t num
 
 // Like escape_url but don't encode "/" or "+".
 char* escape_url_object_name(const char* url) {
-    const char *delimiters[2]={"/","+"};
-    return escape_url_extended(url, delimiters, 2);
+    const char *delimiters[1]={"/"};
+    return escape_url_extended(url, delimiters, 1);
 }
 
 // Like escape_url but don't encode "=".

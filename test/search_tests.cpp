@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "ds3.h"
 #include "test.h"
+#include <sys/stat.h>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE( get_all_objects ) {
@@ -118,31 +119,36 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     free_client(client);
 }
 
-/* Disabling from nightly test until network timeout failure is resolved */
-/*
 BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     printf("-----Testing Search Object with +-------\n");
 
     ds3_client* client = get_client();
     const char* bucket_name = "get_objects_with_plus_query_param";
     const char* plus_object = "Plus+Object";
+    const char* local_file_to_put = "resources/beowulf.txt";
+    struct stat file_info;
+    memset(&file_info, 0, sizeof(struct stat));
+    uint64_t file_size = 0;
 
     ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(bucket_error);
 
-    ds3_request* put_request = ds3_init_put_object_request(bucket_name, plus_object, 1024);
-    FILE* obj_file = fopen("resources/beowulf.txt", "r");
+    stat(local_file_to_put, &file_info);
+    file_size = file_info.st_size;
+
+    ds3_request* put_request = ds3_init_put_object_request(bucket_name, plus_object, file_size);
+    FILE* obj_file = fopen(local_file_to_put, "r");
 
     ds3_error* error = ds3_put_object_request(client, put_request, obj_file, ds3_read_from_file);
     ds3_request_free(put_request);
     fclose(obj_file);
     handle_error(error);
 
-    ds3_request* get_obj_request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* get_obj_request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(get_obj_request, bucket_name);
     ds3_request_set_name(get_obj_request, plus_object);
     ds3_s3_object_list_response* objects_response = NULL;
-    error = ds3_get_objects_spectra_s3_request(client, get_obj_request, &objects_response);
+    error = ds3_get_objects_details_spectra_s3_request(client, get_obj_request, &objects_response);
     handle_error(error);
 
     BOOST_CHECK_EQUAL(objects_response->num_s3_objects, 1);
@@ -155,33 +161,37 @@ BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-*/
 
-/* Disabling from nightly test until network timeout failure is resolved */
-/*
 BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     printf("-----Testing Search Object with special char-------\n");
 
     ds3_client* client = get_client();
     const char* bucket_name = "TestSpecialCharacterInObjectName";
     const char* special_char_object = "varsity1314/_projects/VARSITY 13-14/_versions/Varsity 13-14 (2015-10-05 1827)/_project/Trash/PCMAC HD.avb";
+    const char* local_file_to_put = "resources/beowulf.txt";
+    struct stat file_info;
+    memset(&file_info, 0, sizeof(struct stat));
+    uint64_t file_size = 0;
 
     ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(bucket_error);
 
-    ds3_request* put_request = ds3_init_put_object_request(bucket_name, special_char_object, 1024);
-    FILE* obj_file = fopen("resources/beowulf.txt", "r");
+    stat(local_file_to_put, &file_info);
+    file_size = file_info.st_size;
+
+    ds3_request* put_request = ds3_init_put_object_request(bucket_name, special_char_object, file_size);
+    FILE* obj_file = fopen(local_file_to_put, "r");
 
     ds3_error* error = ds3_put_object_request(client, put_request, obj_file, ds3_read_from_file);
     ds3_request_free(put_request);
     fclose(obj_file);
     handle_error(error);
 
-    ds3_request* get_obj_request = ds3_init_get_objects_spectra_s3_request();
+    ds3_request* get_obj_request = ds3_init_get_objects_details_spectra_s3_request();
     ds3_request_set_bucket_id(get_obj_request, bucket_name);
     ds3_request_set_name(get_obj_request, special_char_object);
     ds3_s3_object_list_response* objects_response = NULL;
-    error = ds3_get_objects_spectra_s3_request(client, get_obj_request, &objects_response);
+    error = ds3_get_objects_details_spectra_s3_request(client, get_obj_request, &objects_response);
     ds3_request_free(get_obj_request);
     handle_error(error);
 
@@ -194,7 +204,6 @@ BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-*/
 
 BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     uint64_t num_objs;
