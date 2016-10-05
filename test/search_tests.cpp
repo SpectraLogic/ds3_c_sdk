@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "ds3.h"
 #include "test.h"
+#include <sys/stat.h>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE( get_all_objects ) {
@@ -118,20 +119,25 @@ BOOST_AUTO_TEST_CASE( get_one_objects ) {
     free_client(client);
 }
 
-/* Disabling from nightly test until network timeout failure is resolved */
-/*
-BOOST_AUTO_TEST_CASE(get_objects_details_with_plus_query_param) {
+BOOST_AUTO_TEST_CASE(get_objects_with_plus_query_param) {
     printf("-----Testing Search Object with +-------\n");
 
     ds3_client* client = get_client();
     const char* bucket_name = "get_objects_details_with_plus_query_param";
     const char* plus_object = "Plus+Object";
+    const char* local_file_to_put = "resources/beowulf.txt";
+    struct stat file_info;
+    memset(&file_info, 0, sizeof(struct stat));
+    uint64_t file_size = 0;
 
     ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(bucket_error);
 
-    ds3_request* put_request = ds3_init_put_object_request(bucket_name, plus_object, 1024);
-    FILE* obj_file = fopen("resources/beowulf.txt", "r");
+    stat(local_file_to_put, &file_info);
+    file_size = file_info.st_size;
+
+    ds3_request* put_request = ds3_init_put_object_request(bucket_name, plus_object, file_size);
+    FILE* obj_file = fopen(local_file_to_put, "r");
 
     ds3_error* error = ds3_put_object_request(client, put_request, obj_file, ds3_read_from_file);
     ds3_request_free(put_request);
@@ -155,22 +161,26 @@ BOOST_AUTO_TEST_CASE(get_objects_details_with_plus_query_param) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-*/
 
-/* Disabling from nightly test until network timeout failure is resolved */
-/*
-BOOST_AUTO_TEST_CASE(get_objects_details_with_special_chars_query_param) {
+BOOST_AUTO_TEST_CASE(get_objects_with_special_chars_query_param) {
     printf("-----Testing Search Object with special char-------\n");
 
     ds3_client* client = get_client();
     const char* bucket_name = "TestSpecialCharacterInObjectName";
     const char* special_char_object = "varsity1314/_projects/VARSITY 13-14/_versions/Varsity 13-14 (2015-10-05 1827)/_project/Trash/PCMAC HD.avb";
+    const char* local_file_to_put = "resources/beowulf.txt";
+    struct stat file_info;
+    memset(&file_info, 0, sizeof(struct stat));
+    uint64_t file_size = 0;
 
     ds3_error* bucket_error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     handle_error(bucket_error);
 
-    ds3_request* put_request = ds3_init_put_object_request(bucket_name, special_char_object, 1024);
-    FILE* obj_file = fopen("resources/beowulf.txt", "r");
+    stat(local_file_to_put, &file_info);
+    file_size = file_info.st_size;
+
+    ds3_request* put_request = ds3_init_put_object_request(bucket_name, special_char_object, file_size);
+    FILE* obj_file = fopen(local_file_to_put, "r");
 
     ds3_error* error = ds3_put_object_request(client, put_request, obj_file, ds3_read_from_file);
     ds3_request_free(put_request);
@@ -194,7 +204,6 @@ BOOST_AUTO_TEST_CASE(get_objects_details_with_special_chars_query_param) {
     clear_bucket(client, bucket_name);
     free_client(client);
 }
-*/
 
 BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
     uint64_t num_objs;
