@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
     ds3_master_object_list_response* chunk_response = NULL;
     bool retry_get;
 
-    ds3_client* client = get_client_at_loglvl(DS3_TRACE);
+    ds3_client* client = get_client();
     const char* bucket_name = "test_chunk_preference_bucket";
 
     printf("-----Testing Bulk GET with chunk_preference-------\n");
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE( escape_urls ) {
     const char *delimiters[4] = {"or", "/", "@", "="};
     const char *strings_to_test[5] = {"some normal text", "/an/object/name", "bytes=0-255,300-400,550-800", "orqwerty/qwerty@qwerty=", "`1234567890-=~!@#$%^&*()_+[]\{}|;:,./<>?"}; 
     const char *object_name_results[5] = {"some%20normal%20text", "/an/object/name", "bytes%3D0-255%2C300-400%2C550-800", "orqwerty/qwerty%40qwerty%3D",
-                                        "%601234567890-%3D~%21%40%23%24%25%5E%26%2A%28%29_+%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
+                                        "%601234567890-%3D~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
     const char *range_header_results[5] = {"some%20normal%20text", "%2Fan%2Fobject%2Fname", "bytes=0-255,300-400,550-800", "orqwerty%2Fqwerty%40qwerty=",
                                          "%601234567890-=~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A,.%2F%3C%3E%3F"};
     const char *general_delimiter_results[5] = {"some%20normal%20text", "/an/object/name", "bytes=0-255%2C300-400%2C550-800", "orqwerty/qwerty@qwerty=",
