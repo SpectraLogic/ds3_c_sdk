@@ -200,9 +200,25 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
     ds3_str_free(job_id);
 }
 
+void populate_with_multi_dir_objects(const ds3_client* client, const char* bucket_name) {
+    ds3_str* job_id = populate_with_multi_dir_objects_return_job(client, bucket_name);
+    ds3_str_free(job_id);
+}
+
 ds3_bulk_object_list_response* default_object_list() {
     const char* books[5] = {"resources/beowulf.txt", "resources/sherlock_holmes.txt", "resources/tale_of_two_cities.txt", "resources/ulysses.txt", "resources/ulysses_large.txt"};
     return ds3_convert_file_list(books, 5);
+}
+
+ds3_bulk_object_list_response* multi_dirs_object_list() {
+    const char* books[6] = {
+      "resources/beowulf.txt",
+      "resources/sherlock_holmes.txt",
+      "resources/tale_of_two_cities.txt",
+      "resources/ulysses.txt",
+      "resources_2/foo.txt",
+      "resources_2/bar.txt"};
+    return ds3_convert_file_list(books, 6);
 }
 
 ds3_request* populate_bulk_return_request(const ds3_client* client, const char* bucket_name, ds3_bulk_object_list_response* obj_list) {
@@ -289,16 +305,30 @@ void populate_with_objects_from_bulk(const ds3_client* client, const char* bucke
     ds3_master_object_list_response_free(chunk_response);
 }
 
-ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
-    ds3_bulk_object_list_response* bulk_object_list_response = default_object_list();
-    ds3_request* request = populate_bulk_return_request(client, bucket_name, bulk_object_list_response);
+ds3_str* populate_with_object_list_return_job( const ds3_client* client,
+                                               const char* bucket_name,
+                                               ds3_bulk_object_list_response* object_list) {
+    ds3_request* request = populate_bulk_return_request(client, bucket_name, object_list);
     ds3_master_object_list_response* master_object_list_response = populate_bulk_return_response(client, request);
 
     ds3_str* job_id = ds3_str_dup(master_object_list_response->job_id);
     populate_with_objects_from_bulk(client, bucket_name, master_object_list_response);
 
-    ds3_bulk_object_list_response_free(bulk_object_list_response);
     ds3_master_object_list_response_free(master_object_list_response);
+    return job_id;
+}
+
+ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
+    ds3_bulk_object_list_response* obj_list = default_object_list();
+    ds3_str* job_id = populate_with_object_list_return_job(client, bucket_name, obj_list);
+    ds3_bulk_object_list_response_free(obj_list);
+    return job_id;
+}
+
+ds3_str* populate_with_multi_dir_objects_return_job(const ds3_client* client, const char* bucket_name) {
+    ds3_bulk_object_list_response* obj_list = multi_dirs_object_list();
+    ds3_str* job_id = populate_with_object_list_return_job(client, bucket_name, obj_list);
+    ds3_bulk_object_list_response_free(obj_list);
     return job_id;
 }
 
