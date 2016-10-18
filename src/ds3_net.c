@@ -586,3 +586,4 @@ ds3_error* net_process_request(const ds3_client* client,
 void net_cleanup(void) {
     curl_global_cleanup();
 }
+
