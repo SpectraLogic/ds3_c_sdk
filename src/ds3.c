@@ -14073,7 +14073,6 @@ static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_cli
     ds3_error* error = NULL;
     GPtrArray* common_prefixes_array = g_ptr_array_new();
     GPtrArray* objects_array = g_ptr_array_new();
-    GPtrArray* common_prefixes_array = g_ptr_array_new();
 
     error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListBucketResult");
     if (error != NULL) {
@@ -14127,10 +14126,6 @@ static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_cli
     response->objects = (ds3_contents_response**)objects_array->pdata;
     response->num_objects = objects_array->len;
     g_ptr_array_free(objects_array, FALSE);
-
-    response->common_prefixes = (ds3_str**)common_prefixes_array->pdata;
-    response->num_common_prefixes = common_prefixes_array->len;
-    g_ptr_array_free(common_prefixes_array, FALSE);
 
     xmlFreeDoc(doc);
 

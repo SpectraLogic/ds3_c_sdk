@@ -26,10 +26,13 @@ void clear_bucket(const ds3_client* client, const char* bucket_name);
 
 void populate_with_objects(const ds3_client* client, const char* bucket_name);
 void populate_with_multi_dir_objects(const ds3_client* client, const char* bucket_name);
+
 ds3_str* populate_with_object_list_return_job( const ds3_client* client,
                                                const char* bucket_name,
                                                ds3_bulk_object_list_response* object_list);
+
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name);
+ds3_str* populate_with_multi_dir_objects_return_job(const ds3_client* client, const char* bucket_name);
 ds3_str* populate_with_empty_objects(const ds3_client* client, const char* bucket_name);
 
 ds3_request* populate_bulk_return_request(const ds3_client* client, const char* bucket_name, ds3_bulk_object_list_response* obj_list);

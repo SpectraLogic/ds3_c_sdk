@@ -201,7 +201,7 @@ void populate_with_objects(const ds3_client* client, const char* bucket_name) {
 }
 
 void populate_with_multi_dir_objects(const ds3_client* client, const char* bucket_name) {
-    ds3_str* job_id = populate_with_object_list_return_job(client, bucket_name, multi_dirs_object_list());
+    ds3_str* job_id = populate_with_multi_dir_objects_return_job(client, bucket_name);
     ds3_str_free(job_id);
 }
 
@@ -319,7 +319,17 @@ ds3_str* populate_with_object_list_return_job( const ds3_client* client,
 }
 
 ds3_str* populate_with_objects_return_job(const ds3_client* client, const char* bucket_name) {
-    return populate_with_object_list_return_job(client, bucket_name, default_object_list());
+    ds3_bulk_object_list_response* obj_list = default_object_list();
+    ds3_str* job_id = populate_with_object_list_return_job(client, bucket_name, obj_list);
+    ds3_bulk_object_list_response_free(obj_list);
+    return job_id;
+}
+
+ds3_str* populate_with_multi_dir_objects_return_job(const ds3_client* client, const char* bucket_name) {
+    ds3_bulk_object_list_response* obj_list = multi_dirs_object_list();
+    ds3_str* job_id = populate_with_object_list_return_job(client, bucket_name, obj_list);
+    ds3_bulk_object_list_response_free(obj_list);
+    return job_id;
 }
 
 bool contains_object(ds3_list_bucket_result_response* bucket_list, const char* key) {
