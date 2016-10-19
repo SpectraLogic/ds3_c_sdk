@@ -1,4 +1,3 @@
-
 /*
  * ******************************************************************************
  *   Copyright 2014-2016 Spectra Logic Corporation. All Rights Reserved.

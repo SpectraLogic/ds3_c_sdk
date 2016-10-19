@@ -173,3 +173,54 @@ BOOST_AUTO_TEST_CASE(get_jobs){
     BOOST_CHECK(True == found_bucket2_job);
 }
 
+BOOST_AUTO_TEST_CASE( GetJobToReplicateRequestHandler_response_type_not_parsed ) {
+    printf("-----Testing GetJobToReplicateRequestHandler response type parsing-------\n");
+
+    const char* bucket_name = "bucket_test_response_type_parsing";
+    ds3_client* client = get_client();
+    ds3_request* request;
+    ds3_error* error;
+
+    ds3_list_bucket_result_response* response = NULL;
+
+    ds3_master_object_list_response* bulk_response = NULL;
+    ds3_bulk_object_list_response* object_list = NULL;
+
+    ds3_str* response_str = NULL;
+    ds3_str* job_id = NULL;
+
+    populate_with_objects(client, bucket_name);
+
+    // Get bucket contents
+    request = ds3_init_get_bucket_request(bucket_name);
+    error = ds3_get_bucket_request(client, request, &response);
+    ds3_request_free(request);
+    handle_error(error);
+
+    object_list = ds3_convert_object_list((const ds3_contents_response**)response->objects, response->num_objects);
+    ds3_list_bucket_result_response_free(response);
+
+    // Create a bulk_get job
+    request = ds3_init_get_bulk_job_spectra_s3_request(bucket_name, object_list);
+    ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(request, DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE);
+    error = ds3_get_bulk_job_spectra_s3_request(client, request, &bulk_response);
+    job_id = ds3_str_dup(bulk_response->job_id);
+    ds3_request_free(request);
+    ds3_error_free(error);
+    ds3_bulk_object_list_response_free(object_list);
+
+    // Replicate the job
+    request = ds3_init_get_job_to_replicate_spectra_s3_request(job_id->value);
+    error = ds3_get_job_to_replicate_spectra_s3_request(client, request, &response_str);
+
+    BOOST_CHECK(error == NULL);
+    BOOST_CHECK(response_str->size > 0);
+    ds3_str_free(response_str);
+    ds3_str_free(job_id);
+    ds3_error_free(error);
+    ds3_request_free(request);
+
+    ds3_master_object_list_response_free(bulk_response);
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
