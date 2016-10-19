@@ -3162,15 +3162,13 @@ ds3_request* ds3_init_eject_storage_domain_blobs_spectra_s3_request(const char* 
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_eject_storage_domain_spectra_s3_request(const char* storage_domain_id, const ds3_bulk_object_list_response* object_list) {
+ds3_request* ds3_init_eject_storage_domain_spectra_s3_request(const char* storage_domain_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "EJECT");
 
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
     }
-    request->object_list = (ds3_bulk_object_list_response*) object_list;
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_eject_tape_spectra_s3_request(const char* resource_id) {
@@ -14213,6 +14211,7 @@ static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(c
 }
 static ds3_paging* _parse_paging_headers(ds3_string_multimap* response_headers) {
     ds3_paging* response_paging = NULL;
+
     ds3_str* page_truncated_key = ds3_str_init("Page-Truncated");
     ds3_str* total_result_count_key = ds3_str_init("Total-Result-Count");
 
@@ -14245,6 +14244,7 @@ static ds3_paging* _parse_paging_headers(ds3_string_multimap* response_headers) 
 
     return response_paging;
 }
+
 
 ds3_error* ds3_abort_multi_part_upload_request(const ds3_client* client, const ds3_request* request) {
 
@@ -16242,7 +16242,6 @@ ds3_error* ds3_replicate_put_job_spectra_s3_request(const ds3_client* client, co
     ds3_error* error;
     ds3_xml_send_buff send_buff;
     GByteArray* xml_blob;
-    ds3_str* _response;
 
     int num_slashes = num_chars_in_ds3_str(request->path, '/');
     if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
@@ -18423,22 +18422,14 @@ ds3_error* ds3_eject_storage_domain_blobs_spectra_s3_request(const ds3_client* c
 }
 ds3_error* ds3_eject_storage_domain_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response) {
     ds3_error* error;
-    ds3_xml_send_buff send_buff;
     GByteArray* xml_blob;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    error = _init_request_payload(request, &send_buff, GET_PHYSICAL_PLACEMENT);
-    if (error != NULL) return error;
-
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
-
-    // Clean up the data sent to the server
-    xmlFree(send_buff.buff);
-
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
     if (error != NULL) {
         g_byte_array_free(xml_blob, TRUE);
         return error;
