@@ -22,7 +22,7 @@
 int main(void) {
 
     // The bucket the files will be stored in
-    const char* bucket_name = BUCKETNAME;
+    const char* bucket_name = BUCKETNAME; // defined in samples.h
 
     // Get a client instance which uses the environment variables to get the endpoint and credentials
     ds3_client* client;

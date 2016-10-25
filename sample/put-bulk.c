@@ -22,10 +22,10 @@
 int main(void) {
 
     // The bucket the files will be stored in
-    const char* bucket_name = BUCKETNAME;
+    const char* bucket_name = BUCKETNAME; // defined in samples.h
 
     // A list of files to bulk put
-    const char* books[4] = BOOKS;
+    const char* books[4] = BOOKS; // defined in samples.h
 
     // Get a client instance which uses the environment variables to get the endpoint and credentials
     ds3_client* client;
