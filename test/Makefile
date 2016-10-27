@@ -56,6 +56,17 @@ CMAKE_BINARY_DIR = /home/denverm/code/ds3_c_sdk/test
 #=============================================================================
 # Targets provided globally by CMake.
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+
+.PHONY : test/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -176,6 +187,33 @@ bulk_get.s: bulk_get.cpp.s
 bulk_get.cpp.s:
 	$(MAKE) -f CMakeFiles/ds3_c_test.dir/build.make CMakeFiles/ds3_c_test.dir/bulk_get.cpp.s
 .PHONY : bulk_get.cpp.s
+
+bulk_put.o: bulk_put.cpp.o
+
+.PHONY : bulk_put.o
+
+# target to build an object file
+bulk_put.cpp.o:
+	$(MAKE) -f CMakeFiles/ds3_c_test.dir/build.make CMakeFiles/ds3_c_test.dir/bulk_put.cpp.o
+.PHONY : bulk_put.cpp.o
+
+bulk_put.i: bulk_put.cpp.i
+
+.PHONY : bulk_put.i
+
+# target to preprocess a source file
+bulk_put.cpp.i:
+	$(MAKE) -f CMakeFiles/ds3_c_test.dir/build.make CMakeFiles/ds3_c_test.dir/bulk_put.cpp.i
+.PHONY : bulk_put.cpp.i
+
+bulk_put.s: bulk_put.cpp.s
+
+.PHONY : bulk_put.s
+
+# target to generate assembly for a file
+bulk_put.cpp.s:
+	$(MAKE) -f CMakeFiles/ds3_c_test.dir/build.make CMakeFiles/ds3_c_test.dir/bulk_put.cpp.s
+.PHONY : bulk_put.cpp.s
 
 checksum.o: checksum.cpp.o
 
@@ -453,6 +491,7 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
+	@echo "... test"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... ds3_c_test"
@@ -462,6 +501,9 @@ help:
 	@echo "... bulk_get.o"
 	@echo "... bulk_get.i"
 	@echo "... bulk_get.s"
+	@echo "... bulk_put.o"
+	@echo "... bulk_put.i"
+	@echo "... bulk_put.s"
 	@echo "... checksum.o"
 	@echo "... checksum.i"
 	@echo "... checksum.s"
