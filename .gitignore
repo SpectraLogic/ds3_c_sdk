@@ -20,6 +20,7 @@ Makefile.in
 .deps/
 .dirstamp
 .libs/
+*.a
 *.o
 *.l[ao]
 *~
@@ -28,3 +29,18 @@ Makefile.in
 !/cpp_sample/Makefile
 /win32/output
 /win32/ds3.zip
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+*.vcxproj*
+*.sdf
+*.sln
+*.suo
+*.opensdf
+Debug/
+*.dir/
+*.exe
+*.ilk
+*.pdb
+ds3.dll
+/win32/output/bin

@@ -1,7 +1,6 @@
 #include <glib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
@@ -44,7 +43,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     ds3_bulk_object_list_response_free(bulk_object_list);
     handle_error(error);
     if (get_physical_placement_response == NULL) {
-        BOOST_MESSAGE("The response was null without an error, which means we have no tape backend.  Skipping the test.");
+        BOOST_TEST_MESSAGE("The response was null without an error, which means we have no tape backend.  Skipping the test.");
         clear_bucket(client, bucket_name);
         free_client(client);
         return;

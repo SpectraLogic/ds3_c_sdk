@@ -6,6 +6,7 @@
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/included/unit_test.hpp>
+#include <glib.h>
 
 TempStorageIds ids;
 
@@ -169,7 +170,7 @@ void print_error(const ds3_error* error) {
         printf("ds3_error_message: %s\n", error->message->value);
       }
       if (error->error != NULL) {
-          printf("ds3_status_code: %d\n", error->error->http_error_code);
+          printf("ds3_status_code: %lu\n", (unsigned long)error->error->http_error_code);
           printf("ds3_status_message: %s\n", error->error->message->value);
           printf("ds3_error_body: %s\n", error->error->code->value);
       }
@@ -266,9 +267,10 @@ ds3_master_object_list_response* ensure_available_chunks(const ds3_client* clien
             // if this happens we need to try the request
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for 30 seconds..."); //<< chunk_response->retry_after);
             retry_get = true;
+
             //TODO parse metadata retry_after
             //sleep(chunk_response->retry_after);
-            sleep(30);
+            g_usleep(30);
             ds3_master_object_list_response_free(chunk_response);
         }
     } while(retry_get);
