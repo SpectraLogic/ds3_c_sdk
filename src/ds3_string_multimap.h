@@ -22,6 +22,17 @@
 extern "C" {
 #endif
 
+// For windows DLL symbol exports.
+#ifdef _WIN32
+#    ifdef LIBRARY_EXPORTS
+#        define LIBRARY_API __declspec(dllexport)
+#    else
+#        define LIBRARY_API __declspec(dllimport)
+#    endif
+#else
+#    define LIBRARY_API
+#endif
+
 typedef struct _ds3_string_multimap       ds3_string_multimap;
 typedef struct _ds3_string_multimap_entry ds3_string_multimap_entry;
 
