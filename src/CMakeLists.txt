@@ -15,7 +15,7 @@ endif(WIN32)
 
 add_library(ds3 SHARED
             ds3.h ds3.c
-            ds3_net.c ds3_net.h
+            ds3_net.h ds3_net.c
             ds3_request.h
             ds3_string_multimap_impl.h ds3_string_multimap_impl.c
             ds3_string_multimap.h ds3_string_multimap.c
@@ -28,8 +28,17 @@ if (WIN32)
 add_definitions(-DLIBRARY_EXPORTS -DCURL_STATICLIB -Dinline=__inline)
 SET_SOURCE_FILES_PROPERTIES(ds3.c PROPERTIES LANGUAGE CXX)
 
-include_directories(../win32/deps/install/include ../win32/deps/install/include/glib-2.0 ../win32/deps/install/lib/glib-2.0/include ../win32/compatibility_includes)
-target_link_libraries(ds3 ../win32/deps/install/lib/glib-2.0 ../win32/deps/install/lib/libxml2_a ../win32/deps/install/lib/libcurl_a ../win32/deps/install/lib/zlib_a Ws2_32)
+include_directories(
+    ../win32/deps/install/include
+    ../win32/deps/install/include/glib-2.0
+    ../win32/deps/install/lib/glib-2.0/include
+    ../win32/compatibility_includes)
+target_link_libraries(ds3
+    win32/deps/install/libcurl_a
+    win32/deps/install/libzlib_a
+    win32/deps/install/liblibxml2_a
+    win32/deps/install/libglib-2.0
+    Ws2_32)
 
 file(TO_NATIVE_PATH ${WINDOWS_VS_OUTPUT_DIR}/ds3.dll DLL_LOCATION)
 file(TO_NATIVE_PATH ${PROJECT_SOURCE_DIR}/test/bin UNIT_TEST_DIR)
