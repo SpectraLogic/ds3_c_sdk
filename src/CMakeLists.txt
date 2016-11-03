@@ -35,10 +35,10 @@ include_directories(
     ../win32/deps/install/lib/glib-2.0/include
     ../win32/compatibility_includes)
 target_link_libraries(ds3
-    ../win32/deps/install/libcurl_a
-    ../win32/deps/install/libzlib_a
-    ../win32/deps/install/liblibxml2_a
-    ../win32/deps/install/libglib-2.0
+    ../win32/deps/install/lib/libcurl_a
+    ../win32/deps/install/lib/zlib_a
+    ../win32/deps/install/lib/libxml2_a
+    ../win32/deps/install/lib/glib-2.0
     Ws2_32)
 
 file(TO_NATIVE_PATH ${WINDOWS_VS_OUTPUT_DIR}/ds3.dll DLL_LOCATION)
