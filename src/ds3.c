@@ -778,7 +778,7 @@ ds3_metadata_entry* ds3_metadata_get_entry(const ds3_metadata* _metadata, const 
         return NULL;
     }
     copy = g_new0(ds3_metadata_entry, 1);
-    metadata_copy = g_new0(ds3_str*, orig->num_values);
+    metadata_copy = g_new0(ds3_str*, (gsize)orig->num_values);
 
     for (i = 0; i < orig->num_values; i++) {
         metadata_copy[i] = ds3_str_dup(orig->values[i]);
@@ -1842,7 +1842,7 @@ static ds3_str* _build_path(const char* path_prefix, const char* bucket_name, co
     char* full_path = NULL;
 
     if (bucket_name != NULL) {
-        if (g_str_has_suffix(bucket_name, "/") == TRUE) {
+        if (g_str_has_suffix(bucket_name, "/") == (gboolean)TRUE) {
             char* chomp_bucket = g_strndup(bucket_name, strlen(bucket_name)-1);
             escaped_bucket_name = escape_url(chomp_bucket);
             g_free(chomp_bucket);
@@ -3534,7 +3534,7 @@ static ds3_error* _internal_request_dispatcher(
 
 static int num_chars_in_ds3_str(const ds3_str* str, char ch) {
     int num_matches = 0;
-    int index;
+    size_t index;
 
     for (index = 0; index < str->size; index++) {
         if (str->value[index] == '/') {
@@ -3585,7 +3585,7 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
     xmlDocPtr doc;
     ds3_bulk_object_response* obj;
     xmlNodePtr objects_node, object_node;
-    int i;
+    size_t obj_index;
 
     // Start creating the xml body to send to the server.
     doc = xmlNewDoc((xmlChar*)"1.0");
@@ -3595,8 +3595,8 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
         xmlSetProp(objects_node, (xmlChar*) "ChunkClientProcessingOrderGuarantee", (xmlChar*) _get_ds3_job_chunk_client_processing_order_guarantee_str(order));
     }
 
-    for (i = 0; i < obj_list->num_objects; i++) {
-        obj = obj_list->objects[i];
+    for (obj_index = 0; obj_index < obj_list->num_objects; obj_index++) {
+        obj = obj_list->objects[obj_index];
         g_snprintf(size_buff, sizeof(char) * LENGTH_BUFF_SIZE, "%llu", (unsigned long long int) obj->length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");

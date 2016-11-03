@@ -1,8 +1,8 @@
 if (WIN32)
 set(WINDOWS_VS_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/win32/output/bin)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR}) 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR}) 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR})
 
 foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
@@ -26,6 +26,7 @@ add_library(ds3 SHARED
 if (WIN32)
 
 add_definitions(-DLIBRARY_EXPORTS -DCURL_STATICLIB -Dinline=__inline)
+set_property(TARGET ds3 _CRT_SECURE_NO_WARNINGS)
 SET_SOURCE_FILES_PROPERTIES(ds3.c PROPERTIES LANGUAGE CXX)
 
 include_directories(
@@ -34,10 +35,10 @@ include_directories(
     ../win32/deps/install/lib/glib-2.0/include
     ../win32/compatibility_includes)
 target_link_libraries(ds3
-    win32/deps/install/libcurl_a
-    win32/deps/install/libzlib_a
-    win32/deps/install/liblibxml2_a
-    win32/deps/install/libglib-2.0
+    ../win32/deps/install/libcurl_a
+    ../win32/deps/install/libzlib_a
+    ../win32/deps/install/liblibxml2_a
+    ../win32/deps/install/libglib-2.0
     Ws2_32)
 
 file(TO_NATIVE_PATH ${WINDOWS_VS_OUTPUT_DIR}/ds3.dll DLL_LOCATION)
