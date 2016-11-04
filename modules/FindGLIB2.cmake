@@ -42,6 +42,12 @@ ELSE (GLIB2_LIBRARIES AND GLIB2_INCLUDE_DIRS )
   ENDIF ( GLIB2_MIN_VERSION )
   IF ( PKG_CONFIG_FOUND )
     IF ( GLIB2_FOUND )
+      FIND_LIBRARY( _glib2_link_DIR
+                    NAMES glib-2.0 glib
+                    PATHS ${GLIB2_LIBRARY_DIRS} )
+      IF ( _glib2_link_DIR )
+        SET ( GLIB2_LIBRARIES ${_glib2_link_DIR} )
+      ENDIF ( _glib2_link_DIR )
       SET ( GLIB2_CORE_FOUND TRUE )
     ELSE ( GLIB2_FOUND )
       SET ( GLIB2_CORE_FOUND FALSE )
