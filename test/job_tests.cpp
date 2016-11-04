@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE( GetJobToReplicateRequestHandler_response_type_not_parsed )
 
     // Replicate the job
     request = ds3_init_get_job_to_replicate_spectra_s3_request(job_id->value);
-    error = ds3_get_job_to_replicate_spectra_s3_request(client, request, &response_str);
+    error = ds3_get_job_to_replicate_spectra_s3_request(client, request, response_str);
 
     BOOST_CHECK(error == NULL);
     BOOST_CHECK(response_str->size > 0);
