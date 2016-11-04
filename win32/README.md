@@ -2,39 +2,46 @@ Overview
 --------
 
 This directory contains all of the files needed to build under Windows.
-Currently we build using Microsoft's nmake and MSVC 2012 and above.
+Currently we build using cmake and MSVC 2015 and above.
 
-Prerequesites
+Prerequisites
 -------------
 
-1. Powershell 4.0 or above 
-2. .NET Framework 4.5 or above
-
-Refer to "PowerShell DS3 Module" documentation in the DS3 Net sdk for information 
-about PowerShell installation.
+1. Boost C++ library installed to a default location on the machine
 
 
 Basic Build
 -----------
 
-To create a release package, run `/win32/package.bat`. Note that this script
-executes the Visual Studio 2012 Command Prompt environment script, so if you're
-using a different version of Visual Studio you'll have to modify the Visual
-Studio install path inside of `/win32/package.bat`.
-
-To build the client including the sample executable do the following
+To build the client library
 
 
 1. Open a new Visual Studio Command Prompt.
-2. Run the following command: `nmake -f Makefile.vc`
-3. Makefile.vc places the resulting binaries inside of `/win32/output/bin` by
-   default.
+2. Navigate to the ds3_c_sdk directory.
+3. Run the following command: `cmake -G "Visual Studio 14 2015"`
+4. Either open the resulting 'libds3.sln' in Visual Studio and build it from
+  there, or run the command 'msbuild libds3.sln' from the command prompt.
+  This should build the libds3 library, which is placed in the directory '<root of repo>/win32/output/bin'
+
+
+Unit Tests
+----------
+
+1. Open a new Visual Studio Command Prompt.
+2. Navigate to the ds3_c_sdk/test directory.
+3. Run the following command: `cmake -G "Visual Studio 14 2015"`
+4. Either open the resulting 'libds3_tests.sln' in Visual Studio and build it
+  from there, or run the command 'msbuild libds3_tests.sln' from the command
+  prompt. This should build the libds3 library, which is placed in the directory
+  '<root of repo>/tests/bin'
+  
 
 Dependencies
 ------------
 
 The SDK depends upon several open source libraries. For convenience we
-redistribute these dependencies in the `/win32/deps/install` directory.
+redistribute these dependencies in the `/win32/deps/install` directory,
+except for the Boost library headers.
 
 To re-build the dependencies, follow the following procedure:
 

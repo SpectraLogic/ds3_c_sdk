@@ -42,7 +42,7 @@ copy "$curl\builds\libcurl-vc-x64-release-static-zlib-static-ipv6-sspi-spnego-wi
 xcopy /s "$curl\builds\libcurl-vc-x64-release-static-zlib-static-ipv6-sspi-spnego-winssl\include" "$installFolder\include"
 
 # Compile and install libxml.
-$libxml2 = "build\libxml2-2.9.1"
+$libxml2 = "build\libxml2-2.9.4"
 cd "$libxml2\win32"
 cscript configure.js include="$installFolder\include" lib="$installFolder\lib" iconv=no
 nmake -f Makefile.msvc MACHINE=x64

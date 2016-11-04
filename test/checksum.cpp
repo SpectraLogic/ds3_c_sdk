@@ -1,7 +1,21 @@
+/*
+ * ******************************************************************************
+ *   Copyright 2014-2016 Spectra Logic Corporation. All Rights Reserved.
+ *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+ *   this file except in compliance with the License. A copy of the License is located at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file.
+ *   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ *   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ *   specific language governing permissions and limitations under the License.
+ * ****************************************************************************
+ */
+
 #include "checksum.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,9 +34,9 @@ unsigned long get_size_by_fd(int fd) {
 
 // Function which compares checksums of the files passed
 bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num_bytes_to_check, unsigned long offset_1, unsigned long offset_2) {
-    int file_descript_1;
-    int file_descript_2;
-    unsigned long file_size_1,file_size_2;
+    GMappedFile* file_descript_1;
+    GMappedFile* file_descript_2;
+    GError *error = NULL;
     char* file_buffer_1;
     char* file_buffer_2;
 
@@ -30,24 +44,25 @@ bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num
         printf("Must specify two files to be compared\n");
         exit(-1);
     }
-    printf("Orignal file:\t%s\n", filename_1);
+    printf("Original file:\t%s\n", filename_1);
     printf("File to be checked:\t%s\n", filename_2);
 
-    file_descript_1 = open(filename_1, O_RDONLY);
-    if(file_descript_1 < 0) exit(-1);
+    file_descript_1 = g_mapped_file_new (filename_1, FALSE, &error);
+    if(error!=NULL) { printf("encountered glib error: code %i, %s\n", error->code, error->message); exit(-1); }
 
-    file_descript_2 = open(filename_2, O_RDONLY);
-    if(file_descript_2 < 0) exit(-1);
+    file_descript_2 = g_mapped_file_new (filename_2, FALSE, &error);
+    if(error!=NULL) { printf("encountered glib error: code %i, %s\n", error->code, error->message); exit(-1); }
 
-    file_size_1 = get_size_by_fd(file_descript_1);
-    file_size_2 = get_size_by_fd(file_descript_2);
+    file_buffer_1 = g_mapped_file_get_contents(file_descript_1);
+    file_buffer_2 = g_mapped_file_get_contents(file_descript_2);
+    if(num_bytes_to_check == 0) {
+        num_bytes_to_check = MIN(g_mapped_file_get_length (file_descript_1), g_mapped_file_get_length (file_descript_1));
+    }
 
-    file_buffer_1 = static_cast<char*>(mmap(0, file_size_1, PROT_READ, MAP_SHARED, file_descript_1, 0));
     result_1 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_1+offset_1, num_bytes_to_check);
     printf("%s(checksum):",filename_1);
     printf("%s\n",result_1);
 
-    file_buffer_2 = static_cast<char*>(mmap(0, file_size_2, PROT_READ, MAP_SHARED, file_descript_2, 0));
     result_2 = g_compute_checksum_for_string(G_CHECKSUM_MD5,file_buffer_2+offset_2, num_bytes_to_check);
     printf("%s(checksum):",filename_2);
     printf("%s\n",result_2);
@@ -62,6 +77,8 @@ bool compare_hash_extended(char* filename_1, char* filename_2, unsigned long num
     g_free(result_1);
     g_free(result_2);
 
+    g_mapped_file_unref(file_descript_1);
+    g_mapped_file_unref(file_descript_2);
 
     return passed;
 }

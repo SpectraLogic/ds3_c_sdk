@@ -1,11 +1,26 @@
+/*
+ * ******************************************************************************
+ *   Copyright 2014-2016 Spectra Logic Corporation. All Rights Reserved.
+ *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+ *   this file except in compliance with the License. A copy of the License is located at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file.
+ *   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ *   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ *   specific language governing permissions and limitations under the License.
+ * ****************************************************************************
+ */
+
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include "ds3.h"
 #include "ds3_net.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 #include "checksum.h"
+#include <glib.h>
 
 static const unsigned char MAX_UNIT_TEST_FILEPATH_LENGTH = 64;
 
@@ -46,7 +61,7 @@ uint32_t get_sum_of_chunks(uint32_t num_files, checksum_result* results) {
     return result;
 }
 
-uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_name, checksum_result* results) {
+uint64_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_name, checksum_result* results) {
     int64_t file_index = -1;
     for (uint64_t current_file_index = 0; current_file_index < *max_file_index; current_file_index++) {
         if (g_strcmp0(current_obj_name->value, results[current_file_index].original_name) == 0) {
@@ -67,7 +82,7 @@ uint32_t getFileIndexForChunk(uint64_t* max_file_index, ds3_str* current_obj_nam
         memcpy(results[file_index].tmp_name+LENGTH_OF_FOLDER_PREFIX+LENGTH_OF_TEMP_PREFIX-2, current_obj_name->value+LENGTH_OF_FOLDER_PREFIX-1, current_obj_name->size-LENGTH_OF_FOLDER_PREFIX+1);
     }
     results[file_index].num_chunks++;
-    return file_index;
+    return (uint64_t)file_index;
 }
 
 void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_master_object_list_response* chunk_response, checksum_result* results) {
@@ -91,7 +106,7 @@ void checkChunkResponse(ds3_client* client, uint32_t num_files, ds3_master_objec
             ds3_request_set_offset(request, offset);
 
             w_file = fopen(results[file_index].tmp_name, "a+");
-            fseek(w_file, current_obj->offset, SEEK_SET);
+            fseek(w_file, (long)current_obj->offset, SEEK_SET);
 
             error = ds3_get_object_request(client, request, w_file, ds3_write_to_file);
             ds3_request_free(request);
@@ -130,7 +145,7 @@ void checkChunkResponsePartials(ds3_client* client, uint32_t num_files, ds3_mast
             ds3_request_set_byte_range(request, segment_size*3, segment_size*4-1);
 
             w_file = fopen(results[file_index].tmp_name, "a+");
-            fseek(w_file, current_obj->offset, SEEK_SET);
+            fseek(w_file, (long)current_obj->offset, SEEK_SET);
 
             error = ds3_get_object_request(client, request, w_file, ds3_write_to_file);
             ds3_request_free(request);
@@ -303,9 +318,10 @@ BOOST_AUTO_TEST_CASE( chunk_preference ) {
             // if this happens we need to try the request
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for 30 seconds..."); //<< chunk_response->retry_after);
             retry_get = true;
+
             //TODO parse metadata retry_after
             //sleep(chunk_response->retry_after);
-            sleep(30);
+            g_usleep(30);
             ds3_master_object_list_response_free(chunk_response);
         }
     } while(retry_get);
@@ -398,28 +414,37 @@ BOOST_AUTO_TEST_CASE( partial_get ) {
 
 BOOST_AUTO_TEST_CASE( escape_urls ) {
     const char *delimiters[4] = {"or", "/", "@", "="};
-    const char *strings_to_test[5] = {"some normal text", "/an/object/name", "bytes=0-255,300-400,550-800", "orqwerty/qwerty@qwerty=", "`1234567890-=~!@#$%^&*()_+[]\{}|;:,./<>?"}; 
+    const char *strings_to_test[5] = {"some normal text", "/an/object/name", "bytes=0-255,300-400,550-800", "orqwerty/qwerty@qwerty=", "`1234567890-=~!@#$%^&*()_+[]\\{}|;:,./<>?"};
     const char *object_name_results[5] = {"some%20normal%20text", "/an/object/name", "bytes%3D0-255%2C300-400%2C550-800", "orqwerty/qwerty%40qwerty%3D",
-                                        "%601234567890-%3D~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
+                                        "%601234567890-%3D~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%5C%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
     const char *range_header_results[5] = {"some%20normal%20text", "%2Fan%2Fobject%2Fname", "bytes=0-255,300-400,550-800", "orqwerty%2Fqwerty%40qwerty=",
-                                         "%601234567890-=~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A,.%2F%3C%3E%3F"};
+                                         "%601234567890-=~%21%40%23%24%25%5E%26%2A%28%29_%2B%5B%5D%5C%7B%7D%7C%3B%3A,.%2F%3C%3E%3F"};
     const char *general_delimiter_results[5] = {"some%20normal%20text", "/an/object/name", "bytes=0-255%2C300-400%2C550-800", "orqwerty/qwerty@qwerty=",
-                                              "%601234567890-=~%21@%23%24%25%5E%26%2A%28%29_%2B%5B%5D%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
+                                              "%601234567890-=~%21@%23%24%25%5E%26%2A%28%29_%2B%5B%5D%5C%7B%7D%7C%3B%3A%2C./%3C%3E%3F"};
 
     printf("-----Testing escape url helpers-------\n");
 
     for (int i = 0; i < 5; i++) {
         char* escaped_url = escape_url_object_name(strings_to_test[i]);
+	if(strcmp(escaped_url, object_name_results[i]) != 0){
+	  printf("%s != %s\n", escaped_url, object_name_results[i]);
+	}
         BOOST_CHECK(strcmp(escaped_url, object_name_results[i]) == 0);
         free(escaped_url);
     }
     for (int i = 0; i < 5; i++) {
         char* escaped_url = escape_url_range_header(strings_to_test[i]);
+	if(strcmp(escaped_url, range_header_results[i]) != 0){
+	  printf("%s != %s\n", escaped_url, range_header_results[i]);
+	}
         BOOST_CHECK(strcmp(escaped_url, range_header_results[i]) == 0);
         free(escaped_url);
     }
     for (int i = 0; i < 5; i++) {
         char* escaped_url = escape_url_extended(strings_to_test[i], delimiters, 4);
+	if(strcmp(escaped_url, general_delimiter_results[i]) != 0){
+	  printf("%s != %s\n", escaped_url, general_delimiter_results[i]);
+	}
         BOOST_CHECK(strcmp(escaped_url, general_delimiter_results[i]) == 0);
         free(escaped_url);
     }

@@ -72,7 +72,7 @@ char* escape_url(const char* url) {
     return escaped_url;
 }
 
-// Like escape_url but don't encode "/".
+// Like escape_url but don't encode the given delimiters.
 char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters) {
     gchar** split = g_strsplit(url, delimiters[num_delimiters-1], 0);
     gchar** ptr;
@@ -260,7 +260,7 @@ static char* _canonicalize_amz_headers(GHashTable* headers) {
     GPtrArray *signing_strings = g_ptr_array_new_with_free_func(g_free);  // stores char*
     GString* header_signing_value;
     char* signing_value;
-    int i;
+    unsigned int i;
 
     while(key != NULL) {
         if(g_str_has_prefix((char*)key->data, "x-amz")){

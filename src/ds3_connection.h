@@ -20,6 +20,17 @@
 extern "C" {
 #endif
 
+// For windows DLL symbol exports.
+#ifdef _WIN32
+#    ifdef LIBRARY_EXPORTS
+#        define LIBRARY_API __declspec(dllexport)
+#    else
+#        define LIBRARY_API __declspec(dllimport)
+#    endif
+#else
+#    define LIBRARY_API
+#endif
+
 #include <curl/curl.h>
 #include <glib.h>
 
@@ -39,11 +50,11 @@ struct _ds3_connection_pool{
     ds3_condition available_connections;
 };
 
-ds3_connection_pool* ds3_connection_pool_init(void);
-void ds3_connection_pool_clear(ds3_connection_pool* pool);
+LIBRARY_API ds3_connection_pool* ds3_connection_pool_init(void);
+LIBRARY_API void ds3_connection_pool_clear(ds3_connection_pool* pool);
 
-ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool);
-void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* handle);
+LIBRARY_API ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool);
+LIBRARY_API void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* handle);
 
 #ifdef __cplusplus
 }

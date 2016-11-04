@@ -1,7 +1,21 @@
+/*
+ * ******************************************************************************
+ *   Copyright 2014-2016 Spectra Logic Corporation. All Rights Reserved.
+ *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+ *   this file except in compliance with the License. A copy of the License is located at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file.
+ *   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ *   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ *   specific language governing permissions and limitations under the License.
+ * ****************************************************************************
+ */
+
 #include <glib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
@@ -44,7 +58,7 @@ BOOST_AUTO_TEST_CASE( get_physical_placment ){
     ds3_bulk_object_list_response_free(bulk_object_list);
     handle_error(error);
     if (get_physical_placement_response == NULL) {
-        BOOST_MESSAGE("The response was null without an error, which means we have no tape backend.  Skipping the test.");
+        BOOST_TEST_MESSAGE("The response was null without an error, which means we have no tape backend.  Skipping the test.");
         clear_bucket(client, bucket_name);
         free_client(client);
         return;

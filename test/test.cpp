@@ -1,3 +1,18 @@
+/*
+ * ******************************************************************************
+ *   Copyright 2014-2016 Spectra Logic Corporation. All Rights Reserved.
+ *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+ *   this file except in compliance with the License. A copy of the License is located at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file.
+ *   This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ *   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ *   specific language governing permissions and limitations under the License.
+ * ****************************************************************************
+ */
+
 // The BOOST_TEST_MODULE should be set only in this file
 // so that a main function is only generated once
 #define BOOST_TEST_MODULE DS3_Tests
@@ -6,6 +21,7 @@
 #include "ds3.h"
 #include "test.h"
 #include <boost/test/included/unit_test.hpp>
+#include <glib.h>
 
 TempStorageIds ids;
 
@@ -169,7 +185,7 @@ void print_error(const ds3_error* error) {
         printf("ds3_error_message: %s\n", error->message->value);
       }
       if (error->error != NULL) {
-          printf("ds3_status_code: %d\n", error->error->http_error_code);
+          printf("ds3_status_code: %lu\n", (unsigned long)error->error->http_error_code);
           printf("ds3_status_message: %s\n", error->error->message->value);
           printf("ds3_error_body: %s\n", error->error->code->value);
       }
@@ -266,9 +282,10 @@ ds3_master_object_list_response* ensure_available_chunks(const ds3_client* clien
             // if this happens we need to try the request
             BOOST_TEST_MESSAGE( "Hit retry, sleeping for 30 seconds..."); //<< chunk_response->retry_after);
             retry_get = true;
+
             //TODO parse metadata retry_after
             //sleep(chunk_response->retry_after);
-            sleep(30);
+            g_usleep(30);
             ds3_master_object_list_response_free(chunk_response);
         }
     } while(retry_get);
