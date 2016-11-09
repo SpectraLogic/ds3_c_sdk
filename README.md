@@ -46,15 +46,12 @@ For Unix/Linux we distribute the SDK as source code. The release tarballs
 contain a simple build script that should work on most Unix/Linux systems.  The
 build system is currently autotools.  
 
-To install autotools on Ubuntu use apt-get and install the following:
+To install cmake on Ubuntu use apt-get and install the following:
 
-    $ sudo apt-get install build-essential
-    $ sudo apt-get install autoconf
-    $ sudo apt-get install libtool
+    $ sudo apt-get install cmake
     
-To install autotools on CentOS use yum and install the following:
-    $ sudo yum install autoconf
-    $ sudo yum install libtool
+To install cmake on CentOS use yum and install the following:
+    $ sudo yum install cmake
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
@@ -96,8 +93,7 @@ terminal window.
     $ cd directory/containing/release/tarball
     $ tar zxf ds3_c_sdk-{version}.tgz
     $ cd ds3_c_sdk-{version}
-    $ autoreconf --install
-    $ ./configure
+    $ cmake .
     $ make
     $ su
     # make install
@@ -113,21 +109,16 @@ The `make install` command installs the following files on your system:
     {prefix}/lib/libds3.so.0.0.0
     {prefix}/include/ds3.h
 
-The `./configure` command sets `{prefix}` to `/usr/local` by default. You can
-change this by running `./configure --prefix=/your/desired/prefix` instead of
-`./configure`.
-
 GIT Clone
 ---------
 
 To build the SDK from a git clone you must have a relatively recent version of
 GNU autoutils installed. While the release tarball does contain the build
-scripts that autoutils generates, the git repository does not.
+scripts that cmake generates, the git repository does not.
 
-Assuming you have autotools installed, you can execute `autoreconf --install`
-and then follow the same instructions as the tarball release.
+Assuming you have cmake installed, you can follow the same instructions as the tarball release.
 
-Usage
+pkg-config Usage
 -----
 
 The SDK provides a pkg-config definition, so you can determine the proper
