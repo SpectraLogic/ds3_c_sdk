@@ -68,6 +68,7 @@ ELSE (GLIB2_LIBRARIES AND GLIB2_INCLUDE_DIRS )
       /sw/lib/
       /usr/lib64
       /usr/lib
+      /usr/lib/x86_64-linux-gnu
       /usr/local/include
       /usr/local/lib
       ${CMAKE_LIBRARY_PATH}
