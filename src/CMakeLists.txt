@@ -66,7 +66,16 @@ if (GLIB2_FOUND)
   target_link_libraries (ds3 ${GLIB2_LIBRARIES})
 endif(GLIB2_FOUND)
 
-install(FILES "ds3.h" "ds3_utils.h" "ds3_net.h" "ds3_request.h" "ds3_string_multimap_impl.h" "ds3_string_multimap.h" "ds3_string.h" "ds3_connection.h"
-        DESTINATION "/usr/local/include")
+install(FILES
+          "ds3.h"
+          "ds3_connection.h"
+          "ds3_net.h"
+          "ds3_request.h"
+          "ds3_string.h"
+          "ds3_string_multimap.h"
+          "ds3_string_multimap_impl.h"
+          "ds3_utils.h"
+        DESTINATION
+          "/usr/local/include")
 install(TARGETS ds3 DESTINATION lib)
 endif(WIN32)

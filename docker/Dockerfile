@@ -1,30 +1,20 @@
 FROM ubuntu:latest
 
-RUN apt-get update
-
-RUN apt-get install -y vim
-
-RUN apt-get install -y build-essential
-
-RUN apt-get install -y libxml2-dev
-
-RUN apt-get install -y libcurl4-openssl-dev
-
-RUN apt-get install -y libglib2.0-dev
-
-RUN apt-get install -y autoconf
-
-RUN apt-get install -y git
-
-RUN apt-get install -y cmake
-
-RUN apt-get install -y libtool
-
-RUN apt-get install -y curl
-
-RUN apt-get install -y libboost-test-dev
-
-RUN apt-get install -y valgrind
+# Combine all apt-get install commands or Docker will attempt to use cache
+RUN apt-get update && apt-get install -y \
+        autoconf \
+        build-essential \
+        cmake \
+        curl \
+        git \
+        libboost-test-dev \
+        libcurl4-openssl-dev \
+        libglib2.0-dev \
+        libtool \
+        libxml2-dev \
+        pkg-config \
+        valgrind \
+        vim
 
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 

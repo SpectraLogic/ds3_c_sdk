@@ -17,11 +17,28 @@ else
   git clone ${GIT_REPO}
 fi
 
-echo "cd ds3_c_sdk/test"
-cd ds3_c_sdk/test
+echo "cd ds3_c_sdk"
+cd ds3_c_sdk
 
-echo "./build_local.sh"
-./build_local.sh
+echo "cmake ."
+cmake .
 
-echo "make mem"
-make mem
+echo "make"
+make
+
+echo "make install"
+make install
+ldconfig
+
+echo "cd test"
+cd test
+
+echo "cmake ."
+cmake .
+
+echo "make"
+make
+echo "make test"
+make test
+
+cat Testing/Temporary/LastTest.log
