@@ -133,6 +133,8 @@ static char* _get_ds3_tape_state_str(ds3_tape_state input) {
         return "LOST";
     } else if (input == DS3_TAPE_STATE_BAD) {
         return "BAD";
+    } else if (input == DS3_TAPE_STATE_CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION) {
+        return "CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION";
     } else if (input == DS3_TAPE_STATE_SERIAL_NUMBER_MISMATCH) {
         return "SERIAL_NUMBER_MISMATCH";
     } else if (input == DS3_TAPE_STATE_BAR_CODE_MISSING) {
@@ -208,6 +210,24 @@ static char* _get_ds3_import_conflict_resolution_mode_str(ds3_import_conflict_re
     }
 
 }
+static char* _get_ds3_priority_str(ds3_priority input) {
+    if (input == DS3_PRIORITY_CRITICAL) {
+        return "CRITICAL";
+    } else if (input == DS3_PRIORITY_URGENT) {
+        return "URGENT";
+    } else if (input == DS3_PRIORITY_HIGH) {
+        return "HIGH";
+    } else if (input == DS3_PRIORITY_NORMAL) {
+        return "NORMAL";
+    } else if (input == DS3_PRIORITY_LOW) {
+        return "LOW";
+    } else if (input == DS3_PRIORITY_BACKGROUND) {
+        return "BACKGROUND";
+    } else {
+        return "";
+    }
+
+}
 static char* _get_ds3_unavailable_media_usage_policy_str(ds3_unavailable_media_usage_policy input) {
     if (input == DS3_UNAVAILABLE_MEDIA_USAGE_POLICY_ALLOW) {
         return "ALLOW";
@@ -253,24 +273,6 @@ static char* _get_ds3_checksum_type_str(ds3_checksum_type input) {
         return "SHA_256";
     } else if (input == DS3_CHECKSUM_TYPE_SHA_512) {
         return "SHA_512";
-    } else {
-        return "";
-    }
-
-}
-static char* _get_ds3_priority_str(ds3_priority input) {
-    if (input == DS3_PRIORITY_CRITICAL) {
-        return "CRITICAL";
-    } else if (input == DS3_PRIORITY_URGENT) {
-        return "URGENT";
-    } else if (input == DS3_PRIORITY_HIGH) {
-        return "HIGH";
-    } else if (input == DS3_PRIORITY_NORMAL) {
-        return "NORMAL";
-    } else if (input == DS3_PRIORITY_LOW) {
-        return "LOW";
-    } else if (input == DS3_PRIORITY_BACKGROUND) {
-        return "BACKGROUND";
     } else {
         return "";
     }
@@ -485,8 +487,8 @@ static char* _get_ds3_system_failure_type_str(ds3_system_failure_type input) {
         return "RECONCILE_TAPE_ENVIRONMENT_FAILED";
     } else if (input == DS3_SYSTEM_FAILURE_TYPE_RECONCILE_POOL_ENVIRONMENT_FAILED) {
         return "RECONCILE_POOL_ENVIRONMENT_FAILED";
-    } else if (input == DS3_SYSTEM_FAILURE_TYPE_SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION) {
-        return "SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION";
+    } else if (input == DS3_SYSTEM_FAILURE_TYPE_CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION) {
+        return "CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION";
     } else {
         return "";
     }
@@ -1334,6 +1336,14 @@ void ds3_request_set_default_put_job_priority_ds3_priority(const ds3_request* re
 }
 void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value) {
     _set_query_param(request, "default_read_preference", (const char*)_get_ds3_target_read_preference_type_str(value));
+
+}
+void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "default_verify_data_after_import", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "default_verify_data_prior_to_import", value);
 
 }
 void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -3349,6 +3359,12 @@ ds3_request* ds3_init_force_target_environment_refresh_spectra_s3_request(void) 
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/target_environment/", NULL, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_get_blobs_on_ds3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/ds3_target/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
+
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_get_ds3_target_data_policies_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/ds3_target_data_policies/", resource_id, NULL));
     return (ds3_request*) request;
@@ -3889,8 +3905,8 @@ static ds3_system_failure_type _match_ds3_system_failure_type(const ds3_log* log
         return DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "RECONCILE_POOL_ENVIRONMENT_FAILED") == 0) {
         return DS3_SYSTEM_FAILURE_TYPE_RECONCILE_POOL_ENVIRONMENT_FAILED;
-    } else if (xmlStrcmp(text, (const xmlChar*) "SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION") == 0) {
-        return DS3_SYSTEM_FAILURE_TYPE_SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION") == 0) {
+        return DS3_SYSTEM_FAILURE_TYPE_CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED for safety.", text);
         return DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED;
@@ -4199,6 +4215,8 @@ static ds3_tape_state _match_ds3_tape_state(const ds3_log* log, const xmlChar* t
         return DS3_TAPE_STATE_LOST;
     } else if (xmlStrcmp(text, (const xmlChar*) "BAD") == 0) {
         return DS3_TAPE_STATE_BAD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION") == 0) {
+        return DS3_TAPE_STATE_CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION;
     } else if (xmlStrcmp(text, (const xmlChar*) "SERIAL_NUMBER_MISMATCH") == 0) {
         return DS3_TAPE_STATE_SERIAL_NUMBER_MISMATCH;
     } else if (xmlStrcmp(text, (const xmlChar*) "BAR_CODE_MISSING") == 0) {
@@ -4477,6 +4495,8 @@ static ds3_error* _parse_ds3_bucket_response(const ds3_client* client, const xml
             response->creation_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DataPolicyId")) {
             response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Empty")) {
+            response->empty = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastPreferredChunkSizeInBytes")) {
@@ -5056,6 +5076,8 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             xmlFree(text);
         } else if (element_equal(child_node, "Rechunked")) {
             response->rechunked = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Replicating")) {
+            response->replicating = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "RequestType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -5065,6 +5087,8 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             xmlFree(text);
         } else if (element_equal(child_node, "Truncated")) {
             response->truncated = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "TruncatedDueToTimeout")) {
+            response->truncated_due_to_timeout = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UserId")) {
             response->user_id = xml_get_string(doc, child_node);
         } else {
@@ -8200,6 +8224,8 @@ static ds3_error* _parse_top_level_ds3_bucket_response(const ds3_client* client,
             response->creation_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DataPolicyId")) {
             response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Empty")) {
+            response->empty = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastPreferredChunkSizeInBytes")) {
@@ -8483,6 +8509,15 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             }
             response->default_import_conflict_resolution_mode = _match_ds3_import_conflict_resolution_mode(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyDataAfterImport")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_verify_data_after_import = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyDataPriorToImport")) {
+            response->default_verify_data_prior_to_import = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "InstanceId")) {
@@ -8927,6 +8962,8 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             xmlFree(text);
         } else if (element_equal(child_node, "Rechunked")) {
             response->rechunked = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Replicating")) {
+            response->replicating = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "RequestType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8936,6 +8973,8 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             xmlFree(text);
         } else if (element_equal(child_node, "Truncated")) {
             response->truncated = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "TruncatedDueToTimeout")) {
+            response->truncated_due_to_timeout = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UserId")) {
             response->user_id = xml_get_string(doc, child_node);
         } else {
@@ -19075,6 +19114,26 @@ ds3_error* ds3_force_target_environment_refresh_spectra_s3_request(const ds3_cli
     }
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_blobs_on_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_get_ds3_target_data_policies_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_list_response** response) {
     ds3_error* error;

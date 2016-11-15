@@ -195,7 +195,7 @@ typedef enum {
 typedef enum {
     DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED,
     DS3_SYSTEM_FAILURE_TYPE_RECONCILE_POOL_ENVIRONMENT_FAILED,
-    DS3_SYSTEM_FAILURE_TYPE_SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION
+    DS3_SYSTEM_FAILURE_TYPE_CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION
 }ds3_system_failure_type;
 typedef enum {
     DS3_UNAVAILABLE_MEDIA_USAGE_POLICY_ALLOW,
@@ -338,6 +338,7 @@ typedef enum {
     DS3_TAPE_STATE_INCOMPATIBLE,
     DS3_TAPE_STATE_LOST,
     DS3_TAPE_STATE_BAD,
+    DS3_TAPE_STATE_CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION,
     DS3_TAPE_STATE_SERIAL_NUMBER_MISMATCH,
     DS3_TAPE_STATE_BAR_CODE_MISSING,
     DS3_TAPE_STATE_FORMAT_PENDING,
@@ -574,6 +575,7 @@ typedef struct {
 typedef struct {
     ds3_str* creation_date;
     ds3_str* data_policy_id;
+    ds3_bool empty;
     ds3_str* id;
     uint64_t last_preferred_chunk_size_in_bytes;
     uint64_t logical_used_capacity;
@@ -629,6 +631,8 @@ typedef struct {
     int auto_activate_timeout_in_mins;
     ds3_auto_inspect_mode auto_inspect;
     ds3_import_conflict_resolution_mode default_import_conflict_resolution_mode;
+    ds3_priority default_verify_data_after_import;
+    ds3_bool default_verify_data_prior_to_import;
     ds3_str* id;
     ds3_str* instance_id;
     ds3_str* last_heartbeat;
@@ -711,8 +715,10 @@ typedef struct {
     uint64_t original_size_in_bytes;
     ds3_priority priority;
     ds3_str* rechunked;
+    ds3_bool replicating;
     ds3_job_request_type request_type;
     ds3_bool truncated;
+    ds3_bool truncated_due_to_timeout;
     ds3_str* user_id;
 }ds3_active_job_response;
 typedef struct {
@@ -2050,6 +2056,8 @@ LIBRARY_API void ds3_request_set_default_get_job_priority_ds3_priority(const ds3
 LIBRARY_API void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value);
 LIBRARY_API void ds3_request_set_default_put_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value);
+LIBRARY_API void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value);
+LIBRARY_API void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_delimiter(const ds3_request* request, const char* value);
 LIBRARY_API void ds3_request_set_density_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value);
@@ -2441,6 +2449,8 @@ LIBRARY_API ds3_error* ds3_get_data_planner_blob_store_tasks_spectra_s3_request(
  *   void ds3_request_set_auto_activate_timeout_in_mins(const ds3_request* request, const int value)
  *   void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* request, const ds3_auto_inspect_mode value)
  *   void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
+ *   void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
+ *   void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* request, const int value)
  *   void ds3_request_set_unavailable_media_policy_ds3_unavailable_media_usage_policy(const ds3_request* request, const ds3_unavailable_media_usage_policy value)
  *   void ds3_request_set_unavailable_pool_max_job_retry_in_mins(const ds3_request* request, const int value)
@@ -3948,6 +3958,8 @@ LIBRARY_API ds3_request* ds3_init_delete_ds3_target_spectra_s3_request(const cha
 LIBRARY_API ds3_error* ds3_delete_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_force_target_environment_refresh_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_force_target_environment_refresh_spectra_s3_request(const ds3_client* client, const ds3_request* request);
+LIBRARY_API ds3_request* ds3_init_get_blobs_on_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_error* ds3_get_blobs_on_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
 LIBRARY_API ds3_request* ds3_init_get_ds3_target_data_policies_spectra_s3_request(const char* resource_id);
 LIBRARY_API ds3_error* ds3_get_ds3_target_data_policies_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_list_response** response);
 /**
