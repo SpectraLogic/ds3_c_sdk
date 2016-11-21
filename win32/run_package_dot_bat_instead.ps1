@@ -1,4 +1,4 @@
-# Build the applciation.
+# Build the application.
 nmake -f Makefile.vc ds3\bin\ds3.dll ds3\include\ds3.h OUTPUT=ds3
 
 # Create a zip file with the application contents.

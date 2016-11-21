@@ -39,8 +39,17 @@ put-bulk: put-bulk.o
 put-bulk.o: ../install/lib/pkgconfig/libds3.pc
 	$(CC) -c put-bulk.c $(CFLAGS)
 
+run-get-object: get-object
+	LD_LIBRARY_PATH=../install/lib ./get-object
+
+get-object: get-object.o
+	$(CC) $< $(CFLAGS) $(LIBS) -o $@
+
+get-object.o: ../install/lib/pkgconfig/libds3.pc
+	$(CC) $(CFLAGS) -c get-object.c
+
 ../install/lib/pkgconfig/libds3.pc:
 	$(error SDK not built. Please run make deps)
 
 clean:
-	rm -f *.o get-service get-bucket put-bulk
+	rm -f *.o get-service get-bucket put-bulk get-object

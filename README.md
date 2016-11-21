@@ -1,7 +1,9 @@
-DS3 C SDK
-=========
+Spectra S3 C SDK
+================
 
-This project contains a C library for using the DS3 Deep Storage REST interface.
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/SpectraLogic/ds3_c_sdk/blob/master/LICENSE.md)
+
+This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 Contact Us
 ==========
@@ -12,7 +14,7 @@ Windows
 =======
 
 For Windows we release a binary version of the SDK for your convenience. See
-[win32/README.dm](win32/README.md) for more information about building from
+[win32/README.md](win32/README.md) for more information about building from
 source in Windows.
 
 Release Zip
@@ -41,17 +43,50 @@ Unix/Linux
 ==========
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
-contain a simple build script that should work on most Unix/Linux systems.
+contain a simple build script that should work on most Unix/Linux systems.  The
+build system is currently autotools.  
+
+To install autotools on Ubuntu use apt-get and install the following:
+
+    $ sudo apt-get install build-essential
+    $ sudo apt-get install autoconf
+    $ sudo apt-get install libtool
+    
+To install autotools on CentOS use yum and install the following:
+    $ sudo yum install autoconf
+    $ sudo yum install libtool
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
-example, Linux systems often provide lib\*-dev or lib\*-devel packages. The DS3
+example, Linux systems often provide lib\*-dev or lib\*-devel packages. The Spectra S3
 dependencies are:
 
 * libxml2
 * libcurl
 * libglib-2.0
 
+On Ubuntu you can install them with apt-get:
+
+    $ sudo apt-get install libxml2-dev
+    $ sudo apt-get install libcurl4-openssl-dev
+    $ sudo apt-get install libglib2.0-dev 
+    
+On CentOS you can install them with yum:
+
+    $ sudo yum install libxml2-devel
+    $ sudo yum install libcurl-devel
+    $ sudo yum install glib2-devel 
+    
+For testing you will need the boost unit test library as well.  
+
+On Ubuntu this can be installed with:
+
+    $ sudo apt-get install libboost-test-dev
+
+On CentOS this can be installed with:
+
+    $ sudo yum install boost-test
+    
 Release Tarball
 ---------------
 
@@ -61,6 +96,7 @@ terminal window.
     $ cd directory/containing/release/tarball
     $ tar zxf ds3_c_sdk-{version}.tgz
     $ cd ds3_c_sdk-{version}
+    $ autoreconf --install
     $ ./configure
     $ make
     $ su
@@ -113,91 +149,73 @@ To build the sample, use the following commands:
     $ cd sample
     $ make deps # Builds the SDK and installs it into directory/containing/source/tree**/install**
     $ make
+	
+To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set in environment variables to match the target device. For the simulator, see [Installation Instructions] (https://developer.spectralogic.com/sim-install/) 
 
-To run it, just use `make run`.
+    $ make run-put-bulk     # create "books" bucket and put files into it
+    $ make run-get-service  # list all buckets
+    $ make run-get-bucket   # list contents of "books" bucket
+    $ make run-get-object   # get first book and write to temp file
+
+Documentation
+-------------
+For the list of API calls in the C SDK please see the documentation [here](http://spectralogic.github.io/ds3_c_sdk/index.html)
 
 Code Samples
 ------------
 
-The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from DS3:
+The following section contains several examples of using the DS3 C SDK.  The first example shows how to get a list of all the buckets back from Spectra S3:
 
 ```c
-
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 // "ds3.h" is the only header that needs to be included to use the DS3 API.
 #include "ds3.h"
 
-int main (int args, char * argv[]) {
-    // Allocate space for the response pointer.
-    // The DS3 client library will end up consuming this.
-    ds3_get_service_response *response; 
-    uint64_t i;
+int main (void) {
+    // Get Service
+    ds3_client* client;
+    ds3_request* request;
+    ds3_error* error;
+    ds3_list_all_my_buckets_result_response *response;
+    uint64_t bucket_index;
 
-    // Setup client credentials and then the actual client itself.
-    ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
-    ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
-    
-    // You can optionally set a proxy server that a request should be sent through
-    //ds3_client_proxy(client, "192.168.56.1:8888");
-    
+    // Create a client from environment variables
+    error = ds3_create_client_from_env(&client);
+    handle_error(error);
+
     // Create the get service request.  All requests to a DS3 appliance start this way.
     // All ds3_init_* functions return a ds3_request struct
-    
-    ds3_request* request = ds3_init_get_service();
-    
+    request = ds3_init_get_service_request();
+
     // This performs the request to a DS3 appliance.
     // If there is an error 'error' will not be NULL
     // If the request completed successfully then 'error' will be NULL
-    ds3_error* error = ds3_get_service(client, request, &response);
-    ds3_free_request(request);
-   
-    // Check that the request completed successfully
-    if(error != NULL) {
-        if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
-        }
-        else {
-            printf("Got a runtime error: %s\n", error->message);
-        }
-        ds3_free_error(error);
-        ds3_free_creds(creds);
-        ds3_free_client(client);
-        return 1;
-    }
-
-    if (response == NULL) {
-        printf("Response was null\n");
-        ds3_free_creds(creds);
-        ds3_free_client(client);
-        return 1;
-    }
+    error = ds3_get_service_request(client, request, &response);
+    ds3_request_free(request);
+    handle_error(error);
 
     if(response->num_buckets == 0) {
         printf("No buckets returned\n");
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_list_all_my_buckets_result_response_free(response);
+        ds3_creds_free(client->creds);
+        ds3_client_free(client);
         return 0;
     }
 
-    for (i = 0; i < response->num_buckets; i++) {
-        ds3_bucket bucket = response->buckets[i];
-        printf("Bucket: (%s) created on %s\n", bucket.name->value, bucket.creation_date->value);
+    for (bucket_index = 0; bucket_index < response->num_buckets; bucket_index++) {
+        ds3_bucket_details_response* bucket = response->buckets[bucket_index];
+        printf("Bucket: (%s) created on %s\n", bucket->name->value, bucket->creation_date->value);
     }
-    
-    ds3_free_service_response(response);
 
-    ds3_free_creds(creds);
-    ds3_free_client(client);
+    ds3_list_all_my_buckets_result_response_free(response);
+    ds3_creds_free(client->creds);
+    ds3_client_free(client);
     ds3_cleanup();
-    
+
     return 0;
 }
+
 
 ```
 
@@ -206,11 +224,8 @@ The next demonstrates how to create a new bucket:
 ```c
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+// "ds3.h" is the only header that needs to be included to use the DS3 API.
 #include "ds3.h"
 
 int main (int args, char * argv[]) {
@@ -218,17 +233,18 @@ int main (int args, char * argv[]) {
     ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
     
     char * bucket = "books";
-    ds3_request * create_bucket_request = ds3_init_put_bucket(bucket);
-    ds3_error* error = ds3_put_bucket(client, create_bucket_request);
-    ds3_free_request(create_bucket_request);
+    ds3_request * create_bucket_request = ds3_init_put_bucket_request(bucket_name);
+    ds3_error* error = ds3_put_bucket_request(client, create_bucket_request);
+    ds3_request_free(create_bucket_request);
     
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Failed to create bucket with error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->http_error_code, error->message->value);
+            printf("Message Body: %s\n", error->error->message->value);
+            printf("Resource: %s\n", error->error->resource->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
         ds3_free_error(error);
         ds3_free_creds(creds);
@@ -250,16 +266,12 @@ The following is an example of performing a get bucket:
 ```c
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 // "ds3.h" is the only header that needs to be included to use the DS3 API.
 #include "ds3.h"
 
 int main (int args, char * argv[]) {
-    ds3_get_bucket_response *response; 
+    ds3_list_bucket_result_response* response; 
     uint64_t i;
 
     // Setup client credentials and then the actual client itself.
@@ -277,48 +289,50 @@ int main (int args, char * argv[]) {
     // This performs the request to a DS3 appliance.
     // If there is an error 'error' will not be NULL
     // If the request completed successfully then 'error' will be NULL
-    ds3_error* error = ds3_get_bucket(client, request, &response);
-    ds3_free_request(request);
+    ds3_error* error = ds3_get_bucket_request(client, request, &response);
+    ds3_request_free(request);
 
     // Check that the request completed successfully
     if(error != NULL) {
         if(error->error != NULL) {
-            printf("Got an error (%lu): %s\n", error->error->status_code, error->message);
-            printf("Message Body: %s\n", error->error->error_body);
+            printf("Failed to create bucket with error (%lu): %s\n", error->error->http_error_code, error->message->value);
+            printf("Message Body: %s\n", error->error->message->value);
+            printf("Resource: %s\n", error->error->resource->value);
         }
         else {
-            printf("Got a runtime error: %s\n", error->message);
+            printf("Got a runtime error: %s\n", error->message->value);
         }
-        ds3_free_error(error);
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_list_bucket_result_response_free(response);
+        ds3_error_free(error);
+        ds3_creds_free(creds);
+        ds3_client_free(client);
         return 1;
-    }
+    }   
 
     if (response == NULL) {
         printf("Response was null\n");
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_creds_free(creds);
+        ds3_client_free(client);
         return 1;
     }
 
     if(response->num_objects == 0) {
         printf("No objects returned\n");
-        ds3_free_bucket_response(response);
-        ds3_free_creds(creds);
-        ds3_free_client(client);
+        ds3_list_bucket_result_response_free(response);
+        ds3_creds_free(creds);
+        ds3_client_free(client);
         return 0;
     }
 
     for (i = 0; i < response->num_objects; i++) {
-        ds3_object object = response->objects[i];
-        printf("Object: (%s) created on %s\n", object.name, object.last_modified);
+        ds3_contents_response* object = response->objects[i];
+        printf("Object: (%s) created on %s\n", object->name->value, object->last_modified->value);
     }
 
-    ds3_free_bucket_response(response);
+    ds3_list_bucket_result_response_free(response);
 
-    ds3_free_creds(creds);
-    ds3_free_client(client);
+    ds3_creds_free(creds);
+    ds3_client_free(client);
     ds3_cleanup();
     return 0;    
 }
