@@ -1,5 +1,8 @@
+# Unzip the 64bit libs to be linked
+
 # Build the application.
-nmake -f Makefile.vc ds3\bin\ds3.dll ds3\include\ds3.h OUTPUT=ds3 MACHINE=x64
+cmake .. -G "Visual Studio 14 2015 Win64"
+msbuild libds3.sln
 
 # Create a zip file with the application contents.
 [Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
