@@ -5,19 +5,19 @@
 (new-object System.Net.WebClient).DownloadFile(
     'http://curl.haxx.se/download/curl-7.37.0.zip',
     'curl-7.37.0.zip')
-Unzip curl-7.37.0.zip curl-7.37.0
+Unzip curl-7.37.0.zip .
 Remove-Item curl-7.37.0.zip
 
 (new-object System.Net.WebClient).DownloadFile(
     'http://zlib.net/zlib128.zip',
     'zlib128.zip')
-Unzip zlib128.zip zlib128
+Unzip zlib128.zip .
 Remove-Item zlib128.zip
 
 (new-object System.Net.WebClient).DownloadFile(
     'ftp://xmlsoft.org/libxml2/libxml2-2.9.4.tar.gz',
     'libxml2-2.9.4.tar.gz')
-Untar libxml2-2.9.4.tar.gz libxml2-2.9.4
+Untar libxml2-2.9.4.tar.gz .
 Remove-Item libxml2-2.9.4.tar.gz
 
 (new-object System.Net.WebClient).DownloadFile(
