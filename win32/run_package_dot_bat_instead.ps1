@@ -1,8 +1,9 @@
-# Unzip the 32 bit libs for linking
-
 # Build the application.
 cmake .. -G "Visual Studio 14 2015"
 msbuild libds3.sln
+
+# Copy dependencies into output directory
+Copy-Item -Path deps\install\* -Destination output -Recurse -force
 
 # Create a zip file with the application contents.
 [Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
@@ -14,6 +15,5 @@ msbuild libds3.sln
 )
 
 # Delete the build.
-Remove-Item -Recurse -Force obj
-Remove-Item -Recurse -Force ds3
+Remove-Item -Recurse -Force output
 
