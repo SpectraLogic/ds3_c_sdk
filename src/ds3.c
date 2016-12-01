@@ -25,6 +25,7 @@
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
+#include <errno.h>
 
 #include "ds3.h"
 #include "ds3_request.h"
@@ -21623,6 +21624,7 @@ size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, void* user_data
     return read(*(int*)user_data, buffer, size * nmemb);
 }
 
+#ifdef _MSC_VER
 static void get_file_size_windows(const char* file_path, uint64_t* file_size) {
     BY_HANDLE_FILE_INFORMATION info;
     HANDLE file_handle;
@@ -21691,6 +21693,7 @@ static void get_file_size_windows(const char* file_path, uint64_t* file_size) {
 
     return;
 }
+#endif
 
 static void get_file_size_posix(const char* file_path, uint64_t* file_size) {
     struct stat file_info;
@@ -21698,7 +21701,7 @@ static void get_file_size_posix(const char* file_path, uint64_t* file_size) {
 
     result = stat(file_path, &file_info);
     if (result != 0) {
-        fprintf(stderr, "Failed to get file info for '%s' res=%d errno=%d\n", file_path, result, errno);
+        fprintf(stderr, "Failed to get file info for '%s' res=%d errno=%d: %s\n", file_path, result, errno, strerror(errno));
         *file_size = 0;
         return;
     }
