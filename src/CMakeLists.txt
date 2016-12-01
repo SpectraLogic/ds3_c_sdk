@@ -30,13 +30,13 @@ if (WIN32)
     set_source_files_properties(ds3.c PROPERTIES LANGUAGE CXX)
 
     file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/win32" WINDOWS_DIR)
-	file(TO_NATIVE_PATH "${WINDOWS_DIR}/deps/install" WINDOWS_INSTALL_DIR)
+    file(TO_NATIVE_PATH "${WINDOWS_DIR}/deps/install" WINDOWS_INSTALL_DIR)
     file(TO_NATIVE_PATH "${WINDOWS_INSTALL_DIR}/lib" WINDOWS_INSTALL_LIB_DIR)
     file(TO_NATIVE_PATH "${WINDOWS_INSTALL_DIR}/include" WINDOWS_INSTALL_INCLUDE_DIR)
 
     include_directories(
         ${WINDOWS_INSTALL_INCLUDE_DIR}
-		${WINDOWS_INSTALL_INCLUDE_DIR}/glib-2.0
+        ${WINDOWS_INSTALL_INCLUDE_DIR}/glib-2.0
         ${WINDOWS_INSTALL_INCLUDE_DIR}/glib-2.0/glib
         ${WINDOWS_INSTALL_LIB_DIR}/glib-2.0/include
         ${WINDOWS_DIR}/compatibility_includes)
