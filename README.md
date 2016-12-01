@@ -52,13 +52,13 @@ Unix/Linux
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
 contain a simple build script that should work on most Unix/Linux systems.  The
-build system is currently autotools.
+build system is currently CMake.
 
-To install cmake on Ubuntu use apt-get and install the following:
+To install CMake on Ubuntu use apt-get and install the following:
 
     $ sudo apt-get install cmake
 
-To install cmake on CentOS use yum and install the following:
+To install CMake on CentOS use yum and install the following:
     $ sudo yum install cmake
 
 The SDK depends upon several open source libraries, so you'll need to ensure
@@ -121,10 +121,10 @@ GIT Clone
 ---------
 
 To build the SDK from a git clone you must have a relatively recent version of
-GNU autoutils installed. While the release tarball does contain the build
-scripts that cmake generates, the git repository does not.
+GNU CMake installed. While the release tarball does contain the build
+scripts that CMake generates, the git repository does not.
 
-Assuming you have cmake installed, you can follow the same instructions as the tarball release.
+Assuming you have CMake installed, you can follow the same instructions as the tarball release.
 
 pkg-config Usage
 -----
