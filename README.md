@@ -10,6 +10,12 @@ Contact Us
 
 Join us at our [Google Groups](https://groups.google.com/d/forum/spectralogicds3-sdks) forum to ask questions, or see frequently asked questions.
 
+Contribute
+==========
+
+Pull requests are welcome, but first sign the [Contributor's
+Agreement](https://developer.spectralogic.com/contributors-agreement/)
+
 Windows
 =======
 
@@ -30,6 +36,8 @@ files:
     ds3\bin\libintl-8.dll
     ds3\bin\pthreadGC2.dll
     ds3\include\ds3.h
+    ds3\include\ds3_string.h
+    ds3\include\ds3_string_multimap.h
     ds3\lib\ds3.exp
     ds3\lib\ds3.lib
 
@@ -44,17 +52,14 @@ Unix/Linux
 
 For Unix/Linux we distribute the SDK as source code. The release tarballs
 contain a simple build script that should work on most Unix/Linux systems.  The
-build system is currently autotools.  
+build system is currently CMake.
 
-To install autotools on Ubuntu use apt-get and install the following:
+To install CMake on Ubuntu use apt-get and install the following:
 
-    $ sudo apt-get install build-essential
-    $ sudo apt-get install autoconf
-    $ sudo apt-get install libtool
-    
-To install autotools on CentOS use yum and install the following:
-    $ sudo yum install autoconf
-    $ sudo yum install libtool
+    $ sudo apt-get install cmake
+
+To install CMake on CentOS use yum and install the following:
+    $ sudo yum install cmake
 
 The SDK depends upon several open source libraries, so you'll need to ensure
 that you've installed the development header packages for each of them. For
@@ -69,15 +74,15 @@ On Ubuntu you can install them with apt-get:
 
     $ sudo apt-get install libxml2-dev
     $ sudo apt-get install libcurl4-openssl-dev
-    $ sudo apt-get install libglib2.0-dev 
-    
+    $ sudo apt-get install libglib2.0-dev
+
 On CentOS you can install them with yum:
 
     $ sudo yum install libxml2-devel
     $ sudo yum install libcurl-devel
-    $ sudo yum install glib2-devel 
-    
-For testing you will need the boost unit test library as well.  
+    $ sudo yum install glib2-devel
+
+For testing you will need the boost unit test library as well.
 
 On Ubuntu this can be installed with:
 
@@ -86,7 +91,7 @@ On Ubuntu this can be installed with:
 On CentOS this can be installed with:
 
     $ sudo yum install boost-test
-    
+
 Release Tarball
 ---------------
 
@@ -96,8 +101,7 @@ terminal window.
     $ cd directory/containing/release/tarball
     $ tar zxf ds3_c_sdk-{version}.tgz
     $ cd ds3_c_sdk-{version}
-    $ autoreconf --install
-    $ ./configure
+    $ cmake .
     $ make
     $ su
     # make install
@@ -113,21 +117,16 @@ The `make install` command installs the following files on your system:
     {prefix}/lib/libds3.so.0.0.0
     {prefix}/include/ds3.h
 
-The `./configure` command sets `{prefix}` to `/usr/local` by default. You can
-change this by running `./configure --prefix=/your/desired/prefix` instead of
-`./configure`.
-
 GIT Clone
 ---------
 
 To build the SDK from a git clone you must have a relatively recent version of
-GNU autoutils installed. While the release tarball does contain the build
-scripts that autoutils generates, the git repository does not.
+GNU CMake installed. While the release tarball does contain the build
+scripts that CMake generates, the git repository does not.
 
-Assuming you have autotools installed, you can execute `autoreconf --install`
-and then follow the same instructions as the tarball release.
+Assuming you have CMake installed, you can follow the same instructions as the tarball release.
 
-Usage
+pkg-config Usage
 -----
 
 The SDK provides a pkg-config definition, so you can determine the proper
@@ -149,7 +148,7 @@ To build the sample, use the following commands:
     $ cd sample
     $ make deps # Builds the SDK and installs it into directory/containing/source/tree**/install**
     $ make
-	
+
 To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set in environment variables to match the target device. For the simulator, see [Installation Instructions] (https://developer.spectralogic.com/sim-install/) 
 
     $ make run-put-bulk     # create "books" bucket and put files into it
@@ -231,12 +230,12 @@ The next demonstrates how to create a new bucket:
 int main (int args, char * argv[]) {
     ds3_creds * creds = ds3_create_creds("cnlhbg==","ZIjGDQAs");
     ds3_client * client = ds3_create_client("http://192.168.56.101:8080", creds);
-    
+
     char * bucket = "books";
     ds3_request * create_bucket_request = ds3_init_put_bucket_request(bucket_name);
     ds3_error* error = ds3_put_bucket_request(client, create_bucket_request);
     ds3_request_free(create_bucket_request);
-    
+
     if(error != NULL) {
         if(error->error != NULL) {
             printf("Failed to create bucket with error (%lu): %s\n", error->error->http_error_code, error->message->value);
@@ -250,7 +249,7 @@ int main (int args, char * argv[]) {
         ds3_free_creds(creds);
         ds3_free_client(client);
         return 1;
-    }   
+    }
 
     printf("Successfully created bucket: %s\n", bucket);
     ds3_free_creds(creds);
@@ -271,7 +270,7 @@ The following is an example of performing a get bucket:
 #include "ds3.h"
 
 int main (int args, char * argv[]) {
-    ds3_list_bucket_result_response* response; 
+    ds3_list_bucket_result_response* response;
     uint64_t i;
 
     // Setup client credentials and then the actual client itself.
@@ -307,7 +306,7 @@ int main (int args, char * argv[]) {
         ds3_creds_free(creds);
         ds3_client_free(client);
         return 1;
-    }   
+    }
 
     if (response == NULL) {
         printf("Response was null\n");
@@ -334,7 +333,7 @@ int main (int args, char * argv[]) {
     ds3_creds_free(creds);
     ds3_client_free(client);
     ds3_cleanup();
-    return 0;    
+    return 0;
 }
 ```
 
