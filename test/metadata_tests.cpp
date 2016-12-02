@@ -405,9 +405,10 @@ BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
     handle_error(error);
 
     request = ds3_init_put_object_request(bucket_name, "resources/beowulf.txt", obj_list->objects[0]->length);
-    file = fopen(obj_list->objects[0]->name->value, "r");
-
+    ds3_request_set_job(request, bulk_response->job_id->value);
     ds3_request_set_metadata(request, "name", "value");
+
+    file = fopen(obj_list->objects[0]->name->value, "r");
     error = ds3_put_object_request(client, request, file, ds3_read_from_file);
     ds3_request_free(request);
     fclose(file);

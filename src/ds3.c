@@ -25,7 +25,6 @@
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
-#include <errno.h>
 
 #include "ds3.h"
 #include "ds3_request.h"
@@ -122,6 +121,10 @@ static char* _get_ds3_tape_state_str(ds3_tape_state input) {
         return "DATA_CHECKPOINT_MISSING";
     } else if (input == DS3_TAPE_STATE_LTFS_WITH_FOREIGN_DATA) {
         return "LTFS_WITH_FOREIGN_DATA";
+    } else if (input == DS3_TAPE_STATE_RAW_IMPORT_PENDING) {
+        return "RAW_IMPORT_PENDING";
+    } else if (input == DS3_TAPE_STATE_RAW_IMPORT_IN_PROGRESS) {
+        return "RAW_IMPORT_IN_PROGRESS";
     } else if (input == DS3_TAPE_STATE_FOREIGN) {
         return "FOREIGN";
     } else if (input == DS3_TAPE_STATE_IMPORT_PENDING) {
@@ -134,6 +137,8 @@ static char* _get_ds3_tape_state_str(ds3_tape_state input) {
         return "LOST";
     } else if (input == DS3_TAPE_STATE_BAD) {
         return "BAD";
+    } else if (input == DS3_TAPE_STATE_CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION) {
+        return "CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION";
     } else if (input == DS3_TAPE_STATE_SERIAL_NUMBER_MISMATCH) {
         return "SERIAL_NUMBER_MISMATCH";
     } else if (input == DS3_TAPE_STATE_BAR_CODE_MISSING) {
@@ -190,8 +195,8 @@ static char* _get_ds3_auto_inspect_mode_str(ds3_auto_inspect_mode input) {
         return "NEVER";
     } else if (input == DS3_AUTO_INSPECT_MODE_MINIMAL) {
         return "MINIMAL";
-    } else if (input == DS3_AUTO_INSPECT_MODE_DEFAULT) {
-        return "DEFAULT";
+    } else if (input == DS3_AUTO_INSPECT_MODE_FULL) {
+        return "FULL";
     } else {
         return "";
     }
@@ -209,6 +214,24 @@ static char* _get_ds3_import_conflict_resolution_mode_str(ds3_import_conflict_re
     }
 
 }
+static char* _get_ds3_priority_str(ds3_priority input) {
+    if (input == DS3_PRIORITY_CRITICAL) {
+        return "CRITICAL";
+    } else if (input == DS3_PRIORITY_URGENT) {
+        return "URGENT";
+    } else if (input == DS3_PRIORITY_HIGH) {
+        return "HIGH";
+    } else if (input == DS3_PRIORITY_NORMAL) {
+        return "NORMAL";
+    } else if (input == DS3_PRIORITY_LOW) {
+        return "LOW";
+    } else if (input == DS3_PRIORITY_BACKGROUND) {
+        return "BACKGROUND";
+    } else {
+        return "";
+    }
+
+}
 static char* _get_ds3_unavailable_media_usage_policy_str(ds3_unavailable_media_usage_policy input) {
     if (input == DS3_UNAVAILABLE_MEDIA_USAGE_POLICY_ALLOW) {
         return "ALLOW";
@@ -216,6 +239,16 @@ static char* _get_ds3_unavailable_media_usage_policy_str(ds3_unavailable_media_u
         return "DISCOURAGED";
     } else if (input == DS3_UNAVAILABLE_MEDIA_USAGE_POLICY_DISALLOW) {
         return "DISALLOW";
+    } else {
+        return "";
+    }
+
+}
+static char* _get_ds3_data_replication_rule_type_str(ds3_data_replication_rule_type input) {
+    if (input == DS3_DATA_REPLICATION_RULE_TYPE_PERMANENT) {
+        return "PERMANENT";
+    } else if (input == DS3_DATA_REPLICATION_RULE_TYPE_RETIRED) {
+        return "RETIRED";
     } else {
         return "";
     }
@@ -259,24 +292,6 @@ static char* _get_ds3_checksum_type_str(ds3_checksum_type input) {
     }
 
 }
-static char* _get_ds3_priority_str(ds3_priority input) {
-    if (input == DS3_PRIORITY_CRITICAL) {
-        return "CRITICAL";
-    } else if (input == DS3_PRIORITY_URGENT) {
-        return "URGENT";
-    } else if (input == DS3_PRIORITY_HIGH) {
-        return "HIGH";
-    } else if (input == DS3_PRIORITY_NORMAL) {
-        return "NORMAL";
-    } else if (input == DS3_PRIORITY_LOW) {
-        return "LOW";
-    } else if (input == DS3_PRIORITY_BACKGROUND) {
-        return "BACKGROUND";
-    } else {
-        return "";
-    }
-
-}
 static char* _get_ds3_versioning_level_str(ds3_versioning_level input) {
     if (input == DS3_VERSIONING_LEVEL_NONE) {
         return "NONE";
@@ -287,20 +302,24 @@ static char* _get_ds3_versioning_level_str(ds3_versioning_level input) {
     }
 
 }
-static char* _get_ds3_data_replication_rule_type_str(ds3_data_replication_rule_type input) {
-    if (input == DS3_DATA_REPLICATION_RULE_TYPE_PERMANENT) {
-        return "PERMANENT";
-    } else if (input == DS3_DATA_REPLICATION_RULE_TYPE_RETIRED) {
-        return "RETIRED";
+static char* _get_ds3_s3_initial_data_placement_policy_str(ds3_s3_initial_data_placement_policy input) {
+    if (input == DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_STANDARD) {
+        return "STANDARD";
+    } else if (input == DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_REDUCED_REDUNDANCY) {
+        return "REDUCED_REDUNDANCY";
+    } else if (input == DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_STANDARD_IA) {
+        return "STANDARD_IA";
+    } else if (input == DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_GLACIER) {
+        return "GLACIER";
     } else {
         return "";
     }
 
 }
-static char* _get_ds3_data_persistence_rule_state_str(ds3_data_persistence_rule_state input) {
-    if (input == DS3_DATA_PERSISTENCE_RULE_STATE_NORMAL) {
+static char* _get_ds3_data_placement_rule_state_str(ds3_data_placement_rule_state input) {
+    if (input == DS3_DATA_PLACEMENT_RULE_STATE_NORMAL) {
         return "NORMAL";
-    } else if (input == DS3_DATA_PERSISTENCE_RULE_STATE_INCLUSION_IN_PROGRESS) {
+    } else if (input == DS3_DATA_PLACEMENT_RULE_STATE_INCLUSION_IN_PROGRESS) {
         return "INCLUSION_IN_PROGRESS";
     } else {
         return "";
@@ -481,13 +500,29 @@ static char* _get_ds3_storage_domain_member_state_str(ds3_storage_domain_member_
     }
 
 }
+static char* _get_ds3_feature_key_type_str(ds3_feature_key_type input) {
+    if (input == DS3_FEATURE_KEY_TYPE_AWS_S3_CLOUD_OUT) {
+        return "AWS_S3_CLOUD_OUT";
+    } else if (input == DS3_FEATURE_KEY_TYPE_MICROSOFT_AZURE_CLOUD_OUT) {
+        return "MICROSOFT_AZURE_CLOUD_OUT";
+    } else {
+        return "";
+    }
+
+}
 static char* _get_ds3_system_failure_type_str(ds3_system_failure_type input) {
     if (input == DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED) {
         return "RECONCILE_TAPE_ENVIRONMENT_FAILED";
     } else if (input == DS3_SYSTEM_FAILURE_TYPE_RECONCILE_POOL_ENVIRONMENT_FAILED) {
         return "RECONCILE_POOL_ENVIRONMENT_FAILED";
-    } else if (input == DS3_SYSTEM_FAILURE_TYPE_SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION) {
-        return "SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION";
+    } else if (input == DS3_SYSTEM_FAILURE_TYPE_CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION) {
+        return "CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION";
+    } else if (input == DS3_SYSTEM_FAILURE_TYPE_MICROSOFT_AZURE_WRITES_REQUIRE_FEATURE_LICENSE) {
+        return "MICROSOFT_AZURE_WRITES_REQUIRE_FEATURE_LICENSE";
+    } else if (input == DS3_SYSTEM_FAILURE_TYPE_AWS_S3_WRITES_REQUIRE_FEATURE_LICENSE) {
+        return "AWS_S3_WRITES_REQUIRE_FEATURE_LICENSE";
+    } else if (input == DS3_SYSTEM_FAILURE_TYPE_DATABASE_RUNNING_OUT_OF_SPACE) {
+        return "DATABASE_RUNNING_OUT_OF_SPACE";
     } else {
         return "";
     }
@@ -598,6 +633,8 @@ static char* _get_ds3_tape_partition_failure_type_str(ds3_tape_partition_failure
         return "TAPE_EJECTION_BY_OPERATOR_REQUIRED";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_MEDIA_TYPE_INCOMPATIBLE) {
         return "TAPE_MEDIA_TYPE_INCOMPATIBLE";
+    } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_REMOVAL_UNEXPECTED) {
+        return "TAPE_REMOVAL_UNEXPECTED";
     } else {
         return "";
     }
@@ -644,7 +681,9 @@ static char* _get_ds3_target_read_preference_type_str(ds3_target_read_preference
 
 }
 static char* _get_ds3_target_failure_type_str(ds3_target_failure_type input) {
-    if (input == DS3_TARGET_FAILURE_TYPE_NOT_ONLINE) {
+    if (input == DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED) {
+        return "IMPORT_FAILED";
+    } else if (input == DS3_TARGET_FAILURE_TYPE_NOT_ONLINE) {
         return "NOT_ONLINE";
     } else if (input == DS3_TARGET_FAILURE_TYPE_WRITE_FAILED) {
         return "WRITE_FAILED";
@@ -664,8 +703,6 @@ static char* _get_ds3_target_failure_type_str(ds3_target_failure_type input) {
 static char* _get_ds3_target_state_str(ds3_target_state input) {
     if (input == DS3_TARGET_STATE_ONLINE) {
         return "ONLINE";
-    } else if (input == DS3_TARGET_STATE_LIMITED_ACCESS) {
-        return "LIMITED_ACCESS";
     } else if (input == DS3_TARGET_STATE_OFFLINE) {
         return "OFFLINE";
     } else {
@@ -678,6 +715,38 @@ static char* _get_ds3_target_access_control_replication_str(ds3_target_access_co
         return "NONE";
     } else if (input == DS3_TARGET_ACCESS_CONTROL_REPLICATION_USERS) {
         return "USERS";
+    } else {
+        return "";
+    }
+
+}
+static char* _get_ds3_s3_region_str(ds3_s3_region input) {
+    if (input == DS3_S3_REGION_GOV_CLOUD) {
+        return "GOV_CLOUD";
+    } else if (input == DS3_S3_REGION_US_EAST_1) {
+        return "US_EAST_1";
+    } else if (input == DS3_S3_REGION_US_WEST_1) {
+        return "US_WEST_1";
+    } else if (input == DS3_S3_REGION_US_WEST_2) {
+        return "US_WEST_2";
+    } else if (input == DS3_S3_REGION_EU_WEST_1) {
+        return "EU_WEST_1";
+    } else if (input == DS3_S3_REGION_EU_CENTRAL_1) {
+        return "EU_CENTRAL_1";
+    } else if (input == DS3_S3_REGION_AP_SOUTH_1) {
+        return "AP_SOUTH_1";
+    } else if (input == DS3_S3_REGION_AP_SOUTHEAST_1) {
+        return "AP_SOUTHEAST_1";
+    } else if (input == DS3_S3_REGION_AP_SOUTHEAST_2) {
+        return "AP_SOUTHEAST_2";
+    } else if (input == DS3_S3_REGION_AP_NORTHEAST_1) {
+        return "AP_NORTHEAST_1";
+    } else if (input == DS3_S3_REGION_AP_NORTHEAST_2) {
+        return "AP_NORTHEAST_2";
+    } else if (input == DS3_S3_REGION_SA_EAST_1) {
+        return "SA_EAST_1";
+    } else if (input == DS3_S3_REGION_CN_NORTH_1) {
+        return "CN_NORTH_1";
     } else {
         return "";
     }
@@ -1173,6 +1242,18 @@ void ds3_request_set_access_control_replication_ds3_target_access_control_replic
     _set_query_param(request, "access_control_replication", (const char*)_get_ds3_target_access_control_replication_str(value));
 
 }
+void ds3_request_set_access_key(const ds3_request* request, const char* value) {
+    _set_query_param(request, "access_key", value);
+
+}
+void ds3_request_set_account_key(const ds3_request* request, const char* value) {
+    _set_query_param(request, "account_key", value);
+
+}
+void ds3_request_set_account_name(const ds3_request* request, const char* value) {
+    _set_query_param(request, "account_name", value);
+
+}
 void ds3_request_set_activated(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "activated", value);
 
@@ -1245,6 +1326,14 @@ void ds3_request_set_auto_reclaim_terminate_threshold(const ds3_request* request
     _set_query_param_float(request, "auto_reclaim_terminate_threshold", value);
 
 }
+void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "auto_verify_frequency_in_days", value);
+
+}
+void ds3_request_set_available_raw_capacity(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "available_raw_capacity", value);
+
+}
 void ds3_request_set_bar_code(const ds3_request* request, const char* value) {
     _set_query_param(request, "bar_code", value);
 
@@ -1279,6 +1368,14 @@ void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request,
 }
 void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value) {
     _set_query_param(request, "chunk_client_processing_order_guarantee", (const char*)_get_ds3_job_chunk_client_processing_order_guarantee_str(value));
+
+}
+void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char* value) {
+    _set_query_param(request, "cloud_bucket_prefix", value);
+
+}
+void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char* value) {
+    _set_query_param(request, "cloud_bucket_suffix", value);
 
 }
 void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value) {
@@ -1337,6 +1434,18 @@ void ds3_request_set_default_read_preference_ds3_target_read_preference_type(con
     _set_query_param(request, "default_read_preference", (const char*)_get_ds3_target_read_preference_type_str(value));
 
 }
+void ds3_request_set_default_verify_after_write(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "default_verify_after_write", value);
+
+}
+void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "default_verify_data_after_import", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "default_verify_data_prior_to_import", value);
+
+}
 void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
     _set_query_param(request, "default_verify_job_priority", (const char*)_get_ds3_priority_str(value));
 
@@ -1353,12 +1462,8 @@ void ds3_request_set_dns_name(const ds3_request* request, const char* value) {
     _set_query_param(request, "dns_name", value);
 
 }
-void ds3_request_set_ds3_target_data_policy(const ds3_request* request, const char* value) {
-    _set_query_param(request, "ds3_target_data_policy", value);
-
-}
-void ds3_request_set_ds3_target_id(const ds3_request* request, const char* value) {
-    _set_query_param(request, "ds3_target_id", value);
+void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char* value) {
+    _set_query_param(request, "ds3_replication_rule_id", value);
 
 }
 void ds3_request_set_eject_label(const ds3_request* request, const char* value) {
@@ -1375,6 +1480,10 @@ void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_boo
 }
 void ds3_request_set_error_message(const ds3_request* request, const char* value) {
     _set_query_param(request, "error_message", value);
+
+}
+void ds3_request_set_expiration_date(const ds3_request* request, const char* value) {
+    _set_query_param(request, "expiration_date", value);
 
 }
 void ds3_request_set_folder(const ds3_request* request, const char* value) {
@@ -1405,6 +1514,10 @@ void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds
     _set_query_param(request, "health", (const char*)_get_ds3_pool_health_str(value));
 
 }
+void ds3_request_set_https(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "https", value);
+
+}
 void ds3_request_set_id(const ds3_request* request, const char* value) {
     _set_query_param(request, "id", value);
 
@@ -1413,12 +1526,20 @@ void ds3_request_set_ignore_naming_conflicts(const ds3_request* request, ds3_boo
     _set_query_param_flag(request, "ignore_naming_conflicts", value);
 
 }
+void ds3_request_set_implicit_job_id_resolution(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "implicit_job_id_resolution", value);
+
+}
 void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value) {
     _set_query_param(request, "import_export_configuration", (const char*)_get_ds3_import_export_configuration_str(value));
 
 }
 void ds3_request_set_include_physical_placement(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "include_physical_placement", value);
+
+}
+void ds3_request_set_initial_data_placement_ds3_s3_initial_data_placement_policy(const ds3_request* request, const ds3_s3_initial_data_placement_policy value) {
+    _set_query_param(request, "initial_data_placement", (const char*)_get_ds3_s3_initial_data_placement_policy_str(value));
 
 }
 void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value) {
@@ -1437,12 +1558,20 @@ void ds3_request_set_job_id(const ds3_request* request, const char* value) {
     _set_query_param(request, "job_id", value);
 
 }
+void ds3_request_set_key_ds3_feature_key_type(const ds3_request* request, const ds3_feature_key_type value) {
+    _set_query_param(request, "key", (const char*)_get_ds3_feature_key_type_str(value));
+
+}
 void ds3_request_set_key_marker(const ds3_request* request, const char* value) {
     _set_query_param(request, "key_marker", value);
 
 }
 void ds3_request_set_last_page(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "last_page", value);
+
+}
+void ds3_request_set_last_verified(const ds3_request* request, const char* value) {
+    _set_query_param(request, "last_verified", value);
 
 }
 void ds3_request_set_latest(const ds3_request* request, ds3_bool value) {
@@ -1463,6 +1592,10 @@ void ds3_request_set_management_url(const ds3_request* request, const char* valu
 }
 void ds3_request_set_marker(const ds3_request* request, const char* value) {
     _set_query_param(request, "marker", value);
+
+}
+void ds3_request_set_max_blob_part_size_in_bytes(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "max_blob_part_size_in_bytes", value);
 
 }
 void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value) {
@@ -1527,6 +1660,10 @@ void ds3_request_set_node_id(const ds3_request* request, const char* value) {
 }
 void ds3_request_set_notification_http_method_ds3_request_type(const ds3_request* request, const ds3_request_type value) {
     _set_query_param(request, "notification_http_method", (const char*)_get_ds3_request_type_str(value));
+
+}
+void ds3_request_set_offline_data_staging_window_in_tb(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "offline_data_staging_window_in_tb", value);
 
 }
 void ds3_request_set_offset(const ds3_request* request, const uint64_t value) {
@@ -1613,6 +1750,26 @@ void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3
     _set_query_param(request, "priority", (const char*)_get_ds3_priority_str(value));
 
 }
+void ds3_request_set_proxy_domain(const ds3_request* request, const char* value) {
+    _set_query_param(request, "proxy_domain", value);
+
+}
+void ds3_request_set_proxy_host(const ds3_request* request, const char* value) {
+    _set_query_param(request, "proxy_host", value);
+
+}
+void ds3_request_set_proxy_password(const ds3_request* request, const char* value) {
+    _set_query_param(request, "proxy_password", value);
+
+}
+void ds3_request_set_proxy_port(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "proxy_port", value);
+
+}
+void ds3_request_set_proxy_username(const ds3_request* request, const char* value) {
+    _set_query_param(request, "proxy_username", value);
+
+}
 void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value) {
     _set_query_param(request, "quiesced", (const char*)_get_ds3_quiesced_str(value));
 
@@ -1629,16 +1786,20 @@ void ds3_request_set_rechunked(const ds3_request* request, const char* value) {
     _set_query_param(request, "rechunked", value);
 
 }
+void ds3_request_set_region_ds3_s3_region(const ds3_request* request, const ds3_s3_region value) {
+    _set_query_param(request, "region", (const char*)_get_ds3_s3_region_str(value));
+
+}
 void ds3_request_set_replicate(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "replicate", value);
 
 }
-void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value) {
-    _set_query_param(request, "replicated_user_default_data_policy", value);
+void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "replicate_deletes", value);
 
 }
-void ds3_request_set_replication_rule_id(const ds3_request* request, const char* value) {
-    _set_query_param(request, "replication_rule_id", value);
+void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value) {
+    _set_query_param(request, "replicated_user_default_data_policy", value);
 
 }
 void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value) {
@@ -1661,8 +1822,12 @@ void ds3_request_set_serial_number(const ds3_request* request, const char* value
     _set_query_param(request, "serial_number", value);
 
 }
-void ds3_request_set_state_ds3_data_persistence_rule_state(const ds3_request* request, const ds3_data_persistence_rule_state value) {
-    _set_query_param(request, "state", (const char*)_get_ds3_data_persistence_rule_state_str(value));
+void ds3_request_set_staged_data_expiration_in_days(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "staged_data_expiration_in_days", value);
+
+}
+void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value) {
+    _set_query_param(request, "state", (const char*)_get_ds3_data_placement_rule_state_str(value));
 
 }
 void ds3_request_set_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value) {
@@ -1713,6 +1878,10 @@ void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const d
     _set_query_param(request, "tape_type", (const char*)_get_ds3_tape_type_str(value));
 
 }
+void ds3_request_set_target_data_policy(const ds3_request* request, const char* value) {
+    _set_query_param(request, "target_data_policy", value);
+
+}
 void ds3_request_set_target_id(const ds3_request* request, const char* value) {
     _set_query_param(request, "target_id", value);
 
@@ -1725,12 +1894,12 @@ void ds3_request_set_truncated(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "truncated", value);
 
 }
-void ds3_request_set_type_ds3_data_persistence_rule_type(const ds3_request* request, const ds3_data_persistence_rule_type value) {
-    _set_query_param(request, "type", (const char*)_get_ds3_data_persistence_rule_type_str(value));
-
-}
 void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value) {
     _set_query_param(request, "type", (const char*)_get_ds3_data_replication_rule_type_str(value));
+
+}
+void ds3_request_set_type_ds3_data_persistence_rule_type(const ds3_request* request, const ds3_data_persistence_rule_type value) {
+    _set_query_param(request, "type", (const char*)_get_ds3_data_persistence_rule_type_str(value));
 
 }
 void ds3_request_set_type_ds3_s3_object_type(const ds3_request* request, const ds3_s3_object_type value) {
@@ -1793,12 +1962,20 @@ void ds3_request_set_user_id(const ds3_request* request, const char* value) {
     _set_query_param(request, "user_id", value);
 
 }
+void ds3_request_set_verify_after_write(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "verify_after_write", value);
+
+}
 void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value) {
     _set_query_param(request, "verify_data_after_import", (const char*)_get_ds3_priority_str(value));
 
 }
 void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "verify_data_prior_to_import", value);
+
+}
+void ds3_request_set_verify_pending_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "verify_pending", (const char*)_get_ds3_priority_str(value));
 
 }
 void ds3_request_set_verify_prior_to_auto_eject_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -2144,6 +2321,18 @@ ds3_request* ds3_init_modify_data_path_backend_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_path_backend/", NULL, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_put_azure_data_replication_rule_spectra_s3_request(const char* data_policy_id, const char* target_id, const ds3_data_replication_rule_type type) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/azure_data_replication_rule/", NULL, NULL));
+    if (data_policy_id != NULL) {
+        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
+    }
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
+    }
+    _set_query_param((ds3_request*) request, "type", _get_ds3_data_replication_rule_type_str(type));
+
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_put_data_persistence_rule_spectra_s3_request(const char* data_policy_id, const ds3_data_isolation_level isolation_level, const char* storage_domain_id, const ds3_data_persistence_rule_type type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/data_persistence_rule/", NULL, NULL));
     if (data_policy_id != NULL) {
@@ -2165,16 +2354,32 @@ ds3_request* ds3_init_put_data_policy_spectra_s3_request(const char* name) {
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_data_replication_rule_spectra_s3_request(const char* data_policy_id, const char* ds3_target_id, const ds3_data_replication_rule_type type) {
-    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/data_replication_rule/", NULL, NULL));
+ds3_request* ds3_init_put_ds3_data_replication_rule_spectra_s3_request(const char* data_policy_id, const char* target_id, const ds3_data_replication_rule_type type) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/ds3_data_replication_rule/", NULL, NULL));
     if (data_policy_id != NULL) {
         _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
     }
-    if (ds3_target_id != NULL) {
-        _set_query_param((ds3_request*) request, "ds3_target_id", ds3_target_id);
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
     }
     _set_query_param((ds3_request*) request, "type", _get_ds3_data_replication_rule_type_str(type));
 
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_put_s3_data_replication_rule_spectra_s3_request(const char* data_policy_id, const char* target_id, const ds3_data_replication_rule_type type) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/s3_data_replication_rule/", NULL, NULL));
+    if (data_policy_id != NULL) {
+        _set_query_param((ds3_request*) request, "data_policy_id", data_policy_id);
+    }
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
+    }
+    _set_query_param((ds3_request*) request, "type", _get_ds3_data_replication_rule_type_str(type));
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_azure_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_data_replication_rule/", resource_id, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_data_persistence_rule_spectra_s3_request(const char* resource_id) {
@@ -2185,8 +2390,20 @@ ds3_request* ds3_init_delete_data_policy_spectra_s3_request(const char* resource
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/data_policy/", resource_id, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_delete_data_replication_rule_spectra_s3_request(const char* resource_id) {
-    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/data_replication_rule/", resource_id, NULL));
+ds3_request* ds3_init_delete_ds3_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/ds3_data_replication_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_s3_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/s3_data_replication_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_data_replication_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_data_replication_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_data_replication_rule/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_data_persistence_rule_spectra_s3_request(const char* resource_id) {
@@ -2205,12 +2422,24 @@ ds3_request* ds3_init_get_data_policy_spectra_s3_request(const char* resource_id
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_policy/", resource_id, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_data_replication_rule_spectra_s3_request(const char* resource_id) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_replication_rule/", resource_id, NULL));
+ds3_request* ds3_init_get_ds3_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/ds3_data_replication_rule/", resource_id, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_data_replication_rules_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/data_replication_rule/", NULL, NULL));
+ds3_request* ds3_init_get_ds3_data_replication_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/ds3_data_replication_rule/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_data_replication_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_data_replication_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_data_replication_rule/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_azure_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/azure_data_replication_rule/", resource_id, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_modify_data_persistence_rule_spectra_s3_request(const char* resource_id) {
@@ -2221,20 +2450,36 @@ ds3_request* ds3_init_modify_data_policy_spectra_s3_request(const char* resource
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_policy/", resource_id, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_modify_data_replication_rule_spectra_s3_request(const char* resource_id) {
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/data_replication_rule/", resource_id, NULL));
+ds3_request* ds3_init_modify_ds3_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/ds3_data_replication_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_s3_data_replication_rule_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/s3_data_replication_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_clear_suspect_blob_azure_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_azure_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_clear_suspect_blob_ds3_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_ds3_target/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_clear_suspect_blob_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_pool/", NULL, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_clear_suspect_blob_s3_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_s3_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_clear_suspect_blob_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_clear_suspect_blob_targets_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_target/", NULL, NULL));
+ds3_request* ds3_init_get_degraded_azure_data_replication_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_azure_data_replication_rule/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_degraded_blobs_spectra_s3_request(void) {
@@ -2249,20 +2494,32 @@ ds3_request* ds3_init_get_degraded_data_persistence_rules_spectra_s3_request(voi
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_data_persistence_rule/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_degraded_data_replication_rules_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_data_replication_rule/", NULL, NULL));
+ds3_request* ds3_init_get_degraded_ds3_data_replication_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_ds3_data_replication_rule/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_degraded_s3_data_replication_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/degraded_s3_data_replication_rule/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_suspect_blob_azure_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_azure_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_suspect_blob_ds3_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_ds3_target/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_suspect_blob_pools_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_pool/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_suspect_blob_tapes_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
+ds3_request* ds3_init_get_suspect_blob_s3_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_s3_target/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_get_suspect_blob_targets_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_target/", NULL, NULL));
+ds3_request* ds3_init_get_suspect_blob_tapes_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_suspect_buckets_spectra_s3_request(void) {
@@ -2279,16 +2536,24 @@ ds3_request* ds3_init_get_suspect_objects_with_full_details_spectra_s3_request(v
 
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_azure_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_ds3_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_mark_suspect_blob_pools_as_degraded_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_pool/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
+ds3_request* ds3_init_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_s3_target/", NULL, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_targets_as_degraded_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_target/", NULL, NULL));
+ds3_request* ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_group_group_member_spectra_s3_request(const char* group_id, const char* member_group_id) {
@@ -2520,6 +2785,13 @@ ds3_request* ds3_init_modify_node_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/node/", resource_id, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_put_azure_target_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/azure_target_failure_notification_registration/", NULL, NULL));
+    if (notification_end_point != NULL) {
+        _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
+    }
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_put_ds3_target_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/ds3_target_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
@@ -2576,6 +2848,13 @@ ds3_request* ds3_init_put_pool_failure_notification_registration_spectra_s3_requ
     }
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_put_s3_target_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/s3_target_failure_notification_registration/", NULL, NULL));
+    if (notification_end_point != NULL) {
+        _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
+    }
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_put_storage_domain_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
@@ -2602,6 +2881,10 @@ ds3_request* ds3_init_put_tape_partition_failure_notification_registration_spect
     if (notification_end_point != NULL) {
         _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
     }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_azure_target_failure_notification_registration_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_target_failure_notification_registration/", resource_id, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_ds3_target_failure_notification_registration_spectra_s3_request(void) {
@@ -2636,6 +2919,10 @@ ds3_request* ds3_init_delete_pool_failure_notification_registration_spectra_s3_r
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/pool_failure_notification_registration/", NULL, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_delete_s3_target_failure_notification_registration_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/s3_target_failure_notification_registration/", resource_id, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_delete_storage_domain_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/storage_domain_failure_notification_registration/", NULL, NULL));
     return (ds3_request*) request;
@@ -2650,6 +2937,14 @@ ds3_request* ds3_init_delete_tape_failure_notification_registration_spectra_s3_r
 }
 ds3_request* ds3_init_delete_tape_partition_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/tape_partition_failure_notification_registration/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_failure_notification_registration_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_failure_notification_registration/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_failure_notification_registrations_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_failure_notification_registration/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_ds3_target_failure_notification_registration_spectra_s3_request(void) {
@@ -2714,6 +3009,14 @@ ds3_request* ds3_init_get_pool_failure_notification_registration_spectra_s3_requ
 }
 ds3_request* ds3_init_get_pool_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/pool_failure_notification_registration/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_failure_notification_registration_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target_failure_notification_registration/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_failure_notification_registrations_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target_failure_notification_registration/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_storage_domain_failure_notification_registration_spectra_s3_request(void) {
@@ -2826,6 +3129,18 @@ ds3_request* ds3_init_cancel_import_on_all_pools_spectra_s3_request(void) {
 ds3_request* ds3_init_cancel_import_pool_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_IMPORT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_cancel_verify_on_all_pools_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", NULL, NULL));
+    _set_query_param((ds3_request*) request, "operation", "CANCEL_VERIFY");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_cancel_verify_pool_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/pool/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "CANCEL_VERIFY");
 
     return (ds3_request*) request;
 }
@@ -3022,6 +3337,14 @@ ds3_request* ds3_init_modify_storage_domain_member_spectra_s3_request(const char
 }
 ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/storage_domain/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_force_feature_key_validation_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/feature_key/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_feature_keys_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/feature_key/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_system_failures_spectra_s3_request(void) {
@@ -3310,6 +3633,24 @@ ds3_request* ds3_init_online_tape_spectra_s3_request(const char* resource_id) {
 
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_raw_import_all_tapes_spectra_s3_request(const char* bucket_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    _set_query_param((ds3_request*) request, "operation", "IMPORT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_raw_import_tape_spectra_s3_request(const char* resource_id, const char* bucket_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    _set_query_param((ds3_request*) request, "operation", "IMPORT");
+
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_verify_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
@@ -3318,6 +3659,119 @@ ds3_request* ds3_init_verify_all_tapes_spectra_s3_request(void) {
 }
 ds3_request* ds3_init_verify_tape_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "VERIFY");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_force_target_environment_refresh_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/target_environment/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_put_azure_target_bucket_name_spectra_s3_request(const char* bucket_id, const char* name, const char* target_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/azure_target_bucket_name/", NULL, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    if (name != NULL) {
+        _set_query_param((ds3_request*) request, "name", name);
+    }
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_put_azure_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/azure_target_read_preference/", NULL, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    _set_query_param((ds3_request*) request, "read_preference", _get_ds3_target_read_preference_type_str(read_preference));
+
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_azure_target_bucket_name_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_target_bucket_name/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_azure_target_failure_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_target_failure/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_azure_target_read_preference_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_target_read_preference/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_azure_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_target/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_bucket_names_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_bucket_name/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_failures_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_failure/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_read_preference_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_read_preference/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_read_preferences_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_read_preference/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_azure_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_blobs_on_azure_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_import_azure_target_spectra_s3_request(const char* resource_id, const char* cloud_bucket_name) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/azure_target/", resource_id, NULL));
+    if (cloud_bucket_name != NULL) {
+        _set_query_param((ds3_request*) request, "cloud_bucket_name", cloud_bucket_name);
+    }
+    _set_query_param((ds3_request*) request, "operation", "IMPORT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_all_azure_targets_spectra_s3_request(const ds3_quiesced quiesced) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/azure_target/", NULL, NULL));
+    _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(quiesced));
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_azure_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/azure_target/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_register_azure_target_spectra_s3_request(const char* account_key, const char* account_name, const char* name) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/azure_target/", NULL, NULL));
+    if (account_key != NULL) {
+        _set_query_param((ds3_request*) request, "account_key", account_key);
+    }
+    if (account_name != NULL) {
+        _set_query_param((ds3_request*) request, "account_name", account_name);
+    }
+    if (name != NULL) {
+        _set_query_param((ds3_request*) request, "name", name);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_verify_azure_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/azure_target/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
 
     return (ds3_request*) request;
@@ -3346,8 +3800,10 @@ ds3_request* ds3_init_delete_ds3_target_spectra_s3_request(const char* resource_
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/ds3_target/", resource_id, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_force_target_environment_refresh_spectra_s3_request(void) {
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/target_environment/", NULL, NULL));
+ds3_request* ds3_init_get_blobs_on_ds3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/ds3_target/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_ds3_target_data_policies_spectra_s3_request(const char* resource_id) {
@@ -3408,6 +3864,115 @@ ds3_request* ds3_init_register_ds3_target_spectra_s3_request(const char* admin_a
 }
 ds3_request* ds3_init_verify_ds3_target_spectra_s3_request(const char* resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/ds3_target/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "VERIFY");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_put_s3_target_bucket_name_spectra_s3_request(const char* bucket_id, const char* name, const char* target_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/s3_target_bucket_name/", NULL, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    if (name != NULL) {
+        _set_query_param((ds3_request*) request, "name", name);
+    }
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_put_s3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/s3_target_read_preference/", NULL, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    _set_query_param((ds3_request*) request, "read_preference", _get_ds3_target_read_preference_type_str(read_preference));
+
+    if (target_id != NULL) {
+        _set_query_param((ds3_request*) request, "target_id", target_id);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_s3_target_bucket_name_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/s3_target_bucket_name/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_s3_target_failure_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/s3_target_failure/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_s3_target_read_preference_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/s3_target_read_preference/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_s3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/s3_target/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_blobs_on_s3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "GET_PHYSICAL_PLACEMENT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_bucket_names_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target_bucket_name/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_failures_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target_failure/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_read_preference_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target_read_preference/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_read_preferences_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target_read_preference/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_s3_targets_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/s3_target/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_import_s3_target_spectra_s3_request(const char* resource_id, const char* cloud_bucket_name) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/s3_target/", resource_id, NULL));
+    if (cloud_bucket_name != NULL) {
+        _set_query_param((ds3_request*) request, "cloud_bucket_name", cloud_bucket_name);
+    }
+    _set_query_param((ds3_request*) request, "operation", "IMPORT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_all_s3_targets_spectra_s3_request(const ds3_quiesced quiesced) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/s3_target/", NULL, NULL));
+    _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(quiesced));
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_s3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/s3_target/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_register_s3_target_spectra_s3_request(const char* access_key, const char* name, const char* secret_key) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/s3_target/", NULL, NULL));
+    if (access_key != NULL) {
+        _set_query_param((ds3_request*) request, "access_key", access_key);
+    }
+    if (name != NULL) {
+        _set_query_param((ds3_request*) request, "name", name);
+    }
+    if (secret_key != NULL) {
+        _set_query_param((ds3_request*) request, "secret_key", secret_key);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_verify_s3_target_spectra_s3_request(const char* resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/s3_target/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "VERIFY");
 
     return (ds3_request*) request;
@@ -3724,8 +4289,8 @@ static ds3_auto_inspect_mode _match_ds3_auto_inspect_mode(const ds3_log* log, co
         return DS3_AUTO_INSPECT_MODE_NEVER;
     } else if (xmlStrcmp(text, (const xmlChar*) "MINIMAL") == 0) {
         return DS3_AUTO_INSPECT_MODE_MINIMAL;
-    } else if (xmlStrcmp(text, (const xmlChar*) "DEFAULT") == 0) {
-        return DS3_AUTO_INSPECT_MODE_DEFAULT;
+    } else if (xmlStrcmp(text, (const xmlChar*) "FULL") == 0) {
+        return DS3_AUTO_INSPECT_MODE_FULL;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_AUTO_INSPECT_MODE_NEVER for safety.", text);
         return DS3_AUTO_INSPECT_MODE_NEVER;
@@ -3777,16 +4342,6 @@ static ds3_data_isolation_level _match_ds3_data_isolation_level(const ds3_log* l
         return DS3_DATA_ISOLATION_LEVEL_STANDARD;
     }
 }
-static ds3_data_persistence_rule_state _match_ds3_data_persistence_rule_state(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
-        return DS3_DATA_PERSISTENCE_RULE_STATE_NORMAL;
-    } else if (xmlStrcmp(text, (const xmlChar*) "INCLUSION_IN_PROGRESS") == 0) {
-        return DS3_DATA_PERSISTENCE_RULE_STATE_INCLUSION_IN_PROGRESS;
-    } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_DATA_PERSISTENCE_RULE_STATE_NORMAL for safety.", text);
-        return DS3_DATA_PERSISTENCE_RULE_STATE_NORMAL;
-    }
-}
 static ds3_data_persistence_rule_type _match_ds3_data_persistence_rule_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "PERMANENT") == 0) {
         return DS3_DATA_PERSISTENCE_RULE_TYPE_PERMANENT;
@@ -3799,6 +4354,16 @@ static ds3_data_persistence_rule_type _match_ds3_data_persistence_rule_type(cons
         return DS3_DATA_PERSISTENCE_RULE_TYPE_PERMANENT;
     }
 }
+static ds3_data_placement_rule_state _match_ds3_data_placement_rule_state(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
+        return DS3_DATA_PLACEMENT_RULE_STATE_NORMAL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "INCLUSION_IN_PROGRESS") == 0) {
+        return DS3_DATA_PLACEMENT_RULE_STATE_INCLUSION_IN_PROGRESS;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_DATA_PLACEMENT_RULE_STATE_NORMAL for safety.", text);
+        return DS3_DATA_PLACEMENT_RULE_STATE_NORMAL;
+    }
+}
 static ds3_data_replication_rule_type _match_ds3_data_replication_rule_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "PERMANENT") == 0) {
         return DS3_DATA_REPLICATION_RULE_TYPE_PERMANENT;
@@ -3807,6 +4372,16 @@ static ds3_data_replication_rule_type _match_ds3_data_replication_rule_type(cons
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_DATA_REPLICATION_RULE_TYPE_PERMANENT for safety.", text);
         return DS3_DATA_REPLICATION_RULE_TYPE_PERMANENT;
+    }
+}
+static ds3_feature_key_type _match_ds3_feature_key_type(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "AWS_S3_CLOUD_OUT") == 0) {
+        return DS3_FEATURE_KEY_TYPE_AWS_S3_CLOUD_OUT;
+    } else if (xmlStrcmp(text, (const xmlChar*) "MICROSOFT_AZURE_CLOUD_OUT") == 0) {
+        return DS3_FEATURE_KEY_TYPE_MICROSOFT_AZURE_CLOUD_OUT;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_FEATURE_KEY_TYPE_AWS_S3_CLOUD_OUT for safety.", text);
+        return DS3_FEATURE_KEY_TYPE_AWS_S3_CLOUD_OUT;
     }
 }
 static ds3_job_chunk_blob_store_state _match_ds3_job_chunk_blob_store_state(const ds3_log* log, const xmlChar* text) {
@@ -3853,6 +4428,20 @@ static ds3_ltfs_file_naming_mode _match_ds3_ltfs_file_naming_mode(const ds3_log*
         return DS3_LTFS_FILE_NAMING_MODE_OBJECT_NAME;
     }
 }
+static ds3_s3_initial_data_placement_policy _match_ds3_s3_initial_data_placement_policy(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "STANDARD") == 0) {
+        return DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_STANDARD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "REDUCED_REDUNDANCY") == 0) {
+        return DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_REDUCED_REDUNDANCY;
+    } else if (xmlStrcmp(text, (const xmlChar*) "STANDARD_IA") == 0) {
+        return DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_STANDARD_IA;
+    } else if (xmlStrcmp(text, (const xmlChar*) "GLACIER") == 0) {
+        return DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_GLACIER;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_STANDARD for safety.", text);
+        return DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_STANDARD;
+    }
+}
 static ds3_s3_object_type _match_ds3_s3_object_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "DATA") == 0) {
         return DS3_S3_OBJECT_TYPE_DATA;
@@ -3861,6 +4450,38 @@ static ds3_s3_object_type _match_ds3_s3_object_type(const ds3_log* log, const xm
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_S3_OBJECT_TYPE_DATA for safety.", text);
         return DS3_S3_OBJECT_TYPE_DATA;
+    }
+}
+static ds3_s3_region _match_ds3_s3_region(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "GOV_CLOUD") == 0) {
+        return DS3_S3_REGION_GOV_CLOUD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "US_EAST_1") == 0) {
+        return DS3_S3_REGION_US_EAST_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "US_WEST_1") == 0) {
+        return DS3_S3_REGION_US_WEST_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "US_WEST_2") == 0) {
+        return DS3_S3_REGION_US_WEST_2;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EU_WEST_1") == 0) {
+        return DS3_S3_REGION_EU_WEST_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "EU_CENTRAL_1") == 0) {
+        return DS3_S3_REGION_EU_CENTRAL_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "AP_SOUTH_1") == 0) {
+        return DS3_S3_REGION_AP_SOUTH_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "AP_SOUTHEAST_1") == 0) {
+        return DS3_S3_REGION_AP_SOUTHEAST_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "AP_SOUTHEAST_2") == 0) {
+        return DS3_S3_REGION_AP_SOUTHEAST_2;
+    } else if (xmlStrcmp(text, (const xmlChar*) "AP_NORTHEAST_1") == 0) {
+        return DS3_S3_REGION_AP_NORTHEAST_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "AP_NORTHEAST_2") == 0) {
+        return DS3_S3_REGION_AP_NORTHEAST_2;
+    } else if (xmlStrcmp(text, (const xmlChar*) "SA_EAST_1") == 0) {
+        return DS3_S3_REGION_SA_EAST_1;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CN_NORTH_1") == 0) {
+        return DS3_S3_REGION_CN_NORTH_1;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_S3_REGION_GOV_CLOUD for safety.", text);
+        return DS3_S3_REGION_GOV_CLOUD;
     }
 }
 static ds3_storage_domain_failure_type _match_ds3_storage_domain_failure_type(const ds3_log* log, const xmlChar* text) {
@@ -3890,8 +4511,14 @@ static ds3_system_failure_type _match_ds3_system_failure_type(const ds3_log* log
         return DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "RECONCILE_POOL_ENVIRONMENT_FAILED") == 0) {
         return DS3_SYSTEM_FAILURE_TYPE_RECONCILE_POOL_ENVIRONMENT_FAILED;
-    } else if (xmlStrcmp(text, (const xmlChar*) "SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION") == 0) {
-        return DS3_SYSTEM_FAILURE_TYPE_SUSPECTED_DATA_LOSS_REQUIRES_USER_CONFIRMATION;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION") == 0) {
+        return DS3_SYSTEM_FAILURE_TYPE_CRITICAL_DATA_VERIFICATION_ERROR_REQUIRES_USER_CONFIRMATION;
+    } else if (xmlStrcmp(text, (const xmlChar*) "MICROSOFT_AZURE_WRITES_REQUIRE_FEATURE_LICENSE") == 0) {
+        return DS3_SYSTEM_FAILURE_TYPE_MICROSOFT_AZURE_WRITES_REQUIRE_FEATURE_LICENSE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "AWS_S3_WRITES_REQUIRE_FEATURE_LICENSE") == 0) {
+        return DS3_SYSTEM_FAILURE_TYPE_AWS_S3_WRITES_REQUIRE_FEATURE_LICENSE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DATABASE_RUNNING_OUT_OF_SPACE") == 0) {
+        return DS3_SYSTEM_FAILURE_TYPE_DATABASE_RUNNING_OUT_OF_SPACE;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED for safety.", text);
         return DS3_SYSTEM_FAILURE_TYPE_RECONCILE_TAPE_ENVIRONMENT_FAILED;
@@ -4150,6 +4777,8 @@ static ds3_tape_partition_failure_type _match_ds3_tape_partition_failure_type(co
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_EJECTION_BY_OPERATOR_REQUIRED;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_MEDIA_TYPE_INCOMPATIBLE") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_MEDIA_TYPE_INCOMPATIBLE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_REMOVAL_UNEXPECTED") == 0) {
+        return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_REMOVAL_UNEXPECTED;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED for safety.", text);
         return DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED;
@@ -4188,6 +4817,10 @@ static ds3_tape_state _match_ds3_tape_state(const ds3_log* log, const xmlChar* t
         return DS3_TAPE_STATE_DATA_CHECKPOINT_MISSING;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTFS_WITH_FOREIGN_DATA") == 0) {
         return DS3_TAPE_STATE_LTFS_WITH_FOREIGN_DATA;
+    } else if (xmlStrcmp(text, (const xmlChar*) "RAW_IMPORT_PENDING") == 0) {
+        return DS3_TAPE_STATE_RAW_IMPORT_PENDING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "RAW_IMPORT_IN_PROGRESS") == 0) {
+        return DS3_TAPE_STATE_RAW_IMPORT_IN_PROGRESS;
     } else if (xmlStrcmp(text, (const xmlChar*) "FOREIGN") == 0) {
         return DS3_TAPE_STATE_FOREIGN;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_PENDING") == 0) {
@@ -4200,6 +4833,8 @@ static ds3_tape_state _match_ds3_tape_state(const ds3_log* log, const xmlChar* t
         return DS3_TAPE_STATE_LOST;
     } else if (xmlStrcmp(text, (const xmlChar*) "BAD") == 0) {
         return DS3_TAPE_STATE_BAD;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION") == 0) {
+        return DS3_TAPE_STATE_CANNOT_FORMAT_DUE_TO_WRITE_PROTECTION;
     } else if (xmlStrcmp(text, (const xmlChar*) "SERIAL_NUMBER_MISMATCH") == 0) {
         return DS3_TAPE_STATE_SERIAL_NUMBER_MISMATCH;
     } else if (xmlStrcmp(text, (const xmlChar*) "BAR_CODE_MISSING") == 0) {
@@ -4262,7 +4897,9 @@ static ds3_target_access_control_replication _match_ds3_target_access_control_re
     }
 }
 static ds3_target_failure_type _match_ds3_target_failure_type(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "NOT_ONLINE") == 0) {
+    if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED") == 0) {
+        return DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "NOT_ONLINE") == 0) {
         return DS3_TARGET_FAILURE_TYPE_NOT_ONLINE;
     } else if (xmlStrcmp(text, (const xmlChar*) "WRITE_FAILED") == 0) {
         return DS3_TARGET_FAILURE_TYPE_WRITE_FAILED;
@@ -4275,8 +4912,8 @@ static ds3_target_failure_type _match_ds3_target_failure_type(const ds3_log* log
     } else if (xmlStrcmp(text, (const xmlChar*) "VERIFY_FAILED") == 0) {
         return DS3_TARGET_FAILURE_TYPE_VERIFY_FAILED;
     } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TARGET_FAILURE_TYPE_NOT_ONLINE for safety.", text);
-        return DS3_TARGET_FAILURE_TYPE_NOT_ONLINE;
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED for safety.", text);
+        return DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED;
     }
 }
 static ds3_target_read_preference_type _match_ds3_target_read_preference_type(const ds3_log* log, const xmlChar* text) {
@@ -4300,8 +4937,6 @@ static ds3_target_read_preference_type _match_ds3_target_read_preference_type(co
 static ds3_target_state _match_ds3_target_state(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "ONLINE") == 0) {
         return DS3_TARGET_STATE_ONLINE;
-    } else if (xmlStrcmp(text, (const xmlChar*) "LIMITED_ACCESS") == 0) {
-        return DS3_TARGET_STATE_LIMITED_ACCESS;
     } else if (xmlStrcmp(text, (const xmlChar*) "OFFLINE") == 0) {
         return DS3_TARGET_STATE_OFFLINE;
     } else {
@@ -4423,6 +5058,53 @@ static ds3_checksum_type _match_ds3_checksum_type(const ds3_log* log, const xmlC
 }
 
 //************ STRUCT PARSERS **************
+static ds3_error* _parse_ds3_azure_data_replication_rule_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_azure_data_replication_rule_response** _response) {
+    ds3_azure_data_replication_rule_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_azure_data_replication_rule_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "DataPolicyId")) {
+            response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxBlobPartSizeInBytes")) {
+            response->max_blob_part_size_in_bytes = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_data_replication_rule_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_data_replication_rule_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
 static ds3_error* _parse_ds3_blob_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_blob_response** _response) {
     ds3_blob_response* response;
     xmlNodePtr child_node;
@@ -4478,6 +5160,8 @@ static ds3_error* _parse_ds3_bucket_response(const ds3_client* client, const xml
             response->creation_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DataPolicyId")) {
             response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Empty")) {
+            response->empty = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastPreferredChunkSizeInBytes")) {
@@ -4717,7 +5401,7 @@ static ds3_error* _parse_ds3_data_persistence_rule_response(const ds3_client* cl
             if (text == NULL) {
                 continue;
             }
-            response->state = _match_ds3_data_persistence_rule_state(client->log, text);
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "StorageDomainId")) {
             response->storage_domain_id = xml_get_string(doc, child_node);
@@ -4786,6 +5470,8 @@ static ds3_error* _parse_ds3_data_policy_response(const ds3_client* client, cons
             }
             response->default_put_job_priority = _match_ds3_priority(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyAfterWrite")) {
+            response->default_verify_after_write = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "DefaultVerifyJobPriority")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -4864,6 +5550,45 @@ static ds3_error* _parse_ds3_data_policy_acl_response(const ds3_client* client, 
     return error;
 }
 
+static ds3_error* _parse_ds3_degraded_blob_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_degraded_blob_response** _response) {
+    ds3_degraded_blob_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_degraded_blob_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureReplicationRuleId")) {
+            response->azure_replication_rule_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "BlobId")) {
+            response->blob_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Ds3ReplicationRuleId")) {
+            response->ds3_replication_rule_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PersistenceRuleId")) {
+            response->persistence_rule_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "S3ReplicationRuleId")) {
+            response->s3_replication_rule_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_degraded_blob_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
 static ds3_error* _parse_ds3_data_replication_rule_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_replication_rule_response** _response) {
     ds3_data_replication_rule_response* response;
     xmlNodePtr child_node;
@@ -4875,10 +5600,6 @@ static ds3_error* _parse_ds3_data_replication_rule_response(const ds3_client* cl
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "DataPolicyId")) {
             response->data_policy_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Ds3TargetDataPolicy")) {
-            response->ds3_target_data_policy = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Ds3TargetId")) {
-            response->ds3_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -4886,8 +5607,12 @@ static ds3_error* _parse_ds3_data_replication_rule_response(const ds3_client* cl
             if (text == NULL) {
                 continue;
             }
-            response->state = _match_ds3_data_persistence_rule_state(client->log, text);
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "TargetDataPolicy")) {
+            response->target_data_policy = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Type")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -4911,27 +5636,34 @@ static ds3_error* _parse_ds3_data_replication_rule_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_degraded_blob_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_degraded_blob_response** _response) {
-    ds3_degraded_blob_response* response;
+static ds3_error* _parse_ds3_feature_key_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_feature_key_response** _response) {
+    ds3_feature_key_response* response;
     xmlNodePtr child_node;
     ds3_error* error = NULL;
 
-    response = g_new0(ds3_degraded_blob_response, 1);
+    response = g_new0(ds3_feature_key_response, 1);
 
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "BlobId")) {
-            response->blob_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "BucketId")) {
-            response->bucket_id = xml_get_string(doc, child_node);
+        if (element_equal(child_node, "CurrentValue")) {
+            response->current_value = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ExpirationDate")) {
+            response->expiration_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "PersistenceRuleId")) {
-            response->persistence_rule_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ReplicationRuleId")) {
-            response->replication_rule_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Key")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->key = _match_ds3_feature_key_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "LimitValue")) {
+            response->limit_value = xml_get_uint64(doc, child_node);
         } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_degraded_blob_response [%s]\n", child_node->name, root->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_feature_key_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -5040,6 +5772,8 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             response->error_message = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ImplicitJobIdResolution")) {
+            response->implicit_job_id_resolution = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "MinimizeSpanningAcrossMedia")) {
             response->minimize_spanning_across_media = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Naked")) {
@@ -5057,6 +5791,8 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             xmlFree(text);
         } else if (element_equal(child_node, "Rechunked")) {
             response->rechunked = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Replicating")) {
+            response->replicating = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "RequestType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -5066,8 +5802,12 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             xmlFree(text);
         } else if (element_equal(child_node, "Truncated")) {
             response->truncated = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "TruncatedDueToTimeout")) {
+            response->truncated_due_to_timeout = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UserId")) {
             response->user_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "VerifyAfterWrite")) {
+            response->verify_after_write = xml_get_bool(client->log, doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_active_job_response [%s]\n", child_node->name, root->name);
         }
@@ -5111,6 +5851,60 @@ static ds3_error* _parse_ds3_node_response(const ds3_client* client, const xmlDo
             response->serial_number = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_node_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_s3_data_replication_rule_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_data_replication_rule_response** _response) {
+    ds3_s3_data_replication_rule_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_s3_data_replication_rule_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "DataPolicyId")) {
+            response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "InitialDataPlacement")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->initial_data_placement = _match_ds3_s3_initial_data_placement_policy(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "MaxBlobPartSizeInBytes")) {
+            response->max_blob_part_size_in_bytes = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_data_replication_rule_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_data_replication_rule_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -5421,6 +6215,68 @@ static ds3_error* _parse_ds3_spectra_user_response(const ds3_client* client, con
             response->secret_key = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_spectra_user_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_azure_target_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_azure_target_failure_notification_registration_response** _response) {
+    ds3_azure_target_failure_notification_registration_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_azure_target_failure_notification_registration_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "CreationDate")) {
+            response->creation_date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Format")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->format = _match_ds3_http_response_format_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFailure")) {
+            response->last_failure = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastHttpResponseCode")) {
+            response->last_http_response_code = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "LastNotification")) {
+            response->last_notification = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NamingConvention")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->naming_convention = _match_ds3_naming_convention_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NotificationEndPoint")) {
+            response->notification_end_point = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NotificationHttpMethod")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->notification_http_method = _match_ds3_request_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NumberOfFailuresSinceLastSuccess")) {
+            response->number_of_failures_since_last_success = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "UserId")) {
+            response->user_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_failure_notification_registration_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -5923,6 +6779,68 @@ static ds3_error* _parse_ds3_s3_object_persisted_notification_registration_respo
             response->user_id = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_object_persisted_notification_registration_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_s3_target_failure_notification_registration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_target_failure_notification_registration_response** _response) {
+    ds3_s3_target_failure_notification_registration_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_s3_target_failure_notification_registration_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "CreationDate")) {
+            response->creation_date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Format")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->format = _match_ds3_http_response_format_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFailure")) {
+            response->last_failure = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastHttpResponseCode")) {
+            response->last_http_response_code = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "LastNotification")) {
+            response->last_notification = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NamingConvention")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->naming_convention = _match_ds3_naming_convention_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NotificationEndPoint")) {
+            response->notification_end_point = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NotificationHttpMethod")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->notification_http_method = _match_ds3_request_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NumberOfFailuresSinceLastSuccess")) {
+            response->number_of_failures_since_last_success = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "UserId")) {
+            response->user_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_failure_notification_registration_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -6866,6 +7784,204 @@ static ds3_error* _parse_ds3_tape_partition_failure_response(const ds3_client* c
     return error;
 }
 
+static ds3_error* _parse_ds3_azure_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_azure_target_response** _response) {
+    ds3_azure_target_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_azure_target_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AccountKey")) {
+            response->account_key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AccountName")) {
+            response->account_name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AutoVerifyFrequencyInDays")) {
+            response->auto_verify_frequency_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketPrefix")) {
+            response->cloud_bucket_prefix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketSuffix")) {
+            response->cloud_bucket_suffix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DefaultReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Https")) {
+            response->https = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFullyVerified")) {
+            response->last_fully_verified = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PermitGoingOutOfSync")) {
+            response->permit_going_out_of_sync = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ReplicateDeletes")) {
+            response->replicate_deletes = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_target_state(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_azure_target_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_azure_target_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_azure_target_response* response = NULL;
+        error = _parse_ds3_azure_target_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_azure_target_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_azure_target_response_array;
+
+    return error;
+}
+static ds3_error* _parse_ds3_azure_target_bucket_name_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_azure_target_bucket_name_response** _response) {
+    ds3_azure_target_bucket_name_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_azure_target_bucket_name_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_bucket_name_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_azure_target_failure_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_azure_target_failure_response** _response) {
+    ds3_azure_target_failure_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_azure_target_failure_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Date")) {
+            response->date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_target_failure_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_failure_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_azure_target_read_preference_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_azure_target_read_preference_response** _response) {
+    ds3_azure_target_read_preference_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_azure_target_read_preference_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_read_preference_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
 static ds3_error* _parse_ds3_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_target_response** _response) {
     ds3_target_response* response;
     xmlNodePtr child_node;
@@ -7038,23 +8154,306 @@ static ds3_error* _parse_ds3_target_read_preference_response(const ds3_client* c
     return error;
 }
 
-static ds3_error* _parse_ds3_suspect_blob_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_suspect_blob_target_response** _response) {
-    ds3_suspect_blob_target_response* response;
+static ds3_error* _parse_ds3_s3_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_target_response** _response) {
+    ds3_s3_target_response* response;
     xmlNodePtr child_node;
     ds3_error* error = NULL;
 
-    response = g_new0(ds3_suspect_blob_target_response, 1);
+    response = g_new0(ds3_s3_target_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AccessKey")) {
+            response->access_key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AutoVerifyFrequencyInDays")) {
+            response->auto_verify_frequency_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketPrefix")) {
+            response->cloud_bucket_prefix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketSuffix")) {
+            response->cloud_bucket_suffix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DataPathEndPoint")) {
+            response->data_path_end_point = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DefaultReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Https")) {
+            response->https = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFullyVerified")) {
+            response->last_fully_verified = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "OfflineDataStagingWindowInTb")) {
+            response->offline_data_staging_window_in_tb = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "PermitGoingOutOfSync")) {
+            response->permit_going_out_of_sync = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "ProxyDomain")) {
+            response->proxy_domain = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ProxyHost")) {
+            response->proxy_host = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ProxyPassword")) {
+            response->proxy_password = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ProxyPort")) {
+            response->proxy_port = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "ProxyUsername")) {
+            response->proxy_username = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Region")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->region = _match_ds3_s3_region(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ReplicateDeletes")) {
+            response->replicate_deletes = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "SecretKey")) {
+            response->secret_key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "StagedDataExpirationInDays")) {
+            response->staged_data_expiration_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_target_state(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_s3_target_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_s3_target_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_s3_target_response* response = NULL;
+        error = _parse_ds3_s3_target_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_s3_target_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_s3_target_response_array;
+
+    return error;
+}
+static ds3_error* _parse_ds3_s3_target_bucket_name_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_target_bucket_name_response** _response) {
+    ds3_s3_target_bucket_name_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_s3_target_bucket_name_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_bucket_name_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_s3_target_failure_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_target_failure_response** _response) {
+    ds3_s3_target_failure_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_s3_target_failure_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Date")) {
+            response->date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_target_failure_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_failure_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_s3_target_read_preference_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_target_read_preference_response** _response) {
+    ds3_s3_target_read_preference_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_s3_target_read_preference_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_read_preference_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_suspect_blob_azure_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_suspect_blob_azure_target_response** _response) {
+    ds3_suspect_blob_azure_target_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_suspect_blob_azure_target_response, 1);
 
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "BlobId")) {
             response->blob_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Ds3TargetId")) {
-            response->ds3_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
         } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_target_response [%s]\n", child_node->name, root->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_azure_target_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_suspect_blob_ds3_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_suspect_blob_ds3_target_response** _response) {
+    ds3_suspect_blob_ds3_target_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_suspect_blob_ds3_target_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BlobId")) {
+            response->blob_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_ds3_target_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_suspect_blob_s3_target_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_suspect_blob_s3_target_response** _response) {
+    ds3_suspect_blob_s3_target_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_suspect_blob_s3_target_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BlobId")) {
+            response->blob_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_s3_target_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -7195,8 +8594,6 @@ static ds3_error* _parse_ds3_blob_store_task_information_response(const ds3_clie
             response->description = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DriveId")) {
             response->drive_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Ds3TargetId")) {
-            response->ds3_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
@@ -7219,6 +8616,10 @@ static ds3_error* _parse_ds3_blob_store_task_information_response(const ds3_clie
             xmlFree(text);
         } else if (element_equal(child_node, "TapeId")) {
             response->tape_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetType")) {
+            response->target_type = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_blob_store_task_information_response [%s]\n", child_node->name, root->name);
         }
@@ -7713,7 +9114,13 @@ static ds3_error* _parse_ds3_physical_placement_response(const ds3_client* clien
 
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Ds3Targets")) {
+        if (element_equal(child_node, "AzureTargets")) {
+            GPtrArray* azure_targets_array;
+            error = _parse_ds3_azure_target_response_array(client, doc, child_node, &azure_targets_array);
+            response->azure_targets = (ds3_azure_target_response**)azure_targets_array->pdata;
+            response->num_azure_targets = azure_targets_array->len;
+            g_ptr_array_free(azure_targets_array, FALSE);
+        } else if (element_equal(child_node, "Ds3Targets")) {
             GPtrArray* ds3_targets_array;
             error = _parse_ds3_target_response_array(client, doc, child_node, &ds3_targets_array);
             response->ds3_targets = (ds3_target_response**)ds3_targets_array->pdata;
@@ -7725,6 +9132,12 @@ static ds3_error* _parse_ds3_physical_placement_response(const ds3_client* clien
             response->pools = (ds3_pool_response**)pools_array->pdata;
             response->num_pools = pools_array->len;
             g_ptr_array_free(pools_array, FALSE);
+        } else if (element_equal(child_node, "S3Targets")) {
+            GPtrArray* s3_targets_array;
+            error = _parse_ds3_s3_target_response_array(client, doc, child_node, &s3_targets_array);
+            response->s3_targets = (ds3_s3_target_response**)s3_targets_array->pdata;
+            response->num_s3_targets = s3_targets_array->len;
+            g_ptr_array_free(s3_targets_array, FALSE);
         } else if (element_equal(child_node, "Tapes")) {
             GPtrArray* tapes_array;
             error = _parse_ds3_tape_response_array(client, doc, child_node, &tapes_array);
@@ -8182,6 +9595,64 @@ static ds3_error* _parse_ds3_detailed_s3_object_response(const ds3_client* clien
 
 
 //************ TOP LEVEL STRUCT PARSERS **************
+static ds3_error* _parse_top_level_ds3_azure_data_replication_rule_response(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_data_replication_rule_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_data_replication_rule_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "DataPolicyId")) {
+            response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxBlobPartSizeInBytes")) {
+            response->max_blob_part_size_in_bytes = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_data_replication_rule_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_data_replication_rule_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_data_replication_rule_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_bucket_response(const ds3_client* client, const ds3_request* request, ds3_bucket_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -8201,6 +9672,8 @@ static ds3_error* _parse_top_level_ds3_bucket_response(const ds3_client* client,
             response->creation_date = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DataPolicyId")) {
             response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Empty")) {
+            response->empty = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastPreferredChunkSizeInBytes")) {
@@ -8484,6 +9957,15 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             }
             response->default_import_conflict_resolution_mode = _match_ds3_import_conflict_resolution_mode(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyDataAfterImport")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_verify_data_after_import = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyDataPriorToImport")) {
+            response->default_verify_data_prior_to_import = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "InstanceId")) {
@@ -8557,7 +10039,7 @@ static ds3_error* _parse_top_level_ds3_data_persistence_rule_response(const ds3_
             if (text == NULL) {
                 continue;
             }
-            response->state = _match_ds3_data_persistence_rule_state(client->log, text);
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "StorageDomainId")) {
             response->storage_domain_id = xml_get_string(doc, child_node);
@@ -8637,6 +10119,8 @@ static ds3_error* _parse_top_level_ds3_data_policy_response(const ds3_client* cl
             }
             response->default_put_job_priority = _match_ds3_priority(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyAfterWrite")) {
+            response->default_verify_after_write = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "DefaultVerifyJobPriority")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8748,10 +10232,6 @@ static ds3_error* _parse_top_level_ds3_data_replication_rule_response(const ds3_
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "DataPolicyId")) {
             response->data_policy_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Ds3TargetDataPolicy")) {
-            response->ds3_target_data_policy = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Ds3TargetId")) {
-            response->ds3_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -8759,8 +10239,12 @@ static ds3_error* _parse_top_level_ds3_data_replication_rule_response(const ds3_
             if (text == NULL) {
                 continue;
             }
-            response->state = _match_ds3_data_persistence_rule_state(client->log, text);
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "TargetDataPolicy")) {
+            response->target_data_policy = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Type")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8911,6 +10395,8 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             response->error_message = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ImplicitJobIdResolution")) {
+            response->implicit_job_id_resolution = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "MinimizeSpanningAcrossMedia")) {
             response->minimize_spanning_across_media = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Naked")) {
@@ -8928,6 +10414,8 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             xmlFree(text);
         } else if (element_equal(child_node, "Rechunked")) {
             response->rechunked = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Replicating")) {
+            response->replicating = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "RequestType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8937,8 +10425,12 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             xmlFree(text);
         } else if (element_equal(child_node, "Truncated")) {
             response->truncated = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "TruncatedDueToTimeout")) {
+            response->truncated_due_to_timeout = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UserId")) {
             response->user_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "VerifyAfterWrite")) {
+            response->verify_after_write = xml_get_bool(client->log, doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_active_job_response [%s]\n", child_node->name, root->name);
         }
@@ -8994,10 +10486,14 @@ static ds3_error* _parse_top_level_ds3_job_chunk_response(const ds3_client* clie
             response->node_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PendingTargetCommit")) {
             response->pending_target_commit = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "ReadFromAzureTargetId")) {
+            response->read_from_azure_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "ReadFromDs3TargetId")) {
             response->read_from_ds3_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "ReadFromPoolId")) {
             response->read_from_pool_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromS3TargetId")) {
+            response->read_from_s3_target_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "ReadFromTapeId")) {
             response->read_from_tape_id = xml_get_string(doc, child_node);
         } else {
@@ -9069,6 +10565,71 @@ static ds3_error* _parse_top_level_ds3_node_response(const ds3_client* client, c
         *_response = response;
     } else {
         ds3_node_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_data_replication_rule_response(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_data_replication_rule_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_data_replication_rule_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "DataPolicyId")) {
+            response->data_policy_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "InitialDataPlacement")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->initial_data_placement = _match_ds3_s3_initial_data_placement_policy(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "MaxBlobPartSizeInBytes")) {
+            response->max_blob_part_size_in_bytes = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_data_replication_rule_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_data_replication_rule_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_data_replication_rule_response_free(response);
     }
 
     return error;
@@ -9314,6 +10875,79 @@ static ds3_error* _parse_top_level_ds3_spectra_user_response(const ds3_client* c
         *_response = response;
     } else {
         ds3_spectra_user_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_failure_notification_registration_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_failure_notification_registration_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_failure_notification_registration_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "CreationDate")) {
+            response->creation_date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Format")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->format = _match_ds3_http_response_format_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFailure")) {
+            response->last_failure = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastHttpResponseCode")) {
+            response->last_http_response_code = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "LastNotification")) {
+            response->last_notification = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NamingConvention")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->naming_convention = _match_ds3_naming_convention_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NotificationEndPoint")) {
+            response->notification_end_point = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NotificationHttpMethod")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->notification_http_method = _match_ds3_request_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NumberOfFailuresSinceLastSuccess")) {
+            response->number_of_failures_since_last_success = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "UserId")) {
+            response->user_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_failure_notification_registration_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_failure_notification_registration_response_free(response);
     }
 
     return error;
@@ -9904,6 +11538,79 @@ static ds3_error* _parse_top_level_ds3_s3_object_persisted_notification_registra
         *_response = response;
     } else {
         ds3_s3_object_persisted_notification_registration_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_failure_notification_registration_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_failure_notification_registration_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_failure_notification_registration_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "CreationDate")) {
+            response->creation_date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Format")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->format = _match_ds3_http_response_format_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFailure")) {
+            response->last_failure = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastHttpResponseCode")) {
+            response->last_http_response_code = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "LastNotification")) {
+            response->last_notification = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NamingConvention")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->naming_convention = _match_ds3_naming_convention_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NotificationEndPoint")) {
+            response->notification_end_point = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NotificationHttpMethod")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->notification_http_method = _match_ds3_request_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "NumberOfFailuresSinceLastSuccess")) {
+            response->number_of_failures_since_last_success = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "UserId")) {
+            response->user_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_failure_notification_registration_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_failure_notification_registration_response_free(response);
     }
 
     return error;
@@ -10739,6 +12446,178 @@ static ds3_error* _parse_top_level_ds3_tape_partition_response(const ds3_client*
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_azure_target_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AccountKey")) {
+            response->account_key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AccountName")) {
+            response->account_name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AutoVerifyFrequencyInDays")) {
+            response->auto_verify_frequency_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketPrefix")) {
+            response->cloud_bucket_prefix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketSuffix")) {
+            response->cloud_bucket_suffix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DefaultReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Https")) {
+            response->https = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFullyVerified")) {
+            response->last_fully_verified = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PermitGoingOutOfSync")) {
+            response->permit_going_out_of_sync = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ReplicateDeletes")) {
+            response->replicate_deletes = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_target_state(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_bucket_name_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_bucket_name_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_bucket_name_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_bucket_name_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_bucket_name_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_bucket_name_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_read_preference_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_read_preference_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_read_preference_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_read_preference_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_read_preference_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_target_response(const ds3_client* client, const ds3_request* request, ds3_target_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -10870,6 +12749,201 @@ static ds3_error* _parse_top_level_ds3_target_read_preference_response(const ds3
         *_response = response;
     } else {
         ds3_target_read_preference_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AccessKey")) {
+            response->access_key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AutoVerifyFrequencyInDays")) {
+            response->auto_verify_frequency_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketPrefix")) {
+            response->cloud_bucket_prefix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CloudBucketSuffix")) {
+            response->cloud_bucket_suffix = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DataPathEndPoint")) {
+            response->data_path_end_point = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DefaultReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Https")) {
+            response->https = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LastFullyVerified")) {
+            response->last_fully_verified = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "OfflineDataStagingWindowInTb")) {
+            response->offline_data_staging_window_in_tb = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "PermitGoingOutOfSync")) {
+            response->permit_going_out_of_sync = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "ProxyDomain")) {
+            response->proxy_domain = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ProxyHost")) {
+            response->proxy_host = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ProxyPassword")) {
+            response->proxy_password = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ProxyPort")) {
+            response->proxy_port = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "ProxyUsername")) {
+            response->proxy_username = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Region")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->region = _match_ds3_s3_region(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ReplicateDeletes")) {
+            response->replicate_deletes = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "SecretKey")) {
+            response->secret_key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "StagedDataExpirationInDays")) {
+            response->staged_data_expiration_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_target_state(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_bucket_name_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_bucket_name_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_bucket_name_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_bucket_name_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_bucket_name_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_bucket_name_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_read_preference_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_read_preference_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_read_preference_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_read_preference_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_read_preference_response_free(response);
     }
 
     return error;
@@ -11474,6 +13548,51 @@ static ds3_error* _parse_top_level_ds3_cache_filesystem_list_response(const ds3_
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_azure_data_replication_rule_list_response(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_data_replication_rule_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* azure_data_replication_rules_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_data_replication_rule_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureDataReplicationRule")) {
+            ds3_azure_data_replication_rule_response* azure_data_replication_rules_response = NULL;
+            error = _parse_ds3_azure_data_replication_rule_response(client, doc, child_node, &azure_data_replication_rules_response);
+            response->azure_data_replication_rules = (ds3_azure_data_replication_rule_response**)azure_data_replication_rules_array->pdata;
+            g_ptr_array_add(azure_data_replication_rules_array, azure_data_replication_rules_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_data_replication_rule_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->azure_data_replication_rules = (ds3_azure_data_replication_rule_response**)azure_data_replication_rules_array->pdata;
+    response->num_azure_data_replication_rules = azure_data_replication_rules_array->len;
+    g_ptr_array_free(azure_data_replication_rules_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_data_replication_rule_list_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_data_persistence_rule_list_response(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -11570,7 +13689,7 @@ static ds3_error* _parse_top_level_ds3_data_replication_rule_list_response(const
     xmlNodePtr child_node;
     ds3_data_replication_rule_list_response* response;
     ds3_error* error = NULL;
-    GPtrArray* data_replication_rules_array = g_ptr_array_new();
+    GPtrArray* ds3_data_replication_rules_array = g_ptr_array_new();
 
     error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
@@ -11580,11 +13699,11 @@ static ds3_error* _parse_top_level_ds3_data_replication_rule_list_response(const
     response = g_new0(ds3_data_replication_rule_list_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "DataReplicationRule")) {
-            ds3_data_replication_rule_response* data_replication_rules_response = NULL;
-            error = _parse_ds3_data_replication_rule_response(client, doc, child_node, &data_replication_rules_response);
-            response->data_replication_rules = (ds3_data_replication_rule_response**)data_replication_rules_array->pdata;
-            g_ptr_array_add(data_replication_rules_array, data_replication_rules_response);
+        if (element_equal(child_node, "Ds3DataReplicationRule")) {
+            ds3_data_replication_rule_response* ds3_data_replication_rules_response = NULL;
+            error = _parse_ds3_data_replication_rule_response(client, doc, child_node, &ds3_data_replication_rules_response);
+            response->ds3_data_replication_rules = (ds3_data_replication_rule_response**)ds3_data_replication_rules_array->pdata;
+            g_ptr_array_add(ds3_data_replication_rules_array, ds3_data_replication_rules_response);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_data_replication_rule_list_response [%s]\n", child_node->name, root->name);
         }
@@ -11595,9 +13714,9 @@ static ds3_error* _parse_top_level_ds3_data_replication_rule_list_response(const
 
     }
 
-    response->data_replication_rules = (ds3_data_replication_rule_response**)data_replication_rules_array->pdata;
-    response->num_data_replication_rules = data_replication_rules_array->len;
-    g_ptr_array_free(data_replication_rules_array, FALSE);
+    response->ds3_data_replication_rules = (ds3_data_replication_rule_response**)ds3_data_replication_rules_array->pdata;
+    response->num_ds3_data_replication_rules = ds3_data_replication_rules_array->len;
+    g_ptr_array_free(ds3_data_replication_rules_array, FALSE);
 
     xmlFreeDoc(doc);
 
@@ -11605,6 +13724,51 @@ static ds3_error* _parse_top_level_ds3_data_replication_rule_list_response(const
         *_response = response;
     } else {
         ds3_data_replication_rule_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_data_replication_rule_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_data_replication_rule_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* s3_data_replication_rules_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_data_replication_rule_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "S3DataReplicationRule")) {
+            ds3_s3_data_replication_rule_response* s3_data_replication_rules_response = NULL;
+            error = _parse_ds3_s3_data_replication_rule_response(client, doc, child_node, &s3_data_replication_rules_response);
+            response->s3_data_replication_rules = (ds3_s3_data_replication_rule_response**)s3_data_replication_rules_array->pdata;
+            g_ptr_array_add(s3_data_replication_rules_array, s3_data_replication_rules_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_data_replication_rule_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->s3_data_replication_rules = (ds3_s3_data_replication_rule_response**)s3_data_replication_rules_array->pdata;
+    response->num_s3_data_replication_rules = s3_data_replication_rules_array->len;
+    g_ptr_array_free(s3_data_replication_rules_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_data_replication_rule_list_response_free(response);
     }
 
     return error;
@@ -11654,6 +13818,96 @@ static ds3_error* _parse_top_level_ds3_degraded_blob_list_response(const ds3_cli
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_suspect_blob_azure_target_list_response(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_azure_target_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_suspect_blob_azure_target_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* suspect_blob_azure_targets_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_suspect_blob_azure_target_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "SuspectBlobAzureTarget")) {
+            ds3_suspect_blob_azure_target_response* suspect_blob_azure_targets_response = NULL;
+            error = _parse_ds3_suspect_blob_azure_target_response(client, doc, child_node, &suspect_blob_azure_targets_response);
+            response->suspect_blob_azure_targets = (ds3_suspect_blob_azure_target_response**)suspect_blob_azure_targets_array->pdata;
+            g_ptr_array_add(suspect_blob_azure_targets_array, suspect_blob_azure_targets_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_azure_target_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->suspect_blob_azure_targets = (ds3_suspect_blob_azure_target_response**)suspect_blob_azure_targets_array->pdata;
+    response->num_suspect_blob_azure_targets = suspect_blob_azure_targets_array->len;
+    g_ptr_array_free(suspect_blob_azure_targets_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_suspect_blob_azure_target_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_suspect_blob_ds3_target_list_response(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_ds3_target_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_suspect_blob_ds3_target_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* suspect_blob_ds3_targets_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_suspect_blob_ds3_target_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "SuspectBlobDs3Target")) {
+            ds3_suspect_blob_ds3_target_response* suspect_blob_ds3_targets_response = NULL;
+            error = _parse_ds3_suspect_blob_ds3_target_response(client, doc, child_node, &suspect_blob_ds3_targets_response);
+            response->suspect_blob_ds3_targets = (ds3_suspect_blob_ds3_target_response**)suspect_blob_ds3_targets_array->pdata;
+            g_ptr_array_add(suspect_blob_ds3_targets_array, suspect_blob_ds3_targets_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_ds3_target_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->suspect_blob_ds3_targets = (ds3_suspect_blob_ds3_target_response**)suspect_blob_ds3_targets_array->pdata;
+    response->num_suspect_blob_ds3_targets = suspect_blob_ds3_targets_array->len;
+    g_ptr_array_free(suspect_blob_ds3_targets_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_suspect_blob_ds3_target_list_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_suspect_blob_pool_list_response(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_pool_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -11695,6 +13949,51 @@ static ds3_error* _parse_top_level_ds3_suspect_blob_pool_list_response(const ds3
         *_response = response;
     } else {
         ds3_suspect_blob_pool_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_suspect_blob_s3_target_list_response(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_s3_target_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_suspect_blob_s3_target_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* suspect_blob_s3_targets_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_suspect_blob_s3_target_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "SuspectBlobS3Target")) {
+            ds3_suspect_blob_s3_target_response* suspect_blob_s3_targets_response = NULL;
+            error = _parse_ds3_suspect_blob_s3_target_response(client, doc, child_node, &suspect_blob_s3_targets_response);
+            response->suspect_blob_s3_targets = (ds3_suspect_blob_s3_target_response**)suspect_blob_s3_targets_array->pdata;
+            g_ptr_array_add(suspect_blob_s3_targets_array, suspect_blob_s3_targets_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_s3_target_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->suspect_blob_s3_targets = (ds3_suspect_blob_s3_target_response**)suspect_blob_s3_targets_array->pdata;
+    response->num_suspect_blob_s3_targets = suspect_blob_s3_targets_array->len;
+    g_ptr_array_free(suspect_blob_s3_targets_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_suspect_blob_s3_target_list_response_free(response);
     }
 
     return error;
@@ -11744,29 +14043,29 @@ static ds3_error* _parse_top_level_ds3_suspect_blob_tape_list_response(const ds3
 
     return error;
 }
-static ds3_error* _parse_top_level_ds3_suspect_blob_target_list_response(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_target_list_response** _response, GByteArray* xml_blob) {
+static ds3_error* _parse_top_level_ds3_s3_object_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    ds3_suspect_blob_target_list_response* response;
+    ds3_s3_object_list_response* response;
     ds3_error* error = NULL;
-    GPtrArray* suspect_blob_targets_array = g_ptr_array_new();
+    GPtrArray* s3_objects_array = g_ptr_array_new();
 
     error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
 
-    response = g_new0(ds3_suspect_blob_target_list_response, 1);
+    response = g_new0(ds3_s3_object_list_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "SuspectBlobTarget")) {
-            ds3_suspect_blob_target_response* suspect_blob_targets_response = NULL;
-            error = _parse_ds3_suspect_blob_target_response(client, doc, child_node, &suspect_blob_targets_response);
-            response->suspect_blob_targets = (ds3_suspect_blob_target_response**)suspect_blob_targets_array->pdata;
-            g_ptr_array_add(suspect_blob_targets_array, suspect_blob_targets_response);
+        if (element_equal(child_node, "S3Object")) {
+            ds3_s3_object_response* s3_objects_response = NULL;
+            error = _parse_ds3_s3_object_response(client, doc, child_node, &s3_objects_response);
+            response->s3_objects = (ds3_s3_object_response**)s3_objects_array->pdata;
+            g_ptr_array_add(s3_objects_array, s3_objects_response);
         } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_suspect_blob_target_list_response [%s]\n", child_node->name, root->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_object_list_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -11775,16 +14074,16 @@ static ds3_error* _parse_top_level_ds3_suspect_blob_target_list_response(const d
 
     }
 
-    response->suspect_blob_targets = (ds3_suspect_blob_target_response**)suspect_blob_targets_array->pdata;
-    response->num_suspect_blob_targets = suspect_blob_targets_array->len;
-    g_ptr_array_free(suspect_blob_targets_array, FALSE);
+    response->s3_objects = (ds3_s3_object_response**)s3_objects_array->pdata;
+    response->num_s3_objects = s3_objects_array->len;
+    g_ptr_array_free(s3_objects_array, FALSE);
 
     xmlFreeDoc(doc);
 
     if (error == NULL) {
         *_response = response;
     } else {
-        ds3_suspect_blob_target_list_response_free(response);
+        ds3_s3_object_list_response_free(response);
     }
 
     return error;
@@ -12055,6 +14354,51 @@ static ds3_error* _parse_top_level_ds3_node_list_response(const ds3_client* clie
         *_response = response;
     } else {
         ds3_node_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_failure_notification_registration_list_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_failure_notification_registration_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* azure_target_failure_notification_registrations_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_failure_notification_registration_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureTargetFailureNotificationRegistration")) {
+            ds3_azure_target_failure_notification_registration_response* azure_target_failure_notification_registrations_response = NULL;
+            error = _parse_ds3_azure_target_failure_notification_registration_response(client, doc, child_node, &azure_target_failure_notification_registrations_response);
+            response->azure_target_failure_notification_registrations = (ds3_azure_target_failure_notification_registration_response**)azure_target_failure_notification_registrations_array->pdata;
+            g_ptr_array_add(azure_target_failure_notification_registrations_array, azure_target_failure_notification_registrations_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_failure_notification_registration_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->azure_target_failure_notification_registrations = (ds3_azure_target_failure_notification_registration_response**)azure_target_failure_notification_registrations_array->pdata;
+    response->num_azure_target_failure_notification_registrations = azure_target_failure_notification_registrations_array->len;
+    g_ptr_array_free(azure_target_failure_notification_registrations_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_failure_notification_registration_list_response_free(response);
     }
 
     return error;
@@ -12419,6 +14763,51 @@ static ds3_error* _parse_top_level_ds3_pool_failure_notification_registration_li
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_s3_target_failure_notification_registration_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_failure_notification_registration_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* s3_target_failure_notification_registrations_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_failure_notification_registration_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "S3TargetFailureNotificationRegistration")) {
+            ds3_s3_target_failure_notification_registration_response* s3_target_failure_notification_registrations_response = NULL;
+            error = _parse_ds3_s3_target_failure_notification_registration_response(client, doc, child_node, &s3_target_failure_notification_registrations_response);
+            response->s3_target_failure_notification_registrations = (ds3_s3_target_failure_notification_registration_response**)s3_target_failure_notification_registrations_array->pdata;
+            g_ptr_array_add(s3_target_failure_notification_registrations_array, s3_target_failure_notification_registrations_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_failure_notification_registration_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->s3_target_failure_notification_registrations = (ds3_s3_target_failure_notification_registration_response**)s3_target_failure_notification_registrations_array->pdata;
+    response->num_s3_target_failure_notification_registrations = s3_target_failure_notification_registrations_array->len;
+    g_ptr_array_free(s3_target_failure_notification_registrations_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_failure_notification_registration_list_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_storage_domain_failure_notification_registration_list_response(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_notification_registration_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -12595,51 +14984,6 @@ static ds3_error* _parse_top_level_ds3_tape_partition_failure_notification_regis
         *_response = response;
     } else {
         ds3_tape_partition_failure_notification_registration_list_response_free(response);
-    }
-
-    return error;
-}
-static ds3_error* _parse_top_level_ds3_s3_object_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_s3_object_list_response* response;
-    ds3_error* error = NULL;
-    GPtrArray* s3_objects_array = g_ptr_array_new();
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_s3_object_list_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "S3Object")) {
-            ds3_s3_object_response* s3_objects_response = NULL;
-            error = _parse_ds3_s3_object_response(client, doc, child_node, &s3_objects_response);
-            response->s3_objects = (ds3_s3_object_response**)s3_objects_array->pdata;
-            g_ptr_array_add(s3_objects_array, s3_objects_response);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_object_list_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-    response->s3_objects = (ds3_s3_object_response**)s3_objects_array->pdata;
-    response->num_s3_objects = s3_objects_array->len;
-    g_ptr_array_free(s3_objects_array, FALSE);
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_s3_object_list_response_free(response);
     }
 
     return error;
@@ -12910,6 +15254,51 @@ static ds3_error* _parse_top_level_ds3_storage_domain_list_response(const ds3_cl
         *_response = response;
     } else {
         ds3_storage_domain_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_feature_key_list_response(const ds3_client* client, const ds3_request* request, ds3_feature_key_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_feature_key_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* feature_keys_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_feature_key_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "FeatureKey")) {
+            ds3_feature_key_response* feature_keys_response = NULL;
+            error = _parse_ds3_feature_key_response(client, doc, child_node, &feature_keys_response);
+            response->feature_keys = (ds3_feature_key_response**)feature_keys_array->pdata;
+            g_ptr_array_add(feature_keys_array, feature_keys_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_feature_key_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->feature_keys = (ds3_feature_key_response**)feature_keys_array->pdata;
+    response->num_feature_keys = feature_keys_array->len;
+    g_ptr_array_free(feature_keys_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_feature_key_list_response_free(response);
     }
 
     return error;
@@ -13319,6 +15708,186 @@ static ds3_error* _parse_top_level_ds3_tape_list_response(const ds3_client* clie
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_azure_target_bucket_name_list_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_bucket_name_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_bucket_name_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* azure_target_bucket_names_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_bucket_name_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureTargetBucketName")) {
+            ds3_azure_target_bucket_name_response* azure_target_bucket_names_response = NULL;
+            error = _parse_ds3_azure_target_bucket_name_response(client, doc, child_node, &azure_target_bucket_names_response);
+            response->azure_target_bucket_names = (ds3_azure_target_bucket_name_response**)azure_target_bucket_names_array->pdata;
+            g_ptr_array_add(azure_target_bucket_names_array, azure_target_bucket_names_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_bucket_name_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->azure_target_bucket_names = (ds3_azure_target_bucket_name_response**)azure_target_bucket_names_array->pdata;
+    response->num_azure_target_bucket_names = azure_target_bucket_names_array->len;
+    g_ptr_array_free(azure_target_bucket_names_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_bucket_name_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_failure_list_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_failure_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* azure_target_failures_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_failure_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureTargetFailure")) {
+            ds3_azure_target_failure_response* azure_target_failures_response = NULL;
+            error = _parse_ds3_azure_target_failure_response(client, doc, child_node, &azure_target_failures_response);
+            response->azure_target_failures = (ds3_azure_target_failure_response**)azure_target_failures_array->pdata;
+            g_ptr_array_add(azure_target_failures_array, azure_target_failures_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_failure_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->azure_target_failures = (ds3_azure_target_failure_response**)azure_target_failures_array->pdata;
+    response->num_azure_target_failures = azure_target_failures_array->len;
+    g_ptr_array_free(azure_target_failures_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_failure_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_read_preference_list_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_read_preference_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* azure_target_read_preferences_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_read_preference_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureTargetReadPreference")) {
+            ds3_azure_target_read_preference_response* azure_target_read_preferences_response = NULL;
+            error = _parse_ds3_azure_target_read_preference_response(client, doc, child_node, &azure_target_read_preferences_response);
+            response->azure_target_read_preferences = (ds3_azure_target_read_preference_response**)azure_target_read_preferences_array->pdata;
+            g_ptr_array_add(azure_target_read_preferences_array, azure_target_read_preferences_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_read_preference_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->azure_target_read_preferences = (ds3_azure_target_read_preference_response**)azure_target_read_preferences_array->pdata;
+    response->num_azure_target_read_preferences = azure_target_read_preferences_array->len;
+    g_ptr_array_free(azure_target_read_preferences_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_read_preference_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_azure_target_list_response(const ds3_client* client, const ds3_request* request, ds3_azure_target_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_azure_target_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* azure_targets_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_azure_target_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AzureTarget")) {
+            ds3_azure_target_response* azure_targets_response = NULL;
+            error = _parse_ds3_azure_target_response(client, doc, child_node, &azure_targets_response);
+            response->azure_targets = (ds3_azure_target_response**)azure_targets_array->pdata;
+            g_ptr_array_add(azure_targets_array, azure_targets_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_azure_target_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->azure_targets = (ds3_azure_target_response**)azure_targets_array->pdata;
+    response->num_azure_targets = azure_targets_array->len;
+    g_ptr_array_free(azure_targets_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_azure_target_list_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_target_failure_list_response(const ds3_client* client, const ds3_request* request, ds3_target_failure_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -13454,6 +16023,186 @@ static ds3_error* _parse_top_level_ds3_target_list_response(const ds3_client* cl
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_s3_target_bucket_name_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_bucket_name_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_bucket_name_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* s3_target_bucket_names_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_bucket_name_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "S3TargetBucketName")) {
+            ds3_s3_target_bucket_name_response* s3_target_bucket_names_response = NULL;
+            error = _parse_ds3_s3_target_bucket_name_response(client, doc, child_node, &s3_target_bucket_names_response);
+            response->s3_target_bucket_names = (ds3_s3_target_bucket_name_response**)s3_target_bucket_names_array->pdata;
+            g_ptr_array_add(s3_target_bucket_names_array, s3_target_bucket_names_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_bucket_name_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->s3_target_bucket_names = (ds3_s3_target_bucket_name_response**)s3_target_bucket_names_array->pdata;
+    response->num_s3_target_bucket_names = s3_target_bucket_names_array->len;
+    g_ptr_array_free(s3_target_bucket_names_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_bucket_name_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_failure_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_failure_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* s3_target_failures_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_failure_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "S3TargetFailure")) {
+            ds3_s3_target_failure_response* s3_target_failures_response = NULL;
+            error = _parse_ds3_s3_target_failure_response(client, doc, child_node, &s3_target_failures_response);
+            response->s3_target_failures = (ds3_s3_target_failure_response**)s3_target_failures_array->pdata;
+            g_ptr_array_add(s3_target_failures_array, s3_target_failures_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_failure_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->s3_target_failures = (ds3_s3_target_failure_response**)s3_target_failures_array->pdata;
+    response->num_s3_target_failures = s3_target_failures_array->len;
+    g_ptr_array_free(s3_target_failures_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_failure_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_read_preference_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_read_preference_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* s3_target_read_preferences_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_read_preference_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "S3TargetReadPreference")) {
+            ds3_s3_target_read_preference_response* s3_target_read_preferences_response = NULL;
+            error = _parse_ds3_s3_target_read_preference_response(client, doc, child_node, &s3_target_read_preferences_response);
+            response->s3_target_read_preferences = (ds3_s3_target_read_preference_response**)s3_target_read_preferences_array->pdata;
+            g_ptr_array_add(s3_target_read_preferences_array, s3_target_read_preferences_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_read_preference_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->s3_target_read_preferences = (ds3_s3_target_read_preference_response**)s3_target_read_preferences_array->pdata;
+    response->num_s3_target_read_preferences = s3_target_read_preferences_array->len;
+    g_ptr_array_free(s3_target_read_preferences_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_read_preference_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_s3_target_list_response(const ds3_client* client, const ds3_request* request, ds3_s3_target_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_s3_target_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* s3_targets_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_s3_target_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "S3Target")) {
+            ds3_s3_target_response* s3_targets_response = NULL;
+            error = _parse_ds3_s3_target_response(client, doc, child_node, &s3_targets_response);
+            response->s3_targets = (ds3_s3_target_response**)s3_targets_array->pdata;
+            g_ptr_array_add(s3_targets_array, s3_targets_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_target_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->s3_targets = (ds3_s3_target_response**)s3_targets_array->pdata;
+    response->num_s3_targets = s3_targets_array->len;
+    g_ptr_array_free(s3_targets_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_s3_target_list_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_spectra_user_list_response(const ds3_client* client, const ds3_request* request, ds3_spectra_user_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -13514,7 +16263,13 @@ static ds3_error* _parse_top_level_ds3_physical_placement_response(const ds3_cli
     response = g_new0(ds3_physical_placement_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Ds3Targets")) {
+        if (element_equal(child_node, "AzureTargets")) {
+            GPtrArray* azure_targets_array;
+            error = _parse_ds3_azure_target_response_array(client, doc, child_node, &azure_targets_array);
+            response->azure_targets = (ds3_azure_target_response**)azure_targets_array->pdata;
+            response->num_azure_targets = azure_targets_array->len;
+            g_ptr_array_free(azure_targets_array, FALSE);
+        } else if (element_equal(child_node, "Ds3Targets")) {
             GPtrArray* ds3_targets_array;
             error = _parse_ds3_target_response_array(client, doc, child_node, &ds3_targets_array);
             response->ds3_targets = (ds3_target_response**)ds3_targets_array->pdata;
@@ -13526,6 +16281,12 @@ static ds3_error* _parse_top_level_ds3_physical_placement_response(const ds3_cli
             response->pools = (ds3_pool_response**)pools_array->pdata;
             response->num_pools = pools_array->len;
             g_ptr_array_free(pools_array, FALSE);
+        } else if (element_equal(child_node, "S3Targets")) {
+            GPtrArray* s3_targets_array;
+            error = _parse_ds3_s3_target_response_array(client, doc, child_node, &s3_targets_array);
+            response->s3_targets = (ds3_s3_target_response**)s3_targets_array->pdata;
+            response->num_s3_targets = s3_targets_array->len;
+            g_ptr_array_free(s3_targets_array, FALSE);
         } else if (element_equal(child_node, "Tapes")) {
             GPtrArray* tapes_array;
             error = _parse_ds3_tape_response_array(client, doc, child_node, &tapes_array);
@@ -15038,6 +17799,23 @@ ds3_error* ds3_modify_data_path_backend_spectra_s3_request(const ds3_client* cli
 
     return _parse_top_level_ds3_data_path_backend_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_put_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_data_replication_rule_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_put_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -15072,7 +17850,7 @@ ds3_error* ds3_put_data_policy_spectra_s3_request(const ds3_client* client, cons
 
     return _parse_top_level_ds3_data_policy_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_put_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response) {
+ds3_error* ds3_put_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
@@ -15088,6 +17866,34 @@ ds3_error* ds3_put_data_replication_rule_spectra_s3_request(const ds3_client* cl
     }
 
     return _parse_top_level_ds3_data_replication_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_put_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_data_replication_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_delete_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 ds3_error* ds3_delete_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
@@ -15111,7 +17917,7 @@ ds3_error* ds3_delete_data_policy_spectra_s3_request(const ds3_client* client, c
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_delete_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+ds3_error* ds3_delete_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     int num_slashes = num_chars_in_ds3_str(request->path, '/');
     if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
@@ -15121,6 +17927,61 @@ ds3_error* ds3_delete_data_replication_rule_spectra_s3_request(const ds3_client*
     }
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_data_replication_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_azure_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_response** response) {
     ds3_error* error;
@@ -15210,7 +18071,7 @@ ds3_error* ds3_get_data_policy_spectra_s3_request(const ds3_client* client, cons
 
     return _parse_top_level_ds3_data_policy_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_get_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response) {
+ds3_error* ds3_get_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
@@ -15230,7 +18091,7 @@ ds3_error* ds3_get_data_replication_rule_spectra_s3_request(const ds3_client* cl
 
     return _parse_top_level_ds3_data_replication_rule_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_get_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response) {
+ds3_error* ds3_get_ds3_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
     ds3_string_multimap* return_headers = NULL;
@@ -15253,6 +18114,70 @@ ds3_error* ds3_get_data_replication_rules_spectra_s3_request(const ds3_client* c
     ds3_string_multimap_free(return_headers);
 
     return error;
+}
+ds3_error* ds3_get_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_data_replication_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_s3_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_modify_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_data_replication_rule_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_modify_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_response** response) {
     ds3_error* error;
@@ -15294,7 +18219,7 @@ ds3_error* ds3_modify_data_policy_spectra_s3_request(const ds3_client* client, c
 
     return _parse_top_level_ds3_data_policy_response(client, request, response, xml_blob);
 }
-ds3_error* ds3_modify_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response) {
+ds3_error* ds3_modify_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
@@ -15314,7 +18239,51 @@ ds3_error* ds3_modify_data_replication_rule_spectra_s3_request(const ds3_client*
 
     return _parse_top_level_ds3_data_replication_rule_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_modify_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_data_replication_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_clear_suspect_blob_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_clear_suspect_blob_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
 ds3_error* ds3_clear_suspect_blob_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_clear_suspect_blob_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
@@ -15330,13 +18299,29 @@ ds3_error* ds3_clear_suspect_blob_tapes_spectra_s3_request(const ds3_client* cli
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_clear_suspect_blob_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+ds3_error* ds3_get_degraded_azure_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_degraded_blobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_degraded_blob_list_response** response) {
     ds3_error* error;
@@ -15410,7 +18395,7 @@ ds3_error* ds3_get_degraded_data_persistence_rules_spectra_s3_request(const ds3_
 
     return error;
 }
-ds3_error* ds3_get_degraded_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response) {
+ds3_error* ds3_get_degraded_ds3_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
     ds3_string_multimap* return_headers = NULL;
@@ -15428,6 +18413,78 @@ ds3_error* ds3_get_degraded_data_replication_rules_spectra_s3_request(const ds3_
     }
 
     error = _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_degraded_s3_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_data_replication_rule_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_suspect_blob_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_azure_target_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_suspect_blob_azure_target_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_suspect_blob_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_ds3_target_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_suspect_blob_ds3_target_list_response(client, request, response, xml_blob);
 
     (*response)->paging = _parse_paging_headers(return_headers);
     ds3_string_multimap_free(return_headers);
@@ -15458,6 +18515,30 @@ ds3_error* ds3_get_suspect_blob_pools_spectra_s3_request(const ds3_client* clien
 
     return error;
 }
+ds3_error* ds3_get_suspect_blob_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_s3_target_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_suspect_blob_s3_target_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
 ds3_error* ds3_get_suspect_blob_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_tape_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -15476,30 +18557,6 @@ ds3_error* ds3_get_suspect_blob_tapes_spectra_s3_request(const ds3_client* clien
     }
 
     error = _parse_top_level_ds3_suspect_blob_tape_list_response(client, request, response, xml_blob);
-
-    (*response)->paging = _parse_paging_headers(return_headers);
-    ds3_string_multimap_free(return_headers);
-
-    return error;
-}
-ds3_error* ds3_get_suspect_blob_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_target_list_response** response) {
-    ds3_error* error;
-    GByteArray* xml_blob;
-    ds3_string_multimap* return_headers = NULL;
-
-    if (request->path->size < 2) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
-    }
-
-    xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
-    if (error != NULL) {
-        ds3_string_multimap_free(return_headers);
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    error = _parse_top_level_ds3_suspect_blob_target_list_response(client, request, response, xml_blob);
 
     (*response)->paging = _parse_paging_headers(return_headers);
     ds3_string_multimap_free(return_headers);
@@ -15530,22 +18587,29 @@ ds3_error* ds3_get_suspect_buckets_spectra_s3_request(const ds3_client* client, 
 
     return error;
 }
-ds3_error* ds3_get_suspect_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_physical_placement_response** response) {
+ds3_error* ds3_get_suspect_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
     xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
     if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
         g_byte_array_free(xml_blob, TRUE);
         return error;
     }
 
-    return _parse_top_level_ds3_physical_placement_response(client, request, response, xml_blob);
+    error = _parse_top_level_ds3_s3_object_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_suspect_objects_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response) {
     ds3_error* error;
@@ -15564,6 +18628,22 @@ ds3_error* ds3_get_suspect_objects_with_full_details_spectra_s3_request(const ds
 
     return _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
 ds3_error* ds3_mark_suspect_blob_pools_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
@@ -15572,7 +18652,7 @@ ds3_error* ds3_mark_suspect_blob_pools_as_degraded_spectra_s3_request(const ds3_
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+ds3_error* ds3_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
@@ -15580,7 +18660,7 @@ ds3_error* ds3_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_mark_suspect_blob_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+ds3_error* ds3_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
@@ -16379,6 +19459,23 @@ ds3_error* ds3_modify_node_spectra_s3_request(const ds3_client* client, const ds
 
     return _parse_top_level_ds3_node_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_put_azure_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_failure_notification_registration_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_put_ds3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_failure_notification_registration_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -16515,6 +19612,23 @@ ds3_error* ds3_put_pool_failure_notification_registration_spectra_s3_request(con
 
     return _parse_top_level_ds3_pool_failure_notification_registration_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_put_s3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_failure_notification_registration_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_put_storage_domain_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_notification_registration_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -16583,6 +19697,17 @@ ds3_error* ds3_put_tape_partition_failure_notification_registration_spectra_s3_r
 
     return _parse_top_level_ds3_tape_partition_failure_notification_registration_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_delete_azure_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
 ds3_error* ds3_delete_ds3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
@@ -16647,6 +19772,17 @@ ds3_error* ds3_delete_pool_failure_notification_registration_spectra_s3_request(
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
+ds3_error* ds3_delete_s3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
 ds3_error* ds3_delete_storage_domain_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
@@ -16678,6 +19814,50 @@ ds3_error* ds3_delete_tape_partition_failure_notification_registration_spectra_s
     }
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_azure_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_failure_notification_registration_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_azure_target_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_target_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_ds3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_failure_notification_registration_response** response) {
     ds3_error* error;
@@ -17001,6 +20181,50 @@ ds3_error* ds3_get_pool_failure_notification_registrations_spectra_s3_request(co
     }
 
     error = _parse_top_level_ds3_pool_failure_notification_registration_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_s3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_failure_notification_registration_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_s3_target_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_target_failure_notification_registration_list_response(client, request, response, xml_blob);
 
     (*response)->paging = _parse_paging_headers(return_headers);
     ds3_string_multimap_free(return_headers);
@@ -17401,6 +20625,34 @@ ds3_error* ds3_cancel_import_on_all_pools_spectra_s3_request(const ds3_client* c
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 ds3_error* ds3_cancel_import_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_pool_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_cancel_verify_on_all_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_cancel_verify_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
@@ -18025,6 +21277,38 @@ ds3_error* ds3_modify_storage_domain_spectra_s3_request(const ds3_client* client
     }
 
     return _parse_top_level_ds3_storage_domain_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_force_feature_key_validation_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_feature_keys_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_feature_key_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_feature_key_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_system_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_system_failure_list_response** response) {
     ds3_error* error;
@@ -18982,6 +22266,34 @@ ds3_error* ds3_online_tape_spectra_s3_request(const ds3_client* client, const ds
 
     return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_raw_import_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_raw_import_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_verify_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -19018,6 +22330,324 @@ ds3_error* ds3_verify_tape_spectra_s3_request(const ds3_client* client, const ds
     }
 
     return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_force_target_environment_refresh_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_put_azure_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_bucket_name_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_bucket_name_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_put_azure_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_read_preference_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_delete_azure_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_azure_target_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_azure_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_azure_target_bucket_names_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_bucket_name_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_target_bucket_name_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_azure_target_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_target_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_azure_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_read_preference_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_azure_target_read_preferences_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_target_read_preference_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_azure_target_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_blobs_on_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_import_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_modify_all_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_modify_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_register_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_verify_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_azure_target_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_put_ds3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_response** response) {
     ds3_error* error;
@@ -19069,13 +22699,25 @@ ds3_error* ds3_delete_ds3_target_spectra_s3_request(const ds3_client* client, co
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_force_target_environment_refresh_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+ds3_error* ds3_get_blobs_on_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
 
-    if (request->path->size < 2) {
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_get_ds3_target_data_policies_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_list_response** response) {
     ds3_error* error;
@@ -19285,6 +22927,316 @@ ds3_error* ds3_verify_ds3_target_spectra_s3_request(const ds3_client* client, co
 
     return _parse_top_level_ds3_target_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_put_s3_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_bucket_name_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_bucket_name_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_put_s3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_read_preference_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_delete_s3_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_s3_target_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_s3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_delete_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_blobs_on_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_s3_target_bucket_names_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_bucket_name_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_target_bucket_name_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_s3_target_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_target_failure_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_s3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_read_preference_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_s3_target_read_preferences_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_target_read_preference_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_get_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_s3_target_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
+ds3_error* ds3_import_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_modify_all_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_modify_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_register_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_verify_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_s3_target_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_delegate_create_user_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -19477,6 +23429,17 @@ void ds3_cleanup(void) {
 }
 
 
+void ds3_azure_data_replication_rule_response_free(ds3_azure_data_replication_rule_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->data_policy_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
 void ds3_blob_response_free(ds3_blob_response* response) {
     if (response == NULL) {
         return;
@@ -19590,28 +23553,41 @@ void ds3_data_policy_acl_response_free(ds3_data_policy_acl_response* response) {
 
     g_free(response);
 }
+void ds3_degraded_blob_response_free(ds3_degraded_blob_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->azure_replication_rule_id);
+    ds3_str_free(response->blob_id);
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->ds3_replication_rule_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->persistence_rule_id);
+    ds3_str_free(response->s3_replication_rule_id);
+
+    g_free(response);
+}
 void ds3_data_replication_rule_response_free(ds3_data_replication_rule_response* response) {
     if (response == NULL) {
         return;
     }
 
     ds3_str_free(response->data_policy_id);
-    ds3_str_free(response->ds3_target_data_policy);
-    ds3_str_free(response->ds3_target_id);
     ds3_str_free(response->id);
+    ds3_str_free(response->target_data_policy);
+    ds3_str_free(response->target_id);
 
     g_free(response);
 }
-void ds3_degraded_blob_response_free(ds3_degraded_blob_response* response) {
+void ds3_feature_key_response_free(ds3_feature_key_response* response) {
     if (response == NULL) {
         return;
     }
 
-    ds3_str_free(response->blob_id);
-    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->expiration_date);
     ds3_str_free(response->id);
-    ds3_str_free(response->persistence_rule_id);
-    ds3_str_free(response->replication_rule_id);
 
     g_free(response);
 }
@@ -19661,8 +23637,10 @@ void ds3_job_chunk_response_free(ds3_job_chunk_response* response) {
     ds3_str_free(response->job_creation_date);
     ds3_str_free(response->job_id);
     ds3_str_free(response->node_id);
+    ds3_str_free(response->read_from_azure_target_id);
     ds3_str_free(response->read_from_ds3_target_id);
     ds3_str_free(response->read_from_pool_id);
+    ds3_str_free(response->read_from_s3_target_id);
     ds3_str_free(response->read_from_tape_id);
 
     g_free(response);
@@ -19678,6 +23656,17 @@ void ds3_node_response_free(ds3_node_response* response) {
     ds3_str_free(response->last_heartbeat);
     ds3_str_free(response->name);
     ds3_str_free(response->serial_number);
+
+    g_free(response);
+}
+void ds3_s3_data_replication_rule_response_free(ds3_s3_data_replication_rule_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->data_policy_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
 
     g_free(response);
 }
@@ -19757,6 +23746,20 @@ void ds3_spectra_user_response_free(ds3_spectra_user_response* response) {
     ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_str_free(response->secret_key);
+
+    g_free(response);
+}
+void ds3_azure_target_failure_notification_registration_response_free(ds3_azure_target_failure_notification_registration_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->creation_date);
+    ds3_str_free(response->id);
+    ds3_str_free(response->last_failure);
+    ds3_str_free(response->last_notification);
+    ds3_str_free(response->notification_end_point);
+    ds3_str_free(response->user_id);
 
     g_free(response);
 }
@@ -19883,6 +23886,20 @@ void ds3_s3_object_persisted_notification_registration_response_free(ds3_s3_obje
     ds3_str_free(response->creation_date);
     ds3_str_free(response->id);
     ds3_str_free(response->job_id);
+    ds3_str_free(response->last_failure);
+    ds3_str_free(response->last_notification);
+    ds3_str_free(response->notification_end_point);
+    ds3_str_free(response->user_id);
+
+    g_free(response);
+}
+void ds3_s3_target_failure_notification_registration_response_free(ds3_s3_target_failure_notification_registration_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->creation_date);
+    ds3_str_free(response->id);
     ds3_str_free(response->last_failure);
     ds3_str_free(response->last_notification);
     ds3_str_free(response->notification_end_point);
@@ -20120,6 +24137,56 @@ void ds3_tape_partition_failure_response_free(ds3_tape_partition_failure_respons
 
     g_free(response);
 }
+void ds3_azure_target_response_free(ds3_azure_target_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->account_key);
+    ds3_str_free(response->account_name);
+    ds3_str_free(response->cloud_bucket_prefix);
+    ds3_str_free(response->cloud_bucket_suffix);
+    ds3_str_free(response->id);
+    ds3_str_free(response->last_fully_verified);
+    ds3_str_free(response->name);
+
+    g_free(response);
+}
+void ds3_azure_target_bucket_name_response_free(ds3_azure_target_bucket_name_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->name);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_azure_target_failure_response_free(ds3_azure_target_failure_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->date);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_azure_target_read_preference_response_free(ds3_azure_target_read_preference_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
 void ds3_target_response_free(ds3_target_response* response) {
     if (response == NULL) {
         return;
@@ -20158,14 +24225,91 @@ void ds3_target_read_preference_response_free(ds3_target_read_preference_respons
 
     g_free(response);
 }
-void ds3_suspect_blob_target_response_free(ds3_suspect_blob_target_response* response) {
+void ds3_s3_target_response_free(ds3_s3_target_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->access_key);
+    ds3_str_free(response->cloud_bucket_prefix);
+    ds3_str_free(response->cloud_bucket_suffix);
+    ds3_str_free(response->data_path_end_point);
+    ds3_str_free(response->id);
+    ds3_str_free(response->last_fully_verified);
+    ds3_str_free(response->name);
+    ds3_str_free(response->proxy_domain);
+    ds3_str_free(response->proxy_host);
+    ds3_str_free(response->proxy_password);
+    ds3_str_free(response->proxy_username);
+    ds3_str_free(response->secret_key);
+
+    g_free(response);
+}
+void ds3_s3_target_bucket_name_response_free(ds3_s3_target_bucket_name_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->name);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_s3_target_failure_response_free(ds3_s3_target_failure_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->date);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_s3_target_read_preference_response_free(ds3_s3_target_read_preference_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_suspect_blob_azure_target_response_free(ds3_suspect_blob_azure_target_response* response) {
     if (response == NULL) {
         return;
     }
 
     ds3_str_free(response->blob_id);
-    ds3_str_free(response->ds3_target_id);
     ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_suspect_blob_ds3_target_response_free(ds3_suspect_blob_ds3_target_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->blob_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+
+    g_free(response);
+}
+void ds3_suspect_blob_s3_target_response_free(ds3_suspect_blob_s3_target_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->blob_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
 
     g_free(response);
 }
@@ -20177,6 +24321,18 @@ void ds3_build_information_response_free(ds3_build_information_response* respons
     ds3_str_free(response->branch);
     ds3_str_free(response->revision);
     ds3_str_free(response->version);
+
+    g_free(response);
+}
+void ds3_azure_target_failure_notification_payload_response_free(ds3_azure_target_failure_notification_payload_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->date);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->notification_generation_date);
+    ds3_str_free(response->target_id);
 
     g_free(response);
 }
@@ -20226,6 +24382,18 @@ void ds3_pool_failure_notification_payload_response_free(ds3_pool_failure_notifi
     ds3_str_free(response->error_message);
     ds3_str_free(response->notification_generation_date);
     ds3_str_free(response->pool_id);
+
+    g_free(response);
+}
+void ds3_s3_target_failure_notification_payload_response_free(ds3_s3_target_failure_notification_payload_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->date);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->notification_generation_date);
+    ds3_str_free(response->target_id);
 
     g_free(response);
 }
@@ -20312,10 +24480,11 @@ void ds3_blob_store_task_information_response_free(ds3_blob_store_task_informati
     ds3_str_free(response->date_started);
     ds3_str_free(response->description);
     ds3_str_free(response->drive_id);
-    ds3_str_free(response->ds3_target_id);
     ds3_str_free(response->name);
     ds3_str_free(response->pool_id);
     ds3_str_free(response->tape_id);
+    ds3_str_free(response->target_id);
+    ds3_str_free(response->target_type);
 
     g_free(response);
 }
@@ -20619,6 +24788,20 @@ void ds3_cache_filesystem_list_response_free(ds3_cache_filesystem_list_response*
 
     g_free(response);
 }
+void ds3_azure_data_replication_rule_list_response_free(ds3_azure_data_replication_rule_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_azure_data_replication_rules; index++) {
+        ds3_azure_data_replication_rule_response_free(response->azure_data_replication_rules[index]);
+    }
+    g_free(response->azure_data_replication_rules);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
 void ds3_data_persistence_rule_list_response_free(ds3_data_persistence_rule_list_response* response) {
     if (response == NULL) {
         return;
@@ -20653,10 +24836,24 @@ void ds3_data_replication_rule_list_response_free(ds3_data_replication_rule_list
     }
 
     size_t index;
-    for (index = 0; index < response->num_data_replication_rules; index++) {
-        ds3_data_replication_rule_response_free(response->data_replication_rules[index]);
+    for (index = 0; index < response->num_ds3_data_replication_rules; index++) {
+        ds3_data_replication_rule_response_free(response->ds3_data_replication_rules[index]);
     }
-    g_free(response->data_replication_rules);
+    g_free(response->ds3_data_replication_rules);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_s3_data_replication_rule_list_response_free(ds3_s3_data_replication_rule_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_s3_data_replication_rules; index++) {
+        ds3_s3_data_replication_rule_response_free(response->s3_data_replication_rules[index]);
+    }
+    g_free(response->s3_data_replication_rules);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -20675,6 +24872,34 @@ void ds3_degraded_blob_list_response_free(ds3_degraded_blob_list_response* respo
 
     g_free(response);
 }
+void ds3_suspect_blob_azure_target_list_response_free(ds3_suspect_blob_azure_target_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_suspect_blob_azure_targets; index++) {
+        ds3_suspect_blob_azure_target_response_free(response->suspect_blob_azure_targets[index]);
+    }
+    g_free(response->suspect_blob_azure_targets);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_suspect_blob_ds3_target_list_response_free(ds3_suspect_blob_ds3_target_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_suspect_blob_ds3_targets; index++) {
+        ds3_suspect_blob_ds3_target_response_free(response->suspect_blob_ds3_targets[index]);
+    }
+    g_free(response->suspect_blob_ds3_targets);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
 void ds3_suspect_blob_pool_list_response_free(ds3_suspect_blob_pool_list_response* response) {
     if (response == NULL) {
         return;
@@ -20685,6 +24910,20 @@ void ds3_suspect_blob_pool_list_response_free(ds3_suspect_blob_pool_list_respons
         ds3_suspect_blob_pool_response_free(response->suspect_blob_pools[index]);
     }
     g_free(response->suspect_blob_pools);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_suspect_blob_s3_target_list_response_free(ds3_suspect_blob_s3_target_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_suspect_blob_s3_targets; index++) {
+        ds3_suspect_blob_s3_target_response_free(response->suspect_blob_s3_targets[index]);
+    }
+    g_free(response->suspect_blob_s3_targets);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -20703,16 +24942,16 @@ void ds3_suspect_blob_tape_list_response_free(ds3_suspect_blob_tape_list_respons
 
     g_free(response);
 }
-void ds3_suspect_blob_target_list_response_free(ds3_suspect_blob_target_list_response* response) {
+void ds3_s3_object_list_response_free(ds3_s3_object_list_response* response) {
     if (response == NULL) {
         return;
     }
 
     size_t index;
-    for (index = 0; index < response->num_suspect_blob_targets; index++) {
-        ds3_suspect_blob_target_response_free(response->suspect_blob_targets[index]);
+    for (index = 0; index < response->num_s3_objects; index++) {
+        ds3_s3_object_response_free(response->s3_objects[index]);
     }
-    g_free(response->suspect_blob_targets);
+    g_free(response->s3_objects);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -20797,6 +25036,20 @@ void ds3_node_list_response_free(ds3_node_list_response* response) {
         ds3_node_response_free(response->nodes[index]);
     }
     g_free(response->nodes);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_azure_target_failure_notification_registration_list_response_free(ds3_azure_target_failure_notification_registration_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_azure_target_failure_notification_registrations; index++) {
+        ds3_azure_target_failure_notification_registration_response_free(response->azure_target_failure_notification_registrations[index]);
+    }
+    g_free(response->azure_target_failure_notification_registrations);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -20913,6 +25166,20 @@ void ds3_pool_failure_notification_registration_list_response_free(ds3_pool_fail
 
     g_free(response);
 }
+void ds3_s3_target_failure_notification_registration_list_response_free(ds3_s3_target_failure_notification_registration_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_s3_target_failure_notification_registrations; index++) {
+        ds3_s3_target_failure_notification_registration_response_free(response->s3_target_failure_notification_registrations[index]);
+    }
+    g_free(response->s3_target_failure_notification_registrations);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
 void ds3_storage_domain_failure_notification_registration_list_response_free(ds3_storage_domain_failure_notification_registration_list_response* response) {
     if (response == NULL) {
         return;
@@ -20965,20 +25232,6 @@ void ds3_tape_partition_failure_notification_registration_list_response_free(ds3
         ds3_tape_partition_failure_notification_registration_response_free(response->tape_partition_failure_notification_registrations[index]);
     }
     g_free(response->tape_partition_failure_notification_registrations);
-    ds3_paging_free(response->paging);
-
-    g_free(response);
-}
-void ds3_s3_object_list_response_free(ds3_s3_object_list_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    size_t index;
-    for (index = 0; index < response->num_s3_objects; index++) {
-        ds3_s3_object_response_free(response->s3_objects[index]);
-    }
-    g_free(response->s3_objects);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -21063,6 +25316,20 @@ void ds3_storage_domain_list_response_free(ds3_storage_domain_list_response* res
         ds3_storage_domain_response_free(response->storage_domains[index]);
     }
     g_free(response->storage_domains);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_feature_key_list_response_free(ds3_feature_key_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_feature_keys; index++) {
+        ds3_feature_key_response_free(response->feature_keys[index]);
+    }
+    g_free(response->feature_keys);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -21193,6 +25460,62 @@ void ds3_tape_list_response_free(ds3_tape_list_response* response) {
 
     g_free(response);
 }
+void ds3_azure_target_bucket_name_list_response_free(ds3_azure_target_bucket_name_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_azure_target_bucket_names; index++) {
+        ds3_azure_target_bucket_name_response_free(response->azure_target_bucket_names[index]);
+    }
+    g_free(response->azure_target_bucket_names);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_azure_target_failure_list_response_free(ds3_azure_target_failure_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_azure_target_failures; index++) {
+        ds3_azure_target_failure_response_free(response->azure_target_failures[index]);
+    }
+    g_free(response->azure_target_failures);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_azure_target_read_preference_list_response_free(ds3_azure_target_read_preference_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_azure_target_read_preferences; index++) {
+        ds3_azure_target_read_preference_response_free(response->azure_target_read_preferences[index]);
+    }
+    g_free(response->azure_target_read_preferences);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_azure_target_list_response_free(ds3_azure_target_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_azure_targets; index++) {
+        ds3_azure_target_response_free(response->azure_targets[index]);
+    }
+    g_free(response->azure_targets);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
 void ds3_target_failure_list_response_free(ds3_target_failure_list_response* response) {
     if (response == NULL) {
         return;
@@ -21235,6 +25558,62 @@ void ds3_target_list_response_free(ds3_target_list_response* response) {
 
     g_free(response);
 }
+void ds3_s3_target_bucket_name_list_response_free(ds3_s3_target_bucket_name_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_s3_target_bucket_names; index++) {
+        ds3_s3_target_bucket_name_response_free(response->s3_target_bucket_names[index]);
+    }
+    g_free(response->s3_target_bucket_names);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_s3_target_failure_list_response_free(ds3_s3_target_failure_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_s3_target_failures; index++) {
+        ds3_s3_target_failure_response_free(response->s3_target_failures[index]);
+    }
+    g_free(response->s3_target_failures);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_s3_target_read_preference_list_response_free(ds3_s3_target_read_preference_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_s3_target_read_preferences; index++) {
+        ds3_s3_target_read_preference_response_free(response->s3_target_read_preferences[index]);
+    }
+    g_free(response->s3_target_read_preferences);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_s3_target_list_response_free(ds3_s3_target_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_s3_targets; index++) {
+        ds3_s3_target_response_free(response->s3_targets[index]);
+    }
+    g_free(response->s3_targets);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
 void ds3_spectra_user_list_response_free(ds3_spectra_user_list_response* response) {
     if (response == NULL) {
         return;
@@ -21255,6 +25634,10 @@ void ds3_physical_placement_response_free(ds3_physical_placement_response* respo
     }
 
     size_t index;
+    for (index = 0; index < response->num_azure_targets; index++) {
+        ds3_azure_target_response_free(response->azure_targets[index]);
+    }
+    g_free(response->azure_targets);
     for (index = 0; index < response->num_ds3_targets; index++) {
         ds3_target_response_free(response->ds3_targets[index]);
     }
@@ -21263,6 +25646,10 @@ void ds3_physical_placement_response_free(ds3_physical_placement_response* respo
         ds3_pool_response_free(response->pools[index]);
     }
     g_free(response->pools);
+    for (index = 0; index < response->num_s3_targets; index++) {
+        ds3_s3_target_response_free(response->s3_targets[index]);
+    }
+    g_free(response->s3_targets);
     for (index = 0; index < response->num_tapes; index++) {
         ds3_tape_response_free(response->tapes[index]);
     }
@@ -21624,101 +26011,11 @@ size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, void* user_data
     return read(*(int*)user_data, buffer, size * nmemb);
 }
 
-#ifdef _MSC_VER
-static void get_file_size_windows(const char* file_path, uint64_t* file_size) {
-    BY_HANDLE_FILE_INFORMATION info;
-    HANDLE file_handle;
-    char * file_path_windows;
-    gunichar2 * file_path_windows_wide;
-    BOOL res;
-
-    file_path_windows = g_strdup(file_path);
-
-    /* Convert the path slashes to windows */
-    for (char * ch = file_path_windows; *ch != '\0'; ++ch) {
-        switch(*ch) {
-        case '/': *ch = '\\'; break;
-        }
-    }
-
-    *file_size = 0;
-
-    /* Convert the path to UTF16 to use in windows native function */
-    file_path_windows_wide = g_utf8_to_utf16(file_path_windows, -1, NULL, NULL, NULL);
-    if (file_path_windows_wide == NULL) {
-        fprintf(stderr, "error converting file name to wide char '%s'\n", file_path_windows);
-        g_free(file_path_windows);
-        return;
-    }
-
-
-    /* Open the file for attributes read only */
-    file_handle = CreateFileW(
-        (wchar_t*)file_path_windows_wide,
-        FILE_READ_ATTRIBUTES,
-        FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
-        NULL,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL);
-    g_free(file_path_windows_wide);
-
-    if (file_handle == INVALID_HANDLE_VALUE) {
-        g_free(file_path_windows);
-        fprintf(stderr, "error opening file '%s'\n", file_path_windows);
-        return;
-    }
-
-    res = GetFileInformationByHandle(file_handle, &info);
-    CloseHandle(file_handle);
-
-    if (!res) {
-        fprintf(stderr, "error getting file attributes\n");
-        g_free(file_path_windows);
-        return;
-    }
-
-    /* If entry is file get the file size */
-    if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        ULARGE_INTEGER size;
-        size.LowPart = info.nFileSizeLow;
-        size.HighPart = info.nFileSizeHigh;
-
-        *file_size =  size.QuadPart;
-    } else {
-        *file_size = 0;
-    }
-
-    g_free(file_path_windows);
-
-    return;
-}
-#endif
-
-static void get_file_size_posix(const char* file_path, uint64_t* file_size) {
-    struct stat file_info;
-    int result;
-
-    result = stat(file_path, &file_info);
-    if (result != 0) {
-        fprintf(stderr, "Failed to get file info for '%s' res=%d errno=%d: %s\n", file_path, result, errno, strerror(errno));
-        *file_size = 0;
-        return;
-    }
-
-    if (S_ISDIR(file_info.st_mode)) {
-        *file_size = 0;
-    } else {
-        *file_size = file_info.st_size;
-    }
-}
-
 static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_name, const char* base_path) {
     struct stat file_info;
     int result;
     ds3_bulk_object_response* obj = g_new0(ds3_bulk_object_response, 1);
     char* file_to_stat;
-
     memset(&file_info, 0, sizeof(struct stat));
 
     if (base_path != NULL) {
@@ -21727,13 +26024,18 @@ static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_nam
         file_to_stat = g_strdup(file_name);
     }
 
+    result = stat(file_to_stat, &file_info);
+    if (result != 0) {
+        fprintf(stderr, "Failed to get file info for %s\n", file_name);
+    }
+
     obj->name = ds3_str_init(file_name);
 
-#ifdef _MSC_VER
-    get_file_size_windows(file_to_stat, &obj->length);
-#else
-    get_file_size_posix(file_to_stat, &obj->length);
-#endif
+    if (S_ISDIR(file_info.st_mode)) {
+        obj->length = 0;
+    } else {
+        obj->length = file_info.st_size;
+    }
 
     g_free(file_to_stat);
 
