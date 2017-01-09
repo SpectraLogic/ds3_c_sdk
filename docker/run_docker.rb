@@ -46,7 +46,7 @@ ENV["GIT_BRANCH"] = ENV["GIT_BRANCH"] || "master"
 puts "GIT_REPO #{ENV["GIT_REPO"]}"
 puts "GIT_BRANCH #{ENV["GIT_BRANCH"]}"
 
-ENV["DOCKER_REPO"] = ENV["DOCKER_REPO"] || "denverm80/c_sdk_test:latest"
+ENV["DOCKER_REPO"] = ENV["DOCKER_REPO"] || "spectralogic/ds3_c_docker:latest"
 puts "DOCKER_REPO #{ENV["DOCKER_REPO"]}"
 
 # Build latest docker image
