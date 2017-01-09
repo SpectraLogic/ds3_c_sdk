@@ -25,7 +25,7 @@ RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A170311380
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 RUN /bin/bash -l -c "rvm requirements"
-RUN /bin/bash -l -c "rvm install 2.2.0"
+RUN /bin/bash -l -c "rvm install 2.3.3"
 RUN /bin/bash -l -c "gem install rake --no-ri --no-rdoc"
 
 RUN /bin/bash -l -c "curl -Lo- https://bit.ly/janus-bootstrap | bash"
