@@ -9,10 +9,10 @@ Unzip curl-7.37.0.zip .
 Remove-Item curl-7.37.0.zip
 
 (new-object System.Net.WebClient).DownloadFile(
-    'http://zlib.net/zlib128.zip',
-    'zlib128.zip')
-Unzip zlib128.zip .
-Remove-Item zlib128.zip
+    'http://zlib.net/zlib1211.zip',
+    'zlib1211.zip')
+Unzip zlib1211.zip .
+Remove-Item zlib1211.zip
 
 (new-object System.Net.WebClient).DownloadFile(
     'ftp://xmlsoft.org/libxml2/libxml2-2.9.4.tar.gz',
