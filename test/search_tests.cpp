@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE( get_folder_and_objects ) {
 BOOST_AUTO_TEST_CASE( get_incorrect_bucket_name ) {
     ds3_client* client = get_client();
     ds3_s3_object_list_response* response;
-    const char* bucket_name = "search_bucket_test";
+    const char* bucket_name = "search_incorrect_bucket_test";
     populate_with_objects(client, bucket_name);
 
     ds3_request* request = ds3_init_get_objects_details_spectra_s3_request();
