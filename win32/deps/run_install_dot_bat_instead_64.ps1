@@ -25,7 +25,7 @@ Install-Prebuilt lib\glib-2.0.lib
 Install-Prebuilt include\glib-2.0
 
 # Compile and install zlib.
-$zlib = "build\zlib-1.2.8"
+$zlib = "build\zlib-1.2.11"
 cd $zlib
 nmake -f win32\Makefile.msc MACHINE=x64
 cd ..\..
