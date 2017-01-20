@@ -4168,7 +4168,7 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
 
     for (obj_index = 0; obj_index < obj_list->num_objects; obj_index++) {
         obj = obj_list->objects[obj_index];
-        g_snprintf(size_buff, sizeof(char) * UNSIGNED_LONG_LONG_BASE_10_STR_LEN, "%"PRIu64, (unsigned long long int) obj->length);
+        g_snprintf(size_buff, sizeof(char) * UNSIGNED_LONG_LONG_BASE_10_STR_LEN, "%"PRIu64, obj->length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
