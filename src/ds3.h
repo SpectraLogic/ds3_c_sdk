@@ -30,6 +30,7 @@
 #include "ds3_string_multimap.h"
 
 #ifdef __cplusplus
+#define __STDC_FORMAT_MACROS
 extern "C" {
 #endif
 
