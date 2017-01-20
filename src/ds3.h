@@ -30,7 +30,6 @@
 #include "ds3_string_multimap.h"
 
 #ifdef __cplusplus
-#define __STDC_FORMAT_MACROS
 extern "C" {
 #endif
 
@@ -46,6 +45,7 @@ extern "C" {
 #endif
 
 #define DS3_READFUNC_ABORT CURL_READFUNC_ABORT
+
 
 typedef struct {
     int page_truncated;
