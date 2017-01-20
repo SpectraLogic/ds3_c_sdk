@@ -25,9 +25,8 @@ add_library(ds3 SHARED
 
 if (WIN32)
 
-add_definitions(-DLIBRARY_EXPORTS -DCURL_STATICLIB -Dinline=__inline)
-set_property(TARGET ds3 PROPERTY _CRT_SECURE_NO_WARNINGS)
-SET_SOURCE_FILES_PROPERTIES(ds3.c PROPERTIES LANGUAGE CXX)
+    add_definitions(-DLIBRARY_EXPORTS -DCURL_STATICLIB -Dinline=__inline -D__STDC_FORMAT_MACROS -D_CRT_SECURE_NO_WARNINGS)
+    set_source_files_properties(ds3.c PROPERTIES LANGUAGE CXX)
 
 include_directories(
     ../win32/deps/install/include

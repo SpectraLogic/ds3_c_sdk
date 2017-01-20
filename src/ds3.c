@@ -42,6 +42,7 @@
 #include <unistd.h>
 #endif
 
+
 #ifndef S_ISDIR
 #define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
 #endif
@@ -1227,7 +1228,7 @@ static void _set_query_param_flag(const ds3_request* _request, const char* key, 
 static void _set_query_param_uint64_t(const ds3_request* _request, const char* key, uint64_t value) {
     char string_buffer[UNSIGNED_LONG_LONG_BASE_10_STR_LEN];
     memset(string_buffer, 0, sizeof(string_buffer));
-    snprintf(string_buffer, sizeof(string_buffer), "%"PRIu64, value);
+    snprintf(string_buffer, sizeof(string_buffer), "%" PRIu64, value);
     _set_query_param(_request, key, string_buffer);
 }
 
@@ -4168,7 +4169,7 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
 
     for (obj_index = 0; obj_index < obj_list->num_objects; obj_index++) {
         obj = obj_list->objects[obj_index];
-        g_snprintf(size_buff, sizeof(char) * UNSIGNED_LONG_LONG_BASE_10_STR_LEN, "%"PRIu64, obj->length);
+        g_snprintf(size_buff, sizeof(char) * UNSIGNED_LONG_LONG_BASE_10_STR_LEN, "%" PRIu64, obj->length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
