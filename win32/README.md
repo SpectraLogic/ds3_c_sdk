@@ -35,10 +35,7 @@ To build the client library
 1. Open a new Visual Studio Command Prompt.
 2. Navigate to the ds3_c_sdk\win32 directory.
 3. Run `package(_64).bat`, which will use CMake to create a Visual Studio 14 2015 solution, and then compile from the command line using msbuild, and compress all requiredSDK dependencies into a `ds3_win(32 or 64).zip`
-3. Run the following command: `cmake .. -G "Visual Studio 14 2015 {Win64}"`
-4. Either open the resulting `libds3.sln` in Visual Studio and build it from
-  there, or run the command `msbuild libds3.sln` from the command prompt.
-  This should build the libds3 library, which is placed in the directory '<root of repo>/win32/output/bin'
+4. This should build the libds3 library, which is placed in the directory '<root of repo>/win32/output/bin'
 
 
 Unit Tests
