@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE( put_metadata_using_get_object_retrieval ) {
     ds3_metadata_entry* metadata_entry;
     const char* file_name[1] = {"resources/beowulf.txt"};
     ds3_client* client = get_client();
-    const char* bucket_name = "get_object_metadata_test";
+    const char* bucket_name = "put_metadata_using_get_object_retrieval";
     FILE* file;
 
     ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);

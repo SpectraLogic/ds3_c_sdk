@@ -25,6 +25,8 @@
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
+#include <errno.h>
+#include <inttypes.h>
 
 #include "ds3.h"
 #include "ds3_request.h"
@@ -43,6 +45,13 @@
 #ifndef S_ISDIR
 #define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
 #endif
+
+//The max size of an uint32_t should be 10 characters + NULL
+static const char UNSIGNED_LONG_BASE_10[] = "4294967296";
+static const unsigned int UNSIGNED_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_BASE_10) + 1;
+//The max size of an uint64_t should be 20 characters + NULL
+static const char UNSIGNED_LONG_LONG_BASE_10[] = "18446744073709551615";
+static const unsigned int UNSIGNED_LONG_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_LONG_BASE_10) + 1;
 
 static char* _get_ds3_bucket_acl_permission_str(ds3_bucket_acl_permission input) {
     if (input == DS3_BUCKET_ACL_PERMISSION_LIST) {
@@ -1079,9 +1088,6 @@ void ds3_client_free(ds3_client* client) {
 }
 
 
-static const char UNSIGNED_LONG_BASE_10[] = "4294967296";
-static const unsigned int UNSIGNED_LONG_BASE_10_STR_LEN = sizeof(UNSIGNED_LONG_BASE_10);
-
 typedef struct {
     char* buff;
     size_t size;
@@ -1219,9 +1225,9 @@ static void _set_query_param_flag(const ds3_request* _request, const char* key, 
 }
 
 static void _set_query_param_uint64_t(const ds3_request* _request, const char* key, uint64_t value) {
-    char string_buffer[UNSIGNED_LONG_BASE_10_STR_LEN];
+    char string_buffer[UNSIGNED_LONG_LONG_BASE_10_STR_LEN];
     memset(string_buffer, 0, sizeof(string_buffer));
-    snprintf(string_buffer, sizeof(string_buffer), "%lu", value);
+    snprintf(string_buffer, sizeof(string_buffer), "%"PRIu64, value);
     _set_query_param(_request, key, string_buffer);
 }
 
@@ -4144,10 +4150,9 @@ static ds3_error* _get_request_xml_nodes(
     return NULL;
 }
 
-#define LENGTH_BUFF_SIZE 21
 
 static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type, ds3_job_chunk_client_processing_order_guarantee order) {
-    char size_buff[LENGTH_BUFF_SIZE]; //The max size of an uint64_t should be 20 characters
+    char size_buff[UNSIGNED_LONG_LONG_BASE_10_STR_LEN];
     xmlDocPtr doc;
     ds3_bulk_object_response* obj;
     xmlNodePtr objects_node, object_node;
@@ -4163,7 +4168,7 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
 
     for (obj_index = 0; obj_index < obj_list->num_objects; obj_index++) {
         obj = obj_list->objects[obj_index];
-        g_snprintf(size_buff, sizeof(char) * LENGTH_BUFF_SIZE, "%llu", (unsigned long long int) obj->length);
+        g_snprintf(size_buff, sizeof(char) * UNSIGNED_LONG_LONG_BASE_10_STR_LEN, "%"PRIu64, obj->length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
         xmlAddChild(objects_node, object_node);
@@ -4180,7 +4185,7 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
 }
 
 static xmlDocPtr _generate_xml_complete_mpu(const ds3_complete_multipart_upload_response* mpu_list) {
-    char size_buff[LENGTH_BUFF_SIZE]; //The max size of an uint64_t should be 20 characters
+    char size_buff[UNSIGNED_LONG_LONG_BASE_10_STR_LEN]; //The max size of an uint64_t should be 20 characters
     xmlDocPtr doc;
     ds3_multipart_upload_part_response* part;
     xmlNodePtr parts_node, part_node;
@@ -4196,7 +4201,7 @@ static xmlDocPtr _generate_xml_complete_mpu(const ds3_complete_multipart_upload_
         part_node = xmlNewNode(NULL, (xmlChar*) "Part");
         xmlAddChild(parts_node, part_node);
 
-        g_snprintf(size_buff, sizeof(char) * LENGTH_BUFF_SIZE, "%d", part->part_number);
+        g_snprintf(size_buff, sizeof(char) * UNSIGNED_LONG_LONG_BASE_10_STR_LEN, "%d", part->part_number);
         xmlNewTextChild(part_node, NULL, (xmlChar*) "PartNumber", (xmlChar*) size_buff);
 
         xmlNewTextChild(part_node, NULL, (xmlChar*) "ETag", (xmlChar*) part->etag->value);
