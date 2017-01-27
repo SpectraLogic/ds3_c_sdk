@@ -1,11 +1,16 @@
 # Build the application.
 cmake .. -G "Visual Studio 14 2015 Win64"
-msbuild libds3.sln
+msbuild libds3.sln /p:Configuration=Release
 
 # Copy dependencies into output directory
-Copy-Item -Path deps\install\* -Destination output -Recurse -force
-Copy-Item -Path output\bin\ds3.lib -Destination output\lib
-Copy-Item -Path ..\src\*.h -Exclude ds3_request.h,ds3_net.h,ds3_utils.h,ds3_string_multimap_impl.h,ds3_connection.h -Destination output\include -force
+Copy-Item deps\install -Destination output -Recurse -force
+
+Copy-Item src\Release\* -Destination output\bin -force
+Copy-Item src\Release\ds3.lib -Destination output\lib\ds3.lib
+
+Copy-Item ..\src\ds3.h output\include
+Copy-Item ..\src\ds3_string.h output\include
+Copy-Item ..\src\ds3_string_multimap.h output\include
 
 # Create a zip file with the application contents.
 [Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")

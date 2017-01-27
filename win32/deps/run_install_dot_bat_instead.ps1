@@ -28,6 +28,8 @@ Install-Prebuilt include\glib-2.0
 $zlib = "build\zlib-1.2.11"
 cd $zlib
 nmake -f win32\Makefile.msc
+# Comment previous and uncomment next line for debug build
+#nmake -f win32\Makefile.msc /MDd
 cd ..\..
 copy "$zlib\zlib.h" "$installFolder\include"
 copy "$zlib\zconf.h" "$installFolder\include"
@@ -36,6 +38,8 @@ copy "$zlib\zlib.lib" "$installFolder\lib\zlib_a.lib"
 # Compile and install libcurl.
 $curl = "build\curl-7.37.0"
 cd "$curl\winbuild"
+nmake -f Makefile.vc mode=static WITH_DEVEL=$installFolder WITH_ZLIB=static ENABLE_IDN=no DEBUG=no
+# Comment previous and uncomment next line for debug build
 nmake -f Makefile.vc mode=static WITH_DEVEL=$installFolder WITH_ZLIB=static ENABLE_IDN=no
 cd ..\..\..
 copy "$curl\builds\libcurl-vc-x86-release-static-zlib-static-ipv6-sspi-spnego-winssl\lib\libcurl_a.lib" "$installFolder\lib"
@@ -44,6 +48,8 @@ xcopy /s "$curl\builds\libcurl-vc-x86-release-static-zlib-static-ipv6-sspi-spneg
 # Compile and install libxml.
 $libxml2 = "build\libxml2-2.9.4"
 cd "$libxml2\win32"
+cscript configure.js include="$installFolder\include" lib="$installFolder\lib" iconv=no debug=no
+# Comment previous and uncomment next line for debug build
 cscript configure.js include="$installFolder\include" lib="$installFolder\lib" iconv=no
 nmake -f Makefile.msvc
 cd ..\..\..

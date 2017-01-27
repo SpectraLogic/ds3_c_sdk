@@ -21629,7 +21629,7 @@ size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, void* user_data
     return read(*(int*)user_data, buffer, size * nmemb);
 }
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 static void get_file_size_windows(const char* file_path, uint64_t* file_size) {
     BY_HANDLE_FILE_INFORMATION info;
     HANDLE file_handle;
@@ -21734,7 +21734,7 @@ static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_nam
 
     obj->name = ds3_str_init(file_name);
 
-#ifdef _MSC_VER
+#ifdef _WIN32
     get_file_size_windows(file_to_stat, &obj->length);
 #else
     get_file_size_posix(file_to_stat, &obj->length);
