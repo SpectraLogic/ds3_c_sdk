@@ -92,6 +92,33 @@ On CentOS this can be installed with:
 
     $ sudo yum install boost-test
 
+
+RPM build on CentOS/7
+=====================
+
+Build from cloned source repository:
+
+    $ ./rpmbuild.sh
+
+The command will produce both src.rpm and and binary rpm.
+
+Content of the compiled package:
+
+    $ rpm -qlp /home/yu/rpmbuild/RPMS/x86_64/ds3_c_sdk-3.2.3-11.el7.centos.x86_64.rpm
+    /usr/include/ds3/ds3.h
+    /usr/include/ds3/ds3_connection.h
+    /usr/include/ds3/ds3_net.h
+    /usr/include/ds3/ds3_request.h
+    /usr/include/ds3/ds3_string.h
+    /usr/include/ds3/ds3_string_multimap.h
+    /usr/include/ds3/ds3_string_multimap_impl.h
+    /usr/include/ds3/ds3_utils.h
+    /usr/lib64/libds3.so
+    /usr/share/doc/ds3_c_sdk-3.2.3/LICENSE.md
+    /usr/share/doc/ds3_c_sdk-3.2.3/README.md
+    /usr/share/doc/ds3_c_sdk-3.2.3/r3x_migration_guide.md
+
+
 Release Tarball
 ---------------
 
