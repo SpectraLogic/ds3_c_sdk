@@ -52,7 +52,7 @@ if (WIN32)
                        ${DLL_LOCATION} ${UNIT_TEST_DIR})
 else(WIN32)
     find_package(LibXml2 2.9 REQUIRED)
-    find_package(CURL 7.29 REQUIRED)
+    find_package(CURL 7.31 REQUIRED)
     find_package(GLIB2 2.34 REQUIRED)
 
     if (LIBXML2_FOUND)

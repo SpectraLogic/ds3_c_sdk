@@ -35,16 +35,14 @@ This project contains a C library for using the Spectra S3 Deep Storage REST int
 
 %build
 
+sed -i 's/CURL 7.31 REQUIRED/CURL 7.29 REQUIRED/' src/CMakeLists.txt
+
 cmake -DCMAKE_INSTALL_PREFIX=/usr  .
 make
 
 %install
 rm -rf %{buildroot}
 mkdir -p  %{buildroot}
-#
-## in builddir
-#cp -a * %{buildroot}
-#find %buildroot -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
 make DESTDIR=%{buildroot} install 
 mkdir -p %{buildroot}%{_libdir}/
 mv %{buildroot}/usr/lib/libds3* %{buildroot}%{_libdir}/
