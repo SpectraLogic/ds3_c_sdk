@@ -8,7 +8,7 @@
 Name:		ds3_c_sdk
 #Version:	3.2.3
 Version:	%{sdk_version}
-Release:	1%{?dist}
+Release:	%{sdk_rev}%{?dist}
 Summary:	Spectra DS3 C SDK
 
 Group:		Utilities/System
@@ -28,7 +28,7 @@ Requires:	curl openssl
 This project contains a C library for using the Spectra S3 Deep Storage REST interface.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}-%{sdk_rev}-%{sdk_id}
 
 
 %build
