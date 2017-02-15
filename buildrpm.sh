@@ -1,5 +1,10 @@
 #!/bin/bash
-ver=v3.2.3  # FIXME
-git archive --format=tar --prefix=ds3_c_sdk-${ver#v}/ ${ver}^{tree} |\
-    gzip > ~/rpmbuild/SOURCES/ds3_c_sdk-${ver#v}.tar.gz
-rpmbuild -bb ds3_c_sdk.spec
+set -e
+#ver=v3.2.3  # FIXME
+ver=`git describe --tags --abbrev=4 |tr - _`
+sver=${ver#v}
+# git archive --format=tar --prefix=ds3_c_sdk-${sver}/ ${ver}^{tree} |\
+git archive --format=tar --prefix=ds3_c_sdk-${sver}/ HEAD |\
+    gzip > ~/rpmbuild/SOURCES/ds3_c_sdk-${sver}.tar.gz
+sed -e 's/$VERSION/'$sver'/' < ds3_c_sdk.spec.in > ds3_c_sdk.spec
+rpmbuild -D "sdk_version ${sver}" -bb ds3_c_sdk.spec

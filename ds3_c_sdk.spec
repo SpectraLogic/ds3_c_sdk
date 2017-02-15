@@ -6,7 +6,8 @@
 %define          debug_package %{nil}
 %define        __os_install_post %{_dbpath}/brp-compress
 Name:		ds3_c_sdk
-Version:	3.2.3
+#Version:	3.2.3
+Version:	%{sdk_version}
 Release:	1%{?dist}
 Summary:	Spectra DS3 C SDK
 
@@ -42,12 +43,13 @@ make
 ## in builddir
 #cp -a * %{buildroot}
 #find %buildroot -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
+make install 
 
 
 %files
 %defattr(-,root,root,-)
 %{_bindir}/*
-%{_libdir}/libmarfs.so*
+%{_libdir}/libds3.so*
 %doc /usr/share/doc/%{name}-%{version}/*
 
 
