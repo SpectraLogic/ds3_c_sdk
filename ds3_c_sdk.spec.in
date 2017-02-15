@@ -1,0 +1,67 @@
+# http://stackoverflow.com/questions/880227/what-is-the-minimum-i-have-to-do-to-create-an-rpm-file
+# Don't try fancy stuff like debuginfo, which is useless on binary-only
+# packages. Don't strip binary too
+# Be sure buildpolicy set to do nothing
+%define        __spec_install_post %{nil}
+%define          debug_package %{nil}
+%define        __os_install_post %{_dbpath}/brp-compress
+%define        sdk_rev %{_sdk_rev}
+%define        sdk_id %{_sdk_id}
+Name:		ds3_c_sdk
+#Version:	3.2.3
+Version:	%{sdk_version}
+Release:	%{sdk_rev}%{?dist}
+Summary:	Spectra DS3 C SDK
+
+Group:		Utilities/System
+License:	ASL 2.0
+URL:		https://github.com/SpectraLogic/ds3_c_sdk
+Source0:	%{name}-%{version}.tar.gz
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+
+BuildRequires:	libcurl-devel
+BuildRequires:	libxml2-devel
+BuildRequires:	glib2-devel
+BuildRequires:	openssl-devel
+BuildRequires:	cmake
+Requires:	curl openssl
+
+%description
+This project contains a C library for using the Spectra S3 Deep Storage REST interface.
+
+%prep
+%setup -q -n %{name}-%{version}-%{sdk_rev}-%{sdk_id}
+
+
+%build
+
+sed -i 's/CURL 7.31 REQUIRED/CURL 7.29 REQUIRED/' src/CMakeLists.txt
+
+cmake -DCMAKE_INSTALL_PREFIX=/usr  .
+make
+
+%install
+rm -rf %{buildroot}
+mkdir -p  %{buildroot}
+make DESTDIR=%{buildroot} install 
+mkdir -p %{buildroot}%{_libdir}/
+mv %{buildroot}/usr/lib/libds3* %{buildroot}%{_libdir}/
+mkdir -p %{buildroot}/usr/include/ds3/
+mv %{buildroot}/usr/local/include/ds3* %{buildroot}/usr/include/ds3/
+mkdir -p  %{buildroot}/usr/share/doc/%{name}-%{version}/
+cp -pv *.md  %{buildroot}/usr/share/doc/%{name}-%{version}/
+
+
+%files
+%defattr(-,root,root,-)
+# %{_bindir}/*
+/usr/include/ds3/*
+%{_libdir}/libds3.so*
+%doc /usr/share/doc/%{name}-%{version}/*
+
+
+
+
+%changelog
+* Wed Feb 15 2017  Yuriy Shestakov <yuriy.shestakov@archive-engines.com> 3.2.3
+- Assemble binary RPM 
