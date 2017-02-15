@@ -33,7 +33,7 @@ This project contains a C library for using the Spectra S3 Deep Storage REST int
 
 %build
 
-cmake .
+cmake -DCMAKE_INSTALL_PREFIX=/usr  .
 make
 
 %install
@@ -43,7 +43,7 @@ make
 ## in builddir
 #cp -a * %{buildroot}
 #find %buildroot -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
-make install 
+make DESTDIR=%{buildroot}/usr install 
 
 
 %files
