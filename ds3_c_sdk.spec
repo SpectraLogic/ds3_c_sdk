@@ -37,18 +37,25 @@ cmake -DCMAKE_INSTALL_PREFIX=/usr  .
 make
 
 %install
-#rm -rf %{buildroot}
-#mkdir -p  %{buildroot}
+rm -rf %{buildroot}
+mkdir -p  %{buildroot}
 #
 ## in builddir
 #cp -a * %{buildroot}
 #find %buildroot -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
-make DESTDIR=%{buildroot}/usr install 
+make DESTDIR=%{buildroot} install 
+mkdir -p %{buildroot}%{_libdir}/
+mv %{buildroot}/usr/lib/libds3* %{buildroot}%{_libdir}/
+mkdir -p %{buildroot}/usr/include/ds3/
+mv %{buildroot}/usr/local/include/ds3* %{buildroot}/usr/include/ds3/
+mkdir -p  %{buildroot}/usr/share/doc/%{name}-%{version}/
+cp -pv *.md  %{buildroot}/usr/share/doc/%{name}-%{version}/
 
 
 %files
 %defattr(-,root,root,-)
-%{_bindir}/*
+# %{_bindir}/*
+/usr/include/ds3/*
 %{_libdir}/libds3.so*
 %doc /usr/share/doc/%{name}-%{version}/*
 
@@ -56,5 +63,5 @@ make DESTDIR=%{buildroot}/usr install
 
 
 %changelog
-* Wed Feb 15 2017  Yuriy Shestakov <yuriy.shestakov@archive-engines.com> 3.4.1
+* Wed Feb 15 2017  Yuriy Shestakov <yuriy.shestakov@archive-engines.com> 3.2.3
 - Assemble binary RPM 
