@@ -58,9 +58,10 @@ else(WIN32) # POSIX
 
   link_directories("${PROJECT_SOURCE_DIR}/../install/lib")
   include_directories("${PROJECT_SOURCE_DIR}/../install/include")
+
 endif(WIN32)
 
-add_executable(ds3_c_test
+add_executable(ds3_c_tests
   bucket_tests.cpp
   bulk_get.cpp
   bulk_put.cpp
@@ -75,7 +76,12 @@ add_executable(ds3_c_test
   service_tests.cpp
   test.cpp)
 
-add_test(regression_tests ds3_c_test)
+add_test(regression_tests ds3_c_tests)
 
-target_link_libraries(ds3_c_test ds3 glib-2.0 boost_unit_test_framework)
+target_link_libraries(ds3_c_tests ds3 glib-2.0 boost_unit_test_framework)
 
+find_program(VALGRIND "valgrind")
+if(VALGRIND)
+  add_custom_target(mem
+  COMMAND "${VALGRIND}" --tool=memcheck  --leak-check=full --track-origins=yes --show-leak-kinds=all $<TARGET_FILE:ds3_c_tests> )  # --show-reachable=yes --num-callers=20 --track-fds=yes
+endif()
