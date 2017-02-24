@@ -35,6 +35,6 @@ RUN echo "export TERM=xterm-256color" >> ~/.bashrc
 RUN echo "color ir_blue" >> ~/.vimrc.after
 
 ADD run_tests.sh /opt/
+ADD run_mem_tests.sh /opt/
 
-ENTRYPOINT ["/opt/run_tests.sh"]
-
+ENTRYPOINT ["/opt/run_mem_tests.sh"]
