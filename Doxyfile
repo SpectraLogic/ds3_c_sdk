@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "DS3 C SDK"
-PROJECT_NUMBER         = 3.0.0
+PROJECT_NUMBER         = 3.4.1
 PROJECT_BRIEF          = "Provides access to the Spectra S3 API with C"
 PROJECT_LOGO           = SpectraLogic.png
 OUTPUT_DIRECTORY       = 
