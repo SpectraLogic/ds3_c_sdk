@@ -776,6 +776,7 @@ typedef struct {
     ds3_job_chunk_client_processing_order_guarantee chunk_client_processing_order_guarantee;
     uint64_t completed_size_in_bytes;
     ds3_str* created_at;
+    ds3_bool dead_job_cleanup_allowed;
     ds3_str* error_message;
     ds3_str* id;
     ds3_bool implicit_job_id_resolution;
@@ -1177,10 +1178,12 @@ typedef struct {
     ds3_tape_type tape_type;
 }ds3_tape_density_directive_response;
 typedef struct {
+    ds3_bool cleaning_required;
     ds3_str* error_message;
     ds3_bool force_tape_removal;
     ds3_str* id;
     ds3_str* last_cleaned;
+    ds3_str* mfg_serial_number;
     ds3_str* partition_id;
     ds3_str* serial_number;
     ds3_tape_drive_state state;
@@ -2320,8 +2323,11 @@ LIBRARY_API void ds3_metadata_free(ds3_metadata* _metadata);
 LIBRARY_API void ds3_metadata_entry_free(ds3_metadata_entry* entry);
 LIBRARY_API void ds3_metadata_keys_free(ds3_metadata_keys_result* metadata_keys);
 
-LIBRARY_API ds3_creds*  ds3_create_creds(const char* access_id, const char* secret_key);
-LIBRARY_API ds3_client* ds3_create_client(const char* endpoint, ds3_creds* creds);
+LIBRARY_API void ds3_creds_free(ds3_creds* client);
+LIBRARY_API void ds3_client_free(ds3_client* client);
+
+LIBRARY_API ds3_creds*  ds3_create_creds(const char *const access_id, const char *const secret_key);
+LIBRARY_API ds3_client* ds3_create_client(const char *const endpoint, ds3_creds* creds);
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
 LIBRARY_API void        ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
@@ -2331,26 +2337,26 @@ LIBRARY_API void        ds3_client_register_net(ds3_client* client, ds3_error* (
                                                                                                 void* write_user_struct,
                                                                                                 size_t (*write_handler_func)(void*, size_t, size_t, void*),
                                                                                                 ds3_string_multimap** return_headers));
-LIBRARY_API void ds3_client_proxy(ds3_client* client, const char* proxy);
+LIBRARY_API void ds3_client_proxy(ds3_client* client, const char *const proxy);
 
 // Set optional request query parameters
 LIBRARY_API void ds3_request_set_byte_range(ds3_request* _request, int64_t rangeStart, int64_t rangeEnd);
 LIBRARY_API void ds3_request_reset_byte_range(ds3_request* _request);
 LIBRARY_API void ds3_request_set_access_control_replication_ds3_target_access_control_replication(const ds3_request* request, const ds3_target_access_control_replication value);
-LIBRARY_API void ds3_request_set_access_key(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_account_key(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_account_name(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_access_key(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_account_key(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_account_name(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_activated(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_admin_auth_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_admin_secret_key(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_admin_auth_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_admin_secret_key(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_always_force_put_job_creation(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_always_minimize_spanning_across_media(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_auth_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_auth_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_auto_activate_timeout_in_mins(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_auto_eject_media_full_threshold(const ds3_request* request, const uint64_t value);
-LIBRARY_API void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value);
@@ -2359,27 +2365,27 @@ LIBRARY_API void ds3_request_set_auto_reclaim_initiate_threshold(const ds3_reque
 LIBRARY_API void ds3_request_set_auto_reclaim_terminate_threshold(const ds3_request* request, const float value);
 LIBRARY_API void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_available_raw_capacity(const ds3_request* request, const uint64_t value);
-LIBRARY_API void ds3_request_set_bar_code(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_blob_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_bar_code(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_blob_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_blobbing_enabled(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_bucket_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_bucket_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_built_in(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_burst_threshold(const ds3_request* request, const float value);
 LIBRARY_API void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request, const ds3_checksum_type value);
 LIBRARY_API void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value);
-LIBRARY_API void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value);
-LIBRARY_API void ds3_request_set_created_at(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_created_at(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_data_path_https(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_data_path_port(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_data_path_proxy(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_data_policy_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_default_blob_size(const ds3_request* request, const uint64_t value);
-LIBRARY_API void ds3_request_set_default_data_policy_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_default_data_policy_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_default_get_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value);
 LIBRARY_API void ds3_request_set_default_put_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
@@ -2388,42 +2394,42 @@ LIBRARY_API void ds3_request_set_default_verify_after_write(const ds3_request* r
 LIBRARY_API void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
-LIBRARY_API void ds3_request_set_delimiter(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_delimiter(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_density_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value);
-LIBRARY_API void ds3_request_set_dns_name(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_eject_label(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_eject_location(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_dns_name(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_eject_label(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_eject_location(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_error_message(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_expiration_date(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_folder(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_error_message(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_expiration_date(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_folder(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_force(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_format_ds3_http_response_format_type(const ds3_request* request, const ds3_http_response_format_type value);
 LIBRARY_API void ds3_request_set_full_details(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_full_of_data(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_group_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_group_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value);
 LIBRARY_API void ds3_request_set_https(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_ignore_naming_conflicts(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_implicit_job_id_resolution(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value);
 LIBRARY_API void ds3_request_set_include_physical_placement(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_initial_data_placement_ds3_s3_initial_data_placement_policy(const ds3_request* request, const ds3_s3_initial_data_placement_policy value);
 LIBRARY_API void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value);
-LIBRARY_API void ds3_request_set_job(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_job_chunk(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_job_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_job(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_job_chunk(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_job_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_key_ds3_feature_key_type(const ds3_request* request, const ds3_feature_key_type value);
-LIBRARY_API void ds3_request_set_key_marker(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_key_marker(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_last_page(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_last_verified(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_last_verified(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_latest(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_library_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_library_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_ltfs_file_naming_ds3_ltfs_file_naming_mode(const ds3_request* request, const ds3_ltfs_file_naming_mode value);
-LIBRARY_API void ds3_request_set_management_url(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_marker(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_management_url(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_marker(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_max_blob_part_size_in_bytes(const ds3_request* request, const uint64_t value);
 LIBRARY_API void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value);
 LIBRARY_API void ds3_request_set_max_keys(const ds3_request* request, const int value);
@@ -2433,53 +2439,53 @@ LIBRARY_API void ds3_request_set_max_upload_size(const ds3_request* request, con
 LIBRARY_API void ds3_request_set_max_uploads(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_maximum_auto_verification_frequency_in_days(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_member_group_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_member_user_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_member_group_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_member_user_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_minimize_spanning_across_media(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_minimum_days_to_retain(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_name(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_name(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value);
-LIBRARY_API void ds3_request_set_node_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_node_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_notification_http_method_ds3_request_type(const ds3_request* request, const ds3_request_type value);
 LIBRARY_API void ds3_request_set_offline_data_staging_window_in_tb(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_offset(const ds3_request* request, const uint64_t value);
 LIBRARY_API void ds3_request_set_page_length(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_page_offset(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_page_start_marker(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_part_number_marker(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_partition_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_partition_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_permission_ds3_bucket_acl_permission(const ds3_request* request, const ds3_bucket_acl_permission value);
 LIBRARY_API void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_persistence_rule_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_persistence_rule_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_pool_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value);
-LIBRARY_API void ds3_request_set_pool_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_pool_partition_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_pool_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_pool_partition_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_pool_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value);
 LIBRARY_API void ds3_request_set_pool_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value);
 LIBRARY_API void ds3_request_set_powered_on(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_preferred_number_of_chunks(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_prefix(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_prefix(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_previous_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value);
 LIBRARY_API void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
-LIBRARY_API void ds3_request_set_proxy_domain(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_proxy_host(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_proxy_password(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_proxy_domain(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_proxy_host(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_proxy_password(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_proxy_port(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_proxy_username(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_proxy_username(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value);
 LIBRARY_API void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value);
 LIBRARY_API void ds3_request_set_rebuild_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
-LIBRARY_API void ds3_request_set_rechunked(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_rechunked(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_region_ds3_s3_region(const ds3_request* request, const ds3_s3_region value);
 LIBRARY_API void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value);
 LIBRARY_API void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_secret_key(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_secret_key(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value);
-LIBRARY_API void ds3_request_set_serial_number(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_serial_number(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_staged_data_expiration_in_days(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value);
 LIBRARY_API void ds3_request_set_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value);
@@ -2488,14 +2494,14 @@ LIBRARY_API void ds3_request_set_state_ds3_tape_drive_state(const ds3_request* r
 LIBRARY_API void ds3_request_set_state_ds3_tape_partition_state(const ds3_request* request, const ds3_tape_partition_state value);
 LIBRARY_API void ds3_request_set_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value);
 LIBRARY_API void ds3_request_set_state_ds3_target_state(const ds3_request* request, const ds3_target_state value);
-LIBRARY_API void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_tape_drive_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_tape_id(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_tape_partition_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_tape_drive_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_tape_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_tape_partition_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value);
 LIBRARY_API void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value);
-LIBRARY_API void ds3_request_set_target_data_policy(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_target_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_target_data_policy(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_target_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_truncated(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value);
@@ -2513,8 +2519,8 @@ LIBRARY_API void ds3_request_set_type_ds3_target_failure_type(const ds3_request*
 LIBRARY_API void ds3_request_set_unavailable_media_policy_ds3_unavailable_media_usage_policy(const ds3_request* request, const ds3_unavailable_media_usage_policy value);
 LIBRARY_API void ds3_request_set_unavailable_pool_max_job_retry_in_mins(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_unavailable_tape_partition_max_job_retry_in_mins(const ds3_request* request, const int value);
-LIBRARY_API void ds3_request_set_upload_id_marker(const ds3_request* request, const char* value);
-LIBRARY_API void ds3_request_set_user_id(const ds3_request* request, const char* value);
+LIBRARY_API void ds3_request_set_upload_id_marker(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_user_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_verify_after_write(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value);
 LIBRARY_API void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value);
@@ -2527,17 +2533,14 @@ LIBRARY_API void ds3_request_set_write_preference_ds3_write_preference_level(con
 LIBRARY_API void ds3_request_set_write_protected(const ds3_request* request, ds3_bool value);
 
 // Set headers / metadata
-LIBRARY_API void ds3_request_set_custom_header(ds3_request* request, const char* header_name, const char* header_value);
-LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char* md5);
-LIBRARY_API void ds3_request_set_sha256(ds3_request* request, const char* sha256);
-LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char* sha512);
-LIBRARY_API void ds3_request_set_crc32(ds3_request* request, const char* crc32);
-LIBRARY_API void ds3_request_set_crc32c(ds3_request* request, const char* crc32c);
+LIBRARY_API void ds3_request_set_custom_header(ds3_request* request, const char *const header_name, const char *const header_value);
+LIBRARY_API void ds3_request_set_md5(ds3_request* request, const char *const md5);
+LIBRARY_API void ds3_request_set_sha256(ds3_request* request, const char *const sha256);
+LIBRARY_API void ds3_request_set_sha512(ds3_request* request, const char *const sha512);
+LIBRARY_API void ds3_request_set_crc32(ds3_request* request, const char *const crc32);
+LIBRARY_API void ds3_request_set_crc32c(ds3_request* request, const char *const crc32c);
 // Any attempt to set a key with an empty or NULL value will be ignored.
-LIBRARY_API void ds3_request_set_metadata(ds3_request* request, const char* name, const char* value);
-
-LIBRARY_API void ds3_creds_free(ds3_creds* client);
-LIBRARY_API void ds3_client_free(ds3_client* client);
+LIBRARY_API void ds3_request_set_metadata(ds3_request* request, const char *const name, const char *const value);
 
 LIBRARY_API ds3_error* ds3_get_object_with_metadata(const ds3_client* client,
                                                     const ds3_request* request,
@@ -2546,65 +2549,65 @@ LIBRARY_API ds3_error* ds3_get_object_with_metadata(const ds3_client* client,
                                                     ds3_metadata** _metadata);
 
 
-LIBRARY_API ds3_request* ds3_init_abort_multi_part_upload_request(const char* bucket_name, const char* object_name, const char* upload_id);
+LIBRARY_API ds3_request* ds3_init_abort_multi_part_upload_request(const char *const bucket_name, const char *const object_name, const char* upload_id);
 LIBRARY_API ds3_error* ds3_abort_multi_part_upload_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_complete_multi_part_upload_request(const char* bucket_name, const char* object_name, const char* upload_id, const ds3_complete_multipart_upload_response* mpu_list);
+LIBRARY_API ds3_request* ds3_init_complete_multi_part_upload_request(const char *const bucket_name, const char *const object_name, const char* upload_id, const ds3_complete_multipart_upload_response* mpu_list);
 LIBRARY_API ds3_error* ds3_complete_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_complete_multipart_upload_result_response** response);
-LIBRARY_API ds3_request* ds3_init_put_bucket_request(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_put_bucket_request(const char *const bucket_name);
 LIBRARY_API ds3_error* ds3_put_bucket_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_put_multi_part_upload_part_request(const char* bucket_name, const char* object_name, const int part_number, const char* upload_id);
+LIBRARY_API ds3_request* ds3_init_put_multi_part_upload_part_request(const char *const bucket_name, const char *const object_name, const int part_number, const char* upload_id);
 LIBRARY_API ds3_error* ds3_put_multi_part_upload_part_request(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*));
 /**
  * Optional Request Modifiers for ds3_init_put_object_request
  *
- *   void ds3_request_set_job(const ds3_request* request, const char* value)
+ *   void ds3_request_set_job(const ds3_request* request, const char * const value)
  *   void ds3_request_set_offset(const ds3_request* request, const uint64_t value)
  */
-LIBRARY_API ds3_request* ds3_init_put_object_request(const char* bucket_name, const char* object_name, const uint64_t length);
+LIBRARY_API ds3_request* ds3_init_put_object_request(const char *const bucket_name, const char *const object_name, const uint64_t length);
 LIBRARY_API ds3_error* ds3_put_object_request(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*));
-LIBRARY_API ds3_request* ds3_init_delete_bucket_request(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_delete_bucket_request(const char *const bucket_name);
 LIBRARY_API ds3_error* ds3_delete_bucket_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_delete_object_request
  *
  *   void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_delete_object_request(const char* bucket_name, const char* object_name);
+LIBRARY_API ds3_request* ds3_init_delete_object_request(const char *const bucket_name, const char *const object_name);
 LIBRARY_API ds3_error* ds3_delete_object_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_delete_objects_request
  *
  *   void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_delete_objects_request(const char* bucket_name, const ds3_delete_objects_response* objects_list);
+LIBRARY_API ds3_request* ds3_init_delete_objects_request(const char *const bucket_name, const ds3_delete_objects_response* objects_list);
 LIBRARY_API ds3_error* ds3_delete_objects_request(const ds3_client* client, const ds3_request* request, ds3_delete_result_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_bucket_request
  *
- *   void ds3_request_set_delimiter(const ds3_request* request, const char* value)
- *   void ds3_request_set_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_delimiter(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_max_keys(const ds3_request* request, const int value)
- *   void ds3_request_set_prefix(const ds3_request* request, const char* value)
+ *   void ds3_request_set_prefix(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_get_bucket_request(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_get_bucket_request(const char *const bucket_name);
 LIBRARY_API ds3_error* ds3_get_bucket_request(const ds3_client* client, const ds3_request* request, ds3_list_bucket_result_response** response);
 LIBRARY_API ds3_request* ds3_init_get_service_request(void);
 LIBRARY_API ds3_error* ds3_get_service_request(const ds3_client* client, const ds3_request* request, ds3_list_all_my_buckets_result_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_object_request
  *
- *   void ds3_request_set_job(const ds3_request* request, const char* value)
+ *   void ds3_request_set_job(const ds3_request* request, const char * const value)
  *   void ds3_request_set_offset(const ds3_request* request, const uint64_t value)
  */
-LIBRARY_API ds3_request* ds3_init_get_object_request(const char* bucket_name, const char* object_name, const uint64_t length);
+LIBRARY_API ds3_request* ds3_init_get_object_request(const char *const bucket_name, const char *const object_name, const uint64_t length);
 LIBRARY_API ds3_error* ds3_get_object_request(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*));
-LIBRARY_API ds3_request* ds3_init_head_bucket_request(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_head_bucket_request(const char *const bucket_name);
 LIBRARY_API ds3_error* ds3_head_bucket_request(const ds3_client* client, const ds3_request* request);
 
-LIBRARY_API ds3_request* ds3_init_head_object_request(const char* bucket_name, const char* object_name);
+LIBRARY_API ds3_request* ds3_init_head_object_request(const char* bucket_name, const char *const object_name);
 LIBRARY_API ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata);
 
-LIBRARY_API ds3_request* ds3_init_initiate_multi_part_upload_request(const char* bucket_name, const char* object_name);
+LIBRARY_API ds3_request* ds3_init_initiate_multi_part_upload_request(const char *const bucket_name, const char *const object_name);
 LIBRARY_API ds3_error* ds3_initiate_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_initiate_multipart_upload_result_response** response);
 /**
  * Optional Request Modifiers for ds3_init_list_multi_part_upload_parts_request
@@ -2612,18 +2615,18 @@ LIBRARY_API ds3_error* ds3_initiate_multi_part_upload_request(const ds3_client* 
  *   void ds3_request_set_max_parts(const ds3_request* request, const int value)
  *   void ds3_request_set_part_number_marker(const ds3_request* request, const int value)
  */
-LIBRARY_API ds3_request* ds3_init_list_multi_part_upload_parts_request(const char* bucket_name, const char* object_name, const char* upload_id);
+LIBRARY_API ds3_request* ds3_init_list_multi_part_upload_parts_request(const char *const bucket_name, const char *const object_name, const char* upload_id);
 LIBRARY_API ds3_error* ds3_list_multi_part_upload_parts_request(const ds3_client* client, const ds3_request* request, ds3_list_parts_result_response** response);
 /**
  * Optional Request Modifiers for ds3_init_list_multi_part_uploads_request
  *
- *   void ds3_request_set_delimiter(const ds3_request* request, const char* value)
- *   void ds3_request_set_key_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_delimiter(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_key_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_max_uploads(const ds3_request* request, const int value)
- *   void ds3_request_set_prefix(const ds3_request* request, const char* value)
- *   void ds3_request_set_upload_id_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_prefix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_upload_id_marker(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_list_multi_part_uploads_request(const char* bucket_name);
+LIBRARY_API ds3_request* ds3_init_list_multi_part_uploads_request(const char *const bucket_name);
 LIBRARY_API ds3_error* ds3_list_multi_part_uploads_request(const ds3_client* client, const ds3_request* request, ds3_list_multi_part_uploads_result_response** response);
 LIBRARY_API ds3_request* ds3_init_put_bucket_acl_for_group_spectra_s3_request(const char* bucket_id, const char* group_id, const ds3_bucket_acl_permission permission);
 LIBRARY_API ds3_error* ds3_put_bucket_acl_for_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_acl_response** response);
@@ -2641,47 +2644,47 @@ LIBRARY_API ds3_request* ds3_init_put_global_data_policy_acl_for_group_spectra_s
 LIBRARY_API ds3_error* ds3_put_global_data_policy_acl_for_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_acl_response** response);
 LIBRARY_API ds3_request* ds3_init_put_global_data_policy_acl_for_user_spectra_s3_request(const char* user_id);
 LIBRARY_API ds3_error* ds3_put_global_data_policy_acl_for_user_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_acl_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_bucket_acl_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_bucket_acl_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_bucket_acl_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_data_policy_acl_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_data_policy_acl_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_data_policy_acl_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_bucket_acl_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_bucket_acl_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_bucket_acl_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_acl_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_bucket_acls_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_group_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_group_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permission_ds3_bucket_acl_permission(const ds3_request* request, const ds3_bucket_acl_permission value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_bucket_acls_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_bucket_acls_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_acl_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_data_policy_acl_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_data_policy_acl_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_data_policy_acl_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_acl_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_data_policy_acls_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_group_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_group_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_data_policy_acls_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_data_policy_acls_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_acl_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_put_bucket_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_put_bucket_spectra_s3_request(const char* name);
 LIBRARY_API ds3_error* ds3_put_bucket_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_response** response);
@@ -2690,43 +2693,43 @@ LIBRARY_API ds3_error* ds3_put_bucket_spectra_s3_request(const ds3_client* clien
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_delete_bucket_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_bucket_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_bucket_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_bucket_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_bucket_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_bucket_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_buckets_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_buckets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_buckets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_bucket_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_bucket_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_bucket_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_bucket_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_response** response);
 LIBRARY_API ds3_request* ds3_init_force_full_cache_reclaim_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_force_full_cache_reclaim_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_cache_filesystem_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_cache_filesystem_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_cache_filesystem_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_filesystem_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_cache_filesystems_spectra_s3_request
  *
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_node_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_node_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_cache_filesystems_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_cache_filesystems_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_filesystem_list_response** response);
@@ -2740,7 +2743,7 @@ LIBRARY_API ds3_error* ds3_get_cache_state_spectra_s3_request(const ds3_client* 
  *   void ds3_request_set_burst_threshold(const ds3_request* request, const float value)
  *   void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_cache_filesystem_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_cache_filesystem_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_cache_filesystem_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_filesystem_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_bucket_capacity_summary_spectra_s3_request
@@ -2837,7 +2840,7 @@ LIBRARY_API ds3_error* ds3_put_data_policy_spectra_s3_request(const ds3_client* 
  * Optional Request Modifiers for ds3_init_put_ds3_data_replication_rule_spectra_s3_request
  *
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_target_data_policy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_data_policy(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_put_ds3_data_replication_rule_spectra_s3_request(const char* data_policy_id, const char* target_id, const ds3_data_replication_rule_type type);
 LIBRARY_API ds3_error* ds3_put_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response);
@@ -2850,46 +2853,46 @@ LIBRARY_API ds3_error* ds3_put_ds3_data_replication_rule_spectra_s3_request(cons
  */
 LIBRARY_API ds3_request* ds3_init_put_s3_data_replication_rule_spectra_s3_request(const char* data_policy_id, const char* target_id, const ds3_data_replication_rule_type type);
 LIBRARY_API ds3_error* ds3_put_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_azure_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_azure_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_data_persistence_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_data_persistence_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_data_policy_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_data_policy_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_data_policy_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_ds3_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_ds3_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_s3_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_s3_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_azure_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_azure_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_azure_data_replication_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_azure_data_replication_rules_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_azure_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_data_persistence_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_data_persistence_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_data_persistence_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_persistence_rule_type(const ds3_request* request, const ds3_data_persistence_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_data_persistence_rules_spectra_s3_request(void);
@@ -2902,46 +2905,46 @@ LIBRARY_API ds3_error* ds3_get_data_persistence_rules_spectra_s3_request(const d
  *   void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request, const ds3_checksum_type value)
  *   void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_data_policies_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_data_policies_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_data_policy_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_data_policy_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_data_policy_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_response** response);
-LIBRARY_API ds3_request* ds3_init_get_ds3_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_ds3_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_ds3_data_replication_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_ds3_data_replication_rules_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_ds3_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_s3_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_s3_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_s3_data_replication_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_initial_data_placement_ds3_s3_initial_data_placement_policy(const ds3_request* request, const ds3_s3_initial_data_placement_policy value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_s3_data_replication_rules_spectra_s3_request(void);
@@ -2953,7 +2956,7 @@ LIBRARY_API ds3_error* ds3_get_s3_data_replication_rules_spectra_s3_request(cons
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_azure_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_azure_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_azure_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_data_persistence_rule_spectra_s3_request
@@ -2962,7 +2965,7 @@ LIBRARY_API ds3_error* ds3_modify_azure_data_replication_rule_spectra_s3_request
  *   void ds3_request_set_minimum_days_to_retain(const ds3_request* request, const int value)
  *   void ds3_request_set_type_ds3_data_persistence_rule_type(const ds3_request* request, const ds3_data_persistence_rule_type value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_data_persistence_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_data_persistence_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_data_persistence_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_persistence_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_data_policy_spectra_s3_request
@@ -2977,20 +2980,20 @@ LIBRARY_API ds3_error* ds3_modify_data_persistence_rule_spectra_s3_request(const
  *   void ds3_request_set_default_verify_after_write(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_rebuild_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_versioning_ds3_versioning_level(const ds3_request* request, const ds3_versioning_level value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_data_policy_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_data_policy_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_data_policy_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_ds3_data_replication_rule_spectra_s3_request
  *
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_target_data_policy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_data_policy(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_ds3_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_ds3_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_ds3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_replication_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_s3_data_replication_rule_spectra_s3_request
@@ -3000,7 +3003,7 @@ LIBRARY_API ds3_error* ds3_modify_ds3_data_replication_rule_spectra_s3_request(c
  *   void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_s3_data_replication_rule_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_s3_data_replication_rule_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_s3_data_replication_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_data_replication_rule_response** response);
 /**
  * Optional Request Modifiers for ds3_init_clear_suspect_blob_azure_targets_spectra_s3_request
@@ -3040,13 +3043,13 @@ LIBRARY_API ds3_error* ds3_clear_suspect_blob_tapes_spectra_s3_request(const ds3
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_azure_data_replication_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_degraded_azure_data_replication_rules_spectra_s3_request(void);
@@ -3054,41 +3057,41 @@ LIBRARY_API ds3_error* ds3_get_degraded_azure_data_replication_rules_spectra_s3_
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_blobs_spectra_s3_request
  *
- *   void ds3_request_set_blob_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_blob_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_persistence_rule_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_persistence_rule_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_degraded_blobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_degraded_blobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_degraded_blob_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_buckets_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_degraded_buckets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_degraded_buckets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_data_persistence_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_persistence_rule_type(const ds3_request* request, const ds3_data_persistence_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_degraded_data_persistence_rules_spectra_s3_request(void);
@@ -3096,13 +3099,13 @@ LIBRARY_API ds3_error* ds3_get_degraded_data_persistence_rules_spectra_s3_reques
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_ds3_data_replication_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_degraded_ds3_data_replication_rules_spectra_s3_request(void);
@@ -3110,13 +3113,13 @@ LIBRARY_API ds3_error* ds3_get_degraded_ds3_data_replication_rules_spectra_s3_re
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_s3_data_replication_rules_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_degraded_s3_data_replication_rules_spectra_s3_request(void);
@@ -3124,92 +3127,92 @@ LIBRARY_API ds3_error* ds3_get_degraded_s3_data_replication_rules_spectra_s3_req
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_blob_azure_targets_spectra_s3_request
  *
- *   void ds3_request_set_blob_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_blob_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_blob_azure_targets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_blob_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_azure_target_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_blob_ds3_targets_spectra_s3_request
  *
- *   void ds3_request_set_blob_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_blob_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_blob_ds3_targets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_blob_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_ds3_target_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_blob_pools_spectra_s3_request
  *
- *   void ds3_request_set_blob_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_blob_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_pool_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_pool_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_blob_pools_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_blob_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_pool_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_blob_s3_targets_spectra_s3_request
  *
- *   void ds3_request_set_blob_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_blob_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_blob_s3_targets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_blob_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_s3_target_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_blob_tapes_spectra_s3_request
  *
- *   void ds3_request_set_blob_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_blob_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_tape_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_tape_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_blob_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_blob_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_suspect_blob_tape_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_buckets_spectra_s3_request
  *
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_buckets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_buckets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_objects_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_objects_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_suspect_objects_with_full_details_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_suspect_objects_with_full_details_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_suspect_objects_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
@@ -3254,61 +3257,61 @@ LIBRARY_API ds3_request* ds3_init_put_group_spectra_s3_request(const char* name)
 LIBRARY_API ds3_error* ds3_put_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_response** response);
 LIBRARY_API ds3_request* ds3_init_put_user_group_member_spectra_s3_request(const char* group_id, const char* member_user_id);
 LIBRARY_API ds3_error* ds3_put_user_group_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_member_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_group_member_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_group_member_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_group_member_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_group_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_group_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_group_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_group_member_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_group_member_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_group_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_member_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_group_members_spectra_s3_request
  *
- *   void ds3_request_set_group_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_group_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_member_group_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_member_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_member_group_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_member_user_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_group_members_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_group_members_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_member_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_group_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_group_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_groups_spectra_s3_request
  *
  *   void ds3_request_set_built_in(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_groups_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_groups_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_group_spectra_s3_request
  *
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_group_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_group_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_response** response);
 /**
  * Optional Request Modifiers for ds3_init_verify_user_is_member_of_group_spectra_s3_request
  *
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_user_is_member_of_group_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_user_is_member_of_group_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_user_is_member_of_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_response** response);
-LIBRARY_API ds3_request* ds3_init_allocate_job_chunk_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_allocate_job_chunk_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_allocate_job_chunk_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_objects_response** response);
-LIBRARY_API ds3_request* ds3_init_cancel_active_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_active_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_active_job_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_cancel_all_active_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  */
 LIBRARY_API ds3_request* ds3_init_cancel_all_active_jobs_spectra_s3_request(void);
@@ -3316,12 +3319,12 @@ LIBRARY_API ds3_error* ds3_cancel_all_active_jobs_spectra_s3_request(const ds3_c
 /**
  * Optional Request Modifiers for ds3_init_cancel_all_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  */
 LIBRARY_API ds3_request* ds3_init_cancel_all_jobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_all_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_cancel_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_job_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_clear_all_canceled_jobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_clear_all_canceled_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -3333,10 +3336,10 @@ LIBRARY_API ds3_error* ds3_clear_all_completed_jobs_spectra_s3_request(const ds3
  *   void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value)
  *   void ds3_request_set_implicit_job_id_resolution(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_get_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_get_bulk_job_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_get_bulk_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_put_bulk_job_spectra_s3_request
@@ -3347,103 +3350,103 @@ LIBRARY_API ds3_error* ds3_get_bulk_job_spectra_s3_request(const ds3_client* cli
  *   void ds3_request_set_implicit_job_id_resolution(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_max_upload_size(const ds3_request* request, const uint64_t value)
  *   void ds3_request_set_minimize_spanning_across_media(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_verify_after_write(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_put_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_put_bulk_job_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_put_bulk_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_verify_bulk_job_spectra_s3_request
  *
  *   void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_bulk_job_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_verify_bulk_job_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_verify_bulk_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_active_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_active_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_active_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_active_job_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_active_jobs_spectra_s3_request
  *
  *   void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_rechunked(const ds3_request* request, const char* value)
+ *   void ds3_request_set_rechunked(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  *   void ds3_request_set_truncated(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_active_jobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_active_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_active_job_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_canceled_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_canceled_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_canceled_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_canceled_job_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_canceled_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_rechunked(const ds3_request* request, const char* value)
+ *   void ds3_request_set_rechunked(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  *   void ds3_request_set_truncated(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_canceled_jobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_canceled_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_canceled_job_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_completed_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_completed_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_completed_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_completed_job_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_completed_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_rechunked(const ds3_request* request, const char* value)
+ *   void ds3_request_set_rechunked(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  *   void ds3_request_set_truncated(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_completed_jobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_completed_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_completed_job_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_job_chunk_dao_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_job_chunk_dao_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_job_chunk_dao_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_chunk_response** response);
-LIBRARY_API ds3_request* ds3_init_get_job_chunk_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_job_chunk_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_job_chunk_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_objects_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request
  *
- *   void ds3_request_set_job_chunk(const ds3_request* request, const char* value)
+ *   void ds3_request_set_job_chunk(const ds3_request* request, const char * const value)
  *   void ds3_request_set_preferred_number_of_chunks(const ds3_request* request, const int value)
  */
 LIBRARY_API ds3_request* ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_request(const char* job);
 LIBRARY_API ds3_error* ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_job_to_replicate_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_job_to_replicate_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response);
 /**
  * Optional Request Modifiers for ds3_init_get_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_full_details(const ds3_request* request, ds3_bool value)
  */
 LIBRARY_API ds3_request* ds3_init_get_jobs_spectra_s3_request(void);
@@ -3451,34 +3454,34 @@ LIBRARY_API ds3_error* ds3_get_jobs_spectra_s3_request(const ds3_client* client,
 /**
  * Optional Request Modifiers for ds3_init_modify_active_job_spectra_s3_request
  *
- *   void ds3_request_set_created_at(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_created_at(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_active_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_active_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_active_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_job_spectra_s3_request
  *
- *   void ds3_request_set_created_at(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_created_at(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_replicate_put_job_spectra_s3_request
  *
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_replicate_put_job_spectra_s3_request(const char* resource_id, const char* payload);
+LIBRARY_API ds3_request* ds3_init_replicate_put_job_spectra_s3_request(const char *const resource_id, const char* payload);
 LIBRARY_API ds3_error* ds3_replicate_put_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response);
-LIBRARY_API ds3_request* ds3_init_truncate_active_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_truncate_active_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_truncate_active_job_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_truncate_all_active_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  */
 LIBRARY_API ds3_request* ds3_init_truncate_all_active_jobs_spectra_s3_request(void);
@@ -3486,16 +3489,16 @@ LIBRARY_API ds3_error* ds3_truncate_all_active_jobs_spectra_s3_request(const ds3
 /**
  * Optional Request Modifiers for ds3_init_truncate_all_jobs_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value)
  */
 LIBRARY_API ds3_request* ds3_init_truncate_all_jobs_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_truncate_all_jobs_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_truncate_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_truncate_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_truncate_job_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_verify_safe_to_create_put_job_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_safe_to_create_put_job_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_safe_to_create_put_job_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_node_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_node_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_node_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_node_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_nodes_spectra_s3_request
@@ -3503,17 +3506,17 @@ LIBRARY_API ds3_error* ds3_get_node_spectra_s3_request(const ds3_client* client,
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_nodes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_nodes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_node_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_node_spectra_s3_request
  *
- *   void ds3_request_set_dns_name(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_dns_name(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_node_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_node_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_node_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_node_response** response);
 /**
  * Optional Request Modifiers for ds3_init_put_azure_target_failure_notification_registration_spectra_s3_request
@@ -3537,7 +3540,7 @@ LIBRARY_API ds3_error* ds3_put_ds3_target_failure_notification_registration_spec
  * Optional Request Modifiers for ds3_init_put_job_completed_notification_registration_spectra_s3_request
  *
  *   void ds3_request_set_format_ds3_http_response_format_type(const ds3_request* request, const ds3_http_response_format_type value)
- *   void ds3_request_set_job_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_job_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value)
  *   void ds3_request_set_notification_http_method_ds3_request_type(const ds3_request* request, const ds3_request_type value)
  */
@@ -3565,7 +3568,7 @@ LIBRARY_API ds3_error* ds3_put_job_creation_failed_notification_registration_spe
  * Optional Request Modifiers for ds3_init_put_object_cached_notification_registration_spectra_s3_request
  *
  *   void ds3_request_set_format_ds3_http_response_format_type(const ds3_request* request, const ds3_http_response_format_type value)
- *   void ds3_request_set_job_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_job_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value)
  *   void ds3_request_set_notification_http_method_ds3_request_type(const ds3_request* request, const ds3_request_type value)
  */
@@ -3584,7 +3587,7 @@ LIBRARY_API ds3_error* ds3_put_object_lost_notification_registration_spectra_s3_
  * Optional Request Modifiers for ds3_init_put_object_persisted_notification_registration_spectra_s3_request
  *
  *   void ds3_request_set_format_ds3_http_response_format_type(const ds3_request* request, const ds3_http_response_format_type value)
- *   void ds3_request_set_job_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_job_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value)
  *   void ds3_request_set_notification_http_method_ds3_request_type(const ds3_request* request, const ds3_request_type value)
  */
@@ -3644,7 +3647,7 @@ LIBRARY_API ds3_error* ds3_put_tape_failure_notification_registration_spectra_s3
  */
 LIBRARY_API ds3_request* ds3_init_put_tape_partition_failure_notification_registration_spectra_s3_request(const char* notification_end_point);
 LIBRARY_API ds3_error* ds3_put_tape_partition_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_failure_notification_registration_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_azure_target_failure_notification_registration_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_azure_target_failure_notification_registration_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_azure_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_delete_ds3_target_failure_notification_registration_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_delete_ds3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -3662,7 +3665,7 @@ LIBRARY_API ds3_request* ds3_init_delete_object_persisted_notification_registrat
 LIBRARY_API ds3_error* ds3_delete_object_persisted_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_delete_pool_failure_notification_registration_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_delete_pool_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_s3_target_failure_notification_registration_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_s3_target_failure_notification_registration_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_s3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_delete_storage_domain_failure_notification_registration_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_delete_storage_domain_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -3672,7 +3675,7 @@ LIBRARY_API ds3_request* ds3_init_delete_tape_failure_notification_registration_
 LIBRARY_API ds3_error* ds3_delete_tape_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_delete_tape_partition_failure_notification_registration_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_delete_tape_partition_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_azure_target_failure_notification_registration_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_azure_target_failure_notification_registration_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_azure_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_azure_target_failure_notification_registrations_spectra_s3_request
@@ -3680,8 +3683,8 @@ LIBRARY_API ds3_error* ds3_get_azure_target_failure_notification_registration_sp
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_azure_target_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_azure_target_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_notification_registration_list_response** response);
@@ -3693,8 +3696,8 @@ LIBRARY_API ds3_error* ds3_get_ds3_target_failure_notification_registration_spec
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_ds3_target_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_ds3_target_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_failure_notification_registration_list_response** response);
@@ -3706,8 +3709,8 @@ LIBRARY_API ds3_error* ds3_get_job_completed_notification_registration_spectra_s
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_job_completed_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_job_completed_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_completed_notification_registration_list_response** response);
@@ -3719,8 +3722,8 @@ LIBRARY_API ds3_error* ds3_get_job_created_notification_registration_spectra_s3_
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_job_created_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_job_created_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_created_notification_registration_list_response** response);
@@ -3732,8 +3735,8 @@ LIBRARY_API ds3_error* ds3_get_job_creation_failed_notification_registration_spe
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_job_creation_failed_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_job_creation_failed_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_creation_failed_notification_registration_list_response** response);
@@ -3745,8 +3748,8 @@ LIBRARY_API ds3_error* ds3_get_object_cached_notification_registration_spectra_s
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_object_cached_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_object_cached_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_cached_notification_registration_list_response** response);
@@ -3758,8 +3761,8 @@ LIBRARY_API ds3_error* ds3_get_object_lost_notification_registration_spectra_s3_
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_object_lost_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_object_lost_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_lost_notification_registration_list_response** response);
@@ -3771,8 +3774,8 @@ LIBRARY_API ds3_error* ds3_get_object_persisted_notification_registration_spectr
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_object_persisted_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_object_persisted_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_persisted_notification_registration_list_response** response);
@@ -3784,12 +3787,12 @@ LIBRARY_API ds3_error* ds3_get_pool_failure_notification_registration_spectra_s3
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_pool_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_pool_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_failure_notification_registration_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_s3_target_failure_notification_registration_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_s3_target_failure_notification_registration_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_s3_target_failure_notification_registration_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_s3_target_failure_notification_registrations_spectra_s3_request
@@ -3797,8 +3800,8 @@ LIBRARY_API ds3_error* ds3_get_s3_target_failure_notification_registration_spect
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_s3_target_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_s3_target_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_notification_registration_list_response** response);
@@ -3810,8 +3813,8 @@ LIBRARY_API ds3_error* ds3_get_storage_domain_failure_notification_registration_
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_storage_domain_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_storage_domain_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_notification_registration_list_response** response);
@@ -3823,8 +3826,8 @@ LIBRARY_API ds3_error* ds3_get_system_failure_notification_registration_spectra_
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_system_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_system_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_system_failure_notification_registration_list_response** response);
@@ -3836,8 +3839,8 @@ LIBRARY_API ds3_error* ds3_get_tape_failure_notification_registration_spectra_s3
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_notification_registration_list_response** response);
@@ -3849,8 +3852,8 @@ LIBRARY_API ds3_error* ds3_get_tape_partition_failure_notification_registration_
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_partition_failure_notification_registrations_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_partition_failure_notification_registrations_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_failure_notification_registration_list_response** response);
@@ -3859,23 +3862,23 @@ LIBRARY_API ds3_error* ds3_get_tape_partition_failure_notification_registrations
  *
  *   void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_delete_folder_recursively_spectra_s3_request(const char* resource_id, const char* bucket_id);
+LIBRARY_API ds3_request* ds3_init_delete_folder_recursively_spectra_s3_request(const char *const resource_id, const char* bucket_id);
 LIBRARY_API ds3_error* ds3_delete_folder_recursively_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_get_blob_persistence_spectra_s3_request(const char* payload);
 LIBRARY_API ds3_error* ds3_get_blob_persistence_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response);
-LIBRARY_API ds3_request* ds3_init_get_object_details_spectra_s3_request(const char* resource_id, const char* bucket_id);
+LIBRARY_API ds3_request* ds3_init_get_object_details_spectra_s3_request(const char *const resource_id, const char* bucket_id);
 LIBRARY_API ds3_error* ds3_get_object_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_object_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_objects_details_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_folder(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_folder(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_latest(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_s3_object_type(const ds3_request* request, const ds3_s3_object_type value)
  *   void ds3_request_set_version(const ds3_request* request, const uint64_t value)
  */
@@ -3884,15 +3887,15 @@ LIBRARY_API ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_clie
 /**
  * Optional Request Modifiers for ds3_init_get_objects_with_full_details_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_folder(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_folder(const ds3_request* request, const char * const value)
  *   void ds3_request_set_include_physical_placement(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_latest(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_s3_object_type(const ds3_request* request, const ds3_s3_object_type value)
  *   void ds3_request_set_version(const ds3_request* request, const uint64_t value)
  */
@@ -3901,38 +3904,38 @@ LIBRARY_API ds3_error* ds3_get_objects_with_full_details_spectra_s3_request(cons
 /**
  * Optional Request Modifiers for ds3_init_get_physical_placement_for_objects_spectra_s3_request
  *
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_get_physical_placement_for_objects_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_get_physical_placement_for_objects_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_get_physical_placement_for_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_physical_placement_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_physical_placement_for_objects_with_full_details_spectra_s3_request
  *
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_get_physical_placement_for_objects_with_full_details_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_get_physical_placement_for_objects_with_full_details_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_get_physical_placement_for_objects_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_verify_physical_placement_for_objects_spectra_s3_request
  *
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_physical_placement_for_objects_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_verify_physical_placement_for_objects_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_verify_physical_placement_for_objects_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_physical_placement_response** response);
 /**
  * Optional Request Modifiers for ds3_init_verify_physical_placement_for_objects_with_full_details_spectra_s3_request
  *
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_physical_placement_for_objects_with_full_details_spectra_s3_request(const char* resource_id, const ds3_bulk_object_list_response* object_list);
+LIBRARY_API ds3_request* ds3_init_verify_physical_placement_for_objects_with_full_details_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_verify_physical_placement_for_objects_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_import_on_all_pools_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_import_on_all_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_cancel_import_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_import_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_import_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_verify_on_all_pools_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_verify_on_all_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_cancel_verify_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_verify_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_verify_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
 /**
  * Optional Request Modifiers for ds3_init_compact_all_pools_spectra_s3_request
@@ -3946,71 +3949,71 @@ LIBRARY_API ds3_error* ds3_compact_all_pools_spectra_s3_request(const ds3_client
  *
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_compact_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_compact_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_compact_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
 LIBRARY_API ds3_request* ds3_init_put_pool_partition_spectra_s3_request(const char* name, const ds3_pool_type type);
 LIBRARY_API ds3_error* ds3_put_pool_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_partition_response** response);
-LIBRARY_API ds3_request* ds3_init_deallocate_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_deallocate_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_deallocate_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_permanently_lost_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_permanently_lost_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_permanently_lost_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_pool_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_pool_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_pool_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_pool_partition_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_pool_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_pool_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_force_pool_environment_refresh_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_force_pool_environment_refresh_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_format_all_foreign_pools_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_format_all_foreign_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_format_foreign_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_format_foreign_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_format_foreign_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
-LIBRARY_API ds3_request* ds3_init_get_blobs_on_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_blobs_on_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_blobs_on_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_pool_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_pool_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_pool_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_pool_failure_type(const ds3_request* request, const ds3_pool_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_pool_failures_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_pool_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_pool_partition_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_pool_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_pool_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_partition_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_pool_partitions_spectra_s3_request
  *
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_pool_partitions_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_pool_partitions_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_partition_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_pools_spectra_s3_request
  *
  *   void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_last_verified(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_last_verified(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_powered_on(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_pools_spectra_s3_request(void);
@@ -4019,10 +4022,10 @@ LIBRARY_API ds3_error* ds3_get_pools_spectra_s3_request(const ds3_client* client
  * Optional Request Modifiers for ds3_init_import_all_pools_spectra_s3_request
  *
  *   void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
  */
@@ -4032,31 +4035,31 @@ LIBRARY_API ds3_error* ds3_import_all_pools_spectra_s3_request(const ds3_client*
  * Optional Request Modifiers for ds3_init_import_pool_spectra_s3_request
  *
  *   void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_import_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_import_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_import_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
 LIBRARY_API ds3_request* ds3_init_modify_all_pools_spectra_s3_request(const ds3_quiesced quiesced);
 LIBRARY_API ds3_error* ds3_modify_all_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_modify_pool_partition_spectra_s3_request
  *
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_pool_partition_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_pool_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_pool_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_partition_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_pool_spectra_s3_request
  *
- *   void ds3_request_set_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
 /**
  * Optional Request Modifiers for ds3_init_verify_all_pools_spectra_s3_request
@@ -4070,9 +4073,9 @@ LIBRARY_API ds3_error* ds3_verify_all_pools_spectra_s3_request(const ds3_client*
  *
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_pool_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_pool_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_pool_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_pool_response** response);
-LIBRARY_API ds3_request* ds3_init_convert_storage_domain_to_ds3_target_spectra_s3_request(const char* resource_id, const char* convert_to_ds3_target);
+LIBRARY_API ds3_request* ds3_init_convert_storage_domain_to_ds3_target_spectra_s3_request(const char *const resource_id, const char* convert_to_ds3_target);
 LIBRARY_API ds3_error* ds3_convert_storage_domain_to_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_put_pool_storage_domain_member_spectra_s3_request
@@ -4085,7 +4088,7 @@ LIBRARY_API ds3_error* ds3_put_pool_storage_domain_member_spectra_s3_request(con
  * Optional Request Modifiers for ds3_init_put_storage_domain_spectra_s3_request
  *
  *   void ds3_request_set_auto_eject_media_full_threshold(const ds3_request* request, const uint64_t value)
- *   void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char* value)
+ *   void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char * const value)
  *   void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value)
@@ -4106,26 +4109,26 @@ LIBRARY_API ds3_error* ds3_put_storage_domain_spectra_s3_request(const ds3_clien
  */
 LIBRARY_API ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type tape_type);
 LIBRARY_API ds3_error* ds3_put_tape_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_storage_domain_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_storage_domain_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_storage_domain_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_storage_domain_member_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_storage_domain_member_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_storage_domain_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_storage_domain_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_storage_domain_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_get_storage_domain_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_storage_domain_failure_type(const ds3_request* request, const ds3_storage_domain_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_storage_domain_failures_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_storage_domain_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_storage_domain_member_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_storage_domain_member_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_storage_domain_members_spectra_s3_request
@@ -4133,31 +4136,31 @@ LIBRARY_API ds3_error* ds3_get_storage_domain_member_spectra_s3_request(const ds
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_pool_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_pool_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_storage_domain_member_state(const ds3_request* request, const ds3_storage_domain_member_state value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_tape_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_tape_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
  *   void ds3_request_set_write_preference_ds3_write_preference_level(const ds3_request* request, const ds3_write_preference_level value)
  */
 LIBRARY_API ds3_request* ds3_init_get_storage_domain_members_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_storage_domain_members_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_storage_domain_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_storage_domain_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_storage_domain_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_storage_domains_spectra_s3_request
  *
- *   void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char* value)
+ *   void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char * const value)
  *   void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_write_optimization_ds3_write_optimization(const ds3_request* request, const ds3_write_optimization value)
  */
@@ -4168,13 +4171,13 @@ LIBRARY_API ds3_error* ds3_get_storage_domains_spectra_s3_request(const ds3_clie
  *
  *   void ds3_request_set_write_preference_ds3_write_preference_level(const ds3_request* request, const ds3_write_preference_level value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_storage_domain_member_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_storage_domain_member_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_storage_domain_spectra_s3_request
  *
  *   void ds3_request_set_auto_eject_media_full_threshold(const ds3_request* request, const uint64_t value)
- *   void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char* value)
+ *   void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char * const value)
  *   void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value)
@@ -4182,36 +4185,36 @@ LIBRARY_API ds3_error* ds3_modify_storage_domain_member_spectra_s3_request(const
  *   void ds3_request_set_max_tape_fragmentation_percent(const ds3_request* request, const int value)
  *   void ds3_request_set_maximum_auto_verification_frequency_in_days(const ds3_request* request, const int value)
  *   void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_verify_prior_to_auto_eject_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_write_optimization_ds3_write_optimization(const ds3_request* request, const ds3_write_optimization value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_storage_domain_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_response** response);
 LIBRARY_API ds3_request* ds3_init_force_feature_key_validation_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_force_feature_key_validation_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_get_feature_keys_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
- *   void ds3_request_set_expiration_date(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_expiration_date(const ds3_request* request, const char * const value)
  *   void ds3_request_set_key_ds3_feature_key_type(const ds3_request* request, const ds3_feature_key_type value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_feature_keys_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_feature_keys_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_feature_key_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_system_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_system_failure_type(const ds3_request* request, const ds3_system_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_system_failures_spectra_s3_request(void);
@@ -4224,72 +4227,72 @@ LIBRARY_API ds3_request* ds3_init_verify_system_health_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_verify_system_health_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_health_verification_result_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_eject_on_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_eject_on_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_cancel_eject_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_eject_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_eject_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_format_on_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_format_on_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_cancel_format_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_format_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_format_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_import_on_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_import_on_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_cancel_import_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_import_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_import_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_online_on_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_online_on_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_cancel_online_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_online_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_online_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_cancel_verify_on_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_cancel_verify_on_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_cancel_verify_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_cancel_verify_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_cancel_verify_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
-LIBRARY_API ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_clean_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response);
 LIBRARY_API ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type density, const char* partition_id, const ds3_tape_type tape_type);
 LIBRARY_API ds3_error* ds3_put_tape_density_directive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_density_directive_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_permanently_lost_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_permanently_lost_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_permanently_lost_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_tape_density_directive_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_tape_density_directive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_tape_density_directive_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_tape_drive_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_tape_drive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_tape_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_tape_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_tape_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_tape_partition_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_tape_partition_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_tape_partition_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_tape_partition_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_tape_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_tape_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_eject_all_tapes_spectra_s3_request
  *
- *   void ds3_request_set_eject_label(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_location(const ds3_request* request, const char* value)
+ *   void ds3_request_set_eject_label(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_location(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_eject_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_eject_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_eject_storage_domain_blobs_spectra_s3_request
  *
- *   void ds3_request_set_eject_label(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_location(const ds3_request* request, const char* value)
+ *   void ds3_request_set_eject_label(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_location(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_eject_storage_domain_blobs_spectra_s3_request(const char* bucket_id, const char* storage_domain_id, const ds3_bulk_object_list_response* object_list);
 LIBRARY_API ds3_error* ds3_eject_storage_domain_blobs_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_eject_storage_domain_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_label(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_location(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_label(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_location(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_eject_storage_domain_spectra_s3_request(const char* storage_domain_id);
 LIBRARY_API ds3_error* ds3_eject_storage_domain_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_eject_tape_spectra_s3_request
  *
- *   void ds3_request_set_eject_label(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_location(const ds3_request* request, const char* value)
+ *   void ds3_request_set_eject_label(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_location(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_eject_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_eject_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_eject_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_force_tape_environment_refresh_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_force_tape_environment_refresh_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -4305,11 +4308,11 @@ LIBRARY_API ds3_error* ds3_format_all_tapes_spectra_s3_request(const ds3_client*
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_format_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_format_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_format_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
-LIBRARY_API ds3_request* ds3_init_get_blobs_on_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_blobs_on_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_blobs_on_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_tape_density_directive_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_tape_density_directive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_tape_density_directive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_density_directive_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_tape_density_directives_spectra_s3_request
@@ -4318,13 +4321,13 @@ LIBRARY_API ds3_error* ds3_get_tape_density_directive_spectra_s3_request(const d
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_density_directives_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_density_directives_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_density_directive_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_tape_drive_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_tape_drive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_tape_drives_spectra_s3_request
@@ -4332,9 +4335,9 @@ LIBRARY_API ds3_error* ds3_get_tape_drive_spectra_s3_request(const ds3_client* c
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_partition_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_serial_number(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_drive_state(const ds3_request* request, const ds3_tape_drive_state value)
  *   void ds3_request_set_type_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value)
  */
@@ -4343,13 +4346,13 @@ LIBRARY_API ds3_error* ds3_get_tape_drives_spectra_s3_request(const ds3_client* 
 /**
  * Optional Request Modifiers for ds3_init_get_tape_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_tape_drive_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_tape_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_tape_drive_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_tape_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_tape_failure_type(const ds3_request* request, const ds3_tape_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_failures_spectra_s3_request(void);
@@ -4358,46 +4361,46 @@ LIBRARY_API ds3_error* ds3_get_tape_failures_spectra_s3_request(const ds3_client
  * Optional Request Modifiers for ds3_init_get_tape_libraries_spectra_s3_request
  *
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_management_url(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_management_url(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_serial_number(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_libraries_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_libraries_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_library_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_tape_library_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_tape_library_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_tape_library_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_library_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_tape_partition_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_tape_partition_failure_type(const ds3_request* request, const ds3_tape_partition_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_partition_failures_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_partition_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_tape_partition_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_tape_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_tape_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_response** response);
-LIBRARY_API ds3_request* ds3_init_get_tape_partition_with_full_details_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_tape_partition_with_full_details_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_tape_partition_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_detailed_tape_partition_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_tape_partitions_spectra_s3_request
  *
  *   void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_library_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_library_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
- *   void ds3_request_set_serial_number(const ds3_request* request, const char* value)
+ *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_partition_state(const ds3_request* request, const ds3_tape_partition_state value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_partitions_spectra_s3_request(void);
@@ -4407,40 +4410,40 @@ LIBRARY_API ds3_error* ds3_get_tape_partitions_spectra_s3_request(const ds3_clie
  *
  *   void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_library_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_library_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
- *   void ds3_request_set_serial_number(const ds3_request* request, const char* value)
+ *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_partition_state(const ds3_request* request, const ds3_tape_partition_state value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_partitions_with_full_details_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_partitions_with_full_details_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_named_detailed_tape_partition_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_tapes_spectra_s3_request
  *
  *   void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_available_raw_capacity(const ds3_request* request, const uint64_t value)
- *   void ds3_request_set_bar_code(const ds3_request* request, const char* value)
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_label(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_location(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bar_code(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_label(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_location(const ds3_request* request, const char * const value)
  *   void ds3_request_set_full_of_data(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_last_verified(const ds3_request* request, const char* value)
+ *   void ds3_request_set_last_verified(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char* value)
- *   void ds3_request_set_partition_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_previous_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
- *   void ds3_request_set_serial_number(const ds3_request* request, const char* value)
+ *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
  *   void ds3_request_set_verify_pending_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_write_protected(const ds3_request* request, ds3_bool value)
@@ -4451,10 +4454,10 @@ LIBRARY_API ds3_error* ds3_get_tapes_spectra_s3_request(const ds3_client* client
  * Optional Request Modifiers for ds3_init_import_all_tapes_spectra_s3_request
  *
  *   void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
  */
@@ -4464,14 +4467,14 @@ LIBRARY_API ds3_error* ds3_import_all_tapes_spectra_s3_request(const ds3_client*
  * Optional Request Modifiers for ds3_init_import_tape_spectra_s3_request
  *
  *   void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_import_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_import_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_import_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 /**
  * Optional Request Modifiers for ds3_init_inspect_all_tapes_spectra_s3_request
@@ -4485,7 +4488,7 @@ LIBRARY_API ds3_error* ds3_inspect_all_tapes_spectra_s3_request(const ds3_client
  *
  *   void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_inspect_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_modify_all_tape_partitions_spectra_s3_request(const ds3_quiesced quiesced);
 LIBRARY_API ds3_error* ds3_modify_all_tape_partitions_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -4494,24 +4497,25 @@ LIBRARY_API ds3_error* ds3_modify_all_tape_partitions_spectra_s3_request(const d
  *
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_tape_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_tape_spectra_s3_request
  *
- *   void ds3_request_set_eject_label(const ds3_request* request, const char* value)
- *   void ds3_request_set_eject_location(const ds3_request* request, const char* value)
+ *   void ds3_request_set_eject_label(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_eject_location(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_online_all_tapes_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_online_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_online_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_online_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_online_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 /**
  * Optional Request Modifiers for ds3_init_raw_import_all_tapes_spectra_s3_request
  *
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
 LIBRARY_API ds3_request* ds3_init_raw_import_all_tapes_spectra_s3_request(const char* bucket_id);
@@ -4519,9 +4523,10 @@ LIBRARY_API ds3_error* ds3_raw_import_all_tapes_spectra_s3_request(const ds3_cli
 /**
  * Optional Request Modifiers for ds3_init_raw_import_tape_spectra_s3_request
  *
+ *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_raw_import_tape_spectra_s3_request(const char* resource_id, const char* bucket_id);
+LIBRARY_API ds3_request* ds3_init_raw_import_tape_spectra_s3_request(const char *const resource_id, const char* bucket_id);
 LIBRARY_API ds3_error* ds3_raw_import_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 /**
  * Optional Request Modifiers for ds3_init_verify_all_tapes_spectra_s3_request
@@ -4535,7 +4540,7 @@ LIBRARY_API ds3_error* ds3_verify_all_tapes_spectra_s3_request(const ds3_client*
  *
  *   void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_tape_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_force_target_environment_refresh_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_force_target_environment_refresh_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -4543,110 +4548,110 @@ LIBRARY_API ds3_request* ds3_init_put_azure_target_bucket_name_spectra_s3_reques
 LIBRARY_API ds3_error* ds3_put_azure_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_bucket_name_response** response);
 LIBRARY_API ds3_request* ds3_init_put_azure_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id);
 LIBRARY_API ds3_error* ds3_put_azure_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_azure_target_bucket_name_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_azure_target_bucket_name_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_azure_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_azure_target_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_azure_target_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_azure_target_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_azure_target_read_preference_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_azure_target_read_preference_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_azure_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_azure_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_azure_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_get_azure_target_bucket_names_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_azure_target_bucket_names_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_azure_target_bucket_names_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_bucket_name_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_azure_target_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_target_failure_type(const ds3_request* request, const ds3_target_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_azure_target_failures_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_azure_target_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_azure_target_read_preference_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_azure_target_read_preference_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_azure_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_azure_target_read_preferences_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_azure_target_read_preferences_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_azure_target_read_preferences_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_read_preference_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_azure_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_azure_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_azure_targets_spectra_s3_request
  *
- *   void ds3_request_set_account_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_account_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  *   void ds3_request_set_state_ds3_target_state(const ds3_request* request, const ds3_target_state value)
  */
 LIBRARY_API ds3_request* ds3_init_get_azure_targets_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_blobs_on_azure_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_blobs_on_azure_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_blobs_on_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_import_azure_target_spectra_s3_request
  *
  *   void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_import_azure_target_spectra_s3_request(const char* resource_id, const char* cloud_bucket_name);
+LIBRARY_API ds3_request* ds3_init_import_azure_target_spectra_s3_request(const char *const resource_id, const char* cloud_bucket_name);
 LIBRARY_API ds3_error* ds3_import_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_modify_all_azure_targets_spectra_s3_request(const ds3_quiesced quiesced);
 LIBRARY_API ds3_error* ds3_modify_all_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_modify_azure_target_spectra_s3_request
  *
- *   void ds3_request_set_account_key(const ds3_request* request, const char* value)
- *   void ds3_request_set_account_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_account_key(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_account_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value)
- *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char* value)
- *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char* value)
+ *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char * const value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_https(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_azure_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_azure_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_register_azure_target_spectra_s3_request
  *
  *   void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value)
- *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char* value)
- *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char* value)
+ *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char * const value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
@@ -4658,65 +4663,65 @@ LIBRARY_API ds3_error* ds3_register_azure_target_spectra_s3_request(const ds3_cl
  *
  *   void ds3_request_set_full_details(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_azure_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_azure_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_azure_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_target_response** response);
 LIBRARY_API ds3_request* ds3_init_put_ds3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id);
 LIBRARY_API ds3_error* ds3_put_ds3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_ds3_target_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_ds3_target_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_ds3_target_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_ds3_target_read_preference_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_ds3_target_read_preference_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_ds3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_ds3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_blobs_on_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_blobs_on_ds3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_blobs_on_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_ds3_target_data_policies_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_ds3_target_data_policies_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_ds3_target_data_policies_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_data_policy_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_ds3_target_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_target_failure_type(const ds3_request* request, const ds3_target_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_ds3_target_failures_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_ds3_target_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_ds3_target_read_preference_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_ds3_target_read_preference_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_ds3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_ds3_target_read_preferences_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_ds3_target_read_preferences_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_ds3_target_read_preferences_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_read_preference_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_ds3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_ds3_targets_spectra_s3_request
  *
- *   void ds3_request_set_admin_auth_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value)
+ *   void ds3_request_set_admin_auth_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_data_path_port(const ds3_request* request, const int value)
- *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  *   void ds3_request_set_state_ds3_target_state(const ds3_request* request, const ds3_target_state value)
@@ -4729,38 +4734,38 @@ LIBRARY_API ds3_error* ds3_modify_all_ds3_targets_spectra_s3_request(const ds3_c
  * Optional Request Modifiers for ds3_init_modify_ds3_target_spectra_s3_request
  *
  *   void ds3_request_set_access_control_replication_ds3_target_access_control_replication(const ds3_request* request, const ds3_target_access_control_replication value)
- *   void ds3_request_set_admin_auth_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_admin_secret_key(const ds3_request* request, const char* value)
- *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value)
+ *   void ds3_request_set_admin_auth_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_admin_secret_key(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_data_path_port(const ds3_request* request, const int value)
- *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
- *   void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_ds3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_pair_back_registered_ds3_target_spectra_s3_request
  *
  *   void ds3_request_set_access_control_replication_ds3_target_access_control_replication(const ds3_request* request, const ds3_target_access_control_replication value)
- *   void ds3_request_set_admin_auth_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_admin_secret_key(const ds3_request* request, const char* value)
- *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value)
+ *   void ds3_request_set_admin_auth_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_admin_secret_key(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_data_path_port(const ds3_request* request, const int value)
- *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_pair_back_registered_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_pair_back_registered_ds3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_pair_back_registered_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_register_ds3_target_spectra_s3_request
@@ -4768,11 +4773,11 @@ LIBRARY_API ds3_error* ds3_pair_back_registered_ds3_target_spectra_s3_request(co
  *   void ds3_request_set_access_control_replication_ds3_target_access_control_replication(const ds3_request* request, const ds3_target_access_control_replication value)
  *   void ds3_request_set_data_path_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_data_path_port(const ds3_request* request, const int value)
- *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_path_proxy(const ds3_request* request, const char * const value)
  *   void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char* value)
+ *   void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_register_ds3_target_spectra_s3_request(const char* admin_auth_id, const char* admin_secret_key, const char* data_path_end_point, const char* name);
 LIBRARY_API ds3_error* ds3_register_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_response** response);
@@ -4781,77 +4786,77 @@ LIBRARY_API ds3_error* ds3_register_ds3_target_spectra_s3_request(const ds3_clie
  *
  *   void ds3_request_set_full_details(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_ds3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_ds3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_ds3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_target_response** response);
 LIBRARY_API ds3_request* ds3_init_put_s3_target_bucket_name_spectra_s3_request(const char* bucket_id, const char* name, const char* target_id);
 LIBRARY_API ds3_error* ds3_put_s3_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_bucket_name_response** response);
 LIBRARY_API ds3_request* ds3_init_put_s3_target_read_preference_spectra_s3_request(const char* bucket_id, const ds3_target_read_preference_type read_preference, const char* target_id);
 LIBRARY_API ds3_error* ds3_put_s3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_response** response);
-LIBRARY_API ds3_request* ds3_init_delete_s3_target_bucket_name_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_s3_target_bucket_name_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_s3_target_bucket_name_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_s3_target_failure_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_s3_target_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_s3_target_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_s3_target_read_preference_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_s3_target_read_preference_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_s3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_delete_s3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delete_s3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_blobs_on_s3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_blobs_on_s3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_blobs_on_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bulk_object_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_s3_target_bucket_names_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_s3_target_bucket_names_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_s3_target_bucket_names_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_bucket_name_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_s3_target_failures_spectra_s3_request
  *
- *   void ds3_request_set_error_message(const ds3_request* request, const char* value)
+ *   void ds3_request_set_error_message(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_type_ds3_target_failure_type(const ds3_request* request, const ds3_target_failure_type value)
  */
 LIBRARY_API ds3_request* ds3_init_get_s3_target_failures_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_s3_target_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_failure_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_s3_target_read_preference_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_s3_target_read_preference_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_s3_target_read_preference_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_s3_target_read_preferences_spectra_s3_request
  *
- *   void ds3_request_set_bucket_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
- *   void ds3_request_set_target_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_target_id(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_s3_target_read_preferences_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_s3_target_read_preferences_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_read_preference_list_response** response);
-LIBRARY_API ds3_request* ds3_init_get_s3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_s3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_s3_targets_spectra_s3_request
  *
- *   void ds3_request_set_access_key(const ds3_request* request, const char* value)
- *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value)
+ *   void ds3_request_set_access_key(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  *   void ds3_request_set_region_ds3_s3_region(const ds3_request* request, const ds3_s3_region value)
@@ -4863,55 +4868,55 @@ LIBRARY_API ds3_error* ds3_get_s3_targets_spectra_s3_request(const ds3_client* c
  * Optional Request Modifiers for ds3_init_import_s3_target_spectra_s3_request
  *
  *   void ds3_request_set_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
- *   void ds3_request_set_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
- *   void ds3_request_set_user_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_user_id(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_import_s3_target_spectra_s3_request(const char* resource_id, const char* cloud_bucket_name);
+LIBRARY_API ds3_request* ds3_init_import_s3_target_spectra_s3_request(const char *const resource_id, const char* cloud_bucket_name);
 LIBRARY_API ds3_error* ds3_import_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_modify_all_s3_targets_spectra_s3_request(const ds3_quiesced quiesced);
 LIBRARY_API ds3_error* ds3_modify_all_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_modify_s3_target_spectra_s3_request
  *
- *   void ds3_request_set_access_key(const ds3_request* request, const char* value)
+ *   void ds3_request_set_access_key(const ds3_request* request, const char * const value)
  *   void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value)
- *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char* value)
- *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char* value)
- *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value)
+ *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_https(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_offline_data_staging_window_in_tb(const ds3_request* request, const int value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_proxy_domain(const ds3_request* request, const char* value)
- *   void ds3_request_set_proxy_host(const ds3_request* request, const char* value)
- *   void ds3_request_set_proxy_password(const ds3_request* request, const char* value)
+ *   void ds3_request_set_proxy_domain(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_proxy_host(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_proxy_password(const ds3_request* request, const char * const value)
  *   void ds3_request_set_proxy_port(const ds3_request* request, const int value)
- *   void ds3_request_set_proxy_username(const ds3_request* request, const char* value)
+ *   void ds3_request_set_proxy_username(const ds3_request* request, const char * const value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  *   void ds3_request_set_region_ds3_s3_region(const ds3_request* request, const ds3_s3_region value)
- *   void ds3_request_set_secret_key(const ds3_request* request, const char* value)
+ *   void ds3_request_set_secret_key(const ds3_request* request, const char * const value)
  *   void ds3_request_set_staged_data_expiration_in_days(const ds3_request* request, const int value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_s3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_s3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_register_s3_target_spectra_s3_request
  *
  *   void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value)
- *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char* value)
- *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char* value)
- *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char* value)
+ *   void ds3_request_set_cloud_bucket_prefix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_data_path_end_point(const ds3_request* request, const char * const value)
  *   void ds3_request_set_default_read_preference_ds3_target_read_preference_type(const ds3_request* request, const ds3_target_read_preference_type value)
  *   void ds3_request_set_https(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_offline_data_staging_window_in_tb(const ds3_request* request, const int value)
  *   void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_proxy_domain(const ds3_request* request, const char* value)
- *   void ds3_request_set_proxy_host(const ds3_request* request, const char* value)
- *   void ds3_request_set_proxy_password(const ds3_request* request, const char* value)
+ *   void ds3_request_set_proxy_domain(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_proxy_host(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_proxy_password(const ds3_request* request, const char * const value)
  *   void ds3_request_set_proxy_port(const ds3_request* request, const int value)
- *   void ds3_request_set_proxy_username(const ds3_request* request, const char* value)
+ *   void ds3_request_set_proxy_username(const ds3_request* request, const char * const value)
  *   void ds3_request_set_region_ds3_s3_region(const ds3_request* request, const ds3_s3_region value)
  *   void ds3_request_set_staged_data_expiration_in_days(const ds3_request* request, const int value)
  */
@@ -4922,43 +4927,43 @@ LIBRARY_API ds3_error* ds3_register_s3_target_spectra_s3_request(const ds3_clien
  *
  *   void ds3_request_set_full_details(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_verify_s3_target_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_verify_s3_target_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_verify_s3_target_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_s3_target_response** response);
 /**
  * Optional Request Modifiers for ds3_init_delegate_create_user_spectra_s3_request
  *
- *   void ds3_request_set_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_secret_key(const ds3_request* request, const char* value)
+ *   void ds3_request_set_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_secret_key(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_delegate_create_user_spectra_s3_request(const char* name);
 LIBRARY_API ds3_error* ds3_delegate_create_user_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_response** response);
-LIBRARY_API ds3_request* ds3_init_delegate_delete_user_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_delegate_delete_user_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delegate_delete_user_spectra_s3_request(const ds3_client* client, const ds3_request* request);
-LIBRARY_API ds3_request* ds3_init_get_user_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_get_user_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_get_user_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_response** response);
 /**
  * Optional Request Modifiers for ds3_init_get_users_spectra_s3_request
  *
- *   void ds3_request_set_auth_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_default_data_policy_id(const ds3_request* request, const char* value)
+ *   void ds3_request_set_auth_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_default_data_policy_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
  *   void ds3_request_set_page_length(const ds3_request* request, const int value)
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
- *   void ds3_request_set_page_start_marker(const ds3_request* request, const char* value)
+ *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_users_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_users_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_list_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_user_spectra_s3_request
  *
- *   void ds3_request_set_default_data_policy_id(const ds3_request* request, const char* value)
- *   void ds3_request_set_name(const ds3_request* request, const char* value)
- *   void ds3_request_set_secret_key(const ds3_request* request, const char* value)
+ *   void ds3_request_set_default_data_policy_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_name(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_secret_key(const ds3_request* request, const char * const value)
  */
-LIBRARY_API ds3_request* ds3_init_modify_user_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_modify_user_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_user_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_response** response);
-LIBRARY_API ds3_request* ds3_init_regenerate_user_secret_key_spectra_s3_request(const char* resource_id);
+LIBRARY_API ds3_request* ds3_init_regenerate_user_secret_key_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_regenerate_user_secret_key_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_spectra_user_response** response);
 
 LIBRARY_API void ds3_cleanup(void);
