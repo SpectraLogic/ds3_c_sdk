@@ -1,3 +1,4 @@
+
 /*
  * ******************************************************************************
  *   Copyright 2014-2017 Spectra Logic Corporation. All Rights Reserved.
@@ -12,6 +13,9 @@
  *   specific language governing permissions and limitations under the License.
  * ****************************************************************************
  */
+
+/* This Code is Auto-Generated; DO NOT MODIFY! */
+
 
 #ifndef __DS3_CONNECTION_H__
 #define __DS3_CONNECTION_H__
