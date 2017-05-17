@@ -301,7 +301,6 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     const char* sequential_bucket_name = "test_bulk_put_sequential";
     const char* obj_name = "resources/ulysses_46mb.txt";
 
-    long start_time, end_time, elapsed_sequential, elapsed_parallel;
     struct timespec start_time_t, end_time_t;
     double elapsed_sequential_t, elapsed_parallel_t;
 
@@ -324,7 +323,6 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     GPtrArray* put_sequential_objs_threads_array = new_put_chunks_threads_args(client, obj_name, sequential_bucket_name, mol, sequential_chunks, 1, False);
 
     // capture sequential test start time
-    start_time = clock();
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
     GThread* xfer_sequential_thread = g_thread_new("sequential_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_sequential_objs_threads_array, 0));
@@ -333,10 +331,7 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     g_thread_join(xfer_sequential_thread);
 
     // find elapsed CPU and real time
-    end_time = clock();
     clock_gettime(CLOCK_MONOTONIC, &end_time_t);
-    elapsed_sequential = (end_time - start_time) / CLOCKS_PER_SEC;
-    printf("  Sequential CPU time[%ld]\n", elapsed_sequential);
     elapsed_sequential_t = _timespec_to_seconds(&end_time_t) - _timespec_to_seconds(&start_time_t);
     printf("  Sequential elapsed time[%f]\n", elapsed_sequential_t);
 
@@ -362,7 +357,6 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     GPtrArray* put_parallel_objs_threads_array = new_put_chunks_threads_args(client, obj_name, parallel_bucket_name, mol, parallel_chunks, 4, False);
 
     // capture sequential test start time
-    start_time = clock();
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
     GThread* xfer_parallel_thread_0 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_parallel_objs_threads_array, 0));
@@ -377,10 +371,7 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     g_thread_join(xfer_parallel_thread_3);
 
     // find elapsed CPU and real time
-    end_time = clock();
     clock_gettime(CLOCK_MONOTONIC, &end_time_t);
-    elapsed_parallel = (end_time - start_time) / CLOCKS_PER_SEC;
-    printf("  Parallel CPU time[%ld]\n", elapsed_parallel);
     elapsed_parallel_t = _timespec_to_seconds(&end_time_t) - _timespec_to_seconds(&start_time_t);
     printf("  Parallel elapsed time[%f]\n", elapsed_parallel_t);
 
@@ -392,6 +383,73 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
 
     ds3_bulk_object_list_response_free(obj_list);
     free_client(client);
+}
+
+BOOST_AUTO_TEST_CASE( multiple_client_xfer ) {
+    printf("-----Testing BULK_PUT of objects from 2 clients in parallel-------\n");
+
+    const char* client1_bucket_name = "test_bulk_put_client1";
+    const char* client2_bucket_name = "test_bulk_put_client2";
+    const char* obj_name = "resources/ulysses_46mb.txt";
+
+    struct timespec start_time_t, end_time_t;
+    double elapsed_t;
+
+    ds3_bulk_object_list_response* obj_list = create_bulk_object_list_single_file(obj_name, 100);
+    ds3_client* client1 = get_client();
+    ds3_client* client2 = get_client();
+    ds3_master_object_list_response* mol1 = NULL;
+    ds3_master_object_list_response* mol2 = NULL;
+    ds3_request* request = NULL;
+
+    ds3_error* error = create_bucket_with_data_policy(client1, client1_bucket_name, ids.data_policy_id->value);
+    handle_error(error);
+    error = create_bucket_with_data_policy(client2, client2_bucket_name, ids.data_policy_id->value);
+    handle_error(error);
+
+    request = ds3_init_put_bulk_job_spectra_s3_request(client1_bucket_name, obj_list);
+    error = ds3_put_bulk_job_spectra_s3_request(client1, request, &mol1);
+    ds3_request_free(request);
+    handle_error(error);
+    request = ds3_init_put_bulk_job_spectra_s3_request(client2_bucket_name, obj_list);
+    error = ds3_put_bulk_job_spectra_s3_request(client2, request, &mol2);
+    ds3_request_free(request);
+    handle_error(error);
+
+    ds3_master_object_list_response* client1_chunks = ensure_available_chunks(client1, mol1->job_id);
+    ds3_master_object_list_response* client2_chunks = ensure_available_chunks(client2, mol2->job_id);
+
+    GPtrArray* client1_put_objs_args = new_put_chunks_threads_args(client1, obj_name, client1_bucket_name, mol1, client1_chunks, 1, False);
+    GPtrArray* client2_put_objs_args = new_put_chunks_threads_args(client2, obj_name, client2_bucket_name, mol2, client2_chunks, 1, False);
+
+    // capture sequential test start time
+    clock_gettime(CLOCK_MONOTONIC, &start_time_t);
+
+    GThread* client1_xfer_thread = g_thread_new("client1_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(client1_put_objs_args, 0));
+    GThread* client2_xfer_thread = g_thread_new("client2_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(client2_put_objs_args, 0));
+
+    // Block and cleanup GThreads
+    g_thread_join(client1_xfer_thread);
+    g_thread_join(client2_xfer_thread);
+
+    // find elapsed CPU and real time
+    clock_gettime(CLOCK_MONOTONIC, &end_time_t);
+    elapsed_t = _timespec_to_seconds(&end_time_t) - _timespec_to_seconds(&start_time_t);
+    printf("  Elapsed time[%f]\n", elapsed_t);
+
+    ds3_master_object_list_response_free(client1_chunks);
+    ds3_master_object_list_response_free(mol1);
+    put_chunks_threads_args_free(client1_put_objs_args);
+    clear_bucket(client1, client1_bucket_name);
+    free_client(client1);
+
+    ds3_master_object_list_response_free(client2_chunks);
+    ds3_master_object_list_response_free(mol2);
+    put_chunks_threads_args_free(client2_put_objs_args);
+    clear_bucket(client2, client2_bucket_name);
+    free_client(client2);
+
+    ds3_bulk_object_list_response_free(obj_list);
 }
 
 BOOST_AUTO_TEST_CASE( put_utf_object_name ) {
