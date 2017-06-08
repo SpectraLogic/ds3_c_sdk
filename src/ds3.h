@@ -2329,6 +2329,7 @@ LIBRARY_API void ds3_client_free(ds3_client* client);
 LIBRARY_API ds3_creds*  ds3_create_creds(const char *const access_id, const char *const secret_key);
 LIBRARY_API ds3_client* ds3_create_client(const char *const endpoint, ds3_creds* creds);
 LIBRARY_API ds3_error*  ds3_create_client_from_env(ds3_client** client);
+LIBRARY_API ds3_client* ds3_copy_client(const ds3_client* client);
 LIBRARY_API void        ds3_client_register_logging(ds3_client* client, ds3_log_lvl log_lvl, void (* log_callback)(const char* log_message, void* user_data), void* user_data);
 LIBRARY_API void        ds3_client_register_net(ds3_client* client, ds3_error* (* net_callback)(const ds3_client* client,
                                                                                                 const ds3_request* _request,

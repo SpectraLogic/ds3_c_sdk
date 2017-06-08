@@ -82,4 +82,6 @@ else(WIN32)
             DESTINATION
                 "/usr/local/include")
     install(TARGETS ds3 DESTINATION lib)
+    set(CMAKE_BUILD_TYPE Release)
+    #set(CMAKE_BUILD_TYPE Debug)
 endif(WIN32)

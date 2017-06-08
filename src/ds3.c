@@ -1061,7 +1061,30 @@ ds3_error* ds3_create_client_from_env(ds3_client** client) {
     return NULL;
 }
 
+// Allow multiple ds3_clients to share a ds3_connection_pool
+ds3_client* ds3_copy_client(const ds3_client const* client) {
+    if (client == NULL) {
+      return NULL;
+    }
+
+    ds3_client* copied_client = g_new0(ds3_client, 1);
+    copied_client->endpoint = ds3_str_dup(client->endpoint);
+    if (client->proxy) {
+        copied_client->proxy = ds3_str_dup(client->proxy);
+    }
+    copied_client->num_redirects = client->num_redirects;
+    copied_client->creds = ds3_create_creds(client->creds->access_id->value, client->creds->secret_key->value);
+
+    ds3_client_register_net( copied_client, net_process_request );
+    ds3_client_register_logging(copied_client, client->log->log_lvl, client->log->log_callback, NULL);
+
+    copied_client->connection_pool = client->connection_pool;
+    ds3_connection_pool_inc_ref(copied_client->connection_pool);
+    return copied_client;
+}
+
 void ds3_client_proxy(ds3_client* client, const char* proxy) {
+    ds3_str_free(client->proxy);
     client->proxy = ds3_str_init(proxy);
 }
 
@@ -1080,11 +1103,12 @@ void ds3_client_free(ds3_client* client) {
       return;
     }
 
+    // free client->connection_pool only if there are no remaining references
+    ds3_connection_pool_dec_ref(client->connection_pool);
+
     ds3_str_free(client->endpoint);
     ds3_str_free(client->proxy);
     g_free(client->log);
-    ds3_connection_pool_clear(client->connection_pool);
-    g_free(client->connection_pool);
     g_free(client);
 }
 
