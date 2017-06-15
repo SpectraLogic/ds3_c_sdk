@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE( bulk_put_10k_very_small_files ) {
     put_chunks_args_single_thread->chunks_list = ensure_available_chunks(client, bulk_response->job_id);
     put_chunks_args_single_thread->verbose = False;
 
-    put_chunks(put_chunks_args_single_thread);
+    put_chunks_from_file(put_chunks_args_single_thread);
 
     ds3_master_object_list_response_free(put_chunks_args_single_thread->chunks_list);
     ds3_master_object_list_response_free(bulk_response);
@@ -164,8 +164,8 @@ BOOST_AUTO_TEST_CASE( bulk_put_200_very_small_files_multithreaded ) {
 
     GPtrArray* put_objs_args_array = new_put_chunks_threads_args(client, object_name, bucket_name, bulk_response, chunk_response, num_threads, False);
 
-    GThread* chunks_thread_0 = g_thread_new("objects_0", (GThreadFunc)put_chunks, g_ptr_array_index(put_objs_args_array, 0));
-    GThread* chunks_thread_1 = g_thread_new("objects_1", (GThreadFunc)put_chunks, g_ptr_array_index(put_objs_args_array, 1));
+    GThread* chunks_thread_0 = g_thread_new("objects_0", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_objs_args_array, 0));
+    GThread* chunks_thread_1 = g_thread_new("objects_1", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_objs_args_array, 1));
 
     // Block and cleanup GThreads
     g_thread_join(chunks_thread_0);
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     // capture sequential test start time
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
-    GThread* xfer_sequential_thread = g_thread_new("sequential_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_sequential_objs_threads_array, 0));
+    GThread* xfer_sequential_thread = g_thread_new("sequential_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_sequential_objs_threads_array, 0));
 
     // Block and cleanup GThreads
     g_thread_join(xfer_sequential_thread);
@@ -243,10 +243,10 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     // capture sequential test start time
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
-    GThread* xfer_parallel_thread_0 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_parallel_objs_threads_array, 0));
-    GThread* xfer_parallel_thread_1 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_parallel_objs_threads_array, 1));
-    GThread* xfer_parallel_thread_2 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_parallel_objs_threads_array, 2));
-    GThread* xfer_parallel_thread_3 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(put_parallel_objs_threads_array, 3));
+    GThread* xfer_parallel_thread_0 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_parallel_objs_threads_array, 0));
+    GThread* xfer_parallel_thread_1 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_parallel_objs_threads_array, 1));
+    GThread* xfer_parallel_thread_2 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_parallel_objs_threads_array, 2));
+    GThread* xfer_parallel_thread_3 = g_thread_new("parallel_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_parallel_objs_threads_array, 3));
 
     // Block and cleanup GThreads
     g_thread_join(xfer_parallel_thread_0);
@@ -321,8 +321,8 @@ BOOST_AUTO_TEST_CASE( multiple_client_xfer ) {
     // capture sequential test start time
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
-    GThread* client1_xfer_thread = g_thread_new("client1_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(client1_put_objs_args, 0));
-    GThread* client2_xfer_thread = g_thread_new("client2_objs_xfer", (GThreadFunc)put_chunks, g_ptr_array_index(client2_put_objs_args, 0));
+    GThread* client1_xfer_thread = g_thread_new("client1_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(client1_put_objs_args, 0));
+    GThread* client2_xfer_thread = g_thread_new("client2_objs_xfer", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(client2_put_objs_args, 0));
 
     // Block and cleanup GThreads
     g_thread_join(client1_xfer_thread);
@@ -355,37 +355,71 @@ BOOST_AUTO_TEST_CASE( multiple_client_xfer ) {
 BOOST_AUTO_TEST_CASE( performance_bulk_put ) {
     printf("-----Testing BULK_PUT performance-------\n");
 
-    const char* bucket_name = "bulk_put_performance_bucket";
+    const char* bucket_name1 = "bulk_put_performance_bucket1";
+    const char* bucket_name2 = "bulk_put_performance_bucket2";
+    const char* bucket_name3 = "bulk_put_performance_bucket3";
     ds3_request* request = NULL;
-    ds3_master_object_list_response* bulk_response = NULL;
-    ds3_client* client = get_client();
-    ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
+    ds3_master_object_list_response* bulk_response1 = NULL;
+    ds3_master_object_list_response* bulk_response2 = NULL;
+    ds3_master_object_list_response* bulk_response3 = NULL;
+
+    ds3_client* client1 = get_client();
+    ds3_client* client2 = ds3_copy_client(client1); // share the connection pool
+    ds3_client* client3 = ds3_copy_client(client1); // share the connection pool
+    // Log per thread
+    int client1_thread=1, client2_thread=2, client3_thread=3;
+    ds3_client_register_logging(client1, DS3_INFO, test_log, (void*)&client1_thread);
+    ds3_client_register_logging(client2, DS3_INFO, test_log, (void*)&client2_thread);
+    ds3_client_register_logging(client3, DS3_INFO, test_log, (void*)&client3_thread);
+
+
+    ds3_error* error = create_bucket_with_data_policy(client1, bucket_name1, ids.data_policy_id->value);
+    handle_error(error);
+    error = create_bucket_with_data_policy(client1, bucket_name2, ids.data_policy_id->value);
+    handle_error(error);
+    error = create_bucket_with_data_policy(client1, bucket_name3, ids.data_policy_id->value);
     handle_error(error);
 
     // Create the list of fake files to transfer
     size_t obj_size = 512 * 1024 * 1024; // 512MB
     const char* obj_prefix = "perf_obj";
-    size_t num_files = 20;
+    size_t num_files = 10;
     ds3_bulk_object_list_response* obj_list = create_bulk_object_list_from_prefix_with_size(obj_prefix, num_files, obj_size);
 
-    // Create the BULK_PUT job
-    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, obj_list);
-    error = ds3_put_bulk_job_spectra_s3_request(client, request, &bulk_response);
+    // Create the BULK_PUT jobs
+    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name1, obj_list);
+    error = ds3_put_bulk_job_spectra_s3_request(client1, request, &bulk_response1);
     handle_error(error);
     ds3_request_free(request);
 
-    ds3_master_object_list_response* chunks_response = ensure_available_chunks(client, bulk_response->job_id);
+    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name2, obj_list);
+    error = ds3_put_bulk_job_spectra_s3_request(client1, request, &bulk_response2);
+    handle_error(error);
+    ds3_request_free(request);
 
-    GPtrArray* put_perf_objs_threads_array = new_put_chunks_threads_args_performance(client, obj_prefix, bucket_name, bulk_response, chunks_response, 3, True, True);
+    request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name3, obj_list);
+    error = ds3_put_bulk_job_spectra_s3_request(client1, request, &bulk_response3);
+    handle_error(error);
+    ds3_request_free(request);
+
+    // Ensure cache space for the jobs
+    ds3_master_object_list_response* chunks_response1 = ensure_available_chunks(client1, bulk_response1->job_id);
+    ds3_master_object_list_response* chunks_response2 = ensure_available_chunks(client2, bulk_response2->job_id);
+    ds3_master_object_list_response* chunks_response3 = ensure_available_chunks(client3, bulk_response3->job_id);
+
+    GPtrArray* put_perf_objs_threads_array1 = new_put_chunks_threads_args(client1, obj_prefix, bucket_name1, bulk_response1, chunks_response1, 1, True);
+    GPtrArray* put_perf_objs_threads_array2 = new_put_chunks_threads_args(client2, obj_prefix, bucket_name2, bulk_response2, chunks_response2, 1, True);
+    GPtrArray* put_perf_objs_threads_array3 = new_put_chunks_threads_args(client3, obj_prefix, bucket_name3, bulk_response3, chunks_response3, 1, True);
 
     // capture sequential test start time
     struct timespec start_time_t, end_time_t;
     double elapsed_t;
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
-    GThread* xfer_thread_1 = g_thread_new("performance_objs_xfer_1", (GThreadFunc)put_chunks, g_ptr_array_index(put_perf_objs_threads_array, 0));
-    GThread* xfer_thread_2 = g_thread_new("performance_objs_xfer_2", (GThreadFunc)put_chunks, g_ptr_array_index(put_perf_objs_threads_array, 1));
-    GThread* xfer_thread_3 = g_thread_new("performance_objs_xfer_3", (GThreadFunc)put_chunks, g_ptr_array_index(put_perf_objs_threads_array, 2));
+    // Spawn threads
+    GThread* xfer_thread_1 = g_thread_new("performance_objs_xfer_1", (GThreadFunc)put_chunks_from_mem, g_ptr_array_index(put_perf_objs_threads_array1, 0));
+    GThread* xfer_thread_2 = g_thread_new("performance_objs_xfer_2", (GThreadFunc)put_chunks_from_mem, g_ptr_array_index(put_perf_objs_threads_array2, 0));
+    GThread* xfer_thread_3 = g_thread_new("performance_objs_xfer_3", (GThreadFunc)put_chunks_from_mem, g_ptr_array_index(put_perf_objs_threads_array3, 0));
 
     // Block and cleanup GThreads
     g_thread_join(xfer_thread_1);
@@ -397,12 +431,24 @@ BOOST_AUTO_TEST_CASE( performance_bulk_put ) {
     elapsed_t = timespec_to_seconds(&end_time_t) - timespec_to_seconds(&start_time_t);
     printf("  Elapsed time[%f]\n", elapsed_t);
 
-    ds3_master_object_list_response_free(bulk_response);
-    ds3_master_object_list_response_free(chunks_response);
-    ds3_bulk_object_list_response_free(obj_list);
-    put_chunks_threads_args_free(put_perf_objs_threads_array);
+    ds3_master_object_list_response_free(bulk_response1);
+    ds3_master_object_list_response_free(chunks_response1);
+    put_chunks_threads_args_free(put_perf_objs_threads_array1);
+    clear_bucket(client1, bucket_name1);
+    free_client(client1);
 
-    clear_bucket(client, bucket_name);
-    free_client(client);
+    ds3_master_object_list_response_free(bulk_response2);
+    ds3_master_object_list_response_free(chunks_response2);
+    put_chunks_threads_args_free(put_perf_objs_threads_array2);
+    clear_bucket(client2, bucket_name2);
+    free_client(client2);
+
+    ds3_master_object_list_response_free(bulk_response3);
+    ds3_master_object_list_response_free(chunks_response3);
+    put_chunks_threads_args_free(put_perf_objs_threads_array3);
+    clear_bucket(client3, bucket_name3);
+    free_client(client3);
+
+    ds3_bulk_object_list_response_free(obj_list);
 }
 

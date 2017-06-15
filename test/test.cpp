@@ -469,14 +469,13 @@ ds3_bulk_object_list_response* create_bulk_object_list_from_prefix_with_size(con
     return obj_list;
 }
 
-GPtrArray* new_put_chunks_threads_args_performance(ds3_client* client,
+GPtrArray* new_put_chunks_threads_args(ds3_client* client,
                                        const char* src_obj_name,
                                        const char* dest_bucket_name,
                                        const ds3_master_object_list_response* bulk_response,
                                        ds3_master_object_list_response* available_chunks,
                                        const uint8_t num_threads,
-                                       const ds3_bool verbose,
-                                       const ds3_bool performance) {
+                                       const ds3_bool verbose) {
     GPtrArray* put_chunks_args_array = g_ptr_array_new();
 
     for (uint8_t thread_index = 0; thread_index < num_threads; thread_index++) {
@@ -489,24 +488,10 @@ GPtrArray* new_put_chunks_threads_args_performance(ds3_client* client,
         put_objects_args->thread_num = thread_index;
         put_objects_args->num_threads = num_threads;
         put_objects_args->verbose = verbose;
-        put_objects_args->performance = performance;
         g_ptr_array_add(put_chunks_args_array, put_objects_args);
     }
 
     return put_chunks_args_array;
-}
-
-/*
- * Returned put_chunks_threads_args* must be freed with put_chunks_threads_args_free();
- */
-GPtrArray* new_put_chunks_threads_args(ds3_client* client,
-                                       const char* src_obj_name,
-                                       const char* dest_bucket_name,
-                                       const ds3_master_object_list_response* bulk_response,
-                                       ds3_master_object_list_response* available_chunks,
-                                       const uint8_t num_threads,
-                                       const ds3_bool verbose) {
-    return new_put_chunks_threads_args_performance(client, src_obj_name, dest_bucket_name, bulk_response, available_chunks, num_threads, verbose, False);
 }
 
 void put_chunks_threads_args_free(GPtrArray* array) {
@@ -517,51 +502,15 @@ void put_chunks_threads_args_free(GPtrArray* array) {
     g_ptr_array_free(array, TRUE);
 }
 
-// Fill a 1MB buffer with a pattern of characters
-static const char TEST_BUFFER_FILLER[] = "0123456789ABCDEF"; // 16 chars
-void init_xfer_info(xfer_info* xfer_info_to_init) {
-    for(size_t offset = 0; offset < XFER_BUFFER_SIZE; offset += 32) {
-        memcpy(xfer_info_to_init->data + offset, TEST_BUFFER_FILLER, 16);
-    }
-    xfer_info_to_init->size = XFER_BUFFER_SIZE;
-}
-
-size_t ds3_test_read_from_mem(void* buffer, size_t size, size_t nmemb, void* user_data) {
-    xfer_info* my_xfer_info = (struct xfer_info*)user_data;
-    my_xfer_info->size = nmemb * size;
-    size_t xfer_chunk_size;
-
-    if (my_xfer_info->size <= XFER_BUFFER_SIZE) {
-        memcpy(buffer, my_xfer_info->data, my_xfer_info->size);
-        my_xfer_info->offset = my_xfer_info->size;
-    } else {
-        my_xfer_info->offset = 0;
-
-        while (my_xfer_info->size > 0) {
-            xfer_chunk_size = (my_xfer_info->size < XFER_BUFFER_SIZE) ? my_xfer_info->size : XFER_BUFFER_SIZE;
-
-            my_xfer_info->size -= xfer_chunk_size;
-            my_xfer_info->offset += xfer_chunk_size;
-        }
-    }
-
-    return my_xfer_info->offset;
-}
-
-
 /**
  * To be passed as GThreadFunc arg to g_thread_new() along with a put_chunks_args struct
  */
-void put_chunks(void* args) {
+void put_chunks_from_file(void* args) {
     put_chunks_args* _args = (put_chunks_args*)args;
     ds3_objects_response* chunk_object_list = NULL;
     ds3_error* error = NULL;
 
     FILE* file;
-    struct xfer_info my_xfer_info;
-    if (_args->performance) {
-        init_xfer_info(&my_xfer_info);
-    }
 
     for (size_t chunk_index = 0; chunk_index < _args->chunks_list->num_objects; chunk_index++) {
         chunk_object_list = _args->chunks_list->objects[chunk_index];
@@ -576,23 +525,12 @@ void put_chunks(void* args) {
                 if (_args->verbose) {
                     ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] BEGIN xfer File[%s] Chunk[%lu]", _args->thread_num, object->name->value, _args->chunks_list->num_objects);
                 }
-                if (_args->performance) {
-                    // Transfer each object for reading from the memory buffer
-                    error = ds3_put_object_request(_args->client, request, &my_xfer_info, ds3_test_read_from_mem);
-                } else {
-                    if (_args->verbose) {
-                        ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] open File*[%s]", _args->thread_num, _args->src_object_name);
-                    }
-                    file = fopen(_args->src_object_name, "r");
-                    if (object->offset != 0) {
-                        fseek(file, object->offset, SEEK_SET);
-                    }
-                    error = ds3_put_object_request(_args->client, request, file, ds3_read_from_file);
-                    fclose(file);
-                    if (_args->verbose) {
-                        ds3_log_message(_args->client->log, DS3_INFO, "  GLibThread[%d] File*[%s] closed.", _args->thread_num, _args->src_object_name);
-                    }
+                file = fopen(_args->src_object_name, "r");
+                if (object->offset != 0) {
+                    fseek(file, object->offset, SEEK_SET);
                 }
+                error = ds3_put_object_request(_args->client, request, file, ds3_read_from_file);
+                fclose(file);
                 if (_args->verbose) {
                     ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] END xfer File[%s] Chunk[%lu]", _args->thread_num, object->name->value, _args->chunks_list->num_objects);
                 }
@@ -602,6 +540,79 @@ void put_chunks(void* args) {
             }
         }
     }
+}
 
+
+// Fill a 1MB buffer with a pattern of characters
+static const char TEST_BUFFER_FILLER[] = "0123456789ABCDEF"; // 16 chars
+static const uint8_t TEST_BUFFER_FILLER_SIZE = sizeof(TEST_BUFFER_FILLER)-1;// ignore NULL terminator
+
+void init_xfer_info(xfer_info* xfer_info_to_init) {
+    for(size_t offset = 0; offset < XFER_BUFFER_SIZE; offset += TEST_BUFFER_FILLER_SIZE) {
+        memcpy(xfer_info_to_init->data + offset, TEST_BUFFER_FILLER, TEST_BUFFER_FILLER_SIZE);
+    }
+    xfer_info_to_init->size = XFER_BUFFER_SIZE;
+    xfer_info_to_init->total_read = 0;
+}
+
+size_t ds3_test_read_from_mem(void* buffer, size_t size, size_t nmemb, void* user_data) {
+    xfer_info* my_xfer_info = (struct xfer_info*) user_data;
+    size_t to_read = nmemb * size;
+
+    if (my_xfer_info->size < to_read) {
+        to_read = my_xfer_info->size;
+    }
+
+    if (my_xfer_info->args->verbose) {
+        ds3_log_message(my_xfer_info->args->client->log, DS3_DEBUG, "ThreadNum[%d] [%s:%s] total_read[%lu]",
+            my_xfer_info->args->thread_num, my_xfer_info->args->bucket_name, my_xfer_info->args->current_object->name->value, my_xfer_info->total_read);
+    }
+    memcpy(buffer, my_xfer_info->data, to_read);
+    my_xfer_info->total_read += to_read;
+    return to_read;
+}
+
+/**
+ * To be passed as GThreadFunc arg to g_thread_new() along with a put_chunks_args struct
+ * Reads input from a memory buffer rather than a File* to eliminate any disk read bottleneck.
+ */
+void put_chunks_from_mem(void* args) {
+    put_chunks_args* _args = (put_chunks_args*)args;
+    ds3_objects_response* chunk_object_list = NULL;
+    ds3_error* error = NULL;
+
+    struct xfer_info my_xfer_info;
+    init_xfer_info(&my_xfer_info);
+    my_xfer_info.args = _args;
+
+    for (size_t chunk_index = 0; chunk_index < _args->chunks_list->num_objects; chunk_index++) {
+        chunk_object_list = _args->chunks_list->objects[chunk_index];
+        for (size_t object_index = 0; object_index < chunk_object_list->num_objects; object_index++) {
+
+            // Work distribution
+            if (object_index % _args->num_threads == _args->thread_num) {
+
+                _args->current_object = chunk_object_list->objects[object_index];
+
+                ds3_request* request = ds3_init_put_object_request(_args->bucket_name, _args->current_object->name->value, _args->current_object->length);
+                ds3_request_set_job(request, _args->job_id);
+
+                if (_args->verbose) {
+                    ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] BEGIN xfer File[%s] Chunk[%lu]", _args->thread_num, _args->current_object->name->value, _args->chunks_list->num_objects);
+                }
+
+                // Transfer each object for reading from the memory buffer
+                error = ds3_put_object_request(_args->client, request, &my_xfer_info, ds3_test_read_from_mem);
+                if (_args->verbose) {
+                    ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] END xfer File[%s] Chunk[%lu]", _args->thread_num, _args->current_object->name->value, _args->chunks_list->num_objects);
+                }
+
+                ds3_request_free(request);
+                handle_error(error);
+            }
+        }
+
+        my_xfer_info.total_read = 0;
+    }
 }
 

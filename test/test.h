@@ -96,7 +96,7 @@ typedef struct {
     char*                                bucket_name;
     ds3_master_object_list_response*     chunks_list;
     ds3_bool                             verbose;
-    ds3_bool                             performance;
+    ds3_bulk_object_response*            current_object;
 } put_chunks_args;
 
 double timespec_to_seconds(struct timespec* ts);
@@ -112,24 +112,17 @@ GPtrArray* new_put_chunks_threads_args(ds3_client* client,
                                        ds3_master_object_list_response* available_chunks,
                                        const uint8_t num_threads,
                                        const ds3_bool verbose);
-
-/*
- * Returned put_chunks_threads_args* must be freed with put_chunks_threads_args_free();
- */
-GPtrArray* new_put_chunks_threads_args_performance(ds3_client* client,
-                                                   const char* src_obj_name,
-                                                   const char* dest_bucket_name,
-                                                   const ds3_master_object_list_response* bulk_response,
-                                                   ds3_master_object_list_response* available_chunks,
-                                                   const uint8_t num_threads,
-                                                   const ds3_bool verbose,
-                                                   const ds3_bool performance);
-
 void put_chunks_threads_args_free(GPtrArray* array);
+
 /**
  * To be passed as GThreadFunc arg to g_thread_new() along with a put_chunks_args struct
  */
-void put_chunks(void* args);
+void put_chunks_from_file(void* args);
+/**
+ * To be passed as GThreadFunc arg to g_thread_new() along with a put_chunks_args struct
+ * Reads input from a memory buffer rather than a File*
+ */
+void put_chunks_from_mem(void* args);
 
 /*
  * Helper functions for a performance test to read data from memory rather than a File
@@ -138,8 +131,9 @@ void put_chunks(void* args);
 
 struct xfer_info {
     char   data[XFER_BUFFER_SIZE];
-    size_t offset;
     size_t size;
+    size_t total_read;
+    put_chunks_args* args;
 };
 
 void init_xfer_info(const xfer_info* xfer_info_to_init, uint16_t size_in_mb);
