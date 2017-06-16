@@ -30,6 +30,9 @@ ds3_str* ds3_str_init_with_size(const char* string, size_t size) {
 }
 
 ds3_str* ds3_str_dup(const ds3_str* string) {
+    if (string == NULL) {
+        return NULL;
+    }
     ds3_str* str = g_new0(ds3_str, 1);
     str->value = g_strndup(string->value, string->size);
     str->size = string->size;

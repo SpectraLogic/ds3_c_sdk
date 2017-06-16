@@ -59,6 +59,8 @@ else(WIN32) # POSIX
   link_directories("${PROJECT_SOURCE_DIR}/../install/lib")
   include_directories("${PROJECT_SOURCE_DIR}/../install/include")
 
+  set(CMAKE_BUILD_TYPE Release)
+  #set(CMAKE_BUILD_TYPE Debug)
 endif(WIN32)
 
 add_executable(ds3_c_tests
@@ -74,6 +76,7 @@ add_executable(ds3_c_tests
   negative_tests.cpp
   search_tests.cpp
   service_tests.cpp
+  connection_tests.cpp
   test.cpp)
 
 add_test(regression_tests ds3_c_tests)
