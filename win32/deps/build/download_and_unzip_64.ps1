@@ -1,6 +1,7 @@
 # download 64bit library dependencies and put into expected layout for install.
 
 . "$PSScriptRoot\util.ps1" # provides Unzip and Untar
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 (new-object System.Net.WebClient).DownloadFile('http://curl.haxx.se/download/curl-7.37.0.zip','curl-7.37.0.zip')
 Unzip curl-7.37.0.zip .
