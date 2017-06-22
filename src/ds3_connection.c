@@ -17,11 +17,11 @@
 /* This Code is Auto-Generated; DO NOT MODIFY! */
 
 
-#include <string.h>
 #include <curl/curl.h>
 #include <glib.h>
 #include <inttypes.h>
 #include "ds3_net.h"
+
 
 ds3_connection_pool* ds3_connection_pool_init(void) {
     return ds3_connection_pool_init_with_size(CONNECTION_POOL_SIZE);
@@ -68,7 +68,6 @@ static int _pool_full(ds3_connection_pool* pool) {
     return (_pool_inc(pool->head, pool->num_connections) == pool->tail);
 }
 
-
 ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
     ds3_connection* connection = NULL;
 
@@ -93,6 +92,7 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
 
 void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connection) {
     g_mutex_lock(&pool->mutex);
+
     curl_easy_reset(connection);
     pool->tail = _pool_inc(pool->tail, pool->num_connections);
 

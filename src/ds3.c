@@ -175,6 +175,8 @@ static char* _get_ds3_tape_type_str(ds3_tape_type input) {
         return "LTO6";
     } else if (input == DS3_TAPE_TYPE_LTO7) {
         return "LTO7";
+    } else if (input == DS3_TAPE_TYPE_LTO8) {
+        return "LTO8";
     } else if (input == DS3_TAPE_TYPE_LTO_CLEANING_TAPE) {
         return "LTO_CLEANING_TAPE";
     } else if (input == DS3_TAPE_TYPE_TS_JC) {
@@ -423,6 +425,8 @@ static char* _get_ds3_pool_failure_type_str(ds3_pool_failure_type input) {
         return "FORMAT_FAILED";
     } else if (input == DS3_POOL_FAILURE_TYPE_IMPORT_FAILED) {
         return "IMPORT_FAILED";
+    } else if (input == DS3_POOL_FAILURE_TYPE_IMPORT_INCOMPLETE) {
+        return "IMPORT_INCOMPLETE";
     } else if (input == DS3_POOL_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE) {
         return "IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE";
     } else if (input == DS3_POOL_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_DATA_INTEGRITY) {
@@ -547,6 +551,8 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
         return "LTO6";
     } else if (input == DS3_TAPE_DRIVE_TYPE_LTO7) {
         return "LTO7";
+    } else if (input == DS3_TAPE_DRIVE_TYPE_LTO8) {
+        return "LTO8";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1140) {
         return "TS1140";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1150) {
@@ -595,6 +601,8 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "GET_TAPE_INFORMATION_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED) {
         return "IMPORT_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_INCOMPLETE) {
+        return "IMPORT_INCOMPLETE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE) {
         return "IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_DATA_INTEGRITY) {
@@ -637,6 +645,8 @@ static char* _get_ds3_tape_partition_failure_type_str(ds3_tape_partition_failure
         return "TAPE_DRIVE_IN_ERROR";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_MISSING) {
         return "TAPE_DRIVE_MISSING";
+    } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_QUIESCED) {
+        return "TAPE_DRIVE_QUIESCED";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_TYPE_MISMATCH) {
         return "TAPE_DRIVE_TYPE_MISMATCH";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_EJECTION_BY_OPERATOR_REQUIRED) {
@@ -693,6 +703,8 @@ static char* _get_ds3_target_read_preference_type_str(ds3_target_read_preference
 static char* _get_ds3_target_failure_type_str(ds3_target_failure_type input) {
     if (input == DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED) {
         return "IMPORT_FAILED";
+    } else if (input == DS3_TARGET_FAILURE_TYPE_IMPORT_INCOMPLETE) {
+        return "IMPORT_INCOMPLETE";
     } else if (input == DS3_TARGET_FAILURE_TYPE_NOT_ONLINE) {
         return "NOT_ONLINE";
     } else if (input == DS3_TARGET_FAILURE_TYPE_WRITE_FAILED) {
@@ -1513,10 +1525,6 @@ void ds3_request_set_expiration_date(const ds3_request* request, const char * co
     _set_query_param(request, "expiration_date", value);
 
 }
-void ds3_request_set_folder(const ds3_request* request, const char * const value) {
-    _set_query_param(request, "folder", value);
-
-}
 void ds3_request_set_force(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "force", value);
 
@@ -1843,6 +1851,10 @@ void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_boo
 }
 void ds3_request_set_serial_number(const ds3_request* request, const char * const value) {
     _set_query_param(request, "serial_number", value);
+
+}
+void ds3_request_set_sort_by(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "sort_by", value);
 
 }
 void ds3_request_set_staged_data_expiration_in_days(const ds3_request* request, const int value) {
@@ -2676,6 +2688,12 @@ ds3_request* ds3_init_clear_all_canceled_jobs_spectra_s3_request(void) {
 }
 ds3_request* ds3_init_clear_all_completed_jobs_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/completed_job/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_close_aggregating_job_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/job/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "close_aggregating_job", NULL);
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_bulk_job_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list) {
@@ -3634,6 +3652,10 @@ ds3_request* ds3_init_modify_all_tape_partitions_spectra_s3_request(const ds3_qu
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_partition/", NULL, NULL));
     _set_query_param((ds3_request*) request, "quiesced", _get_ds3_quiesced_str(quiesced));
 
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_tape_drive_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_drive/", resource_id, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char *const resource_id) {
@@ -4603,6 +4625,8 @@ static ds3_pool_failure_type _match_ds3_pool_failure_type(const ds3_log* log, co
         return DS3_POOL_FAILURE_TYPE_FORMAT_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED") == 0) {
         return DS3_POOL_FAILURE_TYPE_IMPORT_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_INCOMPLETE") == 0) {
+        return DS3_POOL_FAILURE_TYPE_IMPORT_INCOMPLETE;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE") == 0) {
         return DS3_POOL_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED_DUE_TO_DATA_INTEGRITY") == 0) {
@@ -4717,6 +4741,8 @@ static ds3_tape_drive_type _match_ds3_tape_drive_type(const ds3_log* log, const 
         return DS3_TAPE_DRIVE_TYPE_LTO6;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO7") == 0) {
         return DS3_TAPE_DRIVE_TYPE_LTO7;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO8") == 0) {
+        return DS3_TAPE_DRIVE_TYPE_LTO8;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS1140") == 0) {
         return DS3_TAPE_DRIVE_TYPE_TS1140;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS1150") == 0) {
@@ -4751,6 +4777,8 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_GET_TAPE_INFORMATION_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_INCOMPLETE") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_IMPORT_INCOMPLETE;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE") == 0) {
         return DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED_DUE_TO_DATA_INTEGRITY") == 0) {
@@ -4793,6 +4821,8 @@ static ds3_tape_partition_failure_type _match_ds3_tape_partition_failure_type(co
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_IN_ERROR;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_MISSING") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_MISSING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_QUIESCED") == 0) {
+        return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_QUIESCED;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_TYPE_MISMATCH") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_TYPE_MISMATCH;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_EJECTION_BY_OPERATOR_REQUIRED") == 0) {
@@ -4883,6 +4913,8 @@ static ds3_tape_type _match_ds3_tape_type(const ds3_log* log, const xmlChar* tex
         return DS3_TAPE_TYPE_LTO6;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO7") == 0) {
         return DS3_TAPE_TYPE_LTO7;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO8") == 0) {
+        return DS3_TAPE_TYPE_LTO8;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO_CLEANING_TAPE") == 0) {
         return DS3_TAPE_TYPE_LTO_CLEANING_TAPE;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS_JC") == 0) {
@@ -4921,6 +4953,8 @@ static ds3_target_access_control_replication _match_ds3_target_access_control_re
 static ds3_target_failure_type _match_ds3_target_failure_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED") == 0) {
         return DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_INCOMPLETE") == 0) {
+        return DS3_TARGET_FAILURE_TYPE_IMPORT_INCOMPLETE;
     } else if (xmlStrcmp(text, (const xmlChar*) "NOT_ONLINE") == 0) {
         return DS3_TARGET_FAILURE_TYPE_NOT_ONLINE;
     } else if (xmlStrcmp(text, (const xmlChar*) "WRITE_FAILED") == 0) {
@@ -7606,6 +7640,13 @@ static ds3_error* _parse_ds3_tape_drive_response(const ds3_client* client, const
             response->mfg_serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PartitionId")) {
             response->partition_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -7753,6 +7794,8 @@ static ds3_error* _parse_ds3_tape_partition_response(const ds3_client* client, c
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "SerialId")) {
+            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -9026,6 +9069,8 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "SerialId")) {
+            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -12331,6 +12376,13 @@ static ds3_error* _parse_top_level_ds3_tape_drive_response(const ds3_client* cli
             response->mfg_serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "PartitionId")) {
             response->partition_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -12458,6 +12510,8 @@ static ds3_error* _parse_top_level_ds3_tape_partition_response(const ds3_client*
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "SerialId")) {
+            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -13180,6 +13234,8 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "SerialId")) {
+            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -18981,6 +19037,26 @@ ds3_error* ds3_clear_all_completed_jobs_spectra_s3_request(const ds3_client* cli
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
+ds3_error* ds3_close_aggregating_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_master_object_list_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_get_bulk_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response) {
     ds3_error* error;
     ds3_xml_send_buff send_buff;
@@ -22227,6 +22303,26 @@ ds3_error* ds3_modify_all_tape_partitions_spectra_s3_request(const ds3_client* c
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
+ds3_error* ds3_modify_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_tape_drive_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_modify_tape_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -24160,6 +24256,7 @@ void ds3_tape_partition_response_free(ds3_tape_partition_response* response) {
     ds3_str_free(response->id);
     ds3_str_free(response->library_id);
     ds3_str_free(response->name);
+    ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
 
     g_free(response);
@@ -24620,6 +24717,7 @@ void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_respo
     ds3_str_free(response->id);
     ds3_str_free(response->library_id);
     ds3_str_free(response->name);
+    ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
     g_free(response->tape_types);
 
@@ -24716,6 +24814,7 @@ void ds3_named_detailed_tape_partition_response_free(ds3_named_detailed_tape_par
     ds3_str_free(response->id);
     ds3_str_free(response->library_id);
     ds3_str_free(response->name);
+    ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
     g_free(response->tape_types);
 
