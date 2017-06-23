@@ -4978,7 +4978,17 @@ LIBRARY_API size_t ds3_read_from_fd(void* buffer, size_t size, size_t nmemb, voi
 LIBRARY_API ds3_bulk_object_list_response* ds3_convert_file_list(const char** file_list, uint64_t num_files);
 LIBRARY_API ds3_bulk_object_list_response* ds3_convert_file_list_with_basepath(const char** file_list, uint64_t num_files, const char* base_path);
 LIBRARY_API ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_response** objects, uint64_t num_objects);
+LIBRARY_API ds3_bulk_object_list_response* ds3_convert_object_list_from_strings(const char** objects, uint64_t num_objects);
+/*
+ * Init a single ds3_bulk_object_list_response object containing no ds3_bulk_object_response objects
+ */
 LIBRARY_API ds3_bulk_object_list_response* ds3_init_bulk_object_list();
+/*
+ * Init a single ds3_bulk_object_list_response object containing num_objects ds3_bulk_object_response objects.
+ *   each ds3_bulk_object_response object will need its properties (name, bucket, etc) to be set with ds3_str_init("name"),
+ *   and physical_placement will be null.
+ */
+LIBRARY_API ds3_bulk_object_list_response* ds3_init_bulk_object_list_with_size(size_t num_objects);
 
 
 #ifdef __cplusplus
