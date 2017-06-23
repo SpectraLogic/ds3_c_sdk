@@ -26204,6 +26204,44 @@ ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_respon
     return obj_list;
 }
 
+ds3_bulk_object_list_response* ds3_convert_object_list_from_strings(const char** objects, uint64_t num_objects) {
+    size_t object_index;
+    ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
+
+    GPtrArray* ds3_bulk_object_response_array = g_ptr_array_new();
+
+    for (object_index = 0; object_index < num_objects; object_index++) {
+        ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
+        response->name = ds3_str_init(objects[object_index]);
+        g_ptr_array_add(ds3_bulk_object_response_array, response);
+    }
+
+    obj_list->objects = (ds3_bulk_object_response**)ds3_bulk_object_response_array->pdata;
+    obj_list->num_objects = ds3_bulk_object_response_array->len;
+    g_ptr_array_free(ds3_bulk_object_response_array, FALSE);
+
+    return obj_list;
+}
+
 ds3_bulk_object_list_response* ds3_init_bulk_object_list() {
     return g_new0(ds3_bulk_object_list_response, 1);
 }
+
+ds3_bulk_object_list_response* ds3_init_bulk_object_list_with_size(size_t num_objects) {
+    size_t object_index;
+    ds3_bulk_object_list_response* obj_list = ds3_init_bulk_object_list();
+
+    GPtrArray* ds3_bulk_object_response_array = g_ptr_array_new();
+
+    for (object_index = 0; object_index < num_objects; object_index++) {
+        ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
+        g_ptr_array_add(ds3_bulk_object_response_array, response);
+    }
+
+    obj_list->objects = (ds3_bulk_object_response**)ds3_bulk_object_response_array->pdata;
+    obj_list->num_objects = ds3_bulk_object_response_array->len;
+    g_ptr_array_free(ds3_bulk_object_response_array, FALSE);
+
+    return obj_list;
+}
+
