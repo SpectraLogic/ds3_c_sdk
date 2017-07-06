@@ -407,17 +407,6 @@ static ds3_error* _get_request_xml_nodes(
     return NULL;
 }
 
-static char* _get_ds3_job_chunk_client_processing_order_guarantee_str(ds3_job_chunk_client_processing_order_guarantee input) {
-    if (input == DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE) {
-        return "NONE";
-    } else if (input == DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_IN_ORDER) {
-        return "IN_ORDER";
-    } else {
-        return "";
-    }
-
-}
-
 static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type, ds3_job_chunk_client_processing_order_guarantee order) {
     char size_buff[UNSIGNED_LONG_LONG_BASE_10_STR_LEN];
     xmlDocPtr doc;
