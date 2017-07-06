@@ -1,5 +1,5 @@
 add_library(ds3 SHARED
-            ds3.h ds3.c
+            ds3.h ds3.c ds3_init_requests.c ds3_requests.c
             ds3_net.h ds3_net.c
             ds3_request.h
             ds3_string_multimap_impl.h ds3_string_multimap_impl.c
