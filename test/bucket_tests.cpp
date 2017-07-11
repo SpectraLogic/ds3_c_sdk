@@ -31,6 +31,8 @@ BOOST_AUTO_TEST_CASE( init_put_object_offset_unsigned_long_long ) {
     printf("  request->query_params[\"offset\"]:%s\n", value);
     BOOST_CHECK(value != NULL);
     BOOST_CHECK(g_strcmp0(value, "18446744073709551615") == 0);
+
+    ds3_request_free(request);
 }
 
 BOOST_AUTO_TEST_CASE( bulk_put ) {
@@ -79,6 +81,8 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
     ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, object_list);
     ds3_master_object_list_response* bulk_response;
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &bulk_response);
+    ds3_bulk_object_list_response_free(object_list);
+    ds3_request_free(request);
     handle_error(error);
 
     request = ds3_init_put_object_request(bucket_name, objects[0], 0);
