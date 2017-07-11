@@ -26,7 +26,7 @@
 #include "ds3_request.h"
 #include "ds3_net.h"
 
-static const unsigned int STRING_BUFFER_SIZE = 32;
+#define STRING_BUFFER_SIZE 32
 
 static char* _get_ds3_bucket_acl_permission_str(ds3_bucket_acl_permission input) {
     if (input == DS3_BUCKET_ACL_PERMISSION_LIST) {
