@@ -28,9 +28,12 @@
 #include "ds3_utils.h"
 
 #ifdef _WIN32
-#include <io.h>
+  #include <io.h>
+  #ifndef PRIu64
+    #define PRIu64 "I64u"
+  #endif
 #else
-#include <inttypes.h>
+  #include <inttypes.h>
 #endif
 
 
@@ -427,6 +430,7 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
 
     for (obj_index = 0; obj_index < obj_list->num_objects; obj_index++) {
         obj = obj_list->objects[obj_index];
+        memset(size_buff, 0, sizeof(size_buff));
         g_snprintf(size_buff, STRING_BUFFER_SIZE, "%" PRIu64, obj->length);
 
         object_node = xmlNewNode(NULL, (xmlChar*) "Object");
