@@ -9,8 +9,10 @@ add_library(ds3 SHARED
             ds3_connection.h ds3_connection.c)
 
 if (WIN32)
-    #set(WINDOWS_VS_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/win32/src/Debug)
+    set(CMAKE_BUILD_TYPE Release)
     set(WINDOWS_VS_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/win32/src/Release)
+    #set(CMAKE_BUILD_TYPE Debug)
+    #set(WINDOWS_VS_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/win32/src/Debug)
 
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR})
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${WINDOWS_VS_OUTPUT_DIR})
