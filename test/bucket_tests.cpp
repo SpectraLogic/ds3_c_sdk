@@ -15,9 +15,23 @@
 
 #include <stdio.h>
 #include "ds3.h"
+#include "ds3_request.h"
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 #include <glib.h>
+#include <limits.h>
+
+BOOST_AUTO_TEST_CASE( init_put_object_offset_unsigned_long_long ) {
+    printf("-----Testing init PUT_OBJECT with max unsigned long long offset-------\n");
+
+    struct _ds3_request* request = ds3_init_put_object_request("Test_bucket", "test_object", 1024 * 1024);
+    ds3_request_set_offset(request, ULLONG_MAX);
+
+    char* value = (char*)g_hash_table_lookup(request->query_params, "offset");
+    printf("  request->query_params[\"offset\"]:%s\n", value);
+    BOOST_CHECK(value != NULL);
+    BOOST_CHECK(g_strcmp0(value, "18446744073709551615") == 0);
+}
 
 BOOST_AUTO_TEST_CASE( bulk_put ) {
     printf("-----Testing Bulk PUT-------\n");
@@ -63,15 +77,15 @@ BOOST_AUTO_TEST_CASE( empty_folder ) {
     const char* objects[1] = {"empty-folder/"};
     ds3_bulk_object_list_response* object_list = ds3_convert_object_list_from_strings(objects, 1);
     ds3_request* request = ds3_init_put_bulk_job_spectra_s3_request(bucket_name, object_list);
-    ds3_master_object_list_response* bulk_response = NULL;
+    ds3_master_object_list_response* bulk_response;
     error = ds3_put_bulk_job_spectra_s3_request(client, request, &bulk_response);
     handle_error(error);
-    ds3_master_object_list_response_free(bulk_response);
 
     request = ds3_init_put_object_request(bucket_name, objects[0], 0);
     ds3_request_set_job(request, bulk_response->job_id->value);
-    error   = ds3_put_object_request(client, request, NULL, NULL);
+    error = ds3_put_object_request(client, request, NULL, NULL);
     ds3_request_free(request);
+    ds3_master_object_list_response_free(bulk_response);
     handle_error(error);
 
     ds3_list_bucket_result_response* response;
