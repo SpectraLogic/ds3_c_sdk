@@ -525,7 +525,11 @@ void put_chunks_from_file(void* args) {
                 if (_args->verbose) {
                     ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] BEGIN xfer File[%s] Chunk[%lu]", _args->thread_num, object->name->value, _args->chunks_list->num_objects);
                 }
-                file = fopen(_args->src_object_name, "r");
+                if (_args->src_object_name) {
+                    file = fopen(_args->src_object_name, "r");
+                } else {
+                    file = fopen(object->name->value, "r");
+                }
                 if (object->offset != 0) {
                     fseek(file, object->offset, SEEK_SET);
                 }
