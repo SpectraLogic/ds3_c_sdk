@@ -469,13 +469,22 @@ ds3_bulk_object_list_response* create_bulk_object_list_from_prefix_with_size(con
     return obj_list;
 }
 
+/*
+ * Provide *EITHER* src_obj_name *OR* src_dir, not both
+ */
 GPtrArray* new_put_chunks_threads_args(ds3_client* client,
                                        const char* src_obj_name,
+                                       const char* src_dir,
                                        const char* dest_bucket_name,
                                        const ds3_master_object_list_response* bulk_response,
                                        ds3_master_object_list_response* available_chunks,
                                        const uint8_t num_threads,
                                        const ds3_bool verbose) {
+    if (src_obj_name && src_dir) {
+        printf("Error: provide new_put_chunks_threads_with_args() with either src_object_name or src_dir, not both\n");
+        return NULL;
+    }
+
     GPtrArray* put_chunks_args_array = g_ptr_array_new();
 
     for (uint8_t thread_index = 0; thread_index < num_threads; thread_index++) {
@@ -483,6 +492,7 @@ GPtrArray* new_put_chunks_threads_args(ds3_client* client,
         put_objects_args->client = client;
         put_objects_args->job_id = bulk_response->job_id->value;
         put_objects_args->src_object_name = (char*)src_obj_name;
+        put_objects_args->src_dir = (char*)src_dir;
         put_objects_args->bucket_name = (char*)dest_bucket_name;
         put_objects_args->chunks_list = available_chunks;
         put_objects_args->thread_num = thread_index;
@@ -528,7 +538,10 @@ void put_chunks_from_file(void* args) {
                 if (_args->src_object_name) {
                     file = fopen(_args->src_object_name, "r");
                 } else {
-                    file = fopen(object->name->value, "r");
+                    char* file_with_path = g_strconcat(_args->src_dir, object->name->value, (char*)NULL);
+                    printf("  opening file[%s]\n", file_with_path);
+                    file = fopen(file_with_path, "r");
+                    g_free(file_with_path);
                 }
                 if (object->offset != 0) {
                     fseek(file, object->offset, SEEK_SET);

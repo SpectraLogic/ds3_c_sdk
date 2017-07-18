@@ -93,6 +93,7 @@ typedef struct {
     ds3_client*                          client;
     char*                                job_id;
     char*                                src_object_name;
+    char*                                src_dir;
     char*                                bucket_name;
     ds3_master_object_list_response*     chunks_list;
     ds3_bool                             verbose;
@@ -107,6 +108,7 @@ void test_log(const char* message, void* user_data);
  */
 GPtrArray* new_put_chunks_threads_args(ds3_client* client,
                                        const char* src_obj_name,
+                                       const char* src_dir,
                                        const char* dest_bucket_name,
                                        const ds3_master_object_list_response* bulk_response,
                                        ds3_master_object_list_response* available_chunks,
