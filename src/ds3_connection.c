@@ -28,6 +28,7 @@ ds3_connection_pool* ds3_connection_pool_init(void) {
 }
 
 ds3_connection_pool* ds3_connection_pool_init_with_size(uint16_t pool_size) {
+    printf("ds3_connection_pool_init_with_size(%u)\n", pool_size);
     ds3_connection_pool* pool = g_new0(ds3_connection_pool, 1);
     pool->connections = g_new0(ds3_connection*, pool_size);
     pool->num_connections = pool_size;
@@ -38,6 +39,7 @@ ds3_connection_pool* ds3_connection_pool_init_with_size(uint16_t pool_size) {
 }
 
 void ds3_connection_pool_clear(ds3_connection_pool* pool, ds3_bool already_locked) {
+    printf("ds3_connection_pool_clear(%s)\n", (already_locked ? "locked" : "not locked"));
     int index;
 
     if (pool == NULL) {
@@ -61,14 +63,17 @@ void ds3_connection_pool_clear(ds3_connection_pool* pool, ds3_bool already_locke
 }
 
 static int _pool_inc(int index, uint16_t num_connections) {
+    printf("_pool_inc(%d, %u) :[%d]\n", index, num_connections, (index+1) % num_connections);
     return (index+1) % num_connections;
 }
 
 static int _pool_full(ds3_connection_pool* pool) {
+    printf("_pool_full(): head[%d] tail[%d] : [%d]\n", pool->head, pool->tail, (_pool_inc(pool->head, pool->num_connections) == pool->tail) );
     return (_pool_inc(pool->head, pool->num_connections) == pool->tail);
 }
 
 ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
+    printf("ds3_connection_acquire() BEGIN: head[%d] tail[%d]\n", pool->head, pool->tail);
     ds3_connection* connection = NULL;
 
     g_mutex_lock(&pool->mutex);
@@ -87,10 +92,12 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
 
     g_mutex_unlock(&pool->mutex);
 
+    printf("ds3_connection_acquire() END: head[%d] tail[%d]\n", pool->head, pool->tail);
     return connection;
 }
 
 void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connection) {
+    printf("ds3_connection_release() BEGIN: head[%d] tail[%d]\n", pool->head, pool->tail);
     g_mutex_lock(&pool->mutex);
 
     curl_easy_reset(connection);
@@ -98,6 +105,7 @@ void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connectio
 
     g_mutex_unlock(&pool->mutex);
     g_cond_signal(&pool->available_connections);
+    printf("ds3_connection_release() END: head[%d] tail[%d]\n", pool->head, pool->tail);
 }
 
 void ds3_connection_pool_inc_ref(ds3_connection_pool* pool) {

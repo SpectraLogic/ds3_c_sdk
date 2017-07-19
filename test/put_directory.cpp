@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( put_directory_4_threads) {
     const char* bucket_name = "test_bulk_put_directory";
     printf("  Putting all files in [%s] to bucket [%s]\n", dir_path, bucket_name);
 
-    ds3_client* client = get_client();
+    ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
     int client_thread=1;
     ds3_client_register_logging(client, DS3_DEBUG, test_log, (void*)&client_thread); // Use DEBUG level logging
 
@@ -139,10 +139,10 @@ BOOST_AUTO_TEST_CASE( put_directory_4_threads) {
     double elapsed_t;
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
 
-    GThread* put_dir_xfer_thread_0 = g_thread_new("put_dir_xfer_thread_1", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 0));
-    GThread* put_dir_xfer_thread_1 = g_thread_new("put_dir_xfer_thread_2", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 1));
-    GThread* put_dir_xfer_thread_2 = g_thread_new("put_dir_xfer_thread_3", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 2));
-    GThread* put_dir_xfer_thread_3 = g_thread_new("put_dir_xfer_thread_4", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 3));
+    GThread* put_dir_xfer_thread_0 = g_thread_new("put_dir_xfer_thread_0", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 0));
+    GThread* put_dir_xfer_thread_1 = g_thread_new("put_dir_xfer_thread_1", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 1));
+    GThread* put_dir_xfer_thread_2 = g_thread_new("put_dir_xfer_thread_2", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 2));
+    GThread* put_dir_xfer_thread_3 = g_thread_new("put_dir_xfer_thread_3", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_dir_args, 3));
 
     // Block and cleanup GThread(s)
     g_thread_join(put_dir_xfer_thread_0);

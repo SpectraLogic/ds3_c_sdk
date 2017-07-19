@@ -45,12 +45,20 @@ struct BoostTestFixture {
 
 BOOST_GLOBAL_FIXTURE( BoostTestFixture );
 
+void log_timestamp(char* string_buff, long buff_size)
+{
+    
+    g_snprintf(string_buff, buff_size, "%s", );
+}
+
 void test_log(const char* message, void* user_data) {
+    char timebuffer[32];
+    log_timestamp(timebuffer, 32);
     if (user_data) {
         int client_num = *((int*)user_data);
-        fprintf(stderr, "ClientNum[%d], Log Message: %s\n", client_num, message);
+        fprintf(stderr, "%s Client[%d] %s\n", client_num, message);
     } else {
-        fprintf(stderr, "Log Message: %s\n", message);
+        fprintf(stderr, "%s %s\n", message);
     }
 }
 
@@ -541,6 +549,9 @@ void put_chunks_from_file(void* args) {
                     char* file_with_path = g_strconcat(_args->src_dir, object->name->value, (char*)NULL);
                     printf("  opening file[%s]\n", file_with_path);
                     file = fopen(file_with_path, "r");
+                    if (file == NULL) {
+                        printf("  ***Unable to open file[%s]!!!\n", file_with_path);
+                    }
                     g_free(file_with_path);
                 }
                 if (object->offset != 0) {
