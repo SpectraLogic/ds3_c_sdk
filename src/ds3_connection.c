@@ -40,7 +40,6 @@ ds3_connection_pool* ds3_connection_pool_init(void) {
 }
 
 ds3_connection_pool* ds3_connection_pool_init_with_size(uint16_t pool_size) {
-    printf("ds3_connection_pool_init_with_size(%u)\n", pool_size);
     ds3_connection_pool* pool = g_new0(ds3_connection_pool, 1);
 
     pool->connections = g_new0(ds3_connection*, pool_size);
@@ -64,7 +63,6 @@ void ds3_connection_pool_clear(ds3_connection_pool* pool, ds3_bool already_locke
     if (already_locked == False) {
         g_mutex_lock(&pool->mutex);
     }
-    printf("ds3_connection_pool_clear(%s)\n", (already_locked ? "locked" : "not locked"));
 
     for (index = 0; index < pool->num_connections; index++) {
         if (pool->connections[index] != NULL) {
@@ -80,7 +78,6 @@ void ds3_connection_pool_clear(ds3_connection_pool* pool, ds3_bool already_locke
 }
 
 static int _queue_inc(int index, uint16_t size) {
-    printf("_pool_inc(%d, %u) :[%d]\n", index, size, (index+1) % size);
     return (index+1) % size;
 }
 
@@ -93,7 +90,6 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
     ds3_connection* connection = NULL;
 
     g_mutex_lock(&pool->mutex);
-    printf("ds3_connection_acquire() BEGIN: head[%d] tail[%d]\n", pool->queue_head, pool->queue_tail);
     while (_queue_is_empty(pool) && pool->num_connections >= pool->max_connections) {
         g_cond_wait(&pool->available_connection_notifier, &pool->mutex);
     }
@@ -109,7 +105,6 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
         pool->queue_tail = _queue_inc(pool->queue_tail, pool->max_connections);
     }
 
-    printf("ds3_connection_acquire() END: head[%d] tail[%d]\n", pool->queue_head, pool->queue_tail);
     g_mutex_unlock(&pool->mutex);
 
     return connection;
@@ -117,7 +112,6 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
 
 void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connection) {
     g_mutex_lock(&pool->mutex);
-    printf("ds3_connection_release() BEGIN: head[%d] tail[%d]\n", pool->queue_head, pool->queue_tail);
 
     curl_easy_reset(connection);
 
@@ -125,7 +119,6 @@ void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connectio
 
     pool->queue_head = _queue_inc(pool->queue_head, pool->max_connections);
 
-    printf("ds3_connection_release() END: head[%d] tail[%d]\n", pool->queue_head, pool->queue_tail);
     g_cond_signal(&pool->available_connection_notifier);
     g_mutex_unlock(&pool->mutex);
 }

@@ -45,12 +45,13 @@ struct BoostTestFixture {
 
 BOOST_GLOBAL_FIXTURE( BoostTestFixture );
 
-void log_timestamp(char* string_buff, long buff_size)
+static void _log_timestamp(char* string_buff, long buff_size)
 {
     time_t ltime;
     struct tm result;
     struct timeval tv;
     char   usec_buff[8];
+    int    millisec;
 
     gettimeofday(&tv, NULL);
     millisec = lrint(tv.tv_usec/1000.0); // Round to nearest millisec
@@ -58,15 +59,15 @@ void log_timestamp(char* string_buff, long buff_size)
     ltime = time(NULL);
     localtime_r(&ltime, &result);
 
-    strftime(string_buff, buff_size, "%Y:%m:%dT%H:%M:%S", tm);
+    strftime(string_buff, buff_size, "%Y:%m:%dT%H:%M:%S", &result);
     strcat(string_buff, ".");
-    sprintf(usec_buff,"%d", (int)tmnow.tv_usec);
+    sprintf(usec_buff,"%03d", millisec);
     strcat(string_buff, usec_buff);
 }
 
 void test_log(const char* message, void* user_data) {
     char timebuffer[32];
-    log_timestamp(timebuffer, 32);
+    _log_timestamp(timebuffer, 32);
     if (user_data) {
         int client_num = *((int*)user_data);
         fprintf(stderr, "%s Client[%d] %s\n", timebuffer, client_num, message);
