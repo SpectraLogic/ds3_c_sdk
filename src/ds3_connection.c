@@ -99,6 +99,7 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
     }
 
     next_connection_index = pool->queue[pool->head];
+    pool->queue[pool->head] = -1; // invalid while in use
     if (pool->connections[next_connection_index] == NULL) {
         connection = g_new0(ds3_connection, 1);
         connection = curl_easy_init();
@@ -107,6 +108,7 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
     } else {
         connection = pool->connections[next_connection_index];
     }
+    pool->queue[pool->tail] = pool->head;
     pool->head = _pool_inc(pool->head, pool->size);
 
     printf("ds3_connection_acquire() END: head[%d] tail[%d]\n", pool->head, pool->tail);
@@ -116,15 +118,11 @@ ds3_connection* ds3_connection_acquire(ds3_connection_pool* pool) {
 }
 
 void ds3_connection_release(ds3_connection_pool* pool, ds3_connection* connection) {
-    int tail_connection_index;
-
     g_mutex_lock(&pool->mutex);
     printf("ds3_connection_release() BEGIN: head[%d] tail[%d]\n", pool->head, pool->tail);
 
     curl_easy_reset(connection);
-    tail_connection_index = pool->queue[pool->tail];
 
-    pool->connections[tail_connection_index] = connection;
     pool->tail = _pool_inc(pool->tail, pool->size);
 
     printf("ds3_connection_release() END: head[%d] tail[%d]\n", pool->head, pool->tail);
