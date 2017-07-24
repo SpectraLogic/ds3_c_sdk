@@ -64,19 +64,19 @@ else(WIN32) # POSIX
 endif(WIN32)
 
 add_executable(ds3_c_tests
-  #bucket_tests.cpp
-  #bulk_get.cpp
-  #bulk_put.cpp
-  #checksum.cpp
-  #deletes_test.cpp
-  #get_physical_placement.cpp
-  #job_tests.cpp
-  #metadata_tests.cpp
-  #multimap_tests.cpp
-  #negative_tests.cpp
-  #search_tests.cpp
-  #service_tests.cpp
-  #connection_tests.cpp
+  bucket_tests.cpp
+  bulk_get.cpp
+  bulk_put.cpp
+  checksum.cpp
+  deletes_test.cpp
+  get_physical_placement.cpp
+  job_tests.cpp
+  metadata_tests.cpp
+  multimap_tests.cpp
+  negative_tests.cpp
+  search_tests.cpp
+  service_tests.cpp
+  connection_tests.cpp
   put_directory.cpp
   test.cpp)
 
