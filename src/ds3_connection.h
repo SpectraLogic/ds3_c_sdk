@@ -37,7 +37,8 @@ typedef CURL ds3_connection;
 //-- Opaque struct
 struct _ds3_connection_pool{
     ds3_connection** connections;
-    uint16_t         num_connections;
+    int*             queue;
+    uint16_t         size;
     int              head;
     int              tail;
     ds3_mutex        mutex;

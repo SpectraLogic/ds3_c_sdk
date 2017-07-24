@@ -47,8 +47,21 @@ BOOST_GLOBAL_FIXTURE( BoostTestFixture );
 
 void log_timestamp(char* string_buff, long buff_size)
 {
-    
-    g_snprintf(string_buff, buff_size, "%s", );
+    time_t ltime;
+    struct tm result;
+    struct timeval tv;
+    char   usec_buff[8];
+
+    gettimeofday(&tv, NULL);
+    millisec = lrint(tv.tv_usec/1000.0); // Round to nearest millisec
+
+    ltime = time(NULL);
+    localtime_r(&ltime, &result);
+
+    strftime(string_buff, buff_size, "%Y:%m:%dT%H:%M:%S", tm);
+    strcat(string_buff, ".");
+    sprintf(usec_buff,"%d", (int)tmnow.tv_usec);
+    strcat(string_buff, usec_buff);
 }
 
 void test_log(const char* message, void* user_data) {
@@ -56,9 +69,9 @@ void test_log(const char* message, void* user_data) {
     log_timestamp(timebuffer, 32);
     if (user_data) {
         int client_num = *((int*)user_data);
-        fprintf(stderr, "%s Client[%d] %s\n", client_num, message);
+        fprintf(stderr, "%s Client[%d] %s\n", timebuffer, client_num, message);
     } else {
-        fprintf(stderr, "%s %s\n", message);
+        fprintf(stderr, "%s %s\n", timebuffer, message);
     }
 }
 
