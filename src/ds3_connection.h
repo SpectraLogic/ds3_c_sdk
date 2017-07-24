@@ -26,25 +26,16 @@ extern "C" {
 
 #include <curl/curl.h>
 #include <glib.h>
+#include "ds3.h"
 
-#define CONNECTION_POOL_SIZE 10
+#define DEFAULT_CONNECTION_POOL_SIZE 10
 
 typedef GMutex ds3_mutex;
 typedef GCond ds3_condition;
 
 typedef CURL ds3_connection;
 
-//-- Opaque struct
-struct _ds3_connection_pool{
-    ds3_connection** connections;
-    int*             queue;
-    uint16_t         size;
-    int              head;
-    int              tail;
-    ds3_mutex        mutex;
-    ds3_condition    available_connections;
-    uint16_t         ref_count;
-};
+typedef struct _ds3_connection_pool ds3_connection_pool;
 
 ds3_connection_pool* ds3_connection_pool_init(void);
 ds3_connection_pool* ds3_connection_pool_init_with_size(uint16_t pool_size);

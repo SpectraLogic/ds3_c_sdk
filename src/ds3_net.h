@@ -26,7 +26,6 @@ extern "C" {
 
 #include "ds3.h"
 #include "ds3_string_multimap.h"
-#include "ds3_connection.h"
 
 char* escape_url(const char* url);
 char* escape_url_extended(const char* url, const char** delimiters, uint32_t num_delimiters);
