@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE( ds3_client_create_free ) {
     printf("-----Testing ds3_client create and free-------\n");
 
     ds3_client* client = get_client();
-    BOOST_CHECK_EQUAL(client->connection_pool->ref_count, 1);
+    BOOST_CHECK(client->connection_pool != NULL);
     ds3_creds_free(client->creds);
     ds3_client_free(client);
 }
@@ -34,10 +34,8 @@ BOOST_AUTO_TEST_CASE( ds3_connection_pool_copy ) {
     printf("-----Testing ds3_copy_client-------\n");
 
     ds3_client* client = get_client();
-    BOOST_CHECK_EQUAL(client->connection_pool->ref_count, 1);
 
     ds3_client* client_copy = ds3_copy_client(client);
-    BOOST_CHECK_EQUAL(client->connection_pool->ref_count, 2);
     BOOST_CHECK_EQUAL(client->endpoint->value, client_copy->endpoint->value);
     if (client->proxy) {
         BOOST_CHECK_EQUAL(client->proxy->value, client_copy->proxy->value);
@@ -53,7 +51,7 @@ BOOST_AUTO_TEST_CASE( ds3_connection_pool_copy ) {
     ds3_creds_free(client->creds);
     ds3_client_free(client);
 
-    BOOST_CHECK_EQUAL(client_copy->connection_pool->ref_count, 1);
+    BOOST_CHECK(client_copy->connection_pool != NULL);
     ds3_creds_free(client_copy->creds);
     ds3_client_free(client_copy);
 }
@@ -63,10 +61,10 @@ BOOST_AUTO_TEST_CASE( create_bucket_with_copied_client ) {
 
     ds3_client* client = get_client();
     ds3_connection_pool* cp = client->connection_pool;
-    BOOST_CHECK_EQUAL(cp->ref_count, 1);
+    BOOST_CHECK(cp != NULL);
 
     ds3_client* client_copy = ds3_copy_client(client);
-    BOOST_CHECK_EQUAL(cp->ref_count, 2);
+    BOOST_CHECK_EQUAL(cp, client_copy->connection_pool);
 
     const char* client_bucket_name = "create_bucket_from_original_client";
     ds3_error* error = create_bucket_with_data_policy(client, client_bucket_name, ids.data_policy_id->value);
@@ -74,7 +72,7 @@ BOOST_AUTO_TEST_CASE( create_bucket_with_copied_client ) {
     clear_bucket(client, client_bucket_name);
     ds3_creds_free(client->creds);
     ds3_client_free(client);
-    BOOST_CHECK_EQUAL(cp->ref_count, 1);
+    BOOST_CHECK(client_copy->connection_pool != NULL);
 
     const char* copied_client_bucket_name = "create_bucket_from_copied_client";
     error = create_bucket_with_data_policy(client_copy, copied_client_bucket_name, ids.data_policy_id->value);
@@ -162,7 +160,7 @@ BOOST_AUTO_TEST_CASE( bulk_put_200_very_small_files_multithreaded ) {
 
     ds3_master_object_list_response* chunk_response = ensure_available_chunks(client, bulk_response->job_id);
 
-    GPtrArray* put_objs_args_array = new_put_chunks_threads_args(client, object_name, bucket_name, bulk_response, chunk_response, num_threads, False);
+    GPtrArray* put_objs_args_array = new_put_chunks_threads_args(client, object_name, NULL, bucket_name, bulk_response, chunk_response, num_threads, False);
 
     GThread* chunks_thread_0 = g_thread_new("objects_0", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_objs_args_array, 0));
     GThread* chunks_thread_1 = g_thread_new("objects_1", (GThreadFunc)put_chunks_from_file, g_ptr_array_index(put_objs_args_array, 1));
@@ -204,7 +202,7 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
 
     ds3_master_object_list_response* sequential_chunks = ensure_available_chunks(client, mol->job_id);
 
-    GPtrArray* put_sequential_objs_threads_array = new_put_chunks_threads_args(client, obj_name, sequential_bucket_name, mol, sequential_chunks, 1, False);
+    GPtrArray* put_sequential_objs_threads_array = new_put_chunks_threads_args(client, obj_name, NULL, sequential_bucket_name, mol, sequential_chunks, 1, False);
 
     // capture sequential test start time
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
@@ -238,7 +236,7 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
 
     ds3_master_object_list_response* parallel_chunks = ensure_available_chunks(client, mol->job_id);
 
-    GPtrArray* put_parallel_objs_threads_array = new_put_chunks_threads_args(client, obj_name, parallel_bucket_name, mol, parallel_chunks, 4, False);
+    GPtrArray* put_parallel_objs_threads_array = new_put_chunks_threads_args(client, obj_name, NULL, parallel_bucket_name, mol, parallel_chunks, 4, False);
 
     // capture sequential test start time
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
@@ -315,8 +313,8 @@ BOOST_AUTO_TEST_CASE( multiple_client_xfer ) {
     ds3_master_object_list_response* client1_chunks = ensure_available_chunks(client1, mol1->job_id);
     ds3_master_object_list_response* client2_chunks = ensure_available_chunks(client2, mol2->job_id);
 
-    GPtrArray* client1_put_objs_args = new_put_chunks_threads_args(client1, obj_name, client1_bucket_name, mol1, client1_chunks, 1, True);
-    GPtrArray* client2_put_objs_args = new_put_chunks_threads_args(client2, obj_name, client2_bucket_name, mol2, client2_chunks, 1, True);
+    GPtrArray* client1_put_objs_args = new_put_chunks_threads_args(client1, obj_name, NULL, client1_bucket_name, mol1, client1_chunks, 1, True);
+    GPtrArray* client2_put_objs_args = new_put_chunks_threads_args(client2, obj_name, NULL, client2_bucket_name, mol2, client2_chunks, 1, True);
 
     // capture sequential test start time
     clock_gettime(CLOCK_MONOTONIC, &start_time_t);
@@ -407,9 +405,9 @@ BOOST_AUTO_TEST_CASE( performance_bulk_put ) {
     ds3_master_object_list_response* chunks_response2 = ensure_available_chunks(client2, bulk_response2->job_id);
     ds3_master_object_list_response* chunks_response3 = ensure_available_chunks(client3, bulk_response3->job_id);
 
-    GPtrArray* put_perf_objs_threads_array1 = new_put_chunks_threads_args(client1, obj_prefix, bucket_name1, bulk_response1, chunks_response1, 1, True);
-    GPtrArray* put_perf_objs_threads_array2 = new_put_chunks_threads_args(client2, obj_prefix, bucket_name2, bulk_response2, chunks_response2, 1, True);
-    GPtrArray* put_perf_objs_threads_array3 = new_put_chunks_threads_args(client3, obj_prefix, bucket_name3, bulk_response3, chunks_response3, 1, True);
+    GPtrArray* put_perf_objs_threads_array1 = new_put_chunks_threads_args(client1, obj_prefix, NULL, bucket_name1, bulk_response1, chunks_response1, 1, True);
+    GPtrArray* put_perf_objs_threads_array2 = new_put_chunks_threads_args(client2, obj_prefix, NULL, bucket_name2, bulk_response2, chunks_response2, 1, True);
+    GPtrArray* put_perf_objs_threads_array3 = new_put_chunks_threads_args(client3, obj_prefix, NULL, bucket_name3, bulk_response3, chunks_response3, 1, True);
 
     // capture sequential test start time
     struct timespec start_time_t, end_time_t;
