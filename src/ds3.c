@@ -29,6 +29,8 @@
 #include <inttypes.h>
 
 #include "ds3.h"
+#include "ds3_net.h"
+#include "ds3_connection.h"
 #include "ds3_request.h"
 #include "ds3_string_multimap.h"
 #include "ds3_string_multimap_impl.h"

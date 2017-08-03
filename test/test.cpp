@@ -45,12 +45,34 @@ struct BoostTestFixture {
 
 BOOST_GLOBAL_FIXTURE( BoostTestFixture );
 
+static void _log_timestamp(char* string_buff, long buff_size)
+{
+    time_t ltime;
+    struct tm result;
+    struct timeval tv;
+    char   usec_buff[8];
+    int    millisec;
+
+    gettimeofday(&tv, NULL);
+    millisec = lrint(tv.tv_usec/1000.0); // Round to nearest millisec
+
+    ltime = time(NULL);
+    localtime_r(&ltime, &result);
+
+    strftime(string_buff, buff_size, "%Y:%m:%dT%H:%M:%S", &result);
+    strcat(string_buff, ".");
+    sprintf(usec_buff,"%03d", millisec);
+    strcat(string_buff, usec_buff);
+}
+
 void test_log(const char* message, void* user_data) {
+    char timebuffer[32];
+    _log_timestamp(timebuffer, 32);
     if (user_data) {
         int client_num = *((int*)user_data);
-        fprintf(stderr, "ClientNum[%d], Log Message: %s\n", client_num, message);
+        fprintf(stderr, "%s Client[%d] %s\n", timebuffer, client_num, message);
     } else {
-        fprintf(stderr, "Log Message: %s\n", message);
+        fprintf(stderr, "%s %s\n", timebuffer, message);
     }
 }
 
@@ -469,13 +491,22 @@ ds3_bulk_object_list_response* create_bulk_object_list_from_prefix_with_size(con
     return obj_list;
 }
 
+/*
+ * Provide *EITHER* src_obj_name *OR* src_dir, not both
+ */
 GPtrArray* new_put_chunks_threads_args(ds3_client* client,
                                        const char* src_obj_name,
+                                       const char* src_dir,
                                        const char* dest_bucket_name,
                                        const ds3_master_object_list_response* bulk_response,
                                        ds3_master_object_list_response* available_chunks,
                                        const uint8_t num_threads,
                                        const ds3_bool verbose) {
+    if (src_obj_name && src_dir) {
+        printf("Error: provide new_put_chunks_threads_with_args() with either src_object_name or src_dir, not both\n");
+        return NULL;
+    }
+
     GPtrArray* put_chunks_args_array = g_ptr_array_new();
 
     for (uint8_t thread_index = 0; thread_index < num_threads; thread_index++) {
@@ -483,6 +514,7 @@ GPtrArray* new_put_chunks_threads_args(ds3_client* client,
         put_objects_args->client = client;
         put_objects_args->job_id = bulk_response->job_id->value;
         put_objects_args->src_object_name = (char*)src_obj_name;
+        put_objects_args->src_dir = (char*)src_dir;
         put_objects_args->bucket_name = (char*)dest_bucket_name;
         put_objects_args->chunks_list = available_chunks;
         put_objects_args->thread_num = thread_index;
@@ -525,7 +557,17 @@ void put_chunks_from_file(void* args) {
                 if (_args->verbose) {
                     ds3_log_message(_args->client->log, DS3_INFO, "  GlibThread[%d] BEGIN xfer File[%s] Chunk[%lu]", _args->thread_num, object->name->value, _args->chunks_list->num_objects);
                 }
-                file = fopen(_args->src_object_name, "r");
+                if (_args->src_object_name) {
+                    file = fopen(_args->src_object_name, "r");
+                } else {
+                    char* file_with_path = g_strconcat(_args->src_dir, object->name->value, (char*)NULL);
+                    printf("  opening file[%s]\n", file_with_path);
+                    file = fopen(file_with_path, "r");
+                    if (file == NULL) {
+                        printf("  ***Unable to open file[%s]!!!\n", file_with_path);
+                    }
+                    g_free(file_with_path);
+                }
                 if (object->offset != 0) {
                     fseek(file, object->offset, SEEK_SET);
                 }
