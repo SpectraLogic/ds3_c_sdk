@@ -44,3 +44,6 @@ Debug/
 *.pdb
 ds3.dll
 /win32/output/bin
+.idea/
+cmake-build-debug/
+*.dylib
