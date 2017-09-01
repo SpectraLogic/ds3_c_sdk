@@ -84,7 +84,6 @@ static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* he
     response->num_values = num_values;
     response->name = key_name;
     response->values = (ds3_str**) g_ptr_array_free(values, FALSE);
-    fprintf(stderr, "creating metadata entry of: %s\n", key_name->value);
     return response;
 }
 
