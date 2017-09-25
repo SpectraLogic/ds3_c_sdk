@@ -310,7 +310,8 @@ typedef enum {
     DS3_TAPE_DRIVE_TYPE_LTO7,
     DS3_TAPE_DRIVE_TYPE_LTO8,
     DS3_TAPE_DRIVE_TYPE_TS1140,
-    DS3_TAPE_DRIVE_TYPE_TS1150
+    DS3_TAPE_DRIVE_TYPE_TS1150,
+    DS3_TAPE_DRIVE_TYPE_TS1155
 }ds3_tape_drive_type;
 typedef enum {
     DS3_TAPE_FAILURE_TYPE_BAR_CODE_CHANGED,
@@ -2421,6 +2422,7 @@ LIBRARY_API void ds3_request_set_format_ds3_http_response_format_type(const ds3_
 LIBRARY_API void ds3_request_set_full_details(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_full_of_data(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_group_id(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_guid(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value);
 LIBRARY_API void ds3_request_set_https(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_id(const ds3_request* request, const char * const value);
@@ -4016,6 +4018,7 @@ LIBRARY_API ds3_error* ds3_get_pool_spectra_s3_request(const ds3_client* client,
  *
  *   void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_bucket_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_guid(const ds3_request* request, const char * const value)
  *   void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value)
  *   void ds3_request_set_last_page(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_last_verified(const ds3_request* request, const char * const value)
