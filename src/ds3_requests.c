@@ -84,7 +84,6 @@ static ds3_metadata_entry* ds3_metadata_entry_init(ds3_string_multimap_entry* he
     response->num_values = num_values;
     response->name = key_name;
     response->values = (ds3_str**) g_ptr_array_free(values, FALSE);
-    fprintf(stderr, "creating metadata entry of: %s\n", key_name->value);
     return response;
 }
 
@@ -971,6 +970,8 @@ static ds3_tape_drive_type _match_ds3_tape_drive_type(const ds3_log* log, const 
         return DS3_TAPE_DRIVE_TYPE_TS1140;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS1150") == 0) {
         return DS3_TAPE_DRIVE_TYPE_TS1150;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS1155") == 0) {
+        return DS3_TAPE_DRIVE_TYPE_TS1155;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_DRIVE_TYPE_UNKNOWN for safety.", text);
         return DS3_TAPE_DRIVE_TYPE_UNKNOWN;

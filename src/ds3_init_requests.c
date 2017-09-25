@@ -35,6 +35,8 @@
   #include <inttypes.h>
 #endif
 
+//The max size of an uint32_t is 10 characters + NULL
+//The max size of an uint64_t is 20 characters + NULL
 #define STRING_BUFFER_SIZE 32
 
 static char* _get_ds3_bucket_acl_permission_str(ds3_bucket_acl_permission input) {
@@ -540,6 +542,8 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
         return "TS1140";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1150) {
         return "TS1150";
+    } else if (input == DS3_TAPE_DRIVE_TYPE_TS1155) {
+        return "TS1155";
     } else {
         return "";
     }
@@ -1143,6 +1147,10 @@ void ds3_request_set_full_of_data(const ds3_request* request, ds3_bool value) {
 }
 void ds3_request_set_group_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "group_id", value);
+
+}
+void ds3_request_set_guid(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "guid", value);
 
 }
 void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds3_pool_health value) {
