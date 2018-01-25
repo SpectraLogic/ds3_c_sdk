@@ -153,40 +153,6 @@ static char* _get_ds3_tape_state_str(ds3_tape_state input) {
     }
 
 }
-static char* _get_ds3_tape_type_str(ds3_tape_type input) {
-    if (input == DS3_TAPE_TYPE_LTO5) {
-        return "LTO5";
-    } else if (input == DS3_TAPE_TYPE_LTO6) {
-        return "LTO6";
-    } else if (input == DS3_TAPE_TYPE_LTO7) {
-        return "LTO7";
-    } else if (input == DS3_TAPE_TYPE_LTO8) {
-        return "LTO8";
-    } else if (input == DS3_TAPE_TYPE_LTO_CLEANING_TAPE) {
-        return "LTO_CLEANING_TAPE";
-    } else if (input == DS3_TAPE_TYPE_TS_JC) {
-        return "TS_JC";
-    } else if (input == DS3_TAPE_TYPE_TS_JY) {
-        return "TS_JY";
-    } else if (input == DS3_TAPE_TYPE_TS_JK) {
-        return "TS_JK";
-    } else if (input == DS3_TAPE_TYPE_TS_JD) {
-        return "TS_JD";
-    } else if (input == DS3_TAPE_TYPE_TS_JZ) {
-        return "TS_JZ";
-    } else if (input == DS3_TAPE_TYPE_TS_JL) {
-        return "TS_JL";
-    } else if (input == DS3_TAPE_TYPE_TS_CLEANING_TAPE) {
-        return "TS_CLEANING_TAPE";
-    } else if (input == DS3_TAPE_TYPE_UNKNOWN) {
-        return "UNKNOWN";
-    } else if (input == DS3_TAPE_TYPE_FORBIDDEN) {
-        return "FORBIDDEN";
-    } else {
-        return "";
-    }
-
-}
 static char* _get_ds3_auto_inspect_mode_str(ds3_auto_inspect_mode input) {
     if (input == DS3_AUTO_INSPECT_MODE_NEVER) {
         return "NEVER";
@@ -1517,8 +1483,8 @@ void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const
     _set_query_param(request, "tape_state", (const char*)_get_ds3_tape_state_str(value));
 
 }
-void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value) {
-    _set_query_param(request, "tape_type", (const char*)_get_ds3_tape_type_str(value));
+void ds3_request_set_tape_type(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "tape_type", value);
 
 }
 void ds3_request_set_target_data_policy(const ds3_request* request, const char * const value) {
@@ -1577,8 +1543,8 @@ void ds3_request_set_type_ds3_tape_partition_failure_type(const ds3_request* req
     _set_query_param(request, "type", (const char*)_get_ds3_tape_partition_failure_type_str(value));
 
 }
-void ds3_request_set_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value) {
-    _set_query_param(request, "type", (const char*)_get_ds3_tape_type_str(value));
+void ds3_request_set_type(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "type", value);
 
 }
 void ds3_request_set_type_ds3_target_failure_type(const ds3_request* request, const ds3_target_failure_type value) {
@@ -2946,7 +2912,7 @@ ds3_request* ds3_init_put_storage_domain_spectra_s3_request(const char* name) {
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type tape_type) {
+ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const char* tape_type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/storage_domain_member/", NULL, NULL));
     if (storage_domain_id != NULL) {
         _set_query_param((ds3_request*) request, "storage_domain_id", storage_domain_id);
@@ -2954,8 +2920,9 @@ ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const ch
     if (tape_partition_id != NULL) {
         _set_query_param((ds3_request*) request, "tape_partition_id", tape_partition_id);
     }
-    _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(tape_type));
-
+    if (tape_type != NULL) {
+        _set_query_param((ds3_request*) request, "tape_type", tape_type);
+    }
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_storage_domain_failure_spectra_s3_request(const char *const resource_id) {
@@ -3088,15 +3055,16 @@ ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char *const reso
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type density, const char* partition_id, const ds3_tape_type tape_type) {
+ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type density, const char* partition_id, const char* tape_type) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/tape_density_directive/", NULL, NULL));
     _set_query_param((ds3_request*) request, "density", _get_ds3_tape_drive_type_str(density));
 
     if (partition_id != NULL) {
         _set_query_param((ds3_request*) request, "partition_id", partition_id);
     }
-    _set_query_param((ds3_request*) request, "tape_type", _get_ds3_tape_type_str(tape_type));
-
+    if (tape_type != NULL) {
+        _set_query_param((ds3_request*) request, "tape_type", tape_type);
+    }
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_delete_permanently_lost_tape_spectra_s3_request(const char *const resource_id) {

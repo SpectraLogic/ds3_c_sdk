@@ -879,7 +879,7 @@ typedef struct {
     ds3_storage_domain_member_state state;
     ds3_str* storage_domain_id;
     ds3_str* tape_partition_id;
-    ds3_tape_type tape_type;
+    ds3_str* tape_type;
     ds3_write_preference_level write_preference;
 }ds3_storage_domain_member_response;
 typedef struct {
@@ -1176,7 +1176,7 @@ typedef struct {
     ds3_str* storage_domain_id;
     ds3_bool take_ownership_pending;
     uint64_t total_raw_capacity;
-    ds3_tape_type type;
+    ds3_str* type;
     ds3_priority verify_pending;
     ds3_bool write_protected;
 }ds3_tape_response;
@@ -1184,7 +1184,7 @@ typedef struct {
     ds3_tape_drive_type density;
     ds3_str* id;
     ds3_str* partition_id;
-    ds3_tape_type tape_type;
+    ds3_str* tape_type;
 }ds3_tape_density_directive_response;
 typedef struct {
     ds3_bool cleaning_required;
@@ -1499,7 +1499,7 @@ typedef struct {
     ds3_str* serial_id;
     ds3_str* serial_number;
     ds3_tape_partition_state state;
-    ds3_tape_type* tape_types;
+    ds3_str** tape_types;
     size_t num_tape_types;
 }ds3_detailed_tape_partition_response;
 typedef struct {
@@ -1557,7 +1557,7 @@ typedef struct {
     ds3_str* serial_id;
     ds3_str* serial_number;
     ds3_tape_partition_state state;
-    ds3_tape_type* tape_types;
+    ds3_str** tape_types;
     size_t num_tape_types;
 }ds3_named_detailed_tape_partition_response;
 typedef struct {
@@ -2514,7 +2514,7 @@ LIBRARY_API void ds3_request_set_tape_drive_id(const ds3_request* request, const
 LIBRARY_API void ds3_request_set_tape_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_tape_partition_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value);
-LIBRARY_API void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value);
+LIBRARY_API void ds3_request_set_tape_type(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_target_data_policy(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_target_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value);
@@ -2529,7 +2529,7 @@ LIBRARY_API void ds3_request_set_type_ds3_system_failure_type(const ds3_request*
 LIBRARY_API void ds3_request_set_type_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value);
 LIBRARY_API void ds3_request_set_type_ds3_tape_failure_type(const ds3_request* request, const ds3_tape_failure_type value);
 LIBRARY_API void ds3_request_set_type_ds3_tape_partition_failure_type(const ds3_request* request, const ds3_tape_partition_failure_type value);
-LIBRARY_API void ds3_request_set_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value);
+LIBRARY_API void ds3_request_set_type(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_type_ds3_target_failure_type(const ds3_request* request, const ds3_target_failure_type value);
 LIBRARY_API void ds3_request_set_unavailable_media_policy_ds3_unavailable_media_usage_policy(const ds3_request* request, const ds3_unavailable_media_usage_policy value);
 LIBRARY_API void ds3_request_set_unavailable_pool_max_job_retry_in_mins(const ds3_request* request, const int value);
@@ -2767,7 +2767,7 @@ LIBRARY_API ds3_error* ds3_modify_cache_filesystem_spectra_s3_request(const ds3_
  *   void ds3_request_set_pool_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value)
  *   void ds3_request_set_pool_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value)
  *   void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
- *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
+ *   void ds3_request_set_tape_type(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_bucket_capacity_summary_spectra_s3_request(const char* bucket_id, const char* storage_domain_id);
 LIBRARY_API ds3_error* ds3_get_bucket_capacity_summary_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_capacity_summary_container_response** response);
@@ -2778,7 +2778,7 @@ LIBRARY_API ds3_error* ds3_get_bucket_capacity_summary_spectra_s3_request(const 
  *   void ds3_request_set_pool_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value)
  *   void ds3_request_set_pool_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value)
  *   void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
- *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
+ *   void ds3_request_set_tape_type(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_storage_domain_capacity_summary_spectra_s3_request(const char* storage_domain_id);
 LIBRARY_API ds3_error* ds3_get_storage_domain_capacity_summary_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_capacity_summary_container_response** response);
@@ -2789,7 +2789,7 @@ LIBRARY_API ds3_error* ds3_get_storage_domain_capacity_summary_spectra_s3_reques
  *   void ds3_request_set_pool_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value)
  *   void ds3_request_set_pool_type_ds3_pool_type(const ds3_request* request, const ds3_pool_type value)
  *   void ds3_request_set_tape_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
- *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
+ *   void ds3_request_set_tape_type(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_system_capacity_summary_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_system_capacity_summary_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_capacity_summary_container_response** response);
@@ -4123,7 +4123,7 @@ LIBRARY_API ds3_error* ds3_put_storage_domain_spectra_s3_request(const ds3_clien
  *
  *   void ds3_request_set_write_preference_ds3_write_preference_level(const ds3_request* request, const ds3_write_preference_level value)
  */
-LIBRARY_API ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const ds3_tape_type tape_type);
+LIBRARY_API ds3_request* ds3_init_put_tape_storage_domain_member_spectra_s3_request(const char* storage_domain_id, const char* tape_partition_id, const char* tape_type);
 LIBRARY_API ds3_error* ds3_put_tape_storage_domain_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_storage_domain_member_response** response);
 LIBRARY_API ds3_request* ds3_init_delete_storage_domain_failure_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_storage_domain_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -4157,7 +4157,7 @@ LIBRARY_API ds3_error* ds3_get_storage_domain_member_spectra_s3_request(const ds
  *   void ds3_request_set_state_ds3_storage_domain_member_state(const ds3_request* request, const ds3_storage_domain_member_state value)
  *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
  *   void ds3_request_set_tape_partition_id(const ds3_request* request, const char * const value)
- *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
+ *   void ds3_request_set_tape_type(const ds3_request* request, const char * const value)
  *   void ds3_request_set_write_preference_ds3_write_preference_level(const ds3_request* request, const ds3_write_preference_level value)
  */
 LIBRARY_API ds3_request* ds3_init_get_storage_domain_members_spectra_s3_request(void);
@@ -4263,7 +4263,7 @@ LIBRARY_API ds3_request* ds3_init_cancel_verify_tape_spectra_s3_request(const ch
 LIBRARY_API ds3_error* ds3_cancel_verify_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_clean_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response);
-LIBRARY_API ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type density, const char* partition_id, const ds3_tape_type tape_type);
+LIBRARY_API ds3_request* ds3_init_put_tape_density_directive_spectra_s3_request(const ds3_tape_drive_type density, const char* partition_id, const char* tape_type);
 LIBRARY_API ds3_error* ds3_put_tape_density_directive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_density_directive_response** response);
 LIBRARY_API ds3_request* ds3_init_delete_permanently_lost_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_delete_permanently_lost_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request);
@@ -4339,7 +4339,7 @@ LIBRARY_API ds3_error* ds3_get_tape_density_directive_spectra_s3_request(const d
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
  *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
- *   void ds3_request_set_tape_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
+ *   void ds3_request_set_tape_type(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_get_tape_density_directives_spectra_s3_request(void);
 LIBRARY_API ds3_error* ds3_get_tape_density_directives_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_density_directive_list_response** response);
@@ -4461,7 +4461,7 @@ LIBRARY_API ds3_error* ds3_get_tape_spectra_s3_request(const ds3_client* client,
  *   void ds3_request_set_sort_by(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_state(const ds3_request* request, const ds3_tape_state value)
  *   void ds3_request_set_storage_domain_id(const ds3_request* request, const char * const value)
- *   void ds3_request_set_type_ds3_tape_type(const ds3_request* request, const ds3_tape_type value)
+ *   void ds3_request_set_type(const ds3_request* request, const char * const value)
  *   void ds3_request_set_verify_pending_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_write_protected(const ds3_request* request, ds3_bool value)
  */

@@ -772,6 +772,7 @@ void ds3_storage_domain_member_response_free(ds3_storage_domain_member_response*
     ds3_str_free(response->pool_partition_id);
     ds3_str_free(response->storage_domain_id);
     ds3_str_free(response->tape_partition_id);
+    ds3_str_free(response->tape_type);
 
     g_free(response);
 }
@@ -1110,6 +1111,7 @@ void ds3_tape_response_free(ds3_tape_response* response) {
     ds3_str_free(response->partition_id);
     ds3_str_free(response->serial_number);
     ds3_str_free(response->storage_domain_id);
+    ds3_str_free(response->type);
 
     g_free(response);
 }
@@ -1120,6 +1122,7 @@ void ds3_tape_density_directive_response_free(ds3_tape_density_directive_respons
 
     ds3_str_free(response->id);
     ds3_str_free(response->partition_id);
+    ds3_str_free(response->tape_type);
 
     g_free(response);
 }
@@ -1628,6 +1631,7 @@ void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_respo
         return;
     }
 
+    size_t index;
     g_free(response->drive_types);
     ds3_str_free(response->error_message);
     ds3_str_free(response->id);
@@ -1635,6 +1639,9 @@ void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_respo
     ds3_str_free(response->name);
     ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
+    for (index = 0; index < response->num_tape_types; index++) {
+        ds3_str_free(response->tape_types[index]);
+    }
     g_free(response->tape_types);
 
     g_free(response);
@@ -1725,6 +1732,7 @@ void ds3_named_detailed_tape_partition_response_free(ds3_named_detailed_tape_par
         return;
     }
 
+    size_t index;
     g_free(response->drive_types);
     ds3_str_free(response->error_message);
     ds3_str_free(response->id);
@@ -1732,6 +1740,9 @@ void ds3_named_detailed_tape_partition_response_free(ds3_named_detailed_tape_par
     ds3_str_free(response->name);
     ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
+    for (index = 0; index < response->num_tape_types; index++) {
+        ds3_str_free(response->tape_types[index]);
+    }
     g_free(response->tape_types);
 
     g_free(response);
