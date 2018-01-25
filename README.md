@@ -183,6 +183,23 @@ To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and o
     $ make run-get-bucket   # list contents of "books" bucket
     $ make run-get-object   # get first book and write to temp file
 
+Tests
+-----
+
+The `/test` directory contains function tests of the sdk.  Ensure that the environment variables DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set. To build and run the tests, use the following commands:
+
+    $ cd directory/containing/source/tree
+    $ cmake .
+    $ make
+    $ make install
+    $ ldconfig
+
+    $ cd test
+    $ cmake .
+    $ make
+    $ make test
+
+
 Documentation
 -------------
 For the list of API calls in the C SDK please see the documentation [here](http://spectralogic.github.io/ds3_c_sdk/index.html)
