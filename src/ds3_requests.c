@@ -2416,12 +2416,7 @@ static ds3_error* _parse_ds3_storage_domain_member_response(const ds3_client* cl
         } else if (element_equal(child_node, "TapePartitionId")) {
             response->tape_partition_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "TapeType")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->tape_type = _match_ds3_tape_type(client->log, text);
-            xmlFree(text);
+            response->tape_type = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "WritePreference")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -3749,12 +3744,7 @@ static ds3_error* _parse_ds3_tape_response(const ds3_client* client, const xmlDo
         } else if (element_equal(child_node, "TotalRawCapacity")) {
             response->total_raw_capacity = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Type")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->type = _match_ds3_tape_type(client->log, text);
-            xmlFree(text);
+            response->type = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "VerifyPending")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -3820,12 +3810,7 @@ static ds3_error* _parse_ds3_tape_density_directive_response(const ds3_client* c
         } else if (element_equal(child_node, "PartitionId")) {
             response->partition_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "TapeType")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->tape_type = _match_ds3_tape_type(client->log, text);
-            xmlFree(text);
+            response->tape_type = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_tape_density_directive_response [%s]\n", child_node->name, root->name);
         }
@@ -5244,6 +5229,7 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
     ds3_named_detailed_tape_partition_response* response;
     xmlNodePtr child_node;
     ds3_error* error = NULL;
+    GPtrArray* tape_types_array = g_ptr_array_new();
 
     response = g_new0(ds3_named_detailed_tape_partition_response, 1);
 
@@ -5307,20 +5293,15 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
             xmlFree(text);
         } else if (element_equal(child_node, "TapeTypes")) {
             xmlNodePtr loop_node;
+            GPtrArray* tape_types_array = g_ptr_array_new();
             int num_nodes = 0;
-            GByteArray* enum_array = g_byte_array_new();
-            ds3_tape_type tape_types;
             for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
-                if (text == NULL) {
-                    continue;
-                }
-                tape_types = _match_ds3_tape_type(client->log, text);
-                g_byte_array_append(enum_array, (const guint8*) &tape_types, sizeof(ds3_tape_type));
+                ds3_str* tape_types = xml_get_string(doc, loop_node);
+                g_ptr_array_add(tape_types_array, tape_types);
             }
-            response->tape_types = (ds3_tape_type*)enum_array->data;
-            response->num_tape_types = enum_array->len;
-            g_byte_array_free(enum_array, FALSE);
+            response->tape_types = (ds3_str**)tape_types_array->pdata;
+            response->num_tape_types = tape_types_array->len;
+            g_ptr_array_free(tape_types_array, FALSE);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_named_detailed_tape_partition_response [%s]\n", child_node->name, root->name);
         }
@@ -5331,6 +5312,9 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
 
     }
 
+    response->tape_types = (ds3_str**)tape_types_array->pdata;
+    response->num_tape_types = tape_types_array->len;
+    g_ptr_array_free(tape_types_array, FALSE);
 
     if (error == NULL) {
         *_response = response;
@@ -7107,12 +7091,7 @@ static ds3_error* _parse_top_level_ds3_storage_domain_member_response(const ds3_
         } else if (element_equal(child_node, "TapePartitionId")) {
             response->tape_partition_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "TapeType")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->tape_type = _match_ds3_tape_type(client->log, text);
-            xmlFree(text);
+            response->tape_type = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "WritePreference")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8482,12 +8461,7 @@ static ds3_error* _parse_top_level_ds3_tape_response(const ds3_client* client, c
         } else if (element_equal(child_node, "TotalRawCapacity")) {
             response->total_raw_capacity = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Type")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->type = _match_ds3_tape_type(client->log, text);
-            xmlFree(text);
+            response->type = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "VerifyPending")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8545,12 +8519,7 @@ static ds3_error* _parse_top_level_ds3_tape_density_directive_response(const ds3
         } else if (element_equal(child_node, "PartitionId")) {
             response->partition_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "TapeType")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->tape_type = _match_ds3_tape_type(client->log, text);
-            xmlFree(text);
+            response->tape_type = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_tape_density_directive_response [%s]\n", child_node->name, root->name);
         }
@@ -9405,6 +9374,7 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
     xmlNodePtr child_node;
     ds3_detailed_tape_partition_response* response;
     ds3_error* error = NULL;
+    GPtrArray* tape_types_array = g_ptr_array_new();
 
     error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
@@ -9472,20 +9442,15 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
             xmlFree(text);
         } else if (element_equal(child_node, "TapeTypes")) {
             xmlNodePtr loop_node;
+            GPtrArray* tape_types_array = g_ptr_array_new();
             int num_nodes = 0;
-            GByteArray* enum_array = g_byte_array_new();
-            ds3_tape_type tape_types;
             for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
-                if (text == NULL) {
-                    continue;
-                }
-                tape_types = _match_ds3_tape_type(client->log, text);
-                g_byte_array_append(enum_array, (const guint8*) &tape_types, sizeof(ds3_tape_type));
+                ds3_str* tape_types = xml_get_string(doc, loop_node);
+                g_ptr_array_add(tape_types_array, tape_types);
             }
-            response->tape_types = (ds3_tape_type*)enum_array->data;
-            response->num_tape_types = enum_array->len;
-            g_byte_array_free(enum_array, FALSE);
+            response->tape_types = (ds3_str**)tape_types_array->pdata;
+            response->num_tape_types = tape_types_array->len;
+            g_ptr_array_free(tape_types_array, FALSE);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_detailed_tape_partition_response [%s]\n", child_node->name, root->name);
         }
@@ -9496,6 +9461,9 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
 
     }
 
+    response->tape_types = (ds3_str**)tape_types_array->pdata;
+    response->num_tape_types = tape_types_array->len;
+    g_ptr_array_free(tape_types_array, FALSE);
 
     xmlFreeDoc(doc);
 
