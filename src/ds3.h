@@ -287,6 +287,11 @@ typedef enum {
     DS3_QUIESCED_YES
 }ds3_quiesced;
 typedef enum {
+    DS3_RESERVED_TASK_TYPE_ANY,
+    DS3_RESERVED_TASK_TYPE_READ,
+    DS3_RESERVED_TASK_TYPE_WRITE
+}ds3_reserved_task_type;
+typedef enum {
     DS3_SEVERITY_CRITICAL,
     DS3_SEVERITY_WARNING,
     DS3_SEVERITY_ALERT,
@@ -390,6 +395,7 @@ typedef enum {
     DS3_TAPE_TYPE_LTO5,
     DS3_TAPE_TYPE_LTO6,
     DS3_TAPE_TYPE_LTO7,
+    DS3_TAPE_TYPE_LTOM8,
     DS3_TAPE_TYPE_LTO8,
     DS3_TAPE_TYPE_LTO_CLEANING_TAPE,
     DS3_TAPE_TYPE_TS_JC,
@@ -694,8 +700,10 @@ typedef struct {
 }ds3_completed_job_response;
 typedef struct {
     ds3_bool activated;
+    ds3_bool allow_new_job_requests;
     int auto_activate_timeout_in_mins;
     ds3_auto_inspect_mode auto_inspect;
+    int cache_available_retry_after_in_seconds;
     ds3_import_conflict_resolution_mode default_import_conflict_resolution_mode;
     ds3_priority default_verify_data_after_import;
     ds3_bool default_verify_data_prior_to_import;
@@ -1195,6 +1203,7 @@ typedef struct {
     ds3_str* mfg_serial_number;
     ds3_str* partition_id;
     ds3_quiesced quiesced;
+    ds3_reserved_task_type reserved_task_type;
     ds3_str* serial_number;
     ds3_tape_drive_state state;
     ds3_str* tape_id;
@@ -1220,6 +1229,8 @@ typedef struct {
     ds3_str* id;
     ds3_import_export_configuration import_export_configuration;
     ds3_str* library_id;
+    int minimum_read_reserved_drives;
+    int minimum_write_reserved_drives;
     ds3_str* name;
     ds3_quiesced quiesced;
     ds3_str* serial_id;
@@ -1494,6 +1505,8 @@ typedef struct {
     ds3_str* id;
     ds3_import_export_configuration import_export_configuration;
     ds3_str* library_id;
+    int minimum_read_reserved_drives;
+    int minimum_write_reserved_drives;
     ds3_str* name;
     ds3_quiesced quiesced;
     ds3_str* serial_id;
@@ -1552,6 +1565,8 @@ typedef struct {
     ds3_str* id;
     ds3_import_export_configuration import_export_configuration;
     ds3_str* library_id;
+    int minimum_read_reserved_drives;
+    int minimum_write_reserved_drives;
     ds3_str* name;
     ds3_quiesced quiesced;
     ds3_str* serial_id;
@@ -1578,6 +1593,7 @@ typedef struct {
     int number_of_type;
 }ds3_type_response;
 typedef struct {
+    int elapsed_hours;
     uint64_t elapsed_millis;
     int elapsed_minutes;
     uint64_t elapsed_nanos;
@@ -2364,6 +2380,7 @@ LIBRARY_API void ds3_request_set_activated(const ds3_request* request, ds3_bool 
 LIBRARY_API void ds3_request_set_admin_auth_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_admin_secret_key(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value);
+LIBRARY_API void ds3_request_set_allow_new_job_requests(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_always_force_put_job_creation(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_always_minimize_spanning_across_media(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value);
@@ -2385,6 +2402,7 @@ LIBRARY_API void ds3_request_set_blobbing_enabled(const ds3_request* request, ds
 LIBRARY_API void ds3_request_set_bucket_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_built_in(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_burst_threshold(const ds3_request* request, const float value);
+LIBRARY_API void ds3_request_set_cache_available_retry_after_in_seconds(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request, const ds3_checksum_type value);
 LIBRARY_API void ds3_request_set_chunk_client_processing_order_guarantee_ds3_job_chunk_client_processing_order_guarantee(const ds3_request* request, const ds3_job_chunk_client_processing_order_guarantee value);
@@ -2457,6 +2475,8 @@ LIBRARY_API void ds3_request_set_member_group_id(const ds3_request* request, con
 LIBRARY_API void ds3_request_set_member_user_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_minimize_spanning_across_media(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_minimum_days_to_retain(const ds3_request* request, const int value);
+LIBRARY_API void ds3_request_set_minimum_read_reserved_drives(const ds3_request* request, const int value);
+LIBRARY_API void ds3_request_set_minimum_write_reserved_drives(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_name(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value);
 LIBRARY_API void ds3_request_set_node_id(const ds3_request* request, const char * const value);
@@ -2496,6 +2516,7 @@ LIBRARY_API void ds3_request_set_region_ds3_s3_region(const ds3_request* request
 LIBRARY_API void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value);
+LIBRARY_API void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request* request, const ds3_reserved_task_type value);
 LIBRARY_API void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_secret_key(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value);
@@ -2806,8 +2827,10 @@ LIBRARY_API ds3_error* ds3_get_data_planner_blob_store_tasks_spectra_s3_request(
  * Optional Request Modifiers for ds3_init_modify_data_path_backend_spectra_s3_request
  *
  *   void ds3_request_set_activated(const ds3_request* request, ds3_bool value)
+ *   void ds3_request_set_allow_new_job_requests(const ds3_request* request, ds3_bool value)
  *   void ds3_request_set_auto_activate_timeout_in_mins(const ds3_request* request, const int value)
  *   void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* request, const ds3_auto_inspect_mode value)
+ *   void ds3_request_set_cache_available_retry_after_in_seconds(const ds3_request* request, const int value)
  *   void ds3_request_set_default_import_conflict_resolution_mode_ds3_import_conflict_resolution_mode(const ds3_request* request, const ds3_import_conflict_resolution_mode value)
  *   void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
@@ -4353,6 +4376,7 @@ LIBRARY_API ds3_error* ds3_get_tape_drive_spectra_s3_request(const ds3_client* c
  *   void ds3_request_set_page_offset(const ds3_request* request, const int value)
  *   void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value)
  *   void ds3_request_set_partition_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request* request, const ds3_reserved_task_type value)
  *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  *   void ds3_request_set_state_ds3_tape_drive_state(const ds3_request* request, const ds3_tape_drive_state value)
  *   void ds3_request_set_type_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value)
@@ -4513,12 +4537,15 @@ LIBRARY_API ds3_error* ds3_modify_all_tape_partitions_spectra_s3_request(const d
  * Optional Request Modifiers for ds3_init_modify_tape_drive_spectra_s3_request
  *
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
+ *   void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request* request, const ds3_reserved_task_type value)
  */
 LIBRARY_API ds3_request* ds3_init_modify_tape_drive_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response);
 /**
  * Optional Request Modifiers for ds3_init_modify_tape_partition_spectra_s3_request
  *
+ *   void ds3_request_set_minimum_read_reserved_drives(const ds3_request* request, const int value)
+ *   void ds3_request_set_minimum_write_reserved_drives(const ds3_request* request, const int value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  */
 LIBRARY_API ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char *const resource_id);

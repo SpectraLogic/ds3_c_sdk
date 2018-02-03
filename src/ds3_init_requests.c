@@ -515,6 +515,18 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
     }
 
 }
+static char* _get_ds3_reserved_task_type_str(ds3_reserved_task_type input) {
+    if (input == DS3_RESERVED_TASK_TYPE_ANY) {
+        return "ANY";
+    } else if (input == DS3_RESERVED_TASK_TYPE_READ) {
+        return "READ";
+    } else if (input == DS3_RESERVED_TASK_TYPE_WRITE) {
+        return "WRITE";
+    } else {
+        return "";
+    }
+
+}
 static char* _get_ds3_tape_drive_state_str(ds3_tape_drive_state input) {
     if (input == DS3_TAPE_DRIVE_STATE_OFFLINE) {
         return "OFFLINE";
@@ -883,6 +895,10 @@ void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "aggregating", value);
 
 }
+void ds3_request_set_allow_new_job_requests(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "allow_new_job_requests", value);
+
+}
 void ds3_request_set_always_force_put_job_creation(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "always_force_put_job_creation", value);
 
@@ -965,6 +981,10 @@ void ds3_request_set_built_in(const ds3_request* request, ds3_bool value) {
 }
 void ds3_request_set_burst_threshold(const ds3_request* request, const float value) {
     _set_query_param_float(request, "burst_threshold", value);
+
+}
+void ds3_request_set_cache_available_retry_after_in_seconds(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "cache_available_retry_after_in_seconds", value);
 
 }
 void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value) {
@@ -1255,6 +1275,14 @@ void ds3_request_set_minimum_days_to_retain(const ds3_request* request, const in
     _set_query_param_int(request, "minimum_days_to_retain", value);
 
 }
+void ds3_request_set_minimum_read_reserved_drives(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "minimum_read_reserved_drives", value);
+
+}
+void ds3_request_set_minimum_write_reserved_drives(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "minimum_write_reserved_drives", value);
+
+}
 void ds3_request_set_name(const ds3_request* request, const char * const value) {
     _set_query_param(request, "name", value);
 
@@ -1409,6 +1437,10 @@ void ds3_request_set_replicated_user_default_data_policy(const ds3_request* requ
 }
 void ds3_request_set_request_type_ds3_job_request_type(const ds3_request* request, const ds3_job_request_type value) {
     _set_query_param(request, "request_type", (const char*)_get_ds3_job_request_type_str(value));
+
+}
+void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request* request, const ds3_reserved_task_type value) {
+    _set_query_param(request, "reserved_task_type", (const char*)_get_ds3_reserved_task_type_str(value));
 
 }
 void ds3_request_set_roll_back(const ds3_request* request, ds3_bool value) {

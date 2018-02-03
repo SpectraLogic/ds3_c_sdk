@@ -931,6 +931,18 @@ static ds3_quiesced _match_ds3_quiesced(const ds3_log* log, const xmlChar* text)
         return DS3_QUIESCED_NO;
     }
 }
+static ds3_reserved_task_type _match_ds3_reserved_task_type(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "ANY") == 0) {
+        return DS3_RESERVED_TASK_TYPE_ANY;
+    } else if (xmlStrcmp(text, (const xmlChar*) "READ") == 0) {
+        return DS3_RESERVED_TASK_TYPE_READ;
+    } else if (xmlStrcmp(text, (const xmlChar*) "WRITE") == 0) {
+        return DS3_RESERVED_TASK_TYPE_WRITE;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_RESERVED_TASK_TYPE_ANY for safety.", text);
+        return DS3_RESERVED_TASK_TYPE_ANY;
+    }
+}
 static ds3_import_export_configuration _match_ds3_import_export_configuration(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "SUPPORTED") == 0) {
         return DS3_IMPORT_EXPORT_CONFIGURATION_SUPPORTED;
@@ -1138,6 +1150,8 @@ static ds3_tape_type _match_ds3_tape_type(const ds3_log* log, const xmlChar* tex
         return DS3_TAPE_TYPE_LTO6;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO7") == 0) {
         return DS3_TAPE_TYPE_LTO7;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTOM8") == 0) {
+        return DS3_TAPE_TYPE_LTOM8;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO8") == 0) {
         return DS3_TAPE_TYPE_LTO8;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO_CLEANING_TAPE") == 0) {
@@ -3857,6 +3871,13 @@ static ds3_error* _parse_ds3_tape_drive_response(const ds3_client* client, const
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "ReservedTaskType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->reserved_task_type = _match_ds3_reserved_task_type(client->log, text);
+            xmlFree(text);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -3995,6 +4016,10 @@ static ds3_error* _parse_ds3_tape_partition_response(const ds3_client* client, c
             xmlFree(text);
         } else if (element_equal(child_node, "LibraryId")) {
             response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Quiesced")) {
@@ -5271,6 +5296,10 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
             xmlFree(text);
         } else if (element_equal(child_node, "LibraryId")) {
             response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Quiesced")) {
@@ -6227,6 +6256,8 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "Activated")) {
             response->activated = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AllowNewJobRequests")) {
+            response->allow_new_job_requests = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "AutoActivateTimeoutInMins")) {
             response->auto_activate_timeout_in_mins = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "AutoInspect")) {
@@ -6236,6 +6267,8 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             }
             response->auto_inspect = _match_ds3_auto_inspect_mode(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "CacheAvailableRetryAfterInSeconds")) {
+            response->cache_available_retry_after_in_seconds = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "DefaultImportConflictResolutionMode")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8577,6 +8610,13 @@ static ds3_error* _parse_top_level_ds3_tape_drive_response(const ds3_client* cli
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "ReservedTaskType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->reserved_task_type = _match_ds3_reserved_task_type(client->log, text);
+            xmlFree(text);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -8695,6 +8735,10 @@ static ds3_error* _parse_top_level_ds3_tape_partition_response(const ds3_client*
             xmlFree(text);
         } else if (element_equal(child_node, "LibraryId")) {
             response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Quiesced")) {
@@ -9420,6 +9464,10 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
             xmlFree(text);
         } else if (element_equal(child_node, "LibraryId")) {
             response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Quiesced")) {
