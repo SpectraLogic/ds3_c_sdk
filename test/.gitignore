@@ -5,5 +5,5 @@ CTestTestfile.cmake
 ds3_c_tests
 
 # testing log files
-Testing
+Testing/
 
