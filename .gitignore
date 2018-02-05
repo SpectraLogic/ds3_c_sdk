@@ -47,3 +47,10 @@ ds3.dll
 .idea/
 cmake-build-debug/
 *.dylib
+
+install_manifest.txt
+
+# eclipse IDE config files
+.cproject
+.project
+
