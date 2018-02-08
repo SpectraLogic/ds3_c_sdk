@@ -350,6 +350,8 @@ ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_respon
     for (object_index = 0; object_index < num_objects; object_index++) {
         ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
         response->name = ds3_str_dup(objects[object_index]->key);
+        response->version = ds3_str_dup(objects[object_index]->version_id);
+
         g_ptr_array_add(ds3_bulk_object_response_array, response);
     }
 

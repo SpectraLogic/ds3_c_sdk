@@ -439,6 +439,10 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
         if (list_type == BULK_PUT) {
             xmlSetProp(object_node, (xmlChar*) "Size", (xmlChar*) size_buff);
         }
+
+        if (list_type == BULK_GET && obj->version != NULL && strlen(obj->version->value) != 0) {
+        	xmlSetProp(object_node, (xmlChar*) "VersionId", (xmlChar*) obj->version->value);
+        }
     }
 
     xmlDocSetRootElement(doc, objects_node);
@@ -15754,6 +15758,9 @@ ds3_error* ds3_replicate_put_job_spectra_s3_request(const ds3_client* client, co
     return _parse_top_level_ds3_master_object_list_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_stage_objects_job_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
+    GByteArray* xml_blob;
 
     int num_slashes = num_chars_in_ds3_str(request->path, '/');
     if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
@@ -15762,7 +15769,17 @@ ds3_error* ds3_stage_objects_job_spectra_s3_request(const ds3_client* client, co
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, BULK_GET);
+    if (error != NULL) return error;
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    g_byte_array_free(xml_blob, TRUE);
+    return error;
 }
 ds3_error* ds3_truncate_active_job_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
