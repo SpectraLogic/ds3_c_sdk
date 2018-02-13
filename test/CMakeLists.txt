@@ -68,16 +68,17 @@ add_executable(ds3_c_tests
   bulk_get.cpp
   bulk_put.cpp
   checksum.cpp
+  connection_tests.cpp
   deletes_test.cpp
+  get_object.cpp
   get_physical_placement.cpp
   job_tests.cpp
   metadata_tests.cpp
   multimap_tests.cpp
   negative_tests.cpp
+  put_directory.cpp
   search_tests.cpp
   service_tests.cpp
-  connection_tests.cpp
-  put_directory.cpp
   test.cpp)
 
 add_test(regression_tests ds3_c_tests)

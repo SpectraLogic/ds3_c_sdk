@@ -5075,6 +5075,11 @@ LIBRARY_API ds3_bulk_object_list_response* ds3_init_bulk_object_list();
  */
 LIBRARY_API ds3_bulk_object_list_response* ds3_init_bulk_object_list_with_size(size_t num_objects);
 
+/**
+ * Retrieves the size of the specified file. If the file does not exist, 0 is returned.
+ */
+LIBRARY_API uint64_t get_file_size(const char* file_path);
+
 #ifdef __cplusplus
 }
 #endif

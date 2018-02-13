@@ -295,6 +295,16 @@ static void get_file_size_posix(const char* file_path, uint64_t* file_size) {
     }
 }
 
+uint64_t get_file_size(const char* file_path) {
+    uint64_t size = 0;
+#ifdef _WIN32
+    get_file_size_windows(file_path, &size);
+#else
+    get_file_size_posix(file_path, &size);
+#endif
+    return size;
+}
+
 static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_name, const char* base_path) {
     struct stat file_info;
     int result;
