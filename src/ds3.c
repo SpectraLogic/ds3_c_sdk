@@ -295,7 +295,7 @@ static void get_file_size_posix(const char* file_path, uint64_t* file_size) {
     }
 }
 
-uint64_t get_file_size(const char* file_path) {
+uint64_t ds3_get_file_size(const char* file_path) {
     uint64_t size = 0;
 #ifdef _WIN32
     get_file_size_windows(file_path, &size);

@@ -88,7 +88,7 @@ void put_test_file(ds3_client* client, const char* file_name, const char* object
     FILE* file = fopen(file_name, "r");
 
     // Get file size
-    uint64_t size = get_file_size(file_name);
+    uint64_t size = ds3_get_file_size(file_name);
 
     // Perform naked put object
     request = ds3_init_put_object_request(bucket_name, object_name, size);
