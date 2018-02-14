@@ -295,6 +295,16 @@ static void get_file_size_posix(const char* file_path, uint64_t* file_size) {
     }
 }
 
+uint64_t ds3_get_file_size(const char* file_path) {
+    uint64_t size = 0;
+#ifdef _WIN32
+    get_file_size_windows(file_path, &size);
+#else
+    get_file_size_posix(file_path, &size);
+#endif
+    return size;
+}
+
 static ds3_bulk_object_response* _ds3_bulk_object_from_file(const char* file_name, const char* base_path) {
     struct stat file_info;
     int result;
@@ -350,6 +360,8 @@ ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_respon
     for (object_index = 0; object_index < num_objects; object_index++) {
         ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
         response->name = ds3_str_dup(objects[object_index]->key);
+        response->version = ds3_str_dup(objects[object_index]->version_id);
+
         g_ptr_array_add(ds3_bulk_object_response_array, response);
     }
 
@@ -729,6 +741,7 @@ void ds3_s3_object_response_free(ds3_s3_object_response* response) {
     ds3_str_free(response->creation_date);
     ds3_str_free(response->id);
     ds3_str_free(response->name);
+    ds3_str_free(response->version);
 
     g_free(response);
 }
@@ -1039,7 +1052,7 @@ void ds3_pool_response_free(ds3_pool_response* response) {
     ds3_str_free(response->mountpoint);
     ds3_str_free(response->name);
     ds3_str_free(response->partition_id);
-    ds3_str_free(response->storage_domain_id);
+    ds3_str_free(response->storage_domain_member_id);
 
     g_free(response);
 }
@@ -1075,6 +1088,7 @@ void ds3_suspect_blob_pool_response_free(ds3_suspect_blob_pool_response* respons
     ds3_str_free(response->date_written);
     ds3_str_free(response->id);
     ds3_str_free(response->last_accessed);
+    ds3_str_free(response->obsoletion_id);
     ds3_str_free(response->pool_id);
 
     g_free(response);
@@ -1086,6 +1100,7 @@ void ds3_suspect_blob_tape_response_free(ds3_suspect_blob_tape_response* respons
 
     ds3_str_free(response->blob_id);
     ds3_str_free(response->id);
+    ds3_str_free(response->obsoletion_id);
     ds3_str_free(response->tape_id);
 
     g_free(response);
@@ -1110,7 +1125,7 @@ void ds3_tape_response_free(ds3_tape_response* response) {
     ds3_str_free(response->partially_verified_end_of_tape);
     ds3_str_free(response->partition_id);
     ds3_str_free(response->serial_number);
-    ds3_str_free(response->storage_domain_id);
+    ds3_str_free(response->storage_domain_member_id);
     ds3_str_free(response->type);
 
     g_free(response);
@@ -2741,6 +2756,7 @@ void ds3_bulk_object_response_free(ds3_bulk_object_response* response) {
     ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_physical_placement_response_free(response->physical_placement);
+    ds3_str_free(response->version);
 
     g_free(response);
 }
@@ -2754,6 +2770,7 @@ void ds3_bulk_object_list_response_free(ds3_bulk_object_list_response* response)
         ds3_bulk_object_response_free(response->objects[index]);
     }
     g_free(response->objects);
+    ds3_paging_free(response->paging);
 
     g_free(response);
 }
@@ -2779,6 +2796,7 @@ void ds3_job_creation_failed_notification_payload_response_free(ds3_job_creation
 
     ds3_str_free(response->notification_generation_date);
     ds3_tapes_must_be_onlined_response_free(response->tapes_must_be_onlined);
+    ds3_str_free(response->user_name);
 
     g_free(response);
 }
@@ -2966,6 +2984,7 @@ void ds3_contents_response_free(ds3_contents_response* response) {
     ds3_str_free(response->last_modified);
     ds3_user_response_free(response->owner);
     ds3_str_free(response->storage_class);
+    ds3_str_free(response->version_id);
 
     g_free(response);
 }
@@ -2981,6 +3000,7 @@ void ds3_detailed_s3_object_response_free(ds3_detailed_s3_object_response* respo
     ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_str_free(response->owner);
+    ds3_str_free(response->version);
 
     g_free(response);
 }
@@ -3031,6 +3051,10 @@ void ds3_list_bucket_result_response_free(ds3_list_bucket_result_response* respo
     }
     g_free(response->objects);
     ds3_str_free(response->prefix);
+    for (index = 0; index < response->num_versioned_objects; index++) {
+        ds3_contents_response_free(response->versioned_objects[index]);
+    }
+    g_free(response->versioned_objects);
 
     g_free(response);
 }

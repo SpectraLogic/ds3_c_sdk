@@ -19,6 +19,9 @@
 #include "test.h"
 #include <boost/test/unit_test.hpp>
 
+
+
+
 //Testing a Duplicate Bucket Put
 BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
     printf("-----Negative Testing Duplicate Bucket Creation-------\n");
@@ -52,7 +55,6 @@ BOOST_AUTO_TEST_CASE(put_duplicate_bucket) {
     error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
     BOOST_CHECK(error!=NULL);
     BOOST_CHECK(error->error->http_error_code == 409);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Conflict")==0);
     ds3_error_free(error);
 
     //Deleting Created Bucket
@@ -75,9 +77,9 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_bucket){
     request = ds3_init_delete_bucket_request(bucket_name);
     error = ds3_delete_bucket_request(client, request);
     ds3_request_free(request);
+
     BOOST_CHECK(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 404);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Not Found")==0);
     ds3_error_free(error);
     free_client(client);
 }
@@ -96,7 +98,6 @@ BOOST_AUTO_TEST_CASE(get_bucket_with_empty_bucket_name){
     ds3_list_bucket_result_response_free(response);
     free_client(client);
 
-    //printf("error->error->code[%s]\n", error->error->code->value);
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(g_str_has_prefix(error->message->value, "The bucket name parameter is required") == (gboolean)TRUE);
     BOOST_CHECK(error->code == DS3_ERROR_MISSING_ARGS);
@@ -178,9 +179,9 @@ BOOST_AUTO_TEST_CASE(head_bucket_non_existing_bucket){
     request = ds3_init_head_bucket_request(bucket_name);
     error = ds3_head_bucket_request(client, request);
     ds3_request_free(request);
+
     BOOST_CHECK(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 404);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Not Found")==0);
     ds3_error_free(error);
     free_client(client);
 }
@@ -225,8 +226,7 @@ BOOST_AUTO_TEST_CASE(delete_non_existing_object) {
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
-	  BOOST_CHECK(error->error->http_error_code == 404);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Not Found") == 0);
+    BOOST_CHECK(error->error->http_error_code == 404);
     ds3_error_free(error);
 }
 
@@ -240,7 +240,6 @@ BOOST_AUTO_TEST_CASE(bad_bucket_name) {
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 400);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
     ds3_error_free(error);
 
     free_client(client);
@@ -256,7 +255,6 @@ BOOST_AUTO_TEST_CASE( put_bucket_bucket_name_with_trailing_slash){
     BOOST_CHECK(put_bucket_error != NULL);
     BOOST_CHECK(put_bucket_error->code == DS3_ERROR_BAD_STATUS_CODE);
     BOOST_CHECK(put_bucket_error->error->http_error_code == 400);
-    BOOST_CHECK_EQUAL( g_strcmp0(put_bucket_error->error->code->value, "Bad Request"), 0);
 
     ds3_error_free(put_bucket_error);
     clear_bucket(client, bucket_name);
@@ -288,7 +286,6 @@ BOOST_AUTO_TEST_CASE(put_duplicate_object_list){
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 400);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Bad Request") == 0);
     ds3_error_free(error);
 }
 
@@ -339,7 +336,6 @@ BOOST_AUTO_TEST_CASE(delete_multiple_job) {
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 404);
-    BOOST_CHECK(strcmp(error->error->code->value ,"Not Found") == 0);
     ds3_error_free(error);
 }
 
@@ -358,7 +354,6 @@ BOOST_AUTO_TEST_CASE(get_non_existing_job) {
 
     BOOST_REQUIRE(error != NULL);
     BOOST_CHECK(error->error->http_error_code == 404);
-    BOOST_CHECK(strcmp(error->error->code->value, "Not Found") == 0);
     ds3_error_free(error);
 }
 

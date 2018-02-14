@@ -76,10 +76,25 @@ void test_log(const char* message, void* user_data) {
     }
 }
 
+void print_error(const ds3_error* error) {
+    if (error == NULL) {
+        return;
+    }
+    if (NULL != error->message) {
+        printf("ds3_error_message: %s\n", error->message->value);
+    }
+    if (error->error != NULL) {
+        printf("ds3_status_code: %lu\n", (unsigned long)error->error->http_error_code);
+        printf("ds3_status_message: %s\n", error->error->message->value);
+        printf("ds3_error_body: %s\n", error->error->code->value);
+    }
+}
+
 ds3_client* get_client_at_loglvl(ds3_log_lvl log_lvl) {
     ds3_client* client;
 
     ds3_error* error = ds3_create_client_from_env(&client);
+    print_error(error);
 
     if (error != NULL) {
         fprintf(stderr, "Failed to construct ds3_client from environment variables: %s\n", error->message->value);
@@ -119,6 +134,8 @@ void configure_for_tests() {
     // Create DataPolicy
     ds3_request* put_dp_request = ds3_init_put_data_policy_spectra_s3_request(TEST_DP_NAME);
     ds3_error* error = ds3_put_data_policy_spectra_s3_request(client, put_dp_request, &put_dp_response);
+    print_error(error);
+
     data_policy_id = ds3_str_init(put_dp_response->id->value);
 
     ds3_request_free(put_dp_request);
@@ -128,6 +145,7 @@ void configure_for_tests() {
     // Create StorageDomain
     ds3_request* put_sd_request = ds3_init_put_storage_domain_spectra_s3_request(TEST_SD_NAME);
     error = ds3_put_storage_domain_spectra_s3_request(client, put_sd_request, &put_sd_response);
+    print_error(error);
     storage_domain_id = ds3_str_init(put_sd_response->id->value);
 
     ds3_request_free(put_sd_request);
@@ -137,6 +155,7 @@ void configure_for_tests() {
     // Create pool partition
     ds3_request* put_pp_request = ds3_init_put_pool_partition_spectra_s3_request(TEST_PP_NAME, DS3_POOL_TYPE_ONLINE);
     error = ds3_put_pool_partition_spectra_s3_request(client, put_pp_request, &put_pp_response);
+    print_error(error);
     pool_partition_id = ds3_str_init(put_pp_response->id->value);
 
     ds3_request_free(put_pp_request);
@@ -146,6 +165,7 @@ void configure_for_tests() {
     // Create storage domain member linking pool partition to storage domain
     ds3_request* put_pool_sd_member_request = ds3_init_put_pool_storage_domain_member_spectra_s3_request(pool_partition_id->value, storage_domain_id->value);
     error = ds3_put_pool_storage_domain_member_spectra_s3_request(client, put_pool_sd_member_request, &put_sd_member_response);
+    print_error(error);
     storage_domain_member_id = ds3_str_init(put_sd_member_response->id->value);
 
     ds3_request_free(put_pool_sd_member_request);
@@ -159,6 +179,7 @@ void configure_for_tests() {
         storage_domain_id->value,
         DS3_DATA_PERSISTENCE_RULE_TYPE_PERMANENT);
     error = ds3_put_data_persistence_rule_spectra_s3_request(client, put_data_persistence_rule_request, &put_data_persistence_rule_response);
+    print_error(error);
     data_persistence_rule_id = ds3_str_init(put_data_persistence_rule_response->id->value);
 
     ds3_request_free(put_data_persistence_rule_request);
@@ -180,45 +201,39 @@ void teardown_after_tests() {
     // Delete DataPersistenceRule
     ds3_request* delete_data_persistence_rule_request = ds3_init_delete_data_persistence_rule_spectra_s3_request(ids.data_persistence_rule_id->value);
     error = ds3_delete_data_persistence_rule_spectra_s3_request(client, delete_data_persistence_rule_request);
+    print_error(error);
     ds3_request_free(delete_data_persistence_rule_request);
     ds3_error_free(error);
 
     // Delete DataPolicy
     ds3_request* delete_data_policy_request = ds3_init_delete_data_policy_spectra_s3_request(TEST_DP_NAME);
     error = ds3_delete_data_policy_spectra_s3_request(client, delete_data_policy_request);
+    print_error(error);
     ds3_request_free(delete_data_policy_request);
     ds3_error_free(error);
 
     // Delete StorageDomainMember
     ds3_request* delete_storage_domain_member_request = ds3_init_delete_storage_domain_member_spectra_s3_request(ids.storage_domain_member_id->value);
     error = ds3_delete_storage_domain_member_spectra_s3_request(client, delete_storage_domain_member_request);
+    print_error(error);
     ds3_request_free(delete_storage_domain_member_request);
     ds3_error_free(error);
 
     // Delete StorageDomain
     ds3_request* delete_storage_domain_request = ds3_init_delete_storage_domain_spectra_s3_request(TEST_SD_NAME);
     error = ds3_delete_storage_domain_spectra_s3_request(client, delete_storage_domain_request);
+    print_error(error);
     ds3_request_free(delete_storage_domain_request);
     ds3_error_free(error);
 
     // Delete PoolPartition
     ds3_request* delete_pool_partition_request = ds3_init_delete_pool_partition_spectra_s3_request(TEST_PP_NAME);
     error = ds3_delete_pool_partition_spectra_s3_request(client, delete_pool_partition_request);
+    print_error(error);
     ds3_request_free(delete_pool_partition_request);
     ds3_error_free(error);
 
     free_client(client);
-}
-
-void print_error(const ds3_error* error) {
-      if (NULL != error->message) {
-        printf("ds3_error_message: %s\n", error->message->value);
-      }
-      if (error->error != NULL) {
-          printf("ds3_status_code: %lu\n", (unsigned long)error->error->http_error_code);
-          printf("ds3_status_message: %s\n", error->error->message->value);
-          printf("ds3_error_body: %s\n", error->error->code->value);
-      }
 }
 
 void handle_error(ds3_error* error) {
