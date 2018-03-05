@@ -15,20 +15,30 @@
 
 #include "ds3_uint64_string_map.h"
 
+static void _internal_uint64_free(gpointer data) {
+    g_free((uint64_t*) data);
+}
+
+static void _internal_str_free(gpointer data) {
+    ds3_str_free((ds3_str*) data);
+}
+
 ds3_uint64_string_map* ds3_uint64_string_map_init(void) {
     // Create a hash table with uint64_t* as the key, and ds3_str* as the value
     struct _ds3_uint64_string_map* map = g_new0(struct _ds3_uint64_string_map, 1);
-    map->hash = g_hash_table_new_full(g_int64_hash, g_int64_equal, NULL, (void *)ds3_str_free);
+    map->hash = g_hash_table_new_full(g_int64_hash, g_int64_equal, _internal_uint64_free, _internal_str_free);
     return (ds3_uint64_string_map*) map;
 }
 
-// Returns true if the key did not exist yet
-gboolean ds3_uint64_string_map_insert(ds3_uint64_string_map* map, uint64_t* key, const ds3_str* value) {
+// Inserts a safe copy of the key-value pair into the map. Returns true if the key did not exist yet.
+gboolean ds3_uint64_string_map_insert(ds3_uint64_string_map* map, const uint64_t* key, const ds3_str* value) {
     if (map == NULL || map->hash == NULL) {
         return FALSE;
     }
     ds3_str* value_cpy = ds3_str_dup(value);
-    return g_hash_table_insert(map->hash, key, value_cpy);
+    uint64_t* key_cpy = g_new0(uint64_t, 1);
+    *key_cpy = *key;
+    return g_hash_table_insert(map->hash, key_cpy, value_cpy);
 }
 
 gboolean ds3_uint64_string_map_contains(ds3_uint64_string_map* map, uint64_t* key) {
@@ -48,6 +58,10 @@ ds3_str* ds3_uint64_string_map_lookup(ds3_uint64_string_map* map, uint64_t* key)
         return NULL;
     }
     return ds3_str_dup((ds3_str*)value);
+}
+
+guint ds3_uint64_string_map_size(ds3_uint64_string_map* map) {
+    return g_hash_table_size(map->hash);
 }
 
 void ds3_uint64_string_map_free(ds3_uint64_string_map* map) {
@@ -116,4 +130,3 @@ void ds3_uint64_string_pair_free(ds3_uint64_string_pair* pair) {
     }
     g_free(pair);
 }
-

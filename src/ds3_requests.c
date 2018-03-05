@@ -24,7 +24,9 @@
 #include "ds3.h"
 #include "ds3_net.h"
 #include "ds3_request.h"
+#include "ds3_response_header_utils.h"
 #include "ds3_string_multimap_impl.h"
+#include "ds3_uint64_string_map.h"
 #include "ds3_utils.h"
 
 #ifdef _WIN32
@@ -40,7 +42,6 @@
 //The max size of an uint32_t is 10 characters + NULL
 //The max size of an uint64_t is 20 characters + NULL
 #define STRING_BUFFER_SIZE 32
-
 
 struct _ds3_metadata {
     GHashTable* metadata;
@@ -232,6 +233,7 @@ void ds3_metadata_keys_free(ds3_metadata_keys_result* metadata_keys) {
     }
     g_free(metadata_keys);
 }
+
 static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name) {
     return xmlStrcmp(attribute->name, (const xmlChar*) attribute_name) == 0;
 }
@@ -13535,7 +13537,8 @@ ds3_error* ds3_head_bucket_request(const ds3_client* client, const ds3_request* 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
-ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
+// TODO begin modified
+ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_head_object_response** response) {
     ds3_error* error;
     ds3_string_multimap* return_headers;
     ds3_metadata* metadata;
@@ -13550,13 +13553,17 @@ ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* 
     error = _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, &return_headers);
 
     if (error == NULL) {
-        metadata = _init_metadata(return_headers);
-        *_metadata = metadata;
+        ds3_head_object_response* response_ptr = g_new0(ds3_head_object_response, 1);
+        response_ptr->metadata = _init_metadata(return_headers);
+        response_ptr->blob_checksum_type = get_blob_checksum_type(client->log, return_headers);
+        response_ptr->blob_checksums = get_blob_checksums(client->log, return_headers);
+        *response = response_ptr;
         ds3_string_multimap_free(return_headers);
     }
 
     return error;
 }
+// TODO end modified
 
 ds3_error* ds3_initiate_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_initiate_multipart_upload_result_response** response) {
     ds3_error* error;

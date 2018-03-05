@@ -28,6 +28,7 @@
 #include <curl/curl.h>
 #include "ds3_string.h"
 #include "ds3_string_multimap.h"
+#include "ds3_uint64_string_map.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -627,6 +628,15 @@ typedef enum {
     DS3_CHECKSUM_TYPE_SHA_256,
     DS3_CHECKSUM_TYPE_SHA_512
 }ds3_checksum_type;
+
+//TODO manually added
+typedef struct {
+    ds3_metadata* metadata;
+    ds3_checksum_type *blob_checksum_type;
+    ds3_uint64_string_map* blob_checksums;
+}ds3_head_object_response;
+//TODO end manually added
+
 typedef struct {
     ds3_str* data_policy_id;
     ds3_str* id;
@@ -2146,6 +2156,9 @@ typedef struct _ds3_client {
     ds3_connection_pool* connection_pool;
 }ds3_client;
 
+// TODO begin added
+LIBRARY_API void ds3_head_object_response_free(ds3_head_object_response* response);
+// TODO end added
 LIBRARY_API void ds3_azure_data_replication_rule_response_free(ds3_azure_data_replication_rule_response* response_data);
 LIBRARY_API void ds3_blob_response_free(ds3_blob_response* response_data);
 LIBRARY_API void ds3_bucket_response_free(ds3_bucket_response* response_data);
@@ -2641,7 +2654,7 @@ LIBRARY_API ds3_request* ds3_init_head_bucket_request(const char *const bucket_n
 LIBRARY_API ds3_error* ds3_head_bucket_request(const ds3_client* client, const ds3_request* request);
 
 LIBRARY_API ds3_request* ds3_init_head_object_request(const char* bucket_name, const char *const object_name);
-LIBRARY_API ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata);
+LIBRARY_API ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_head_object_response** response);
 
 LIBRARY_API ds3_request* ds3_init_initiate_multi_part_upload_request(const char *const bucket_name, const char *const object_name);
 LIBRARY_API ds3_error* ds3_initiate_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_initiate_multipart_upload_result_response** response);

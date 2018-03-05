@@ -17,6 +17,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "../src/ds3_uint64_string_map.h"
+#include "../src/ds3_response_header_utils.h"
 
 BOOST_AUTO_TEST_CASE( ds3_unit64_string_map ) {
     const char* const_value = "my value";
@@ -62,4 +63,85 @@ BOOST_AUTO_TEST_CASE( ds3_unit64_string_map ) {
 
     // Free map
     ds3_uint64_string_map_free(map);
+}
+
+void _put_test_headers(ds3_string_multimap* map, const char* key, const char* value) {
+    ds3_str* ds3_key = ds3_str_init(key);
+    ds3_str* ds3_value = ds3_str_init(value);
+    ds3_string_multimap_insert(map, ds3_key, ds3_value);
+    ds3_str_free(ds3_key);
+    ds3_str_free(ds3_value);
+}
+
+ds3_string_multimap* _get_head_object_test_headers(void) {
+    ds3_string_multimap* map = ds3_string_multimap_init();
+    _put_test_headers(map, "x-amz-meta-key", "value");
+    _put_test_headers(map, "ds3-blob-checksum-type", "CRC_32");
+    _put_test_headers(map, "ds3-blob-checksum-offset-0", "4nQGNX4nyz0pi8Hvap79PQ==");
+    _put_test_headers(map, "ds3-blob-checksum-offset-10485760", "965Aa0/n8DlO1IwXYFh4bg==");
+    _put_test_headers(map, "ds3-blob-checksum-offset-20971520", "iV2OqJaXJ/jmqgRSb1HmFA==");
+    return map;
+}
+
+BOOST_AUTO_TEST_CASE( get_blob_checksum_type_CRC_32 ) {
+    ds3_string_multimap* response_headers = _get_head_object_test_headers();
+
+    ds3_checksum_type* type = get_blob_checksum_type(NULL, response_headers);
+    BOOST_CHECK(type != NULL);
+    BOOST_CHECK(*type == DS3_CHECKSUM_TYPE_CRC_32);
+
+    if (type != NULL) {
+        g_free(type);
+    }
+    ds3_string_multimap_free(response_headers);
+}
+
+BOOST_AUTO_TEST_CASE( get_blob_checksum_type_empty_map ) {
+    ds3_string_multimap* response_headers = ds3_string_multimap_init();
+
+    ds3_checksum_type* type = get_blob_checksum_type(NULL, response_headers);
+    BOOST_CHECK(type == NULL);
+
+    if (type != NULL) {
+        g_free(type);
+    }
+    ds3_string_multimap_free(response_headers);
+}
+
+void _verify_blob_checksum_value(ds3_uint64_string_map* checksums, uint64_t key, const char* expected_checksum) {
+    ds3_str* blob_checksum;
+    BOOST_CHECK_EQUAL(ds3_uint64_string_map_contains(checksums, &key), TRUE);
+
+    blob_checksum = ds3_uint64_string_map_lookup(checksums, &key);
+
+    BOOST_CHECK(blob_checksum != NULL);
+    BOOST_CHECK_EQUAL(blob_checksum->value, expected_checksum);
+
+    ds3_str_free(blob_checksum);
+}
+
+BOOST_AUTO_TEST_CASE( get_blob_checksums_test ) {
+    ds3_string_multimap* response_headers = _get_head_object_test_headers();
+
+    ds3_uint64_string_map* checksums = get_blob_checksums(NULL, response_headers);
+    BOOST_CHECK(checksums != NULL);
+    BOOST_CHECK(ds3_uint64_string_map_size(checksums) == 3);
+
+    _verify_blob_checksum_value(checksums, 0, "4nQGNX4nyz0pi8Hvap79PQ==");
+    _verify_blob_checksum_value(checksums, 10485760, "965Aa0/n8DlO1IwXYFh4bg==");
+    _verify_blob_checksum_value(checksums, 20971520, "iV2OqJaXJ/jmqgRSb1HmFA==");
+
+    ds3_uint64_string_map_free(checksums);
+    ds3_string_multimap_free(response_headers);
+}
+
+BOOST_AUTO_TEST_CASE( get_blob_checksums_empty_map ) {
+    ds3_string_multimap* response_headers = ds3_string_multimap_init();
+
+    ds3_uint64_string_map* checksums = get_blob_checksums(NULL, response_headers);
+    BOOST_CHECK(checksums != NULL);
+    BOOST_CHECK(ds3_uint64_string_map_size(checksums) == 0);
+
+    ds3_uint64_string_map_free(checksums);
+    ds3_string_multimap_free(response_headers);
 }

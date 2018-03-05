@@ -28,6 +28,7 @@
 #include "ds3_connection.h"
 #include "ds3_request.h"
 #include "ds3_string_multimap_impl.h"
+#include "ds3_uint64_string_map.h"
 #include "ds3_utils.h"
 
 #ifdef _WIN32
@@ -400,6 +401,26 @@ ds3_bulk_object_list_response* ds3_init_bulk_object_list_with_size(size_t num_ob
 
     return obj_list;
 }
+
+//TODO begin added
+void ds3_head_object_response_free(ds3_head_object_response* response) {
+    if (response == NULL) {
+        return;
+    }
+    if (response->blob_checksum_type != NULL) {
+        g_free(response->blob_checksum_type);
+    }
+    if (response->metadata != NULL) {
+        ds3_metadata_free(response->metadata);
+    }
+    if (response->blob_checksums != NULL) {
+        ds3_uint64_string_map_free(response->blob_checksums);
+    }
+
+    g_free(response);
+}
+//TODO end added
+
 void ds3_multipart_upload_part_response_free(ds3_multipart_upload_part_response* response) {
     if (response == NULL) {
         return;

@@ -44,10 +44,11 @@ struct _ds3_uint64_string_map {
 typedef struct _ds3_uint64_string_map ds3_uint64_string_map;
 
 LIBRARY_API ds3_uint64_string_map* ds3_uint64_string_map_init(void);
-LIBRARY_API gboolean ds3_uint64_string_map_insert(ds3_uint64_string_map* map, uint64_t* key, const ds3_str* value);
+LIBRARY_API gboolean ds3_uint64_string_map_insert(ds3_uint64_string_map* map, const uint64_t* key, const ds3_str* value);
 LIBRARY_API gboolean ds3_uint64_string_map_contains(ds3_uint64_string_map* map, uint64_t* key);
 LIBRARY_API ds3_str* ds3_uint64_string_map_lookup(ds3_uint64_string_map* map, uint64_t* key);
 LIBRARY_API void     ds3_uint64_string_map_free(ds3_uint64_string_map* map);
+LIBRARY_API guint    ds3_uint64_string_map_size(ds3_uint64_string_map* map);
 
 // Used to iterate through a ds3_uint64_string_map
 struct _ds3_uint64_string_map_iter {
