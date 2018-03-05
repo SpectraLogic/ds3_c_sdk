@@ -43,6 +43,7 @@
 //The max size of an uint64_t is 20 characters + NULL
 #define STRING_BUFFER_SIZE 32
 
+
 struct _ds3_metadata {
     GHashTable* metadata;
 };
@@ -233,7 +234,6 @@ void ds3_metadata_keys_free(ds3_metadata_keys_result* metadata_keys) {
     }
     g_free(metadata_keys);
 }
-
 static bool attribute_equal(const struct _xmlAttr* attribute, const char* attribute_name) {
     return xmlStrcmp(attribute->name, (const xmlChar*) attribute_name) == 0;
 }
@@ -13537,7 +13537,6 @@ ds3_error* ds3_head_bucket_request(const ds3_client* client, const ds3_request* 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
-// TODO begin modified
 ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_head_object_response** response) {
     ds3_error* error;
     ds3_string_multimap* return_headers;
@@ -13563,7 +13562,6 @@ ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* 
 
     return error;
 }
-// TODO end modified
 
 ds3_error* ds3_initiate_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_initiate_multipart_upload_result_response** response) {
     ds3_error* error;

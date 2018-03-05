@@ -629,13 +629,11 @@ typedef enum {
     DS3_CHECKSUM_TYPE_SHA_512
 }ds3_checksum_type;
 
-//TODO manually added
 typedef struct {
     ds3_metadata* metadata;
     ds3_checksum_type *blob_checksum_type;
     ds3_uint64_string_map* blob_checksums;
 }ds3_head_object_response;
-//TODO end manually added
 
 typedef struct {
     ds3_str* data_policy_id;
@@ -2156,9 +2154,6 @@ typedef struct _ds3_client {
     ds3_connection_pool* connection_pool;
 }ds3_client;
 
-// TODO begin added
-LIBRARY_API void ds3_head_object_response_free(ds3_head_object_response* response);
-// TODO end added
 LIBRARY_API void ds3_azure_data_replication_rule_response_free(ds3_azure_data_replication_rule_response* response_data);
 LIBRARY_API void ds3_blob_response_free(ds3_blob_response* response_data);
 LIBRARY_API void ds3_bucket_response_free(ds3_bucket_response* response_data);
@@ -2353,6 +2348,7 @@ LIBRARY_API void ds3_list_multi_part_uploads_result_response_free(ds3_list_multi
 
 LIBRARY_API void ds3_request_free(ds3_request* request);
 LIBRARY_API void ds3_error_free(ds3_error* error);
+LIBRARY_API void ds3_head_object_response_free(ds3_head_object_response* response);
 LIBRARY_API void ds3_multipart_upload_part_response_free(ds3_multipart_upload_part_response* response);
 LIBRARY_API void ds3_complete_multipart_upload_response_free(ds3_complete_multipart_upload_response* response);
 LIBRARY_API void ds3_delete_objects_response_free(ds3_delete_objects_response* response);
