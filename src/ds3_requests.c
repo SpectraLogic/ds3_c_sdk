@@ -405,7 +405,7 @@ static ds3_error* _get_request_xml_nodes(
     return NULL;
 }
 
-static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type, ds3_job_chunk_client_processing_order_guarantee order) {
+static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type) {
     char size_buff[STRING_BUFFER_SIZE];
     xmlDocPtr doc;
     ds3_bulk_object_response* obj;
@@ -415,17 +415,6 @@ static xmlDocPtr _generate_xml_bulk_objects_list(const ds3_bulk_object_list_resp
     // Start creating the xml body to send to the server.
     doc = xmlNewDoc((xmlChar*)"1.0");
     objects_node = xmlNewNode(NULL, (xmlChar*) "Objects");
-
-    if (list_type == BULK_GET) {
-        if (order == DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE) {
-            xmlSetProp(objects_node, (xmlChar*) "ChunkClientProcessingOrderGuarantee", (const xmlChar *) "NONE");
-        } else if (order == DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_IN_ORDER) {
-            xmlSetProp(objects_node, (xmlChar*) "ChunkClientProcessingOrderGuarantee", (const xmlChar *) "IN_ORDER");
-        } else {
-            return NULL;
-        }
-    }
-
 
     for (obj_index = 0; obj_index < obj_list->num_objects; obj_index++) {
         obj = obj_list->objects[obj_index];
@@ -517,7 +506,7 @@ static ds3_error* _init_request_payload(const ds3_request* _request,
             if (request->object_list == NULL || request->object_list->num_objects == 0) {
                 return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bulk command requires a list of objects to process");
             }
-            doc = _generate_xml_bulk_objects_list(request->object_list, operation_type, request->chunk_ordering);
+            doc = _generate_xml_bulk_objects_list(request->object_list, operation_type);
             break;
 
         case COMPLETE_MPU:
