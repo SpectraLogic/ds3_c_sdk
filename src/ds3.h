@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
+#include "ds3_bool.h"
 #include "ds3_string.h"
 #include "ds3_string_multimap.h"
 #include "ds3_uint64_string_map.h"
@@ -69,10 +70,6 @@ typedef struct {
 }ds3_metadata_keys_result;
 
 typedef struct _ds3_metadata ds3_metadata;
-
-typedef enum {
-    False, True
-}ds3_bool;
 
 typedef enum {
     HTTP_GET,

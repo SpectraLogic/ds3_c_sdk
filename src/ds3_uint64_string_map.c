@@ -13,7 +13,18 @@
  * ****************************************************************************
  */
 
+#include <glib.h>
+
 #include "ds3_uint64_string_map.h"
+
+struct _ds3_uint64_string_map {
+    GHashTable* hash; //key is uint64_t*, value is ds3_str*
+};
+
+// Used to iterate through a ds3_uint64_string_map
+struct _ds3_uint64_string_map_iter {
+    GHashTableIter* g_iter;
+};
 
 static void _internal_uint64_free(gpointer data) {
     g_free((uint64_t*) data);
@@ -31,21 +42,29 @@ ds3_uint64_string_map* ds3_uint64_string_map_init(void) {
 }
 
 // Inserts a safe copy of the key-value pair into the map. Returns true if the key did not exist yet.
-gboolean ds3_uint64_string_map_insert(ds3_uint64_string_map* map, const uint64_t* key, const ds3_str* value) {
+ds3_bool ds3_uint64_string_map_insert(ds3_uint64_string_map* map, const uint64_t* key, const ds3_str* value) {
     if (map == NULL || map->hash == NULL) {
         return FALSE;
     }
     ds3_str* value_cpy = ds3_str_dup(value);
     uint64_t* key_cpy = g_new0(uint64_t, 1);
     *key_cpy = *key;
-    return g_hash_table_insert(map->hash, key_cpy, value_cpy);
+    gboolean result = g_hash_table_insert(map->hash, key_cpy, value_cpy);
+    if (result == FALSE) {
+        return False;
+    }
+    return True;
 }
 
-gboolean ds3_uint64_string_map_contains(ds3_uint64_string_map* map, uint64_t* key) {
+ds3_bool ds3_uint64_string_map_contains(ds3_uint64_string_map* map, uint64_t* key) {
     if (map == NULL || map->hash == NULL) {
         return FALSE;
     }
-    return g_hash_table_contains(map->hash, key);
+    gboolean result = g_hash_table_contains(map->hash, key);
+    if (result == FALSE) {
+        return False;
+    }
+    return True;
 }
 
 // Looks up the value for the provided key and returns a duplicate of the ds3_str value if found.
@@ -60,8 +79,8 @@ ds3_str* ds3_uint64_string_map_lookup(ds3_uint64_string_map* map, uint64_t* key)
     return ds3_str_dup((ds3_str*)value);
 }
 
-guint ds3_uint64_string_map_size(ds3_uint64_string_map* map) {
-    return g_hash_table_size(map->hash);
+uint64_t ds3_uint64_string_map_size(ds3_uint64_string_map* map) {
+    return (uint64_t) g_hash_table_size(map->hash);
 }
 
 void ds3_uint64_string_map_free(ds3_uint64_string_map* map) {

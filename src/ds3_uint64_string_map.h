@@ -17,10 +17,10 @@
 #define __DS3_UINT64_T_STRING_MAP__
 
 #include <stdlib.h>
-#include <glib.h>
 
-#include "ds3_string.h"
 #include "stdint.h"
+#include "ds3_bool.h"
+#include "ds3_string.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,23 +37,14 @@ extern "C" {
 #    define LIBRARY_API
 #endif
 
-struct _ds3_uint64_string_map {
-    GHashTable* hash; //key is uint64_t*, value is ds3_str*
-};
-
 typedef struct _ds3_uint64_string_map ds3_uint64_string_map;
 
 LIBRARY_API ds3_uint64_string_map* ds3_uint64_string_map_init(void);
-LIBRARY_API gboolean ds3_uint64_string_map_insert(ds3_uint64_string_map* map, const uint64_t* key, const ds3_str* value);
-LIBRARY_API gboolean ds3_uint64_string_map_contains(ds3_uint64_string_map* map, uint64_t* key);
+LIBRARY_API ds3_bool ds3_uint64_string_map_insert(ds3_uint64_string_map* map, const uint64_t* key, const ds3_str* value);
+LIBRARY_API ds3_bool ds3_uint64_string_map_contains(ds3_uint64_string_map* map, uint64_t* key);
 LIBRARY_API ds3_str* ds3_uint64_string_map_lookup(ds3_uint64_string_map* map, uint64_t* key);
 LIBRARY_API void     ds3_uint64_string_map_free(ds3_uint64_string_map* map);
-LIBRARY_API guint    ds3_uint64_string_map_size(ds3_uint64_string_map* map);
-
-// Used to iterate through a ds3_uint64_string_map
-struct _ds3_uint64_string_map_iter {
-    GHashTableIter* g_iter;
-};
+LIBRARY_API uint64_t    ds3_uint64_string_map_size(ds3_uint64_string_map* map);
 
 typedef struct _ds3_uint64_string_map_iter ds3_uint64_string_map_iter;
 
