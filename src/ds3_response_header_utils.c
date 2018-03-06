@@ -22,7 +22,7 @@
 
 // Converts a ds3_str* containing a checksum value into a ds3_checksum_type*.
 // If conversion is not possible, then NULL is returned.
-ds3_checksum_type* _convert_str_to_checksum_type(const ds3_log* log, const ds3_str* checksum_str) {
+static ds3_checksum_type* _convert_str_to_checksum_type(const ds3_log* log, const ds3_str* checksum_str) {
     if (checksum_str == NULL || checksum_str->value == NULL) {
         return NULL;
     }
@@ -76,7 +76,7 @@ ds3_checksum_type* get_blob_checksum_type(const ds3_log* log, ds3_string_multima
 }
 
 // Retrieves the offset value at the end of a blob checksum header
-uint64_t* _get_offset_from_key(const ds3_str* key) {
+static uint64_t* _get_offset_from_key(const ds3_str* key) {
     if (key == NULL) {
         return NULL;
     }
