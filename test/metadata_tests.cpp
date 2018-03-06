@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
-    ds3_metadata* metadata_result;
+    ds3_head_object_response* head_object_response;
     ds3_metadata_entry* metadata_entry;
     const char* file_name[1] = {"resources/beowulf.txt"};
     ds3_client* client = get_client();
@@ -63,20 +63,21 @@ BOOST_AUTO_TEST_CASE( put_metadata ) {
 
     request = ds3_init_head_object_request(bucket_name, "resources/beowulf.txt");
 
-    error = ds3_head_object_request(client, request, &metadata_result);
+    error = ds3_head_object_request(client, request, &head_object_response);
     ds3_request_free(request);
     handle_error(error);
-    BOOST_CHECK(metadata_result != NULL);
+    BOOST_CHECK(head_object_response != NULL);
+    BOOST_CHECK(head_object_response->metadata != NULL);
 
-    metadata_count = ds3_metadata_size(metadata_result);
+    metadata_count = ds3_metadata_size(head_object_response->metadata);
     BOOST_CHECK(metadata_count == 1);
 
-    metadata_entry = ds3_metadata_get_entry(metadata_result, "name");
+    metadata_entry = ds3_metadata_get_entry(head_object_response->metadata, "name");
     BOOST_CHECK(metadata_entry != NULL);
     BOOST_CHECK(g_strcmp0(metadata_entry->name->value, "name") == 0);
 
     ds3_metadata_entry_free(metadata_entry);
-    ds3_metadata_free(metadata_result);
+    ds3_head_object_response_free(head_object_response);
     clear_bucket(client, bucket_name);
     free_client(client);
 }
@@ -87,7 +88,7 @@ BOOST_AUTO_TEST_CASE( put_emtpy_metadata ) {
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
-    ds3_metadata* metadata_result;
+    ds3_head_object_response* head_object_response;
     ds3_metadata_entry* metadata_entry;
     const char* file_name[1] = {"resources/beowulf.txt"};
     ds3_client* client = get_client();
@@ -125,18 +126,18 @@ BOOST_AUTO_TEST_CASE( put_emtpy_metadata ) {
 
     request = ds3_init_head_object_request(bucket_name, "resources/beowulf.txt");
 
-    error = ds3_head_object_request(client, request, &metadata_result);
+    error = ds3_head_object_request(client, request, &head_object_response);
     ds3_request_free(request);
     handle_error(error);
 
-    metadata_count = ds3_metadata_size(metadata_result);
+    metadata_count = ds3_metadata_size(head_object_response->metadata);
     BOOST_CHECK(metadata_count == 0);
 
-    metadata_entry = ds3_metadata_get_entry(metadata_result, "name");
+    metadata_entry = ds3_metadata_get_entry(head_object_response->metadata, "name");
     BOOST_CHECK(metadata_entry == NULL);
 
     ds3_metadata_entry_free(metadata_entry);
-    ds3_metadata_free(metadata_result);
+    ds3_head_object_response_free(head_object_response);
     clear_bucket(client, bucket_name);
     free_client(client);
 }
@@ -147,7 +148,7 @@ BOOST_AUTO_TEST_CASE( put_null_metadata ) {
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
-    ds3_metadata* metadata_result;
+    ds3_head_object_response* head_object_response;
     ds3_metadata_entry* metadata_entry;
     const char* file_name[1] = {"resources/beowulf.txt"};
     ds3_client* client = get_client();
@@ -185,18 +186,18 @@ BOOST_AUTO_TEST_CASE( put_null_metadata ) {
 
     request = ds3_init_head_object_request(bucket_name, "resources/beowulf.txt");
 
-    error = ds3_head_object_request(client, request, &metadata_result);
+    error = ds3_head_object_request(client, request, &head_object_response);
     ds3_request_free(request);
     handle_error(error);
 
-    metadata_count = ds3_metadata_size(metadata_result);
+    metadata_count = ds3_metadata_size(head_object_response->metadata);
     BOOST_CHECK(metadata_count == 0);
 
-    metadata_entry = ds3_metadata_get_entry(metadata_result, "name");
+    metadata_entry = ds3_metadata_get_entry(head_object_response->metadata, "name");
     BOOST_CHECK(metadata_entry == NULL);
 
     ds3_metadata_entry_free(metadata_entry);
-    ds3_metadata_free(metadata_result);
+    ds3_head_object_response_free(head_object_response);
     clear_bucket(client, bucket_name);
     free_client(client);
 }
@@ -221,7 +222,7 @@ BOOST_AUTO_TEST_CASE( head_bucket ) {
 BOOST_AUTO_TEST_CASE( head_folder ) {
     printf("-----Testing head_folder-------\n");
 
-    ds3_metadata* metadata_result;
+    ds3_head_object_response* head_object_response;
     ds3_client* client = get_client();
     const char* bucket_name = "head_folder_test";
 
@@ -236,11 +237,11 @@ BOOST_AUTO_TEST_CASE( head_folder ) {
 
     request = ds3_init_head_object_request(bucket_name, test_folder);
 
-    error = ds3_head_object_request(client, request, &metadata_result);
+    error = ds3_head_object_request(client, request, &head_object_response);
     ds3_request_free(request);
     handle_error(error);
-    BOOST_CHECK(metadata_result != NULL);
-    ds3_metadata_free(metadata_result);
+    BOOST_CHECK(head_object_response->metadata != NULL);
+    ds3_head_object_response_free(head_object_response);
 
     clear_bucket(client, bucket_name);
     free_client(client);
@@ -252,7 +253,7 @@ BOOST_AUTO_TEST_CASE( put_multiple_metadata_items ) {
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
-    ds3_metadata* metadata_result;
+    ds3_head_object_response* head_object_response;
     ds3_metadata_entry* metadata_entry;
     const char* file_name[1] = {"resources/beowulf.txt"};
     //ds3_client* client = get_client_at_loglvl(DS3_DEBUG);
@@ -284,27 +285,27 @@ BOOST_AUTO_TEST_CASE( put_multiple_metadata_items ) {
     ds3_master_object_list_response_free(bulk_response);
 
     request = ds3_init_head_object_request(bucket_name, "resources/beowulf.txt");
-    error = ds3_head_object_request(client, request, &metadata_result);
+    error = ds3_head_object_request(client, request, &head_object_response);
     ds3_request_free(request);
     handle_error(error);
-    BOOST_CHECK(metadata_result != NULL);
+    BOOST_CHECK(head_object_response->metadata != NULL);
 
-    metadata_count = ds3_metadata_size(metadata_result);
+    metadata_count = ds3_metadata_size(head_object_response->metadata);
     BOOST_CHECK(metadata_count == 2);
 
-    metadata_entry = ds3_metadata_get_entry(metadata_result, "name");
+    metadata_entry = ds3_metadata_get_entry(head_object_response->metadata, "name");
     BOOST_CHECK(metadata_entry != NULL);
     BOOST_CHECK(g_strcmp0(metadata_entry->name->value, "name") == 0);
     BOOST_CHECK(g_strcmp0(metadata_entry->values[0]->value, "value") == 0);
     ds3_metadata_entry_free(metadata_entry);
 
-    metadata_entry = ds3_metadata_get_entry(metadata_result, "key");
+    metadata_entry = ds3_metadata_get_entry(head_object_response->metadata, "key");
     BOOST_CHECK(metadata_entry != NULL);
     BOOST_CHECK(g_strcmp0(metadata_entry->name->value, "key") == 0);
     BOOST_CHECK(g_strcmp0(metadata_entry->values[0]->value, "value2") == 0);
 
     ds3_metadata_entry_free(metadata_entry);
-    ds3_metadata_free(metadata_result);
+    ds3_head_object_response_free(head_object_response);
     clear_bucket(client, bucket_name);
     free_client(client);
 }
@@ -325,7 +326,7 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
     ds3_bulk_object_list_response* obj_list;
     uint64_t metadata_count;
     ds3_master_object_list_response* bulk_response;
-    ds3_metadata* metadata_result = NULL;
+    ds3_head_object_response* head_object_response;
     ds3_metadata_keys_result* metadata_keys = NULL;
 
     const char* file_name[1] = {"resources/beowulf.txt"};
@@ -360,15 +361,15 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
 
     request = ds3_init_head_object_request(bucket_name, "resources/beowulf.txt");
 
-    error = ds3_head_object_request(client, request, &metadata_result);
+    error = ds3_head_object_request(client, request, &head_object_response);
     ds3_request_free(request);
     handle_error(error);
-    BOOST_CHECK(metadata_result != NULL);
+    BOOST_CHECK(head_object_response->metadata != NULL);
 
-    metadata_count = ds3_metadata_size(metadata_result);
+    metadata_count = ds3_metadata_size(head_object_response->metadata);
     BOOST_CHECK(metadata_count == 2);
 
-    metadata_keys = ds3_metadata_keys(metadata_result);
+    metadata_keys = ds3_metadata_keys(head_object_response->metadata);
     BOOST_CHECK(metadata_keys != NULL);
 
     BOOST_CHECK(metadata_keys->num_keys == 2);
@@ -376,7 +377,7 @@ BOOST_AUTO_TEST_CASE( metadata_keys ) {
     BOOST_CHECK(contains_key(metadata_keys, "name"));
 
     ds3_metadata_keys_free(metadata_keys);
-    ds3_metadata_free(metadata_result);
+    ds3_head_object_response_free(head_object_response);
     clear_bucket(client, bucket_name);
     free_client(client);
 }
