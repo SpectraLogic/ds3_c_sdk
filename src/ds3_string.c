@@ -55,4 +55,3 @@ void ds3_str_free(ds3_str* string) {
     }
     g_free(string);
 }
-

@@ -79,6 +79,7 @@ add_executable(ds3_c_tests
   put_directory.cpp
   search_tests.cpp
   service_tests.cpp
+  unit_tests.cpp
   test.cpp)
 
 add_test(regression_tests ds3_c_tests)

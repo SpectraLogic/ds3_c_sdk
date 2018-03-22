@@ -24,7 +24,9 @@
 #include "ds3.h"
 #include "ds3_net.h"
 #include "ds3_request.h"
+#include "ds3_response_header_utils.h"
 #include "ds3_string_multimap_impl.h"
+#include "ds3_uint64_string_map.h"
 #include "ds3_utils.h"
 
 #ifdef _WIN32
@@ -13580,7 +13582,7 @@ ds3_error* ds3_head_bucket_request(const ds3_client* client, const ds3_request* 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
 
-ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_metadata** _metadata) {
+ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* request, ds3_head_object_response** response) {
     ds3_error* error;
     ds3_string_multimap* return_headers;
     ds3_metadata* metadata;
@@ -13595,8 +13597,11 @@ ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* 
     error = _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, &return_headers);
 
     if (error == NULL) {
-        metadata = _init_metadata(return_headers);
-        *_metadata = metadata;
+        ds3_head_object_response* response_ptr = g_new0(ds3_head_object_response, 1);
+        response_ptr->metadata = _init_metadata(return_headers);
+        response_ptr->blob_checksum_type = get_blob_checksum_type(client->log, return_headers);
+        response_ptr->blob_checksums = get_blob_checksums(client->log, return_headers);
+        *response = response_ptr;
         ds3_string_multimap_free(return_headers);
     }
 

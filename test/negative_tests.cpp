@@ -133,11 +133,11 @@ BOOST_AUTO_TEST_CASE(head_object_with_empty_object_name){
     handle_error(error);
 
     ds3_request* request = ds3_init_head_object_request(bucket_name, "");
-    ds3_metadata* response = NULL;
+    ds3_head_object_response* response = NULL;
     error = ds3_head_object_request(client, request, &response);
     ds3_request_free(request);
     clear_bucket(client, bucket_name);
-    ds3_metadata_free(response);
+    ds3_head_object_response_free(response);
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
@@ -156,11 +156,11 @@ BOOST_AUTO_TEST_CASE(head_object_with_null_object_name){
     handle_error(error);
 
     ds3_request* request = ds3_init_head_object_request(bucket_name, NULL);
-    ds3_metadata* response = NULL;
+    ds3_head_object_response* response = NULL;
     error = ds3_head_object_request(client, request, &response);
     ds3_request_free(request);
     clear_bucket(client, bucket_name);
-    ds3_metadata_free(response);
+    ds3_head_object_response_free(response);
     free_client(client);
 
     BOOST_REQUIRE(error != NULL);
