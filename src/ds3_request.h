@@ -43,6 +43,9 @@ struct _ds3_request{
     ds3_complete_multipart_upload_response*         mpu_list;
 
     ds3_delete_objects_response*                    delete_objects;
+
+    // Used for request payloads that marshal a list of ids
+    ds3_ids_list*                                   ids;
 };
 
 typedef struct {

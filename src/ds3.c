@@ -449,6 +449,19 @@ void ds3_delete_objects_response_free(ds3_delete_objects_response* response) {
     g_free(response);
 }
 
+void ds3_ids_list_free(ds3_ids_list* ids) {
+    if (ids == NULL) {
+        return;
+    }
+
+    int index;
+    for (index = 0; index < ids->num_strings; index++) {
+        ds3_str_free(ids->strings_list[index]);
+    }
+    g_free(ids->strings_list);
+    g_free(ids);
+}
+
 void ds3_head_object_response_free(ds3_head_object_response* response) {
     if (response == NULL) {
         return;

@@ -491,6 +491,27 @@ static xmlDocPtr _generate_xml_delete_objects(ds3_delete_objects_response* keys_
     return doc;
 }
 
+static xmlDocPtr _generate_xml_ids(ds3_ids_list* ids_list) {
+    xmlDocPtr doc;
+    ds3_str* key;
+    xmlNodePtr ids_node, id_node;
+    int id_num;
+
+    // Start creating the xml body to send to the server.
+    doc = xmlNewDoc((xmlChar*)"1.0");
+    ids_node = xmlNewNode(NULL, (xmlChar*) "Ids");
+
+    for (id_num = 0; id_num < ids_list->num_strings; id_num++) {
+        key = ids_list->strings_list[id_num];
+
+        xmlNewTextChild(id_node, NULL, (xmlChar*) "Id", (xmlChar*) key->value);
+        xmlAddChild(ids_node, id_node);
+    }
+
+    xmlDocSetRootElement(doc, ids_node);
+    return doc;
+}
+
 static ds3_error* _init_request_payload(const ds3_request* _request,
                                         ds3_xml_send_buff* send_buff,
                                         const object_list_type operation_type) {
@@ -524,6 +545,13 @@ static ds3_error* _init_request_payload(const ds3_request* _request,
                 return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The delete objects command requires a list of objects to process");
             }
             doc = _generate_xml_delete_objects(request->delete_objects);
+            break;
+
+        case ID_LIST:
+            if (request->ids == NULL || request->ids->num_strings == 0) {
+                return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The suspect blob command requires a list of ids to process");
+            }
+            doc = _generate_xml_ids(request->ids);
             break;
 
         case STRING: // *** not XML - do not interpret
