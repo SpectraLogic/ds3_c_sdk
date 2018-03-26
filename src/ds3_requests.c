@@ -344,6 +344,7 @@ typedef enum {
     COMPLETE_MPU,
     STRING,
     STRING_LIST,
+    ID_LIST,
     DATA
 }object_list_type;
 
@@ -14655,44 +14656,94 @@ ds3_error* ds3_modify_s3_data_replication_rule_spectra_s3_request(const ds3_clie
     return _parse_top_level_ds3_s3_data_replication_rule_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_clear_suspect_blob_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_clear_suspect_blob_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_clear_suspect_blob_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_clear_suspect_blob_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_clear_suspect_blob_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_get_degraded_azure_data_replication_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_list_response** response) {
     ds3_error* error;
@@ -15024,44 +15075,94 @@ ds3_error* ds3_get_suspect_objects_with_full_details_spectra_s3_request(const ds
     return _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_mark_suspect_blob_pools_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+    ds3_error* error;
+    ds3_xml_send_buff send_buff;
 
     if (request->path->size < 2) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
     }
 
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+    error = _init_request_payload(request, &send_buff, ID_LIST);
+    if (error != NULL) return error;
+
+    error = _internal_request_dispatcher(client, request, NULL, NULL, (void*) &send_buff, _ds3_send_xml_buff, NULL);
+
+    // Clean up the data sent to the server
+    xmlFree(send_buff.buff);
+
+    return error;
 }
 ds3_error* ds3_put_group_group_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_member_response** response) {
     ds3_error* error;

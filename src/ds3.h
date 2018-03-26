@@ -3079,35 +3079,35 @@ LIBRARY_API ds3_error* ds3_modify_s3_data_replication_rule_spectra_s3_request(co
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_azure_targets_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_azure_targets_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_clear_suspect_blob_azure_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_clear_suspect_blob_ds3_targets_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_ds3_targets_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_ds3_targets_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_clear_suspect_blob_ds3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_clear_suspect_blob_pools_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_pools_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_pools_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_clear_suspect_blob_pools_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_clear_suspect_blob_s3_targets_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_s3_targets_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_s3_targets_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_clear_suspect_blob_s3_targets_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_clear_suspect_blob_tapes_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_tapes_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_clear_suspect_blob_tapes_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_clear_suspect_blob_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_get_degraded_azure_data_replication_rules_spectra_s3_request
@@ -3290,35 +3290,35 @@ LIBRARY_API ds3_error* ds3_get_suspect_objects_with_full_details_spectra_s3_requ
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_mark_suspect_blob_pools_as_degraded_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_pools_as_degraded_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_pools_as_degraded_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_mark_suspect_blob_pools_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request
  *
  *   void ds3_request_set_force(const ds3_request* request, ds3_bool value)
  */
-LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(void);
+LIBRARY_API ds3_request* ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_ids_list* ids);
 LIBRARY_API ds3_error* ds3_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 LIBRARY_API ds3_request* ds3_init_put_group_group_member_spectra_s3_request(const char* group_id, const char* member_group_id);
 LIBRARY_API ds3_error* ds3_put_group_group_member_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_group_member_response** response);
