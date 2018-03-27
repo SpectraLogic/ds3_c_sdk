@@ -17,27 +17,17 @@
 #define __DS3_STRING_MULTIMAP__
 
 #include "ds3_string.h"
+#include "ds3_library_exports.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-// For windows DLL symbol exports.
-#ifdef _WIN32
-#    ifdef LIBRARY_EXPORTS
-#        define LIBRARY_API __declspec(dllexport)
-#    else
-#        define LIBRARY_API __declspec(dllimport)
-#    endif
-#else
-#    define LIBRARY_API
 #endif
 
 typedef struct _ds3_string_multimap       ds3_string_multimap;
 typedef struct _ds3_string_multimap_entry ds3_string_multimap_entry;
 
 
-//opertions for manipulating a hash map as a ds3_str multi map
+//operations for manipulating a hash map as a ds3_str multi map
 LIBRARY_API ds3_string_multimap*       ds3_string_multimap_init(void);
 LIBRARY_API void                       ds3_string_multimap_insert(ds3_string_multimap* map, const ds3_str* key, const ds3_str* value);
 LIBRARY_API void                       ds3_string_multimap_insert_entry(ds3_string_multimap* map, const ds3_string_multimap_entry* entry);  // caller frees all passed in values
@@ -45,7 +35,7 @@ LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_lookup(ds3_string_mul
 LIBRARY_API void                       ds3_string_multimap_free(ds3_string_multimap* map);
 
 
-//opertions for manipulating a ds3_string_multi_map_entry
+//operations for manipulating a ds3_string_multi_map_entry
 LIBRARY_API ds3_string_multimap_entry* ds3_string_multimap_entry_init(const ds3_str* key);
 LIBRARY_API ds3_str*                   ds3_string_multimap_entry_get_key(const ds3_string_multimap_entry* entry);
 LIBRARY_API void                       ds3_string_multimap_entry_add_value(ds3_string_multimap_entry* entry, const ds3_str* value);

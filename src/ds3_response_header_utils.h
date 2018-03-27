@@ -1,6 +1,6 @@
 /*
  * ******************************************************************************
- *   Copyright 2014-2017 Spectra Logic Corporation. All Rights Reserved.
+ *   Copyright 2014-2018 Spectra Logic Corporation. All Rights Reserved.
  *   Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *   this file except in compliance with the License. A copy of the License is located at
  *
@@ -13,27 +13,25 @@
  * ****************************************************************************
  */
 
-#ifndef __DS3_STRING__
-#define __DS3_STRING__
+
+#ifndef __DS3_RESPONSE_HEADER_UTILS__
+#define __DS3_RESPONSE_HEADER_UTILS__
 
 #include <stdlib.h>
+#include <glib.h>
+
+#include "ds3_string.h"
+#include "stdint.h"
+#include "ds3_string_multimap.h"
+#include "ds3.h"
 #include "ds3_library_exports.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct{
-    char* value;
-    size_t size;
-}ds3_str;
-
-LIBRARY_API ds3_str* ds3_str_init(const char* string);
-LIBRARY_API ds3_str* ds3_str_init_with_size(const char* string, size_t size);
-LIBRARY_API char* ds3_str_value(const ds3_str* string);
-LIBRARY_API size_t ds3_str_size(const ds3_str* string);
-LIBRARY_API ds3_str* ds3_str_dup(const ds3_str* string);
-LIBRARY_API void ds3_str_free(ds3_str* string);
+LIBRARY_API ds3_checksum_type* get_blob_checksum_type(const ds3_log* log, ds3_string_multimap* response_headers);
+LIBRARY_API ds3_uint64_string_map* get_blob_checksums(const ds3_log* log, ds3_string_multimap* response_headers);
 
 #ifdef __cplusplus
 }

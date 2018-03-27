@@ -28,6 +28,7 @@
 #include "ds3_connection.h"
 #include "ds3_request.h"
 #include "ds3_string_multimap_impl.h"
+#include "ds3_uint64_string_map.h"
 #include "ds3_utils.h"
 
 #ifdef _WIN32
@@ -360,7 +361,7 @@ ds3_bulk_object_list_response* ds3_convert_object_list(const ds3_contents_respon
     for (object_index = 0; object_index < num_objects; object_index++) {
         ds3_bulk_object_response* response = g_new0(ds3_bulk_object_response, 1);
         response->name = ds3_str_dup(objects[object_index]->key);
-        response->version = ds3_str_dup(objects[object_index]->version_id);
+        response->version_id = ds3_str_dup(objects[object_index]->version_id);
 
         g_ptr_array_add(ds3_bulk_object_response_array, response);
     }
@@ -445,6 +446,36 @@ void ds3_delete_objects_response_free(ds3_delete_objects_response* response) {
         ds3_str_free(response->strings_list[index]);
     }
     g_free(response->strings_list);
+    g_free(response);
+}
+
+void ds3_ids_list_free(ds3_ids_list* ids) {
+    if (ids == NULL) {
+        return;
+    }
+
+    int index;
+    for (index = 0; index < ids->num_strings; index++) {
+        ds3_str_free(ids->strings_list[index]);
+    }
+    g_free(ids->strings_list);
+    g_free(ids);
+}
+
+void ds3_head_object_response_free(ds3_head_object_response* response) {
+    if (response == NULL) {
+        return;
+    }
+    if (response->blob_checksum_type != NULL) {
+        g_free(response->blob_checksum_type);
+    }
+    if (response->metadata != NULL) {
+        ds3_metadata_free(response->metadata);
+    }
+    if (response->blob_checksums != NULL) {
+        ds3_uint64_string_map_free(response->blob_checksums);
+    }
+
     g_free(response);
 }
 
@@ -741,7 +772,6 @@ void ds3_s3_object_response_free(ds3_s3_object_response* response) {
     ds3_str_free(response->creation_date);
     ds3_str_free(response->id);
     ds3_str_free(response->name);
-    ds3_str_free(response->version);
 
     g_free(response);
 }
@@ -1088,7 +1118,6 @@ void ds3_suspect_blob_pool_response_free(ds3_suspect_blob_pool_response* respons
     ds3_str_free(response->date_written);
     ds3_str_free(response->id);
     ds3_str_free(response->last_accessed);
-    ds3_str_free(response->obsoletion_id);
     ds3_str_free(response->pool_id);
 
     g_free(response);
@@ -1100,7 +1129,6 @@ void ds3_suspect_blob_tape_response_free(ds3_suspect_blob_tape_response* respons
 
     ds3_str_free(response->blob_id);
     ds3_str_free(response->id);
-    ds3_str_free(response->obsoletion_id);
     ds3_str_free(response->tape_id);
 
     g_free(response);
@@ -2756,7 +2784,7 @@ void ds3_bulk_object_response_free(ds3_bulk_object_response* response) {
     ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_physical_placement_response_free(response->physical_placement);
-    ds3_str_free(response->version);
+    ds3_str_free(response->version_id);
 
     g_free(response);
 }
@@ -3000,7 +3028,6 @@ void ds3_detailed_s3_object_response_free(ds3_detailed_s3_object_response* respo
     ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_str_free(response->owner);
-    ds3_str_free(response->version);
 
     g_free(response);
 }

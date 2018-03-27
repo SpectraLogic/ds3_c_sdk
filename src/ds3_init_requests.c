@@ -104,8 +104,8 @@ static char* _get_ds3_tape_state_str(ds3_tape_state input) {
         return "ONLINE_PENDING";
     } else if (input == DS3_TAPE_STATE_ONLINE_IN_PROGRESS) {
         return "ONLINE_IN_PROGRESS";
-    } else if (input == DS3_TAPE_STATE_INSPECTION_PENDING) {
-        return "INSPECTION_PENDING";
+    } else if (input == DS3_TAPE_STATE_PENDING_INSPECTION) {
+        return "PENDING_INSPECTION";
     } else if (input == DS3_TAPE_STATE_UNKNOWN) {
         return "UNKNOWN";
     } else if (input == DS3_TAPE_STATE_DATA_CHECKPOINT_FAILURE) {
@@ -917,8 +917,8 @@ void ds3_request_set_auto_compaction_enabled(const ds3_request* request, ds3_boo
     _set_query_param_flag(request, "auto_compaction_enabled", value);
 
 }
-void ds3_request_set_auto_compaction_threshold_in_bytes(const ds3_request* request, const uint64_t value) {
-    _set_query_param_uint64_t(request, "auto_compaction_threshold_in_bytes", value);
+void ds3_request_set_auto_compaction_threshold(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "auto_compaction_threshold", value);
 
 }
 void ds3_request_set_auto_eject_media_full_threshold(const ds3_request* request, const uint64_t value) {
@@ -1009,10 +1009,6 @@ void ds3_request_set_cloud_bucket_suffix(const ds3_request* request, const char 
     _set_query_param(request, "cloud_bucket_suffix", value);
 
 }
-void ds3_request_set_conflict_resolution_mode(const ds3_request* request, const char * const value) {
-    _set_query_param(request, "conflict_resolution_mode", value);
-
-}
 void ds3_request_set_created_at(const ds3_request* request, const char * const value) {
     _set_query_param(request, "created_at", value);
 
@@ -1099,6 +1095,10 @@ void ds3_request_set_eject_label(const ds3_request* request, const char * const 
 }
 void ds3_request_set_eject_location(const ds3_request* request, const char * const value) {
     _set_query_param(request, "eject_location", value);
+
+}
+void ds3_request_set_end_date(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "end_date", value);
 
 }
 void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_bool value) {
@@ -1471,6 +1471,10 @@ void ds3_request_set_sort_by(const ds3_request* request, const char * const valu
 }
 void ds3_request_set_staged_data_expiration_in_days(const ds3_request* request, const int value) {
     _set_query_param_int(request, "staged_data_expiration_in_days", value);
+
+}
+void ds3_request_set_start_date(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "start_date", value);
 
 }
 void ds3_request_set_state_ds3_data_placement_rule_state(const ds3_request* request, const ds3_data_placement_rule_state value) {
@@ -2127,24 +2131,34 @@ ds3_request* ds3_init_modify_s3_data_replication_rule_spectra_s3_request(const c
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/s3_data_replication_rule/", resource_id, NULL));
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_clear_suspect_blob_azure_targets_spectra_s3_request(void) {
+ds3_request* ds3_init_clear_suspect_blob_azure_targets_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_azure_target/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_clear_suspect_blob_ds3_targets_spectra_s3_request(void) {
+ds3_request* ds3_init_clear_suspect_blob_ds3_targets_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_ds3_target/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_clear_suspect_blob_pools_spectra_s3_request(void) {
+ds3_request* ds3_init_clear_suspect_blob_pools_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_pool/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_clear_suspect_blob_s3_targets_spectra_s3_request(void) {
+ds3_request* ds3_init_clear_suspect_blob_s3_targets_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_s3_target/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_clear_suspect_blob_tapes_spectra_s3_request(void) {
+ds3_request* ds3_init_clear_suspect_blob_tapes_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_degraded_azure_data_replication_rules_spectra_s3_request(void) {
@@ -2205,24 +2219,34 @@ ds3_request* ds3_init_get_suspect_objects_with_full_details_spectra_s3_request(v
 
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(void) {
+ds3_request* ds3_init_mark_suspect_blob_azure_targets_as_degraded_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_azure_target/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(void) {
+ds3_request* ds3_init_mark_suspect_blob_ds3_targets_as_degraded_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_ds3_target/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_pools_as_degraded_spectra_s3_request(void) {
+ds3_request* ds3_init_mark_suspect_blob_pools_as_degraded_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_pool/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(void) {
+ds3_request* ds3_init_mark_suspect_blob_s3_targets_as_degraded_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_s3_target/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(void) {
+ds3_request* ds3_init_mark_suspect_blob_tapes_as_degraded_spectra_s3_request(const ds3_ids_list* ids) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/suspect_blob_tape/", NULL, NULL));
+    request->ids = (ds3_ids_list*) ids;
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_group_group_member_spectra_s3_request(const char* group_id, const char* member_group_id) {
@@ -2426,9 +2450,11 @@ ds3_request* ds3_init_replicate_put_job_spectra_s3_request(const char *const res
         request->delete_objects->strings_list[0]->size = strlen(payload);    }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_stage_objects_job_spectra_s3_request(const char *const resource_id) {
+ds3_request* ds3_init_stage_objects_job_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "START_BULK_STAGE");
+
+    request->object_list = (ds3_bulk_object_list_response*) object_list;
 
     return (ds3_request*) request;
 }
@@ -2781,6 +2807,16 @@ ds3_request* ds3_init_get_physical_placement_for_objects_with_full_details_spect
 
     request->object_list = (ds3_bulk_object_list_response*) object_list;
 
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_undelete_object_spectra_s3_request(const char* bucket_id, const char* name) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/object/", NULL, NULL));
+    if (bucket_id != NULL) {
+        _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
+    }
+    if (name != NULL) {
+        _set_query_param((ds3_request*) request, "name", name);
+    }
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_verify_physical_placement_for_objects_spectra_s3_request(const char *const resource_id, const ds3_bulk_object_list_response* object_list) {
