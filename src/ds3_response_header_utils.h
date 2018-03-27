@@ -24,20 +24,10 @@
 #include "stdint.h"
 #include "ds3_string_multimap.h"
 #include "ds3.h"
+#include "ds3_library_exports.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-// For windows DLL symbol exports.
-#ifdef _WIN32
-#    ifdef LIBRARY_EXPORTS
-#        define LIBRARY_API __declspec(dllexport)
-#    else
-#        define LIBRARY_API __declspec(dllimport)
-#    endif
-#else
-#    define LIBRARY_API
 #endif
 
 LIBRARY_API ds3_checksum_type* get_blob_checksum_type(const ds3_log* log, ds3_string_multimap* response_headers);
