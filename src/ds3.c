@@ -1218,7 +1218,6 @@ void ds3_tape_partition_response_free(ds3_tape_partition_response* response) {
     ds3_str_free(response->id);
     ds3_str_free(response->library_id);
     ds3_str_free(response->name);
-    ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
 
     g_free(response);
@@ -1680,7 +1679,6 @@ void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_respo
     ds3_str_free(response->id);
     ds3_str_free(response->library_id);
     ds3_str_free(response->name);
-    ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
     for (index = 0; index < response->num_tape_types; index++) {
         ds3_str_free(response->tape_types[index]);
@@ -1781,7 +1779,6 @@ void ds3_named_detailed_tape_partition_response_free(ds3_named_detailed_tape_par
     ds3_str_free(response->id);
     ds3_str_free(response->library_id);
     ds3_str_free(response->name);
-    ds3_str_free(response->serial_id);
     ds3_str_free(response->serial_number);
     for (index = 0; index < response->num_tape_types; index++) {
         ds3_str_free(response->tape_types[index]);
