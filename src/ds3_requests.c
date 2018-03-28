@@ -4068,8 +4068,6 @@ static ds3_error* _parse_ds3_tape_partition_response(const ds3_client* client, c
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
-        } else if (element_equal(child_node, "SerialId")) {
-            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -5350,8 +5348,6 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
-        } else if (element_equal(child_node, "SerialId")) {
-            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -8795,8 +8791,6 @@ static ds3_error* _parse_top_level_ds3_tape_partition_response(const ds3_client*
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
-        } else if (element_equal(child_node, "SerialId")) {
-            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {
@@ -9526,8 +9520,6 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
             }
             response->quiesced = _match_ds3_quiesced(client->log, text);
             xmlFree(text);
-        } else if (element_equal(child_node, "SerialId")) {
-            response->serial_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "State")) {

@@ -1239,7 +1239,6 @@ typedef struct {
     int minimum_write_reserved_drives;
     ds3_str* name;
     ds3_quiesced quiesced;
-    ds3_str* serial_id;
     ds3_str* serial_number;
     ds3_tape_partition_state state;
 }ds3_tape_partition_response;
@@ -1516,7 +1515,6 @@ typedef struct {
     int minimum_write_reserved_drives;
     ds3_str* name;
     ds3_quiesced quiesced;
-    ds3_str* serial_id;
     ds3_str* serial_number;
     ds3_tape_partition_state state;
     ds3_str** tape_types;
@@ -1577,7 +1575,6 @@ typedef struct {
     int minimum_write_reserved_drives;
     ds3_str* name;
     ds3_quiesced quiesced;
-    ds3_str* serial_id;
     ds3_str* serial_number;
     ds3_tape_partition_state state;
     ds3_str** tape_types;
@@ -4588,6 +4585,7 @@ LIBRARY_API ds3_error* ds3_modify_tape_drive_spectra_s3_request(const ds3_client
  *   void ds3_request_set_minimum_read_reserved_drives(const ds3_request* request, const int value)
  *   void ds3_request_set_minimum_write_reserved_drives(const ds3_request* request, const int value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
+ *   void ds3_request_set_serial_number(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_modify_tape_partition_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_modify_tape_partition_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_partition_response** response);
