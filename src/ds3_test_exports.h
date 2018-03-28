@@ -13,18 +13,18 @@
  * ****************************************************************************
  */
 
-#ifndef DS3_LIBRARY_EXPORTS_H
-#define DS3_LIBRARY_EXPORTS_H
+#ifndef DS3_TEST_EXPORTS_H
+#define DS3_TEST_EXPORTS_H
 
-// For windows DLL symbol exports.
+// For windows unit test symbol exports.
 #ifdef _WIN32
-#    ifdef LIBRARY_EXPORTS
-#        define LIBRARY_API __declspec(dllexport)
+#    ifdef TEST_EXPORTS
+#        define TEST_API __declspec(testexport)
 #    else
-#        define LIBRARY_API __declspec(dllimport)
+#        define TEST_API __declspec(testimport)
 #    endif
 #else
-#    define LIBRARY_API
+#    define TEST_API
 #endif
 
 #endif
