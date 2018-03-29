@@ -11,7 +11,7 @@ add_library(ds3 SHARED
             ds3_response_header_utils.h ds3_response_header_utils.c
             ds3_bool.h
             ds3_library_exports.h
-            ds3_test_exports.h)
+            ds3_marshaling.h)
 
 if (WIN32)
     set(CMAKE_BUILD_TYPE Release)
@@ -90,7 +90,7 @@ else(WIN32)
                 "ds3_response_header_utils.h"
                 "ds3_bool.h"
                 "ds3_library_exports.h"
-                "ds3_test_exports.h"
+                "ds3_marshaling.h"
             DESTINATION
                 "/usr/local/include")
     install(TARGETS ds3 DESTINATION lib)

@@ -16,7 +16,6 @@
 #ifndef DS3_MARSHALING_H
 #define DS3_MARSHALING_H
 
-#include "ds3_test_exports.h"
 #include <libxml/parser.h>
 
 #ifdef __cplusplus
@@ -41,10 +40,10 @@ typedef struct {
     size_t total_read;
 }ds3_xml_send_buff;
 
-TEST_API xmlDocPtr ds3_generate_xml_ids(ds3_ids_list* ids_list);
-TEST_API xmlDocPtr ds3_generate_xml_delete_objects(ds3_delete_objects_response* keys_list);
-TEST_API xmlDocPtr ds3_generate_xml_complete_mpu(const ds3_complete_multipart_upload_response* mpu_list);
-TEST_API xmlDocPtr ds3_generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type);
+xmlDocPtr ds3_generate_xml_ids(ds3_ids_list* ids_list);
+xmlDocPtr ds3_generate_xml_delete_objects(ds3_delete_objects_response* keys_list);
+xmlDocPtr ds3_generate_xml_complete_mpu(const ds3_complete_multipart_upload_response* mpu_list);
+xmlDocPtr ds3_generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type);
 
 #ifdef __cplusplus
 }
