@@ -13,18 +13,39 @@
  * ****************************************************************************
  */
 
-#ifndef DS3_LIBRARY_EXPORTS_H
-#define DS3_LIBRARY_EXPORTS_H
+#ifndef DS3_MARSHALING_H
+#define DS3_MARSHALING_H
 
-// For windows DLL symbol exports.
-#ifdef _WIN32
-#    ifdef LIBRARY_EXPORTS
-#        define LIBRARY_API __declspec(dllexport)
-#    else
-#        define LIBRARY_API __declspec(dllimport)
-#    endif
-#else
-#    define LIBRARY_API
+#include <libxml/parser.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+typedef enum {
+    BULK_PUT,
+    BULK_GET,
+    BULK_DELETE,
+    GET_PHYSICAL_PLACEMENT,
+    COMPLETE_MPU,
+    STRING,
+    STRING_LIST,
+    ID_LIST,
+    DATA
+}object_list_type;
+
+typedef struct {
+    char* buff;
+    size_t size;
+    size_t total_read;
+}ds3_xml_send_buff;
+
+xmlDocPtr ds3_generate_xml_ids(ds3_ids_list* ids_list);
+xmlDocPtr ds3_generate_xml_delete_objects(ds3_delete_objects_response* keys_list);
+xmlDocPtr ds3_generate_xml_complete_mpu(const ds3_complete_multipart_upload_response* mpu_list);
+xmlDocPtr ds3_generate_xml_bulk_objects_list(const ds3_bulk_object_list_response* obj_list, object_list_type list_type);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

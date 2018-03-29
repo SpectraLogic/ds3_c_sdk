@@ -8,6 +8,27 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../modules/")
 
 add_definitions(-DCURL_STATICLIB)
 
+add_executable(ds3_c_tests
+        bucket_tests.cpp
+        bulk_get.cpp
+        bulk_put.cpp
+        checksum.cpp
+        connection_tests.cpp
+        deletes_test.cpp
+        get_object.cpp
+        get_physical_placement.cpp
+        job_tests.cpp
+        metadata_tests.cpp
+        multimap_tests.cpp
+        negative_tests.cpp
+        put_directory.cpp
+        search_tests.cpp
+        service_tests.cpp
+        unit_tests.cpp
+        test.cpp)
+
+add_test(regression_tests ds3_c_tests)
+
 if (WIN32)
   find_package(Boost 1.59.0)
   include_directories(${Boost_INCLUDE_DIRS})
@@ -33,7 +54,16 @@ if (WIN32)
     set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${WINDOWS_VS_OUTPUT_DIR} )
   endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
+  target_link_libraries(ds3_c_tests ${WINDOWS_INSTALL_LIB_DIR}/libxml2_a.lib)
+
 else(WIN32) # POSIX
+  find_package(LibXml2 2.9 REQUIRED)
+
+  if (LIBXML2_FOUND)
+    include_directories(${LIBXML2_INCLUDE_DIR})
+    target_link_libraries (ds3_c_tests ${LIBXML2_LIBRARIES})
+  endif (LIBXML2_FOUND)
+
   add_definitions(-DBOOST_TEST_DYN_LINK)
   set(CMAKE_CXX_FLAGS "-g -Wall")
 
@@ -62,27 +92,6 @@ else(WIN32) # POSIX
   set(CMAKE_BUILD_TYPE Release)
   #set(CMAKE_BUILD_TYPE Debug)
 endif(WIN32)
-
-add_executable(ds3_c_tests
-  bucket_tests.cpp
-  bulk_get.cpp
-  bulk_put.cpp
-  checksum.cpp
-  connection_tests.cpp
-  deletes_test.cpp
-  get_object.cpp
-  get_physical_placement.cpp
-  job_tests.cpp
-  metadata_tests.cpp
-  multimap_tests.cpp
-  negative_tests.cpp
-  put_directory.cpp
-  search_tests.cpp
-  service_tests.cpp
-  unit_tests.cpp
-  test.cpp)
-
-add_test(regression_tests ds3_c_tests)
 
 target_link_libraries(ds3_c_tests ds3 glib-2.0 boost_unit_test_framework)
 
