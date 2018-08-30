@@ -5114,6 +5114,8 @@ static ds3_error* _parse_ds3_delete_object_error_response(const ds3_client* clie
             response->key = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Message")) {
             response->message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "VersionId")) {
+            response->version_id = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_delete_object_error_response [%s]\n", child_node->name, root->name);
         }
@@ -5224,6 +5226,8 @@ static ds3_error* _parse_ds3_s3_object_to_delete_response(const ds3_client* clie
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "Key")) {
             response->key = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "VersionId")) {
+            response->version_id = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_s3_object_to_delete_response [%s]\n", child_node->name, root->name);
         }

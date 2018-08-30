@@ -1501,6 +1501,7 @@ typedef struct {
     ds3_str* code;
     ds3_str* key;
     ds3_str* message;
+    ds3_str* version_id;
 }ds3_delete_object_error_response;
 typedef struct {
     ds3_bool auto_compaction_enabled;
@@ -1545,6 +1546,7 @@ typedef struct {
 }ds3_job_node_response;
 typedef struct {
     ds3_str* key;
+    ds3_str* version_id;
 }ds3_s3_object_to_delete_response;
 typedef struct {
     ds3_str* display_name;
@@ -1964,6 +1966,7 @@ typedef struct {
     size_t num_objects_not_persisted;
 }ds3_job_completed_notification_payload_response;
 typedef struct {
+    ds3_str* error_message;
     ds3_str* notification_generation_date;
     ds3_tapes_must_be_onlined_response* tapes_must_be_onlined;
     ds3_str* user_name;
@@ -5021,6 +5024,7 @@ LIBRARY_API ds3_error* ds3_verify_s3_target_spectra_s3_request(const ds3_client*
  * Optional Request Modifiers for ds3_init_delegate_create_user_spectra_s3_request
  *
  *   void ds3_request_set_id(const ds3_request* request, const char * const value)
+ *   void ds3_request_set_max_buckets(const ds3_request* request, const int value)
  *   void ds3_request_set_secret_key(const ds3_request* request, const char * const value)
  */
 LIBRARY_API ds3_request* ds3_init_delegate_create_user_spectra_s3_request(const char* name);
