@@ -1665,6 +1665,7 @@ void ds3_delete_object_error_response_free(ds3_delete_object_error_response* res
     ds3_str_free(response->code);
     ds3_str_free(response->key);
     ds3_str_free(response->message);
+    ds3_str_free(response->version_id);
 
     g_free(response);
 }
@@ -1735,6 +1736,7 @@ void ds3_s3_object_to_delete_response_free(ds3_s3_object_to_delete_response* res
     }
 
     ds3_str_free(response->key);
+    ds3_str_free(response->version_id);
 
     g_free(response);
 }
@@ -2819,6 +2821,7 @@ void ds3_job_creation_failed_notification_payload_response_free(ds3_job_creation
         return;
     }
 
+    ds3_str_free(response->error_message);
     ds3_str_free(response->notification_generation_date);
     ds3_tapes_must_be_onlined_response_free(response->tapes_must_be_onlined);
     ds3_str_free(response->user_name);
