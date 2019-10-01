@@ -364,7 +364,7 @@ static ds3_error* _get_request_xml_nodes(
         char* root_element_name) {
     xmlNodePtr root;
 
-    xmlDocPtr doc = xmlParseMemory((const char*) xml_blob->data, xml_blob->len);
+    xmlDocPtr doc = xmlReadMemory((const char*) xml_blob->data, xml_blob->len, NULL, NULL, XML_PARSE_HUGE);
     if (doc == NULL) {
         char* message = g_strconcat("Failed to parse response document.  The actual response is: ", xml_blob->data, NULL);
         g_byte_array_free(xml_blob, TRUE);
