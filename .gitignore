@@ -53,4 +53,4 @@ install_manifest.txt
 # eclipse IDE config files
 .cproject
 .project
-
+*.cbp
