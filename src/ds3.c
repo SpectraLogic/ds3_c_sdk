@@ -857,6 +857,34 @@ void ds3_azure_target_failure_notification_registration_response_free(ds3_azure_
 
     g_free(response);
 }
+void ds3_bucket_changes_notification_registration_response_free(ds3_bucket_changes_notification_registration_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->creation_date);
+    ds3_str_free(response->id);
+    ds3_str_free(response->last_failure);
+    ds3_str_free(response->last_notification);
+    ds3_str_free(response->notification_end_point);
+    ds3_str_free(response->user_id);
+
+    g_free(response);
+}
+void ds3_bucket_history_event_response_free(ds3_bucket_history_event_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->object_creation_date);
+    ds3_str_free(response->object_name);
+    ds3_str_free(response->version_id);
+
+    g_free(response);
+}
 void ds3_target_failure_notification_registration_response_free(ds3_target_failure_notification_registration_response* response) {
     if (response == NULL) {
         return;
@@ -1839,6 +1867,15 @@ void ds3_duration_response_free(ds3_duration_response* response) {
 
     g_free(response);
 }
+void ds3_sequenced_event_response_free(ds3_sequenced_event_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->id);
+
+    g_free(response);
+}
 void ds3_bucket_acl_list_response_free(ds3_bucket_acl_list_response* response) {
     if (response == NULL) {
         return;
@@ -2157,6 +2194,34 @@ void ds3_azure_target_failure_notification_registration_list_response_free(ds3_a
         ds3_azure_target_failure_notification_registration_response_free(response->azure_target_failure_notification_registrations[index]);
     }
     g_free(response->azure_target_failure_notification_registrations);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_bucket_changes_notification_registration_list_response_free(ds3_bucket_changes_notification_registration_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_bucket_changes_notification_registrations; index++) {
+        ds3_bucket_changes_notification_registration_response_free(response->bucket_changes_notification_registrations[index]);
+    }
+    g_free(response->bucket_changes_notification_registrations);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_bucket_history_event_list_response_free(ds3_bucket_history_event_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_bucket_history_events; index++) {
+        ds3_bucket_history_event_response_free(response->bucket_history_events[index]);
+    }
+    g_free(response->bucket_history_events);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -2798,6 +2863,20 @@ void ds3_bulk_object_list_response_free(ds3_bulk_object_list_response* response)
     }
     g_free(response->objects);
     ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_bucket_changes_notification_payload_response_free(ds3_bucket_changes_notification_payload_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_changes; index++) {
+        ds3_sequenced_event_response_free(response->changes[index]);
+    }
+    g_free(response->changes);
+    ds3_str_free(response->notification_generation_date);
 
     g_free(response);
 }

@@ -266,6 +266,8 @@ static char* _get_ds3_s3_initial_data_placement_policy_str(ds3_s3_initial_data_p
         return "STANDARD_IA";
     } else if (input == DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_GLACIER) {
         return "GLACIER";
+    } else if (input == DS3_S3_INITIAL_DATA_PLACEMENT_POLICY_DEEP_ARCHIVE) {
+        return "DEEP_ARCHIVE";
     } else {
         return "";
     }
@@ -496,12 +498,16 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
         return "LTO7";
     } else if (input == DS3_TAPE_DRIVE_TYPE_LTO8) {
         return "LTO8";
+    } else if (input == DS3_TAPE_DRIVE_TYPE_LTO9) {
+        return "LTO9";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1140) {
         return "TS1140";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1150) {
         return "TS1150";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1155) {
         return "TS1155";
+    } else if (input == DS3_TAPE_DRIVE_TYPE_TS1160) {
+        return "TS1160";
     } else {
         return "";
     }
@@ -701,17 +707,31 @@ static char* _get_ds3_target_access_control_replication_str(ds3_target_access_co
     }
 
 }
+static char* _get_ds3_cloud_naming_mode_str(ds3_cloud_naming_mode input) {
+    if (input == DS3_CLOUD_NAMING_MODE_BLACK_PEARL) {
+        return "BLACK_PEARL";
+    } else if (input == DS3_CLOUD_NAMING_MODE_AWS_S3) {
+        return "AWS_S3";
+    } else {
+        return "";
+    }
+
+}
 static char* _get_ds3_s3_region_str(ds3_s3_region input) {
     if (input == DS3_S3_REGION_GOV_CLOUD) {
         return "GOV_CLOUD";
     } else if (input == DS3_S3_REGION_US_EAST_1) {
         return "US_EAST_1";
+    } else if (input == DS3_S3_REGION_US_EAST_2) {
+        return "US_EAST_2";
     } else if (input == DS3_S3_REGION_US_WEST_1) {
         return "US_WEST_1";
     } else if (input == DS3_S3_REGION_US_WEST_2) {
         return "US_WEST_2";
     } else if (input == DS3_S3_REGION_EU_WEST_1) {
         return "EU_WEST_1";
+    } else if (input == DS3_S3_REGION_EU_WEST_2) {
+        return "EU_WEST_2";
     } else if (input == DS3_S3_REGION_EU_CENTRAL_1) {
         return "EU_CENTRAL_1";
     } else if (input == DS3_S3_REGION_AP_SOUTH_1) {
@@ -728,6 +748,8 @@ static char* _get_ds3_s3_region_str(ds3_s3_region input) {
         return "SA_EAST_1";
     } else if (input == DS3_S3_REGION_CN_NORTH_1) {
         return "CN_NORTH_1";
+    } else if (input == DS3_S3_REGION_CA_CENTRAL_1) {
+        return "CA_CENTRAL_1";
     } else {
         return "";
     }
@@ -987,6 +1009,10 @@ void ds3_request_set_burst_threshold(const ds3_request* request, const float val
 }
 void ds3_request_set_cache_available_retry_after_in_seconds(const ds3_request* request, const int value) {
     _set_query_param_int(request, "cache_available_retry_after_in_seconds", value);
+
+}
+void ds3_request_set_cached_only(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "cached_only", value);
 
 }
 void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value) {
@@ -1277,6 +1303,10 @@ void ds3_request_set_member_user_id(const ds3_request* request, const char * con
     _set_query_param(request, "member_user_id", value);
 
 }
+void ds3_request_set_min_sequence_number(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "min_sequence_number", value);
+
+}
 void ds3_request_set_minimize_spanning_across_media(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "minimize_spanning_across_media", value);
 
@@ -1289,6 +1319,10 @@ void ds3_request_set_minimum_read_reserved_drives(const ds3_request* request, co
     _set_query_param_int(request, "minimum_read_reserved_drives", value);
 
 }
+void ds3_request_set_minimum_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
+    _set_query_param(request, "minimum_task_priority", (const char*)_get_ds3_priority_str(value));
+
+}
 void ds3_request_set_minimum_write_reserved_drives(const ds3_request* request, const int value) {
     _set_query_param_int(request, "minimum_write_reserved_drives", value);
 
@@ -1299,6 +1333,10 @@ void ds3_request_set_name(const ds3_request* request, const char * const value) 
 }
 void ds3_request_set_naming_convention_ds3_naming_convention_type(const ds3_request* request, const ds3_naming_convention_type value) {
     _set_query_param(request, "naming_convention", (const char*)_get_ds3_naming_convention_type_str(value));
+
+}
+void ds3_request_set_naming_mode_ds3_cloud_naming_mode(const ds3_request* request, const ds3_cloud_naming_mode value) {
+    _set_query_param(request, "naming_mode", (const char*)_get_ds3_cloud_naming_mode_str(value));
 
 }
 void ds3_request_set_node_id(const ds3_request* request, const char * const value) {
@@ -1381,6 +1419,10 @@ void ds3_request_set_powered_on(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "powered_on", value);
 
 }
+void ds3_request_set_pre_allocate_job_space(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "pre_allocate_job_space", value);
+
+}
 void ds3_request_set_preferred_number_of_chunks(const ds3_request* request, const int value) {
     _set_query_param_int(request, "preferred_number_of_chunks", value);
 
@@ -1453,6 +1495,10 @@ void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request
     _set_query_param(request, "reserved_task_type", (const char*)_get_ds3_reserved_task_type_str(value));
 
 }
+void ds3_request_set_restricted_access(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "restricted_access", value);
+
+}
 void ds3_request_set_secret_key(const ds3_request* request, const char * const value) {
     _set_query_param(request, "secret_key", value);
 
@@ -1463,6 +1509,10 @@ void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_boo
 }
 void ds3_request_set_serial_number(const ds3_request* request, const char * const value) {
     _set_query_param(request, "serial_number", value);
+
+}
+void ds3_request_set_size(const ds3_request* request, const uint64_t value) {
+    _set_query_param_uint64_t(request, "size", value);
 
 }
 void ds3_request_set_sort_by(const ds3_request* request, const char * const value) {
@@ -1726,6 +1776,16 @@ ds3_request* ds3_init_abort_multi_part_upload_request(const char *const bucket_n
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, object_name));
     if (upload_id != NULL) {
         _set_query_param((ds3_request*) request, "upload_id", upload_id);
+    }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_complete_blob_request(const char *const bucket_name, const char *const object_name, const char* blob, const char* job) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/", bucket_name, object_name));
+    if (blob != NULL) {
+        _set_query_param((ds3_request*) request, "blob", blob);
+    }
+    if (job != NULL) {
+        _set_query_param((ds3_request*) request, "job", job);
     }
     return (ds3_request*) request;
 }
@@ -2499,6 +2559,13 @@ ds3_request* ds3_init_put_azure_target_failure_notification_registration_spectra
     }
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_put_bucket_changes_notification_registration_spectra_s3_request(const char* notification_end_point) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/bucket_changes_notification_registration/", NULL, NULL));
+    if (notification_end_point != NULL) {
+        _set_query_param((ds3_request*) request, "notification_end_point", notification_end_point);
+    }
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_put_ds3_target_failure_notification_registration_spectra_s3_request(const char* notification_end_point) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/ds3_target_failure_notification_registration/", NULL, NULL));
     if (notification_end_point != NULL) {
@@ -2594,6 +2661,10 @@ ds3_request* ds3_init_delete_azure_target_failure_notification_registration_spec
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/azure_target_failure_notification_registration/", resource_id, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_delete_bucket_changes_notification_registration_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/bucket_changes_notification_registration/", resource_id, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_delete_ds3_target_failure_notification_registration_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/ds3_target_failure_notification_registration/", NULL, NULL));
     return (ds3_request*) request;
@@ -2652,6 +2723,18 @@ ds3_request* ds3_init_get_azure_target_failure_notification_registration_spectra
 }
 ds3_request* ds3_init_get_azure_target_failure_notification_registrations_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/azure_target_failure_notification_registration/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_bucket_changes_notification_registration_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket_changes_notification_registration/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_bucket_changes_notification_registrations_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket_changes_notification_registration/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_bucket_history_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/bucket_history/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_ds3_target_failure_notification_registration_spectra_s3_request(void) {
