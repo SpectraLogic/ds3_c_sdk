@@ -588,7 +588,6 @@ ds3_error* net_process_request(const ds3_client* client,
                 }
                 ds3_string_multimap_free(response_headers);
                 ds3_str_free(response_data.status_message);
-                g_free(url);
 
                 if (response_data.status_code == 307) {
                     ds3_log_message(client->log, DS3_INFO, "Request encountered a 307 redirect");
@@ -601,9 +600,11 @@ ds3_error* net_process_request(const ds3_client* client,
                         error->message = ds3_str_init("Encountered too many redirects while attempting to fulfill the request");
                         error->code = DS3_ERROR_TOO_MANY_REDIRECTS;
                     } else {
+                        ds3_error_free(error);
                         continue;
                     }
                 }
+                g_free(url);
                 return error;
             }
             g_byte_array_free(response_data.body, TRUE);
