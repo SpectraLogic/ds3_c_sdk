@@ -558,10 +558,14 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "DRIVE_CLEAN_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_CLEANED) {
         return "DRIVE_CLEANED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_ENCRYPTION_ERROR) {
+        return "ENCRYPTION_ERROR";
     } else if (input == DS3_TAPE_FAILURE_TYPE_FORMAT_FAILED) {
         return "FORMAT_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_GET_TAPE_INFORMATION_FAILED) {
         return "GET_TAPE_INFORMATION_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_HARDWARE_ERROR) {
+        return "HARDWARE_ERROR";
     } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED) {
         return "IMPORT_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_INCOMPLETE) {
@@ -570,8 +574,12 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_DATA_INTEGRITY) {
         return "IMPORT_FAILED_DUE_TO_DATA_INTEGRITY";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_INCOMPATIBLE) {
+        return "INCOMPATIBLE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_INSPECT_FAILED) {
         return "INSPECT_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_QUIESCING_DRIVE) {
+        return "QUIESCING_DRIVE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_READ_FAILED) {
         return "READ_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_REIMPORT_REQUIRED) {
@@ -682,6 +690,8 @@ static char* _get_ds3_target_failure_type_str(ds3_target_failure_type input) {
         return "READ_INITIATE_FAILED";
     } else if (input == DS3_TARGET_FAILURE_TYPE_VERIFY_FAILED) {
         return "VERIFY_FAILED";
+    } else if (input == DS3_TARGET_FAILURE_TYPE_VERIFY_COMPLETE) {
+        return "VERIFY_COMPLETE";
     } else {
         return "";
     }
@@ -967,6 +977,10 @@ void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* reque
     _set_query_param(request, "auto_inspect", (const char*)_get_ds3_auto_inspect_mode_str(value));
 
 }
+void ds3_request_set_auto_quiesce_enabled(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "auto_quiesce_enabled", value);
+
+}
 void ds3_request_set_auto_reclaim_initiate_threshold(const ds3_request* request, const float value) {
     _set_query_param_float(request, "auto_reclaim_initiate_threshold", value);
 
@@ -1109,6 +1123,10 @@ void ds3_request_set_density_ds3_tape_drive_type(const ds3_request* request, con
 }
 void ds3_request_set_dns_name(const ds3_request* request, const char * const value) {
     _set_query_param(request, "dns_name", value);
+
+}
+void ds3_request_set_drive_idle_timeout_in_minutes(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "drive_idle_timeout_in_minutes", value);
 
 }
 void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char * const value) {
@@ -1261,6 +1279,10 @@ void ds3_request_set_max_buckets(const ds3_request* request, const int value) {
 }
 void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value) {
     _set_query_param_uint64_t(request, "max_capacity_in_bytes", value);
+
+}
+void ds3_request_set_max_failed_tapes(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_failed_tapes", value);
 
 }
 void ds3_request_set_max_keys(const ds3_request* request, const int value) {
@@ -3406,6 +3428,12 @@ ds3_request* ds3_init_inspect_all_tapes_spectra_s3_request(void) {
 ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char *const resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "INSPECT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_mark_tape_for_compaction_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "MARK_FOR_COMPACTION");
 
     return (ds3_request*) request;
 }
