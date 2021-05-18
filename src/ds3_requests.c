@@ -1052,10 +1052,14 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_DRIVE_CLEAN_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_CLEANED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_DRIVE_CLEANED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "ENCRYPTION_ERROR") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_ENCRYPTION_ERROR;
     } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_FORMAT_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "GET_TAPE_INFORMATION_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_GET_TAPE_INFORMATION_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "HARDWARE_ERROR") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_HARDWARE_ERROR;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_INCOMPLETE") == 0) {
@@ -1064,8 +1068,12 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE;
     } else if (xmlStrcmp(text, (const xmlChar*) "IMPORT_FAILED_DUE_TO_DATA_INTEGRITY") == 0) {
         return DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_DATA_INTEGRITY;
+    } else if (xmlStrcmp(text, (const xmlChar*) "INCOMPATIBLE") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_INCOMPATIBLE;
     } else if (xmlStrcmp(text, (const xmlChar*) "INSPECT_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_INSPECT_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "QUIESCING_DRIVE") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_QUIESCING_DRIVE;
     } else if (xmlStrcmp(text, (const xmlChar*) "READ_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_READ_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "REIMPORT_REQUIRED") == 0) {
@@ -1262,6 +1270,8 @@ static ds3_target_failure_type _match_ds3_target_failure_type(const ds3_log* log
         return DS3_TARGET_FAILURE_TYPE_READ_INITIATE_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "VERIFY_FAILED") == 0) {
         return DS3_TARGET_FAILURE_TYPE_VERIFY_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "VERIFY_COMPLETE") == 0) {
+        return DS3_TARGET_FAILURE_TYPE_VERIFY_COMPLETE;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED for safety.", text);
         return DS3_TARGET_FAILURE_TYPE_IMPORT_FAILED;
@@ -4033,6 +4043,8 @@ static ds3_error* _parse_ds3_tape_drive_response(const ds3_client* client, const
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastCleaned")) {
             response->last_cleaned = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxFailedTapes")) {
+            response->max_failed_tapes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "MfgSerialNumber")) {
             response->mfg_serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "MinimumTaskPriority")) {
@@ -4178,6 +4190,10 @@ static ds3_error* _parse_ds3_tape_partition_response(const ds3_client* client, c
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "AutoCompactionEnabled")) {
             response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "DriveType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -5197,6 +5213,8 @@ static ds3_error* _parse_ds3_cache_filesystem_information_response(const ds3_cli
             error = _parse_ds3_cache_entry_information_response(client, doc, child_node, &entries_response);
             response->entries = (ds3_cache_entry_information_response**)entries_array->pdata;
             g_ptr_array_add(entries_array, entries_response);
+        } else if (element_equal(child_node, "JobLockedCacheInBytes")) {
+            response->job_locked_cache_in_bytes = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Summary")) {
             response->summary = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "TotalCapacityInBytes")) {
@@ -5462,6 +5480,10 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "AutoCompactionEnabled")) {
             response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "DriveType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -8909,6 +8931,8 @@ static ds3_error* _parse_top_level_ds3_tape_drive_response(const ds3_client* cli
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "LastCleaned")) {
             response->last_cleaned = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxFailedTapes")) {
+            response->max_failed_tapes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "MfgSerialNumber")) {
             response->mfg_serial_number = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "MinimumTaskPriority")) {
@@ -9034,6 +9058,10 @@ static ds3_error* _parse_top_level_ds3_tape_partition_response(const ds3_client*
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "AutoCompactionEnabled")) {
             response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "DriveType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -9763,6 +9791,10 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
         if (element_equal(child_node, "AutoCompactionEnabled")) {
             response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "DriveType")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -19211,6 +19243,26 @@ ds3_error* ds3_inspect_all_tapes_spectra_s3_request(const ds3_client* client, co
     return _parse_top_level_ds3_tape_failure_list_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_inspect_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_mark_tape_for_compaction_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 

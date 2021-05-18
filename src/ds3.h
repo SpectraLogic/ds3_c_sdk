@@ -338,13 +338,17 @@ typedef enum {
     DS3_TAPE_FAILURE_TYPE_DELAYED_OWNERSHIP_FAILURE,
     DS3_TAPE_FAILURE_TYPE_DRIVE_CLEAN_FAILED,
     DS3_TAPE_FAILURE_TYPE_DRIVE_CLEANED,
+    DS3_TAPE_FAILURE_TYPE_ENCRYPTION_ERROR,
     DS3_TAPE_FAILURE_TYPE_FORMAT_FAILED,
     DS3_TAPE_FAILURE_TYPE_GET_TAPE_INFORMATION_FAILED,
+    DS3_TAPE_FAILURE_TYPE_HARDWARE_ERROR,
     DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED,
     DS3_TAPE_FAILURE_TYPE_IMPORT_INCOMPLETE,
     DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_TAKE_OWNERSHIP_FAILURE,
     DS3_TAPE_FAILURE_TYPE_IMPORT_FAILED_DUE_TO_DATA_INTEGRITY,
+    DS3_TAPE_FAILURE_TYPE_INCOMPATIBLE,
     DS3_TAPE_FAILURE_TYPE_INSPECT_FAILED,
+    DS3_TAPE_FAILURE_TYPE_QUIESCING_DRIVE,
     DS3_TAPE_FAILURE_TYPE_READ_FAILED,
     DS3_TAPE_FAILURE_TYPE_REIMPORT_REQUIRED,
     DS3_TAPE_FAILURE_TYPE_SERIAL_NUMBER_MISMATCH,
@@ -436,7 +440,8 @@ typedef enum {
     DS3_TARGET_FAILURE_TYPE_WRITE_INITIATE_FAILED,
     DS3_TARGET_FAILURE_TYPE_READ_FAILED,
     DS3_TARGET_FAILURE_TYPE_READ_INITIATE_FAILED,
-    DS3_TARGET_FAILURE_TYPE_VERIFY_FAILED
+    DS3_TARGET_FAILURE_TYPE_VERIFY_FAILED,
+    DS3_TARGET_FAILURE_TYPE_VERIFY_COMPLETE
 }ds3_target_failure_type;
 typedef enum {
     DS3_TARGET_READ_PREFERENCE_TYPE_MINIMUM_LATENCY,
@@ -593,6 +598,7 @@ typedef enum {
     DS3_REST_OPERATION_TYPE_GET_PHYSICAL_PLACEMENT,
     DS3_REST_OPERATION_TYPE_IMPORT,
     DS3_REST_OPERATION_TYPE_INSPECT,
+    DS3_REST_OPERATION_TYPE_MARK_FOR_COMPACTION,
     DS3_REST_OPERATION_TYPE_ONLINE,
     DS3_REST_OPERATION_TYPE_PAIR_BACK,
     DS3_REST_OPERATION_TYPE_REGENERATE_SECRET_KEY,
@@ -1251,6 +1257,7 @@ typedef struct {
     ds3_bool force_tape_removal;
     ds3_str* id;
     ds3_str* last_cleaned;
+    int max_failed_tapes;
     ds3_str* mfg_serial_number;
     ds3_priority minimum_task_priority;
     ds3_str* partition_id;
@@ -1277,6 +1284,8 @@ typedef struct {
 }ds3_tape_library_response;
 typedef struct {
     ds3_bool auto_compaction_enabled;
+    ds3_bool auto_quiesce_enabled;
+    int drive_idle_timeout_in_minutes;
     ds3_tape_drive_type drive_type;
     ds3_str* error_message;
     ds3_str* id;
@@ -1528,6 +1537,7 @@ typedef struct {
     ds3_cache_filesystem_response* cache_filesystem;
     ds3_cache_entry_information_response** entries;
     size_t num_entries;
+    uint64_t job_locked_cache_in_bytes;
     ds3_str* summary;
     uint64_t total_capacity_in_bytes;
     uint64_t unavailable_capacity_in_bytes;
@@ -1555,6 +1565,8 @@ typedef struct {
 }ds3_delete_object_error_response;
 typedef struct {
     ds3_bool auto_compaction_enabled;
+    ds3_bool auto_quiesce_enabled;
+    int drive_idle_timeout_in_minutes;
     ds3_tape_drive_type drive_type;
     ds3_tape_drive_type* drive_types;
     size_t num_drive_types;
@@ -1616,6 +1628,8 @@ typedef struct {
 }ds3_health_verification_result_response;
 typedef struct {
     ds3_bool auto_compaction_enabled;
+    ds3_bool auto_quiesce_enabled;
+    int drive_idle_timeout_in_minutes;
     ds3_tape_drive_type drive_type;
     ds3_tape_drive_type* drive_types;
     size_t num_drive_types;
@@ -2485,6 +2499,7 @@ LIBRARY_API void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_requ
 LIBRARY_API void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* request, const ds3_auto_inspect_mode value);
+LIBRARY_API void ds3_request_set_auto_quiesce_enabled(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_auto_reclaim_initiate_threshold(const ds3_request* request, const float value);
 LIBRARY_API void ds3_request_set_auto_reclaim_terminate_threshold(const ds3_request* request, const float value);
 LIBRARY_API void ds3_request_set_auto_verify_frequency_in_days(const ds3_request* request, const int value);
@@ -2521,6 +2536,7 @@ LIBRARY_API void ds3_request_set_default_verify_job_priority_ds3_priority(const 
 LIBRARY_API void ds3_request_set_delimiter(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_density_ds3_tape_drive_type(const ds3_request* request, const ds3_tape_drive_type value);
 LIBRARY_API void ds3_request_set_dns_name(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_drive_idle_timeout_in_minutes(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_ds3_replication_rule_id(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_eject_label(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_eject_location(const ds3_request* request, const char * const value);
@@ -2559,6 +2575,7 @@ LIBRARY_API void ds3_request_set_marker(const ds3_request* request, const char *
 LIBRARY_API void ds3_request_set_max_blob_part_size_in_bytes(const ds3_request* request, const uint64_t value);
 LIBRARY_API void ds3_request_set_max_buckets(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value);
+LIBRARY_API void ds3_request_set_max_failed_tapes(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_max_keys(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_max_parts(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_max_tape_fragmentation_percent(const ds3_request* request, const int value);
@@ -4701,11 +4718,14 @@ LIBRARY_API ds3_error* ds3_inspect_all_tapes_spectra_s3_request(const ds3_client
  */
 LIBRARY_API ds3_request* ds3_init_inspect_tape_spectra_s3_request(const char *const resource_id);
 LIBRARY_API ds3_error* ds3_inspect_tape_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
+LIBRARY_API ds3_request* ds3_init_mark_tape_for_compaction_spectra_s3_request(const char *const resource_id);
+LIBRARY_API ds3_error* ds3_mark_tape_for_compaction_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_response** response);
 LIBRARY_API ds3_request* ds3_init_modify_all_tape_partitions_spectra_s3_request(const ds3_quiesced quiesced);
 LIBRARY_API ds3_error* ds3_modify_all_tape_partitions_spectra_s3_request(const ds3_client* client, const ds3_request* request);
 /**
  * Optional Request Modifiers for ds3_init_modify_tape_drive_spectra_s3_request
  *
+ *   void ds3_request_set_max_failed_tapes(const ds3_request* request, const int value)
  *   void ds3_request_set_minimum_task_priority_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
  *   void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request* request, const ds3_reserved_task_type value)
@@ -4716,6 +4736,8 @@ LIBRARY_API ds3_error* ds3_modify_tape_drive_spectra_s3_request(const ds3_client
  * Optional Request Modifiers for ds3_init_modify_tape_partition_spectra_s3_request
  *
  *   void ds3_request_set_auto_compaction_enabled(const ds3_request* request, ds3_bool value)
+ *   void ds3_request_set_auto_quiesce_enabled(const ds3_request* request, ds3_bool value)
+ *   void ds3_request_set_drive_idle_timeout_in_minutes(const ds3_request* request, const int value)
  *   void ds3_request_set_minimum_read_reserved_drives(const ds3_request* request, const int value)
  *   void ds3_request_set_minimum_write_reserved_drives(const ds3_request* request, const int value)
  *   void ds3_request_set_quiesced_ds3_quiesced(const ds3_request* request, const ds3_quiesced value)
