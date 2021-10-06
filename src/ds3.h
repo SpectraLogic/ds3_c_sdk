@@ -740,8 +740,10 @@ typedef struct {
     ds3_bool default_verify_data_prior_to_import;
     ds3_str* id;
     ds3_str* instance_id;
+    float iom_cache_limitation_percent;
     ds3_bool iom_enabled;
     ds3_str* last_heartbeat;
+    int max_aggregated_blobs_per_chunk;
     int partially_verify_last_percent_of_tapes;
     ds3_unavailable_media_usage_policy unavailable_media_policy;
     int unavailable_pool_max_job_retry_in_mins;
@@ -2558,6 +2560,7 @@ LIBRARY_API void ds3_request_set_implicit_job_id_resolution(const ds3_request* r
 LIBRARY_API void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value);
 LIBRARY_API void ds3_request_set_include_physical_placement(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_initial_data_placement_ds3_s3_initial_data_placement_policy(const ds3_request* request, const ds3_s3_initial_data_placement_policy value);
+LIBRARY_API void ds3_request_set_iom_cache_limitation_percent(const ds3_request* request, const float value);
 LIBRARY_API void ds3_request_set_iom_enabled(const ds3_request* request, ds3_bool value);
 LIBRARY_API void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value);
 LIBRARY_API void ds3_request_set_job(const ds3_request* request, const char * const value);
@@ -2572,6 +2575,7 @@ LIBRARY_API void ds3_request_set_library_id(const ds3_request* request, const ch
 LIBRARY_API void ds3_request_set_ltfs_file_naming_ds3_ltfs_file_naming_mode(const ds3_request* request, const ds3_ltfs_file_naming_mode value);
 LIBRARY_API void ds3_request_set_management_url(const ds3_request* request, const char * const value);
 LIBRARY_API void ds3_request_set_marker(const ds3_request* request, const char * const value);
+LIBRARY_API void ds3_request_set_max_aggregated_blobs_per_chunk(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_max_blob_part_size_in_bytes(const ds3_request* request, const uint64_t value);
 LIBRARY_API void ds3_request_set_max_buckets(const ds3_request* request, const int value);
 LIBRARY_API void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value);
@@ -2960,7 +2964,9 @@ LIBRARY_API ds3_error* ds3_get_data_planner_blob_store_tasks_spectra_s3_request(
  *   void ds3_request_set_cache_available_retry_after_in_seconds(const ds3_request* request, const int value)
  *   void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value)
  *   void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value)
+ *   void ds3_request_set_iom_cache_limitation_percent(const ds3_request* request, const float value)
  *   void ds3_request_set_iom_enabled(const ds3_request* request, ds3_bool value)
+ *   void ds3_request_set_max_aggregated_blobs_per_chunk(const ds3_request* request, const int value)
  *   void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* request, const int value)
  *   void ds3_request_set_unavailable_media_policy_ds3_unavailable_media_usage_policy(const ds3_request* request, const ds3_unavailable_media_usage_policy value)
  *   void ds3_request_set_unavailable_pool_max_job_retry_in_mins(const ds3_request* request, const int value)

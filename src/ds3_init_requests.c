@@ -1213,6 +1213,10 @@ void ds3_request_set_initial_data_placement_ds3_s3_initial_data_placement_policy
     _set_query_param(request, "initial_data_placement", (const char*)_get_ds3_s3_initial_data_placement_policy_str(value));
 
 }
+void ds3_request_set_iom_cache_limitation_percent(const ds3_request* request, const float value) {
+    _set_query_param_float(request, "iom_cache_limitation_percent", value);
+
+}
 void ds3_request_set_iom_enabled(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "iom_enabled", value);
 
@@ -1267,6 +1271,10 @@ void ds3_request_set_management_url(const ds3_request* request, const char * con
 }
 void ds3_request_set_marker(const ds3_request* request, const char * const value) {
     _set_query_param(request, "marker", value);
+
+}
+void ds3_request_set_max_aggregated_blobs_per_chunk(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_aggregated_blobs_per_chunk", value);
 
 }
 void ds3_request_set_max_blob_part_size_in_bytes(const ds3_request* request, const uint64_t value) {
