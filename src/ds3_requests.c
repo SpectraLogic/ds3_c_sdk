@@ -6535,10 +6535,14 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "InstanceId")) {
             response->instance_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "IomCacheLimitationPercent")) {
+            response->iom_cache_limitation_percent = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "IomEnabled")) {
             response->iom_enabled = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "LastHeartbeat")) {
             response->last_heartbeat = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxAggregatedBlobsPerChunk")) {
+            response->max_aggregated_blobs_per_chunk = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "PartiallyVerifyLastPercentOfTapes")) {
             response->partially_verify_last_percent_of_tapes = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "UnavailableMediaPolicy")) {

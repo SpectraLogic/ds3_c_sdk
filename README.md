@@ -384,3 +384,13 @@ int main (int args, char * argv[]) {
 The structure of the code is very similar to the previous examples.  Setup the client, setup the call, perform the call.  Every request follows this same pattern.
 
 Additional examples are available here: [samples](sample)
+
+Creating a New Release
+----------------------
+
+Update the version of the SDK before creating a new release. The format is `<major>.<minor>.<patch>`, where the 
+`<major>.<minor>` numbers must match the version of BP. The `<patch>` is an incrementing number that increments with 
+each SDK release for a given major/minor release.
+
+The version is specified in `CMakeLists.txt`.
+
