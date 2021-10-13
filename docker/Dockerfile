@@ -1,4 +1,5 @@
-FROM ubuntu:latest
+# FROM ubuntu:latest
+FROM centos:8
 
 # Set the locale
 RUN locale-gen en_US.UTF-8
