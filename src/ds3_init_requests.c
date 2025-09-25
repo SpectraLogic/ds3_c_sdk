@@ -868,6 +868,14 @@ static void _set_query_param_flag(const ds3_request* _request, const char* key, 
     }
 }
 
+static void _set_query_param_ds3_bool(const ds3_request* _request, const char* key, ds3_bool value) {
+    if (value == True) {
+        _set_query_param(_request, key, "True");
+    } else {
+        _set_query_param(_request, key, "False");
+    }
+}
+
 static void _set_query_param_uint64_t(const ds3_request* _request, const char* key, uint64_t value) {
     char string_buffer[STRING_BUFFER_SIZE];
     memset(string_buffer, 0, sizeof(string_buffer));
@@ -906,7 +914,7 @@ void ds3_request_set_account_name(const ds3_request* request, const char * const
 
 }
 void ds3_request_set_activated(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "activated", value);
+    _set_query_param_ds3_bool(request, "activated", value);
 
 }
 void ds3_request_set_admin_auth_id(const ds3_request* request, const char * const value) {
@@ -918,23 +926,23 @@ void ds3_request_set_admin_secret_key(const ds3_request* request, const char * c
 
 }
 void ds3_request_set_aggregating(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "aggregating", value);
+    _set_query_param_ds3_bool(request, "aggregating", value);
 
 }
 void ds3_request_set_allow_new_job_requests(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "allow_new_job_requests", value);
+    _set_query_param_ds3_bool(request, "allow_new_job_requests", value);
 
 }
 void ds3_request_set_always_force_put_job_creation(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "always_force_put_job_creation", value);
+    _set_query_param_ds3_bool(request, "always_force_put_job_creation", value);
 
 }
 void ds3_request_set_always_minimize_spanning_across_media(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "always_minimize_spanning_across_media", value);
+    _set_query_param_ds3_bool(request, "always_minimize_spanning_across_media", value);
 
 }
 void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "assigned_to_storage_domain", value);
+    _set_query_param_ds3_bool(request, "assigned_to_storage_domain", value);
 
 }
 void ds3_request_set_auth_id(const ds3_request* request, const char * const value) {
@@ -946,7 +954,7 @@ void ds3_request_set_auto_activate_timeout_in_mins(const ds3_request* request, c
 
 }
 void ds3_request_set_auto_compaction_enabled(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "auto_compaction_enabled", value);
+    _set_query_param_ds3_bool(request, "auto_compaction_enabled", value);
 
 }
 void ds3_request_set_auto_compaction_threshold(const ds3_request* request, const int value) {
@@ -962,15 +970,15 @@ void ds3_request_set_auto_eject_upon_cron(const ds3_request* request, const char
 
 }
 void ds3_request_set_auto_eject_upon_job_cancellation(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "auto_eject_upon_job_cancellation", value);
+    _set_query_param_ds3_bool(request, "auto_eject_upon_job_cancellation", value);
 
 }
 void ds3_request_set_auto_eject_upon_job_completion(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "auto_eject_upon_job_completion", value);
+    _set_query_param_ds3_bool(request, "auto_eject_upon_job_completion", value);
 
 }
 void ds3_request_set_auto_eject_upon_media_full(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "auto_eject_upon_media_full", value);
+    _set_query_param_ds3_bool(request, "auto_eject_upon_media_full", value);
 
 }
 void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* request, const ds3_auto_inspect_mode value) {
@@ -978,7 +986,7 @@ void ds3_request_set_auto_inspect_ds3_auto_inspect_mode(const ds3_request* reque
 
 }
 void ds3_request_set_auto_quiesce_enabled(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "auto_quiesce_enabled", value);
+    _set_query_param_ds3_bool(request, "auto_quiesce_enabled", value);
 
 }
 void ds3_request_set_auto_reclaim_initiate_threshold(const ds3_request* request, const float value) {
@@ -1006,7 +1014,7 @@ void ds3_request_set_blob_id(const ds3_request* request, const char * const valu
 
 }
 void ds3_request_set_blobbing_enabled(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "blobbing_enabled", value);
+    _set_query_param_ds3_bool(request, "blobbing_enabled", value);
 
 }
 void ds3_request_set_bucket_id(const ds3_request* request, const char * const value) {
@@ -1014,7 +1022,7 @@ void ds3_request_set_bucket_id(const ds3_request* request, const char * const va
 
 }
 void ds3_request_set_built_in(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "built_in", value);
+    _set_query_param_ds3_bool(request, "built_in", value);
 
 }
 void ds3_request_set_burst_threshold(const ds3_request* request, const float value) {
@@ -1030,7 +1038,7 @@ void ds3_request_set_cached_only(const ds3_request* request, ds3_bool value) {
 
 }
 void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "canceled_due_to_timeout", value);
+    _set_query_param_ds3_bool(request, "canceled_due_to_timeout", value);
 
 }
 void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request, const ds3_checksum_type value) {
@@ -1058,7 +1066,7 @@ void ds3_request_set_data_path_end_point(const ds3_request* request, const char 
 
 }
 void ds3_request_set_data_path_https(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "data_path_https", value);
+    _set_query_param_ds3_bool(request, "data_path_https", value);
 
 }
 void ds3_request_set_data_path_port(const ds3_request* request, const int value) {
@@ -1070,7 +1078,7 @@ void ds3_request_set_data_path_proxy(const ds3_request* request, const char * co
 
 }
 void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "data_path_verify_certificate", value);
+    _set_query_param_ds3_bool(request, "data_path_verify_certificate", value);
 
 }
 void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value) {
@@ -1098,7 +1106,7 @@ void ds3_request_set_default_read_preference_ds3_target_read_preference_type(con
 
 }
 void ds3_request_set_default_verify_after_write(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "default_verify_after_write", value);
+    _set_query_param_ds3_bool(request, "default_verify_after_write", value);
 
 }
 void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -1106,7 +1114,7 @@ void ds3_request_set_default_verify_data_after_import_ds3_priority(const ds3_req
 
 }
 void ds3_request_set_default_verify_data_prior_to_import(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "default_verify_data_prior_to_import", value);
+    _set_query_param_ds3_bool(request, "default_verify_data_prior_to_import", value);
 
 }
 void ds3_request_set_default_verify_job_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -1146,7 +1154,7 @@ void ds3_request_set_end_date(const ds3_request* request, const uint64_t value) 
 
 }
 void ds3_request_set_end_to_end_crc_required(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "end_to_end_crc_required", value);
+    _set_query_param_ds3_bool(request, "end_to_end_crc_required", value);
 
 }
 void ds3_request_set_error_message(const ds3_request* request, const char * const value) {
@@ -1170,7 +1178,7 @@ void ds3_request_set_full_details(const ds3_request* request, ds3_bool value) {
 
 }
 void ds3_request_set_full_of_data(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "full_of_data", value);
+    _set_query_param_ds3_bool(request, "full_of_data", value);
 
 }
 void ds3_request_set_group_id(const ds3_request* request, const char * const value) {
@@ -1186,7 +1194,7 @@ void ds3_request_set_health_ds3_pool_health(const ds3_request* request, const ds
 
 }
 void ds3_request_set_https(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "https", value);
+    _set_query_param_ds3_bool(request, "https", value);
 
 }
 void ds3_request_set_id(const ds3_request* request, const char * const value) {
@@ -1198,7 +1206,7 @@ void ds3_request_set_ignore_naming_conflicts(const ds3_request* request, ds3_boo
 
 }
 void ds3_request_set_implicit_job_id_resolution(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "implicit_job_id_resolution", value);
+    _set_query_param_ds3_bool(request, "implicit_job_id_resolution", value);
 
 }
 void ds3_request_set_import_export_configuration_ds3_import_export_configuration(const ds3_request* request, const ds3_import_export_configuration value) {
@@ -1218,7 +1226,7 @@ void ds3_request_set_iom_cache_limitation_percent(const ds3_request* request, co
 
 }
 void ds3_request_set_iom_enabled(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "iom_enabled", value);
+    _set_query_param_ds3_bool(request, "iom_enabled", value);
 
 }
 void ds3_request_set_isolation_level_ds3_data_isolation_level(const ds3_request* request, const ds3_data_isolation_level value) {
@@ -1254,7 +1262,7 @@ void ds3_request_set_last_verified(const ds3_request* request, const char * cons
 
 }
 void ds3_request_set_latest(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "latest", value);
+    _set_query_param_ds3_bool(request, "latest", value);
 
 }
 void ds3_request_set_library_id(const ds3_request* request, const char * const value) {
@@ -1322,7 +1330,7 @@ void ds3_request_set_maximum_auto_verification_frequency_in_days(const ds3_reque
 
 }
 void ds3_request_set_media_ejection_allowed(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "media_ejection_allowed", value);
+    _set_query_param_ds3_bool(request, "media_ejection_allowed", value);
 
 }
 void ds3_request_set_member_group_id(const ds3_request* request, const char * const value) {
@@ -1338,7 +1346,7 @@ void ds3_request_set_min_sequence_number(const ds3_request* request, const uint6
 
 }
 void ds3_request_set_minimize_spanning_across_media(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "minimize_spanning_across_media", value);
+    _set_query_param_ds3_bool(request, "minimize_spanning_across_media", value);
 
 }
 void ds3_request_set_minimum_days_to_retain(const ds3_request* request, const int value) {
@@ -1418,7 +1426,7 @@ void ds3_request_set_permission_ds3_bucket_acl_permission(const ds3_request* req
 
 }
 void ds3_request_set_permit_going_out_of_sync(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "permit_going_out_of_sync", value);
+    _set_query_param_ds3_bool(request, "permit_going_out_of_sync", value);
 
 }
 void ds3_request_set_persistence_rule_id(const ds3_request* request, const char * const value) {
@@ -1446,7 +1454,7 @@ void ds3_request_set_pool_type_ds3_pool_type(const ds3_request* request, const d
 
 }
 void ds3_request_set_powered_on(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "powered_on", value);
+    _set_query_param_ds3_bool(request, "powered_on", value);
 
 }
 void ds3_request_set_pre_allocate_job_space(const ds3_request* request, ds3_bool value) {
@@ -1510,7 +1518,7 @@ void ds3_request_set_region_ds3_s3_region(const ds3_request* request, const ds3_
 
 }
 void ds3_request_set_replicate_deletes(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "replicate_deletes", value);
+    _set_query_param_ds3_bool(request, "replicate_deletes", value);
 
 }
 void ds3_request_set_replicated_user_default_data_policy(const ds3_request* request, const char * const value) {
@@ -1526,7 +1534,7 @@ void ds3_request_set_reserved_task_type_ds3_reserved_task_type(const ds3_request
 
 }
 void ds3_request_set_restricted_access(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "restricted_access", value);
+    _set_query_param_ds3_bool(request, "restricted_access", value);
 
 }
 void ds3_request_set_secret_key(const ds3_request* request, const char * const value) {
@@ -1534,7 +1542,7 @@ void ds3_request_set_secret_key(const ds3_request* request, const char * const v
 
 }
 void ds3_request_set_secure_media_allocation(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "secure_media_allocation", value);
+    _set_query_param_ds3_bool(request, "secure_media_allocation", value);
 
 }
 void ds3_request_set_serial_number(const ds3_request* request, const char * const value) {
@@ -1630,7 +1638,7 @@ void ds3_request_set_task_priority_ds3_priority(const ds3_request* request, cons
 
 }
 void ds3_request_set_truncated(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "truncated", value);
+    _set_query_param_ds3_bool(request, "truncated", value);
 
 }
 void ds3_request_set_type_ds3_data_replication_rule_type(const ds3_request* request, const ds3_data_replication_rule_type value) {
@@ -1702,7 +1710,7 @@ void ds3_request_set_user_id(const ds3_request* request, const char * const valu
 
 }
 void ds3_request_set_verify_after_write(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "verify_after_write", value);
+    _set_query_param_ds3_bool(request, "verify_after_write", value);
 
 }
 void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -1710,7 +1718,7 @@ void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* re
 
 }
 void ds3_request_set_verify_data_prior_to_import(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "verify_data_prior_to_import", value);
+    _set_query_param_ds3_bool(request, "verify_data_prior_to_import", value);
 
 }
 void ds3_request_set_verify_pending_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -1742,7 +1750,7 @@ void ds3_request_set_write_preference_ds3_write_preference_level(const ds3_reque
 
 }
 void ds3_request_set_write_protected(const ds3_request* request, ds3_bool value) {
-    _set_query_param_flag(request, "write_protected", value);
+    _set_query_param_ds3_bool(request, "write_protected", value);
 
 }
 

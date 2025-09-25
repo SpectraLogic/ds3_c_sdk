@@ -91,6 +91,25 @@ BOOST_AUTO_TEST_CASE(cancel_job){
     free_client(client);
 }
 
+BOOST_AUTO_TEST_CASE(create_aggregate_job){
+    ds3_client* client = get_client();
+
+    const char* bucket_name = "bucket_test_create_aggregate_job";
+
+    printf("-----Testing Create Aggregate Job-------\n");
+
+    ds3_bulk_object_list_response* obj_list = default_object_list();
+    ds3_request* request = populate_bulk_return_request(client, bucket_name, obj_list);
+    ds3_request_set_aggregating(request, True);
+    ds3_master_object_list_response* response = populate_bulk_return_response(client, request);
+
+    BOOST_CHECK(response->aggregating == True);
+    ds3_master_object_list_response_free(response);
+    ds3_bulk_object_list_response_free(obj_list);
+    clear_bucket(client, bucket_name);
+    free_client(client);
+}
+
 BOOST_AUTO_TEST_CASE(get_jobs){
     ds3_client* client = get_client();
     ds3_error* error = NULL;
