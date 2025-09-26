@@ -689,6 +689,14 @@ static ds3_job_chunk_client_processing_order_guarantee _match_ds3_job_chunk_clie
         return DS3_JOB_CHUNK_CLIENT_PROCESSING_ORDER_GUARANTEE_NONE;
     }
 }
+static ds3_job_creation_failed_type _match_ds3_job_creation_failed_type(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "TAPES_MUST_BE_ONLINED") == 0) {
+        return DS3_JOB_CREATION_FAILED_TYPE_TAPES_MUST_BE_ONLINED;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_JOB_CREATION_FAILED_TYPE_TAPES_MUST_BE_ONLINED for safety.", text);
+        return DS3_JOB_CREATION_FAILED_TYPE_TAPES_MUST_BE_ONLINED;
+    }
+}
 static ds3_job_request_type _match_ds3_job_request_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "PUT") == 0) {
         return DS3_JOB_REQUEST_TYPE_PUT;
@@ -889,6 +897,16 @@ static ds3_bucket_history_event_type _match_ds3_bucket_history_event_type(const 
         return DS3_BUCKET_HISTORY_EVENT_TYPE_DELETE;
     }
 }
+static ds3_cache_entry_state _match_ds3_cache_entry_state(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "ALLOCATED") == 0) {
+        return DS3_CACHE_ENTRY_STATE_ALLOCATED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "IN_CACHE") == 0) {
+        return DS3_CACHE_ENTRY_STATE_IN_CACHE;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_CACHE_ENTRY_STATE_ALLOCATED for safety.", text);
+        return DS3_CACHE_ENTRY_STATE_ALLOCATED;
+    }
+}
 static ds3_pool_failure_type _match_ds3_pool_failure_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "BLOB_READ_FAILED") == 0) {
         return DS3_POOL_FAILURE_TYPE_BLOB_READ_FAILED;
@@ -974,6 +992,8 @@ static ds3_quiesced _match_ds3_quiesced(const ds3_log* log, const xmlChar* text)
 static ds3_reserved_task_type _match_ds3_reserved_task_type(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "ANY") == 0) {
         return DS3_RESERVED_TASK_TYPE_ANY;
+    } else if (xmlStrcmp(text, (const xmlChar*) "MAINTENANCE") == 0) {
+        return DS3_RESERVED_TASK_TYPE_MAINTENANCE;
     } else if (xmlStrcmp(text, (const xmlChar*) "READ") == 0) {
         return DS3_RESERVED_TASK_TYPE_READ;
     } else if (xmlStrcmp(text, (const xmlChar*) "WRITE") == 0) {
@@ -1020,6 +1040,8 @@ static ds3_tape_drive_type _match_ds3_tape_drive_type(const ds3_log* log, const 
         return DS3_TAPE_DRIVE_TYPE_LTO8;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO9") == 0) {
         return DS3_TAPE_DRIVE_TYPE_LTO9;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO10") == 0) {
+        return DS3_TAPE_DRIVE_TYPE_LTO10;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS1140") == 0) {
         return DS3_TAPE_DRIVE_TYPE_TS1140;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS1150") == 0) {
@@ -1028,6 +1050,8 @@ static ds3_tape_drive_type _match_ds3_tape_drive_type(const ds3_log* log, const 
         return DS3_TAPE_DRIVE_TYPE_TS1155;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS1160") == 0) {
         return DS3_TAPE_DRIVE_TYPE_TS1160;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS1170") == 0) {
+        return DS3_TAPE_DRIVE_TYPE_TS1170;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_DRIVE_TYPE_UNKNOWN for safety.", text);
         return DS3_TAPE_DRIVE_TYPE_UNKNOWN;
@@ -1040,6 +1064,8 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_BAR_CODE_DUPLICATE;
     } else if (xmlStrcmp(text, (const xmlChar*) "BLOB_READ_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_BLOB_READ_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CLEANING_TAPE_EXPIRED") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_CLEANING_TAPE_EXPIRED;
     } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_FAILURE") == 0) {
         return DS3_TAPE_FAILURE_TYPE_DATA_CHECKPOINT_FAILURE;
     } else if (xmlStrcmp(text, (const xmlChar*) "DATA_CHECKPOINT_FAILURE_DUE_TO_READ_ONLY") == 0) {
@@ -1052,6 +1078,16 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_DRIVE_CLEAN_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_CLEANED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_DRIVE_CLEANED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_TEST_FAILED") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_TEST_FAILED_ALL_WRITES_TOO_SLOW") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED_ALL_WRITES_TOO_SLOW;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_TEST_FAILED_FORWARD_WRITES_TOO_SLOW") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED_FORWARD_WRITES_TOO_SLOW;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_TEST_FAILED_REVERSE_WRITES_TOO_SLOW") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED_REVERSE_WRITES_TOO_SLOW;
+    } else if (xmlStrcmp(text, (const xmlChar*) "DRIVE_TEST_SUCCEEDED") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_SUCCEEDED;
     } else if (xmlStrcmp(text, (const xmlChar*) "ENCRYPTION_ERROR") == 0) {
         return DS3_TAPE_FAILURE_TYPE_ENCRYPTION_ERROR;
     } else if (xmlStrcmp(text, (const xmlChar*) "FORMAT_FAILED") == 0) {
@@ -1072,6 +1108,8 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_INCOMPATIBLE;
     } else if (xmlStrcmp(text, (const xmlChar*) "INSPECT_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_INSPECT_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "MOVE_FAILED") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_MOVE_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "QUIESCING_DRIVE") == 0) {
         return DS3_TAPE_FAILURE_TYPE_QUIESCING_DRIVE;
     } else if (xmlStrcmp(text, (const xmlChar*) "READ_FAILED") == 0) {
@@ -1090,7 +1128,9 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
     }
 }
 static ds3_tape_partition_failure_type _match_ds3_tape_partition_failure_type(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "CLEANING_TAPE_REQUIRED") == 0) {
+    if (xmlStrcmp(text, (const xmlChar*) "AUTO_QUIESCED") == 0) {
+        return DS3_TAPE_PARTITION_FAILURE_TYPE_AUTO_QUIESCED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "CLEANING_TAPE_REQUIRED") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED;
     } else if (xmlStrcmp(text, (const xmlChar*) "DUPLICATE_TAPE_BAR_CODES_DETECTED") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_DUPLICATE_TAPE_BAR_CODES_DETECTED;
@@ -1110,6 +1150,8 @@ static ds3_tape_partition_failure_type _match_ds3_tape_partition_failure_type(co
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_IN_ERROR;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_MISSING") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_MISSING;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_NOT_CLEANED") == 0) {
+        return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_NOT_CLEANED;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_QUIESCED") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_QUIESCED;
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_DRIVE_TYPE_MISMATCH") == 0) {
@@ -1123,8 +1165,8 @@ static ds3_tape_partition_failure_type _match_ds3_tape_partition_failure_type(co
     } else if (xmlStrcmp(text, (const xmlChar*) "TAPE_IN_INVALID_PARTITION") == 0) {
         return DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_IN_INVALID_PARTITION;
     } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED for safety.", text);
-        return DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED;
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_PARTITION_FAILURE_TYPE_AUTO_QUIESCED for safety.", text);
+        return DS3_TAPE_PARTITION_FAILURE_TYPE_AUTO_QUIESCED;
     }
 }
 static ds3_tape_partition_state _match_ds3_tape_partition_state(const ds3_log* log, const xmlChar* text) {
@@ -1137,6 +1179,16 @@ static ds3_tape_partition_state _match_ds3_tape_partition_state(const ds3_log* l
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_PARTITION_STATE_ONLINE for safety.", text);
         return DS3_TAPE_PARTITION_STATE_ONLINE;
+    }
+}
+static ds3_tape_role _match_ds3_tape_role(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "NORMAL") == 0) {
+        return DS3_TAPE_ROLE_NORMAL;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TEST") == 0) {
+        return DS3_TAPE_ROLE_TEST;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_ROLE_NORMAL for safety.", text);
+        return DS3_TAPE_ROLE_NORMAL;
     }
 }
 static ds3_tape_state _match_ds3_tape_state(const ds3_log* log, const xmlChar* text) {
@@ -1212,6 +1264,8 @@ static ds3_tape_type _match_ds3_tape_type(const ds3_log* log, const xmlChar* tex
         return DS3_TAPE_TYPE_LTO8;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO9") == 0) {
         return DS3_TAPE_TYPE_LTO9;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO10") == 0) {
+        return DS3_TAPE_TYPE_LTO10;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO_CLEANING_TAPE") == 0) {
         return DS3_TAPE_TYPE_LTO_CLEANING_TAPE;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS_JC") == 0) {
@@ -1232,6 +1286,10 @@ static ds3_tape_type _match_ds3_tape_type(const ds3_log* log, const xmlChar* tex
         return DS3_TAPE_TYPE_TS_JE;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS_JV") == 0) {
         return DS3_TAPE_TYPE_TS_JV;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JF") == 0) {
+        return DS3_TAPE_TYPE_TS_JF;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TS_JN") == 0) {
+        return DS3_TAPE_TYPE_TS_JN;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS_CLEANING_TAPE") == 0) {
         return DS3_TAPE_TYPE_TS_CLEANING_TAPE;
     } else if (xmlStrcmp(text, (const xmlChar*) "UNKNOWN") == 0) {
@@ -1319,16 +1377,6 @@ static ds3_blob_store_task_state _match_ds3_blob_store_task_state(const ds3_log*
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_BLOB_STORE_TASK_STATE_NOT_READY for safety.", text);
         return DS3_BLOB_STORE_TASK_STATE_NOT_READY;
-    }
-}
-static ds3_cache_entry_state _match_ds3_cache_entry_state(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "ALLOCATED") == 0) {
-        return DS3_CACHE_ENTRY_STATE_ALLOCATED;
-    } else if (xmlStrcmp(text, (const xmlChar*) "IN_CACHE") == 0) {
-        return DS3_CACHE_ENTRY_STATE_IN_CACHE;
-    } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_CACHE_ENTRY_STATE_ALLOCATED for safety.", text);
-        return DS3_CACHE_ENTRY_STATE_ALLOCATED;
     }
 }
 static ds3_job_status _match_ds3_job_status(const ds3_log* log, const xmlChar* text) {
@@ -1533,6 +1581,8 @@ static ds3_error* _parse_ds3_bucket_response(const ds3_client* client, const xml
             response->logical_used_capacity = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Protected")) {
+            response->protected_flag = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UserId")) {
             response->user_id = xml_get_string(doc, child_node);
         } else {
@@ -2154,6 +2204,8 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             }
             response->priority = _match_ds3_priority(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "Protected")) {
+            response->protected_flag = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Rechunked")) {
             response->rechunked = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Replicating")) {
@@ -2182,6 +2234,48 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             response->verify_after_write = xml_get_bool(client->log, doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_active_job_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_job_creation_failed_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_creation_failed_response** _response) {
+    ds3_job_creation_failed_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_job_creation_failed_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Date")) {
+            response->date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TapeBarCodes")) {
+            response->tape_bar_codes = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_job_creation_failed_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "UserName")) {
+            response->user_name = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_creation_failed_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -3599,12 +3693,16 @@ static ds3_error* _parse_ds3_cache_filesystem_response(const ds3_client* client,
             response->auto_reclaim_terminate_threshold = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "BurstThreshold")) {
             response->burst_threshold = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "CacheSafetyEnabled")) {
+            response->cache_safety_enabled = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "MaxCapacityInBytes")) {
             response->max_capacity_in_bytes = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "MaxPercentUtilizationOfFilesystem")) {
             response->max_percent_utilization_of_filesystem = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "NeedsReconcile")) {
+            response->needs_reconcile = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "NodeId")) {
             response->node_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Path")) {
@@ -3924,6 +4022,13 @@ static ds3_error* _parse_ds3_tape_response(const ds3_client* client, const xmlDo
                 continue;
             }
             response->previous_state = _match_ds3_tape_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Role")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->role = _match_ds3_tape_role(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
@@ -5439,6 +5544,91 @@ static ds3_error* _parse_ds3_s3_object_to_delete_response(const ds3_client* clie
     return error;
 }
 
+static ds3_error* _parse_ds3_tape_type_summary_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_type_summary_api_bean_response** _response) {
+    ds3_tape_type_summary_api_bean_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_tape_type_summary_api_bean_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AvailableStorageCapacity")) {
+            response->available_storage_capacity = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "Count")) {
+            response->count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "TotalStorageCapacity")) {
+            response->total_storage_capacity = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            response->type = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "UsedStorageCapacity")) {
+            response->used_storage_capacity = xml_get_uint64(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_tape_type_summary_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_tape_type_summary_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_tape_type_summary_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_tape_type_summary_api_bean_response* response = NULL;
+        error = _parse_ds3_tape_type_summary_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_tape_type_summary_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_tape_type_summary_api_bean_response_array;
+
+    return error;
+}
+static ds3_error* _parse_ds3_type_type_count_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_type_type_count_api_bean_response** _response) {
+    ds3_type_type_count_api_bean_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_type_type_count_api_bean_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Count")) {
+            response->count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "FullOfData")) {
+            response->full_of_data = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            response->type = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_type_type_count_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
 static ds3_error* _parse_ds3_user_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_user_response** _response) {
     ds3_user_response* response;
     xmlNodePtr child_node;
@@ -5464,114 +5654,6 @@ static ds3_error* _parse_ds3_user_response(const ds3_client* client, const xmlDo
 
 
     *_response = response;
-
-    return error;
-}
-
-static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_named_detailed_tape_partition_response** _response) {
-    ds3_named_detailed_tape_partition_response* response;
-    xmlNodePtr child_node;
-    ds3_error* error = NULL;
-    GPtrArray* tape_types_array = g_ptr_array_new();
-
-    response = g_new0(ds3_named_detailed_tape_partition_response, 1);
-
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "AutoCompactionEnabled")) {
-            response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
-            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
-            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "DriveType")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->drive_type = _match_ds3_tape_drive_type(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "DriveTypes")) {
-            xmlNodePtr loop_node;
-            int num_nodes = 0;
-            GByteArray* enum_array = g_byte_array_new();
-            ds3_tape_drive_type drive_types;
-            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
-                if (text == NULL) {
-                    continue;
-                }
-                drive_types = _match_ds3_tape_drive_type(client->log, text);
-                g_byte_array_append(enum_array, (const guint8*) &drive_types, sizeof(ds3_tape_drive_type));
-            }
-            response->drive_types = (ds3_tape_drive_type*)enum_array->data;
-            response->num_drive_types = enum_array->len;
-            g_byte_array_free(enum_array, FALSE);
-        } else if (element_equal(child_node, "ErrorMessage")) {
-            response->error_message = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Id")) {
-            response->id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ImportExportConfiguration")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->import_export_configuration = _match_ds3_import_export_configuration(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "LibraryId")) {
-            response->library_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
-            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
-            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "Name")) {
-            response->name = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Quiesced")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->quiesced = _match_ds3_quiesced(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "SerialNumber")) {
-            response->serial_number = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "State")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->state = _match_ds3_tape_partition_state(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "TapeTypes")) {
-            xmlNodePtr loop_node;
-            GPtrArray* tape_types_array = g_ptr_array_new();
-            int num_nodes = 0;
-            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                ds3_str* tape_types = xml_get_string(doc, loop_node);
-                g_ptr_array_add(tape_types_array, tape_types);
-            }
-            response->tape_types = (ds3_str**)tape_types_array->pdata;
-            response->num_tape_types = tape_types_array->len;
-            g_ptr_array_free(tape_types_array, FALSE);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_named_detailed_tape_partition_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-    response->tape_types = (ds3_str**)tape_types_array->pdata;
-    response->num_tape_types = tape_types_array->len;
-    g_ptr_array_free(tape_types_array, FALSE);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_named_detailed_tape_partition_response_free(response);
-    }
 
     return error;
 }
@@ -6097,6 +6179,74 @@ static ds3_error* _parse_ds3_contents_response(const ds3_client* client, const x
     return error;
 }
 
+static ds3_error* _parse_ds3_tape_state_summary_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_state_summary_api_bean_response** _response) {
+    ds3_tape_state_summary_api_bean_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+    GPtrArray* type_counts_array = g_ptr_array_new();
+
+    response = g_new0(ds3_tape_state_summary_api_bean_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Count")) {
+            response->count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "FullOfData")) {
+            response->full_of_data = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "TapeState")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->tape_state = _match_ds3_tape_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TypeCounts")) {
+            ds3_type_type_count_api_bean_response* type_counts_response = NULL;
+            error = _parse_ds3_type_type_count_api_bean_response(client, doc, child_node, &type_counts_response);
+            response->type_counts = (ds3_type_type_count_api_bean_response**)type_counts_array->pdata;
+            g_ptr_array_add(type_counts_array, type_counts_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_tape_state_summary_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->type_counts = (ds3_type_type_count_api_bean_response**)type_counts_array->pdata;
+    response->num_type_counts = type_counts_array->len;
+    g_ptr_array_free(type_counts_array, FALSE);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_tape_state_summary_api_bean_response_free(response);
+    }
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_tape_state_summary_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_tape_state_summary_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_tape_state_summary_api_bean_response* response = NULL;
+        error = _parse_ds3_tape_state_summary_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_tape_state_summary_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_tape_state_summary_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_detailed_s3_object_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_detailed_s3_object_response** _response) {
     ds3_detailed_s3_object_response* response;
     xmlNodePtr child_node;
@@ -6154,6 +6304,134 @@ static ds3_error* _parse_ds3_detailed_s3_object_response(const ds3_client* clien
         *_response = response;
     } else {
         ds3_detailed_s3_object_response_free(response);
+    }
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_named_detailed_tape_partition_response** _response) {
+    ds3_named_detailed_tape_partition_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+    GPtrArray* tape_types_array = g_ptr_array_new();
+
+    response = g_new0(ds3_named_detailed_tape_partition_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AutoCompactionEnabled")) {
+            response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AvailableStorageCapacity")) {
+            response->available_storage_capacity = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "DriveType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->drive_type = _match_ds3_tape_drive_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DriveTypes")) {
+            xmlNodePtr loop_node;
+            int num_nodes = 0;
+            GByteArray* enum_array = g_byte_array_new();
+            ds3_tape_drive_type drive_types;
+            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
+                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
+                if (text == NULL) {
+                    continue;
+                }
+                drive_types = _match_ds3_tape_drive_type(client->log, text);
+                g_byte_array_append(enum_array, (const guint8*) &drive_types, sizeof(ds3_tape_drive_type));
+            }
+            response->drive_types = (ds3_tape_drive_type*)enum_array->data;
+            response->num_drive_types = enum_array->len;
+            g_byte_array_free(enum_array, FALSE);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ImportExportConfiguration")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->import_export_configuration = _match_ds3_import_export_configuration(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "LibraryId")) {
+            response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "SerialNumber")) {
+            response->serial_number = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_tape_partition_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TapeCount")) {
+            response->tape_count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "TapeStateSummaries")) {
+            GPtrArray* tape_state_summaries_array;
+            error = _parse_ds3_tape_state_summary_api_bean_response_array(client, doc, child_node, &tape_state_summaries_array);
+            response->tape_state_summaries = (ds3_tape_state_summary_api_bean_response**)tape_state_summaries_array->pdata;
+            response->num_tape_state_summaries = tape_state_summaries_array->len;
+            g_ptr_array_free(tape_state_summaries_array, FALSE);
+        } else if (element_equal(child_node, "TapeTypeSummaries")) {
+            GPtrArray* tape_type_summaries_array;
+            error = _parse_ds3_tape_type_summary_api_bean_response_array(client, doc, child_node, &tape_type_summaries_array);
+            response->tape_type_summaries = (ds3_tape_type_summary_api_bean_response**)tape_type_summaries_array->pdata;
+            response->num_tape_type_summaries = tape_type_summaries_array->len;
+            g_ptr_array_free(tape_type_summaries_array, FALSE);
+        } else if (element_equal(child_node, "TapeTypes")) {
+            xmlNodePtr loop_node;
+            GPtrArray* tape_types_array = g_ptr_array_new();
+            int num_nodes = 0;
+            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
+                ds3_str* tape_types = xml_get_string(doc, loop_node);
+                g_ptr_array_add(tape_types_array, tape_types);
+            }
+            response->tape_types = (ds3_str**)tape_types_array->pdata;
+            response->num_tape_types = tape_types_array->len;
+            g_ptr_array_free(tape_types_array, FALSE);
+        } else if (element_equal(child_node, "TotalStorageCapacity")) {
+            response->total_storage_capacity = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "UsedStorageCapacity")) {
+            response->used_storage_capacity = xml_get_uint64(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_named_detailed_tape_partition_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->tape_types = (ds3_str**)tape_types_array->pdata;
+    response->num_tape_types = tape_types_array->len;
+    g_ptr_array_free(tape_types_array, FALSE);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_named_detailed_tape_partition_response_free(response);
     }
 
     return error;
@@ -6250,6 +6528,8 @@ static ds3_error* _parse_top_level_ds3_bucket_response(const ds3_client* client,
             response->logical_used_capacity = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "Name")) {
             response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Protected")) {
+            response->protected_flag = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UserId")) {
             response->user_id = xml_get_string(doc, child_node);
         } else {
@@ -6543,8 +6823,12 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             response->last_heartbeat = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "MaxAggregatedBlobsPerChunk")) {
             response->max_aggregated_blobs_per_chunk = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MaxNumberOfConcurrentJobs")) {
+            response->max_number_of_concurrent_jobs = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "PartiallyVerifyLastPercentOfTapes")) {
             response->partially_verify_last_percent_of_tapes = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "PoolSafetyEnabled")) {
+            response->pool_safety_enabled = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "UnavailableMediaPolicy")) {
             xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
             if (text == NULL) {
@@ -6556,6 +6840,8 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             response->unavailable_pool_max_job_retry_in_mins = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "UnavailableTapePartitionMaxJobRetryInMins")) {
             response->unavailable_tape_partition_max_job_retry_in_mins = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "VerifyCheckpointBeforeRead")) {
+            response->verify_checkpoint_before_read = xml_get_bool(client->log, doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_data_path_backend_response [%s]\n", child_node->name, root->name);
         }
@@ -6985,6 +7271,8 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             }
             response->priority = _match_ds3_priority(client->log, text);
             xmlFree(text);
+        } else if (element_equal(child_node, "Protected")) {
+            response->protected_flag = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Rechunked")) {
             response->rechunked = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Replicating")) {
@@ -8584,12 +8872,16 @@ static ds3_error* _parse_top_level_ds3_cache_filesystem_response(const ds3_clien
             response->auto_reclaim_terminate_threshold = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "BurstThreshold")) {
             response->burst_threshold = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "CacheSafetyEnabled")) {
+            response->cache_safety_enabled = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Id")) {
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "MaxCapacityInBytes")) {
             response->max_capacity_in_bytes = xml_get_uint64(doc, child_node);
         } else if (element_equal(child_node, "MaxPercentUtilizationOfFilesystem")) {
             response->max_percent_utilization_of_filesystem = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "NeedsReconcile")) {
+            response->needs_reconcile = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "NodeId")) {
             response->node_id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "Path")) {
@@ -8813,6 +9105,13 @@ static ds3_error* _parse_top_level_ds3_tape_response(const ds3_client* client, c
                 continue;
             }
             response->previous_state = _match_ds3_tape_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Role")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->role = _match_ds3_tape_role(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "SerialNumber")) {
             response->serial_number = xml_get_string(doc, child_node);
@@ -9773,121 +10072,6 @@ static ds3_error* _parse_top_level_ds3_complete_multipart_upload_result_response
         *_response = response;
     } else {
         ds3_complete_multipart_upload_result_response_free(response);
-    }
-
-    return error;
-}
-static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds3_client* client, const ds3_request* request, ds3_detailed_tape_partition_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_detailed_tape_partition_response* response;
-    ds3_error* error = NULL;
-    GPtrArray* tape_types_array = g_ptr_array_new();
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_detailed_tape_partition_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "AutoCompactionEnabled")) {
-            response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
-            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
-            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "DriveType")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->drive_type = _match_ds3_tape_drive_type(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "DriveTypes")) {
-            xmlNodePtr loop_node;
-            int num_nodes = 0;
-            GByteArray* enum_array = g_byte_array_new();
-            ds3_tape_drive_type drive_types;
-            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
-                if (text == NULL) {
-                    continue;
-                }
-                drive_types = _match_ds3_tape_drive_type(client->log, text);
-                g_byte_array_append(enum_array, (const guint8*) &drive_types, sizeof(ds3_tape_drive_type));
-            }
-            response->drive_types = (ds3_tape_drive_type*)enum_array->data;
-            response->num_drive_types = enum_array->len;
-            g_byte_array_free(enum_array, FALSE);
-        } else if (element_equal(child_node, "ErrorMessage")) {
-            response->error_message = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Id")) {
-            response->id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ImportExportConfiguration")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->import_export_configuration = _match_ds3_import_export_configuration(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "LibraryId")) {
-            response->library_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
-            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
-            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "Name")) {
-            response->name = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Quiesced")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->quiesced = _match_ds3_quiesced(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "SerialNumber")) {
-            response->serial_number = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "State")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->state = _match_ds3_tape_partition_state(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "TapeTypes")) {
-            xmlNodePtr loop_node;
-            GPtrArray* tape_types_array = g_ptr_array_new();
-            int num_nodes = 0;
-            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                ds3_str* tape_types = xml_get_string(doc, loop_node);
-                g_ptr_array_add(tape_types_array, tape_types);
-            }
-            response->tape_types = (ds3_str**)tape_types_array->pdata;
-            response->num_tape_types = tape_types_array->len;
-            g_ptr_array_free(tape_types_array, FALSE);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_detailed_tape_partition_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-    response->tape_types = (ds3_str**)tape_types_array->pdata;
-    response->num_tape_types = tape_types_array->len;
-    g_ptr_array_free(tape_types_array, FALSE);
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_detailed_tape_partition_response_free(response);
     }
 
     return error;
@@ -11013,6 +11197,51 @@ static ds3_error* _parse_top_level_ds3_completed_job_list_response(const ds3_cli
         *_response = response;
     } else {
         ds3_completed_job_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_job_creation_failed_list_response(const ds3_client* client, const ds3_request* request, ds3_job_creation_failed_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_job_creation_failed_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* job_creation_faileds_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_job_creation_failed_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "JobCreationFailed")) {
+            ds3_job_creation_failed_response* job_creation_faileds_response = NULL;
+            error = _parse_ds3_job_creation_failed_response(client, doc, child_node, &job_creation_faileds_response);
+            response->job_creation_faileds = (ds3_job_creation_failed_response**)job_creation_faileds_array->pdata;
+            g_ptr_array_add(job_creation_faileds_array, job_creation_faileds_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_creation_failed_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->job_creation_faileds = (ds3_job_creation_failed_response**)job_creation_faileds_array->pdata;
+    response->num_job_creation_faileds = job_creation_faileds_array->len;
+    g_ptr_array_free(job_creation_faileds_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_job_creation_failed_list_response_free(response);
     }
 
     return error;
@@ -12412,51 +12641,6 @@ static ds3_error* _parse_top_level_ds3_tape_partition_list_response(const ds3_cl
 
     return error;
 }
-static ds3_error* _parse_top_level_ds3_named_detailed_tape_partition_list_response(const ds3_client* client, const ds3_request* request, ds3_named_detailed_tape_partition_list_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_named_detailed_tape_partition_list_response* response;
-    ds3_error* error = NULL;
-    GPtrArray* named_detailed_tape_partitions_array = g_ptr_array_new();
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_named_detailed_tape_partition_list_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "TapePartition")) {
-            ds3_named_detailed_tape_partition_response* named_detailed_tape_partitions_response = NULL;
-            error = _parse_ds3_named_detailed_tape_partition_response(client, doc, child_node, &named_detailed_tape_partitions_response);
-            response->named_detailed_tape_partitions = (ds3_named_detailed_tape_partition_response**)named_detailed_tape_partitions_array->pdata;
-            g_ptr_array_add(named_detailed_tape_partitions_array, named_detailed_tape_partitions_response);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_named_detailed_tape_partition_list_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-    response->named_detailed_tape_partitions = (ds3_named_detailed_tape_partition_response**)named_detailed_tape_partitions_array->pdata;
-    response->num_named_detailed_tape_partitions = named_detailed_tape_partitions_array->len;
-    g_ptr_array_free(named_detailed_tape_partitions_array, FALSE);
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_named_detailed_tape_partition_list_response_free(response);
-    }
-
-    return error;
-}
 static ds3_error* _parse_top_level_ds3_tape_list_response(const ds3_client* client, const ds3_request* request, ds3_tape_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -13618,6 +13802,51 @@ static ds3_error* _parse_top_level_ds3_detailed_s3_object_list_response(const ds
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_named_detailed_tape_partition_list_response(const ds3_client* client, const ds3_request* request, ds3_named_detailed_tape_partition_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_named_detailed_tape_partition_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* named_detailed_tape_partitions_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_named_detailed_tape_partition_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "TapePartition")) {
+            ds3_named_detailed_tape_partition_response* named_detailed_tape_partitions_response = NULL;
+            error = _parse_ds3_named_detailed_tape_partition_response(client, doc, child_node, &named_detailed_tape_partitions_response);
+            response->named_detailed_tape_partitions = (ds3_named_detailed_tape_partition_response**)named_detailed_tape_partitions_array->pdata;
+            g_ptr_array_add(named_detailed_tape_partitions_array, named_detailed_tape_partitions_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_named_detailed_tape_partition_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->named_detailed_tape_partitions = (ds3_named_detailed_tape_partition_response**)named_detailed_tape_partitions_array->pdata;
+    response->num_named_detailed_tape_partitions = named_detailed_tape_partitions_array->len;
+    g_ptr_array_free(named_detailed_tape_partitions_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_named_detailed_tape_partition_list_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_client* client, const ds3_request* request, ds3_list_bucket_result_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -13695,6 +13924,141 @@ static ds3_error* _parse_top_level_ds3_list_bucket_result_response(const ds3_cli
         *_response = response;
     } else {
         ds3_list_bucket_result_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds3_client* client, const ds3_request* request, ds3_detailed_tape_partition_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_detailed_tape_partition_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* tape_types_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_detailed_tape_partition_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AutoCompactionEnabled")) {
+            response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AvailableStorageCapacity")) {
+            response->available_storage_capacity = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "DriveType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->drive_type = _match_ds3_tape_drive_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DriveTypes")) {
+            xmlNodePtr loop_node;
+            int num_nodes = 0;
+            GByteArray* enum_array = g_byte_array_new();
+            ds3_tape_drive_type drive_types;
+            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
+                xmlChar* text = xmlNodeListGetString(doc, loop_node, 1);
+                if (text == NULL) {
+                    continue;
+                }
+                drive_types = _match_ds3_tape_drive_type(client->log, text);
+                g_byte_array_append(enum_array, (const guint8*) &drive_types, sizeof(ds3_tape_drive_type));
+            }
+            response->drive_types = (ds3_tape_drive_type*)enum_array->data;
+            response->num_drive_types = enum_array->len;
+            g_byte_array_free(enum_array, FALSE);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ImportExportConfiguration")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->import_export_configuration = _match_ds3_import_export_configuration(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "LibraryId")) {
+            response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "SerialNumber")) {
+            response->serial_number = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_tape_partition_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TapeCount")) {
+            response->tape_count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "TapeStateSummaries")) {
+            GPtrArray* tape_state_summaries_array;
+            error = _parse_ds3_tape_state_summary_api_bean_response_array(client, doc, child_node, &tape_state_summaries_array);
+            response->tape_state_summaries = (ds3_tape_state_summary_api_bean_response**)tape_state_summaries_array->pdata;
+            response->num_tape_state_summaries = tape_state_summaries_array->len;
+            g_ptr_array_free(tape_state_summaries_array, FALSE);
+        } else if (element_equal(child_node, "TapeTypeSummaries")) {
+            GPtrArray* tape_type_summaries_array;
+            error = _parse_ds3_tape_type_summary_api_bean_response_array(client, doc, child_node, &tape_type_summaries_array);
+            response->tape_type_summaries = (ds3_tape_type_summary_api_bean_response**)tape_type_summaries_array->pdata;
+            response->num_tape_type_summaries = tape_type_summaries_array->len;
+            g_ptr_array_free(tape_type_summaries_array, FALSE);
+        } else if (element_equal(child_node, "TapeTypes")) {
+            xmlNodePtr loop_node;
+            GPtrArray* tape_types_array = g_ptr_array_new();
+            int num_nodes = 0;
+            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
+                ds3_str* tape_types = xml_get_string(doc, loop_node);
+                g_ptr_array_add(tape_types_array, tape_types);
+            }
+            response->tape_types = (ds3_str**)tape_types_array->pdata;
+            response->num_tape_types = tape_types_array->len;
+            g_ptr_array_free(tape_types_array, FALSE);
+        } else if (element_equal(child_node, "TotalStorageCapacity")) {
+            response->total_storage_capacity = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "UsedStorageCapacity")) {
+            response->used_storage_capacity = xml_get_uint64(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_detailed_tape_partition_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->tape_types = (ds3_str**)tape_types_array->pdata;
+    response->num_tape_types = tape_types_array->len;
+    g_ptr_array_free(tape_types_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_detailed_tape_partition_response_free(response);
     }
 
     return error;
@@ -15964,6 +16328,17 @@ ds3_error* ds3_verify_bulk_job_spectra_s3_request(const ds3_client* client, cons
 
     return _parse_top_level_ds3_master_object_list_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_delete_job_creation_failure_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
 ds3_error* ds3_get_active_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_active_job_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -16152,6 +16527,30 @@ ds3_error* ds3_get_job_chunks_ready_for_client_processing_spectra_s3_request(con
     }
 
     return _parse_top_level_ds3_master_object_list_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_job_creation_failures_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_creation_failed_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_job_creation_failed_list_response(client, request, response, xml_blob);
+
+    (*response)->paging = _parse_paging_headers(return_headers);
+    ds3_string_multimap_free(return_headers);
+
+    return error;
 }
 ds3_error* ds3_get_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response) {
     ds3_error* error;
@@ -18607,6 +19006,26 @@ ds3_error* ds3_cancel_online_tape_spectra_s3_request(const ds3_client* client, c
 
     return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_cancel_test_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_tape_drive_response(client, request, response, xml_blob);
+}
 ds3_error* ds3_cancel_verify_on_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -18645,6 +19064,26 @@ ds3_error* ds3_cancel_verify_tape_spectra_s3_request(const ds3_client* client, c
     return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_clean_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_tape_drive_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_put_drive_dump_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
 
@@ -19418,6 +19857,26 @@ ds3_error* ds3_raw_import_tape_spectra_s3_request(const ds3_client* client, cons
     }
 
     return _parse_top_level_ds3_tape_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_test_tape_drive_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_drive_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_tape_drive_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_verify_all_tapes_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_tape_failure_list_response** response) {
     ds3_error* error;

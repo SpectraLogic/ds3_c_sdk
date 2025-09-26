@@ -500,6 +500,8 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
         return "LTO8";
     } else if (input == DS3_TAPE_DRIVE_TYPE_LTO9) {
         return "LTO9";
+    } else if (input == DS3_TAPE_DRIVE_TYPE_LTO10) {
+        return "LTO10";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1140) {
         return "TS1140";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1150) {
@@ -508,6 +510,8 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
         return "TS1155";
     } else if (input == DS3_TAPE_DRIVE_TYPE_TS1160) {
         return "TS1160";
+    } else if (input == DS3_TAPE_DRIVE_TYPE_TS1170) {
+        return "TS1170";
     } else {
         return "";
     }
@@ -516,6 +520,8 @@ static char* _get_ds3_tape_drive_type_str(ds3_tape_drive_type input) {
 static char* _get_ds3_reserved_task_type_str(ds3_reserved_task_type input) {
     if (input == DS3_RESERVED_TASK_TYPE_ANY) {
         return "ANY";
+    } else if (input == DS3_RESERVED_TASK_TYPE_MAINTENANCE) {
+        return "MAINTENANCE";
     } else if (input == DS3_RESERVED_TASK_TYPE_READ) {
         return "READ";
     } else if (input == DS3_RESERVED_TASK_TYPE_WRITE) {
@@ -546,6 +552,8 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "BAR_CODE_DUPLICATE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_BLOB_READ_FAILED) {
         return "BLOB_READ_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_CLEANING_TAPE_EXPIRED) {
+        return "CLEANING_TAPE_EXPIRED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_DATA_CHECKPOINT_FAILURE) {
         return "DATA_CHECKPOINT_FAILURE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_DATA_CHECKPOINT_FAILURE_DUE_TO_READ_ONLY) {
@@ -558,6 +566,16 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "DRIVE_CLEAN_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_CLEANED) {
         return "DRIVE_CLEANED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED) {
+        return "DRIVE_TEST_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED_ALL_WRITES_TOO_SLOW) {
+        return "DRIVE_TEST_FAILED_ALL_WRITES_TOO_SLOW";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED_FORWARD_WRITES_TOO_SLOW) {
+        return "DRIVE_TEST_FAILED_FORWARD_WRITES_TOO_SLOW";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_FAILED_REVERSE_WRITES_TOO_SLOW) {
+        return "DRIVE_TEST_FAILED_REVERSE_WRITES_TOO_SLOW";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_DRIVE_TEST_SUCCEEDED) {
+        return "DRIVE_TEST_SUCCEEDED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_ENCRYPTION_ERROR) {
         return "ENCRYPTION_ERROR";
     } else if (input == DS3_TAPE_FAILURE_TYPE_FORMAT_FAILED) {
@@ -578,6 +596,8 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "INCOMPATIBLE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_INSPECT_FAILED) {
         return "INSPECT_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_MOVE_FAILED) {
+        return "MOVE_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_QUIESCING_DRIVE) {
         return "QUIESCING_DRIVE";
     } else if (input == DS3_TAPE_FAILURE_TYPE_READ_FAILED) {
@@ -596,7 +616,9 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
 
 }
 static char* _get_ds3_tape_partition_failure_type_str(ds3_tape_partition_failure_type input) {
-    if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED) {
+    if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_AUTO_QUIESCED) {
+        return "AUTO_QUIESCED";
+    } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_CLEANING_TAPE_REQUIRED) {
         return "CLEANING_TAPE_REQUIRED";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_DUPLICATE_TAPE_BAR_CODES_DETECTED) {
         return "DUPLICATE_TAPE_BAR_CODES_DETECTED";
@@ -616,6 +638,8 @@ static char* _get_ds3_tape_partition_failure_type_str(ds3_tape_partition_failure
         return "TAPE_DRIVE_IN_ERROR";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_MISSING) {
         return "TAPE_DRIVE_MISSING";
+    } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_NOT_CLEANED) {
+        return "TAPE_DRIVE_NOT_CLEANED";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_QUIESCED) {
         return "TAPE_DRIVE_QUIESCED";
     } else if (input == DS3_TAPE_PARTITION_FAILURE_TYPE_TAPE_DRIVE_TYPE_MISMATCH) {
@@ -650,6 +674,16 @@ static char* _get_ds3_tape_partition_state_str(ds3_tape_partition_state input) {
         return "OFFLINE";
     } else if (input == DS3_TAPE_PARTITION_STATE_ERROR) {
         return "ERROR";
+    } else {
+        return "";
+    }
+
+}
+static char* _get_ds3_tape_role_str(ds3_tape_role input) {
+    if (input == DS3_TAPE_ROLE_NORMAL) {
+        return "NORMAL";
+    } else if (input == DS3_TAPE_ROLE_TEST) {
+        return "TEST";
     } else {
         return "";
     }
@@ -1017,6 +1051,10 @@ void ds3_request_set_blobbing_enabled(const ds3_request* request, ds3_bool value
     _set_query_param_ds3_bool(request, "blobbing_enabled", value);
 
 }
+void ds3_request_set_bucket(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "bucket", value);
+
+}
 void ds3_request_set_bucket_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "bucket_id", value);
 
@@ -1031,6 +1069,10 @@ void ds3_request_set_burst_threshold(const ds3_request* request, const float val
 }
 void ds3_request_set_cache_available_retry_after_in_seconds(const ds3_request* request, const int value) {
     _set_query_param_int(request, "cache_available_retry_after_in_seconds", value);
+
+}
+void ds3_request_set_cache_safety_enabled(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "cache_safety_enabled", value);
 
 }
 void ds3_request_set_cached_only(const ds3_request* request, ds3_bool value) {
@@ -1083,6 +1125,14 @@ void ds3_request_set_data_path_verify_certificate(const ds3_request* request, ds
 }
 void ds3_request_set_data_policy_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "data_policy_id", value);
+
+}
+void ds3_request_set_date(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "date", value);
+
+}
+void ds3_request_set_dead_job_cleanup_allowed(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "dead_job_cleanup_allowed", value);
 
 }
 void ds3_request_set_default_blob_size(const ds3_request* request, const uint64_t value) {
@@ -1305,6 +1355,10 @@ void ds3_request_set_max_keys(const ds3_request* request, const int value) {
     _set_query_param_int(request, "max_keys", value);
 
 }
+void ds3_request_set_max_number_of_concurrent_jobs(const ds3_request* request, const int value) {
+    _set_query_param_int(request, "max_number_of_concurrent_jobs", value);
+
+}
 void ds3_request_set_max_parts(const ds3_request* request, const int value) {
     _set_query_param_int(request, "max_parts", value);
 
@@ -1377,6 +1431,10 @@ void ds3_request_set_naming_mode_ds3_cloud_naming_mode(const ds3_request* reques
     _set_query_param(request, "naming_mode", (const char*)_get_ds3_cloud_naming_mode_str(value));
 
 }
+void ds3_request_set_needs_reconcile(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "needs_reconcile", value);
+
+}
 void ds3_request_set_node_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "node_id", value);
 
@@ -1417,6 +1475,10 @@ void ds3_request_set_partially_verify_last_percent_of_tapes(const ds3_request* r
     _set_query_param_int(request, "partially_verify_last_percent_of_tapes", value);
 
 }
+void ds3_request_set_partition(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "partition", value);
+
+}
 void ds3_request_set_partition_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "partition_id", value);
 
@@ -1443,6 +1505,10 @@ void ds3_request_set_pool_id(const ds3_request* request, const char * const valu
 }
 void ds3_request_set_pool_partition_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "pool_partition_id", value);
+
+}
+void ds3_request_set_pool_safety_enabled(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "pool_safety_enabled", value);
 
 }
 void ds3_request_set_pool_state_ds3_pool_state(const ds3_request* request, const ds3_pool_state value) {
@@ -1475,6 +1541,10 @@ void ds3_request_set_previous_state_ds3_tape_state(const ds3_request* request, c
 }
 void ds3_request_set_priority_ds3_priority(const ds3_request* request, const ds3_priority value) {
     _set_query_param(request, "priority", (const char*)_get_ds3_priority_str(value));
+
+}
+void ds3_request_set_protected(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "protected", value);
 
 }
 void ds3_request_set_proxy_domain(const ds3_request* request, const char * const value) {
@@ -1537,6 +1607,10 @@ void ds3_request_set_restricted_access(const ds3_request* request, ds3_bool valu
     _set_query_param_ds3_bool(request, "restricted_access", value);
 
 }
+void ds3_request_set_role_ds3_tape_role(const ds3_request* request, const ds3_tape_role value) {
+    _set_query_param(request, "role", (const char*)_get_ds3_tape_role_str(value));
+
+}
 void ds3_request_set_secret_key(const ds3_request* request, const char * const value) {
     _set_query_param(request, "secret_key", value);
 
@@ -1551,6 +1625,10 @@ void ds3_request_set_serial_number(const ds3_request* request, const char * cons
 }
 void ds3_request_set_size(const ds3_request* request, const uint64_t value) {
     _set_query_param_uint64_t(request, "size", value);
+
+}
+void ds3_request_set_skip_clean(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "skip_clean", value);
 
 }
 void ds3_request_set_sort_by(const ds3_request* request, const char * const value) {
@@ -1709,8 +1787,16 @@ void ds3_request_set_user_id(const ds3_request* request, const char * const valu
     _set_query_param(request, "user_id", value);
 
 }
+void ds3_request_set_user_name(const ds3_request* request, const char * const value) {
+    _set_query_param(request, "user_name", value);
+
+}
 void ds3_request_set_verify_after_write(const ds3_request* request, ds3_bool value) {
     _set_query_param_ds3_bool(request, "verify_after_write", value);
+
+}
+void ds3_request_set_verify_checkpoint_before_read(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "verify_checkpoint_before_read", value);
 
 }
 void ds3_request_set_verify_data_after_import_ds3_priority(const ds3_request* request, const ds3_priority value) {
@@ -2476,6 +2562,10 @@ ds3_request* ds3_init_verify_bulk_job_spectra_s3_request(const char *const resou
 
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_delete_job_creation_failure_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/job_creation_failed/", resource_id, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_get_active_job_spectra_s3_request(const char *const resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/active_job/", resource_id, NULL));
     return (ds3_request*) request;
@@ -2513,6 +2603,10 @@ ds3_request* ds3_init_get_job_chunks_ready_for_client_processing_spectra_s3_requ
     if (job != NULL) {
         _set_query_param((ds3_request*) request, "job", job);
     }
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_job_creation_failures_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_creation_failed/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_job_spectra_s3_request(const char *const resource_id) {
@@ -3250,6 +3344,12 @@ ds3_request* ds3_init_cancel_online_tape_spectra_s3_request(const char *const re
 
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_cancel_test_tape_drive_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_drive/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "CANCEL_TEST");
+
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_cancel_verify_on_all_tapes_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape/", NULL, NULL));
     _set_query_param((ds3_request*) request, "operation", "CANCEL_VERIFY");
@@ -3265,6 +3365,12 @@ ds3_request* ds3_init_cancel_verify_tape_spectra_s3_request(const char *const re
 ds3_request* ds3_init_clean_tape_drive_spectra_s3_request(const char *const resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_drive/", resource_id, NULL));
     _set_query_param((ds3_request*) request, "operation", "CLEAN");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_put_drive_dump_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_drive/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "DUMP");
 
     return (ds3_request*) request;
 }
@@ -3498,6 +3604,12 @@ ds3_request* ds3_init_raw_import_tape_spectra_s3_request(const char *const resou
         _set_query_param((ds3_request*) request, "bucket_id", bucket_id);
     }
     _set_query_param((ds3_request*) request, "operation", "IMPORT");
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_test_tape_drive_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/tape_drive/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "operation", "TEST");
 
     return (ds3_request*) request;
 }
