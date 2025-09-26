@@ -738,6 +738,19 @@ void ds3_job_chunk_response_free(ds3_job_chunk_response* response) {
 
     g_free(response);
 }
+void ds3_job_creation_failed_response_free(ds3_job_creation_failed_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->date);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->id);
+    ds3_str_free(response->tape_bar_codes);
+    ds3_str_free(response->user_name);
+
+    g_free(response);
+}
 void ds3_node_response_free(ds3_node_response* response) {
     if (response == NULL) {
         return;
@@ -1697,25 +1710,6 @@ void ds3_delete_object_error_response_free(ds3_delete_object_error_response* res
 
     g_free(response);
 }
-void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    size_t index;
-    g_free(response->drive_types);
-    ds3_str_free(response->error_message);
-    ds3_str_free(response->id);
-    ds3_str_free(response->library_id);
-    ds3_str_free(response->name);
-    ds3_str_free(response->serial_number);
-    for (index = 0; index < response->num_tape_types; index++) {
-        ds3_str_free(response->tape_types[index]);
-    }
-    g_free(response->tape_types);
-
-    g_free(response);
-}
 void ds3_error_response_free(ds3_error_response* response) {
     if (response == NULL) {
         return;
@@ -1768,6 +1762,24 @@ void ds3_s3_object_to_delete_response_free(ds3_s3_object_to_delete_response* res
 
     g_free(response);
 }
+void ds3_tape_type_summary_api_bean_response_free(ds3_tape_type_summary_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->type);
+
+    g_free(response);
+}
+void ds3_type_type_count_api_bean_response_free(ds3_type_type_count_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->type);
+
+    g_free(response);
+}
 void ds3_user_response_free(ds3_user_response* response) {
     if (response == NULL) {
         return;
@@ -1795,25 +1807,6 @@ void ds3_health_verification_result_response_free(ds3_health_verification_result
         return;
     }
 
-
-    g_free(response);
-}
-void ds3_named_detailed_tape_partition_response_free(ds3_named_detailed_tape_partition_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    size_t index;
-    g_free(response->drive_types);
-    ds3_str_free(response->error_message);
-    ds3_str_free(response->id);
-    ds3_str_free(response->library_id);
-    ds3_str_free(response->name);
-    ds3_str_free(response->serial_number);
-    for (index = 0; index < response->num_tape_types; index++) {
-        ds3_str_free(response->tape_types[index]);
-    }
-    g_free(response->tape_types);
 
     g_free(response);
 }
@@ -2166,6 +2159,20 @@ void ds3_completed_job_list_response_free(ds3_completed_job_list_response* respo
         ds3_completed_job_response_free(response->completed_jobs[index]);
     }
     g_free(response->completed_jobs);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_job_creation_failed_list_response_free(ds3_job_creation_failed_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_job_creation_faileds; index++) {
+        ds3_job_creation_failed_response_free(response->job_creation_faileds[index]);
+    }
+    g_free(response->job_creation_faileds);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -2600,20 +2607,6 @@ void ds3_tape_partition_list_response_free(ds3_tape_partition_list_response* res
         ds3_tape_partition_response_free(response->tape_partitions[index]);
     }
     g_free(response->tape_partitions);
-    ds3_paging_free(response->paging);
-
-    g_free(response);
-}
-void ds3_named_detailed_tape_partition_list_response_free(ds3_named_detailed_tape_partition_list_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    size_t index;
-    for (index = 0; index < response->num_named_detailed_tape_partitions; index++) {
-        ds3_named_detailed_tape_partition_response_free(response->named_detailed_tape_partitions[index]);
-    }
-    g_free(response->named_detailed_tape_partitions);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -3095,6 +3088,19 @@ void ds3_contents_response_free(ds3_contents_response* response) {
 
     g_free(response);
 }
+void ds3_tape_state_summary_api_bean_response_free(ds3_tape_state_summary_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_type_counts; index++) {
+        ds3_type_type_count_api_bean_response_free(response->type_counts[index]);
+    }
+    g_free(response->type_counts);
+
+    g_free(response);
+}
 void ds3_detailed_s3_object_response_free(ds3_detailed_s3_object_response* response) {
     if (response == NULL) {
         return;
@@ -3107,6 +3113,33 @@ void ds3_detailed_s3_object_response_free(ds3_detailed_s3_object_response* respo
     ds3_str_free(response->id);
     ds3_str_free(response->name);
     ds3_str_free(response->owner);
+
+    g_free(response);
+}
+void ds3_named_detailed_tape_partition_response_free(ds3_named_detailed_tape_partition_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    g_free(response->drive_types);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->id);
+    ds3_str_free(response->library_id);
+    ds3_str_free(response->name);
+    ds3_str_free(response->serial_number);
+    for (index = 0; index < response->num_tape_state_summaries; index++) {
+        ds3_tape_state_summary_api_bean_response_free(response->tape_state_summaries[index]);
+    }
+    g_free(response->tape_state_summaries);
+    for (index = 0; index < response->num_tape_type_summaries; index++) {
+        ds3_tape_type_summary_api_bean_response_free(response->tape_type_summaries[index]);
+    }
+    g_free(response->tape_type_summaries);
+    for (index = 0; index < response->num_tape_types; index++) {
+        ds3_str_free(response->tape_types[index]);
+    }
+    g_free(response->tape_types);
 
     g_free(response);
 }
@@ -3137,6 +3170,20 @@ void ds3_detailed_s3_object_list_response_free(ds3_detailed_s3_object_list_respo
 
     g_free(response);
 }
+void ds3_named_detailed_tape_partition_list_response_free(ds3_named_detailed_tape_partition_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_named_detailed_tape_partitions; index++) {
+        ds3_named_detailed_tape_partition_response_free(response->named_detailed_tape_partitions[index]);
+    }
+    g_free(response->named_detailed_tape_partitions);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
 void ds3_list_bucket_result_response_free(ds3_list_bucket_result_response* response) {
     if (response == NULL) {
         return;
@@ -3161,6 +3208,33 @@ void ds3_list_bucket_result_response_free(ds3_list_bucket_result_response* respo
         ds3_contents_response_free(response->versioned_objects[index]);
     }
     g_free(response->versioned_objects);
+
+    g_free(response);
+}
+void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    g_free(response->drive_types);
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->id);
+    ds3_str_free(response->library_id);
+    ds3_str_free(response->name);
+    ds3_str_free(response->serial_number);
+    for (index = 0; index < response->num_tape_state_summaries; index++) {
+        ds3_tape_state_summary_api_bean_response_free(response->tape_state_summaries[index]);
+    }
+    g_free(response->tape_state_summaries);
+    for (index = 0; index < response->num_tape_type_summaries; index++) {
+        ds3_tape_type_summary_api_bean_response_free(response->tape_type_summaries[index]);
+    }
+    g_free(response->tape_type_summaries);
+    for (index = 0; index < response->num_tape_types; index++) {
+        ds3_str_free(response->tape_types[index]);
+    }
+    g_free(response->tape_types);
 
     g_free(response);
 }
