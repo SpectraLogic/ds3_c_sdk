@@ -466,6 +466,9 @@ ds3_error* net_process_request(const ds3_client* client,
 
             curl_easy_setopt(handle, CURLOPT_URL, url);
 
+            // Pin HTTP/1.1: libcurl >= 7.62.0 defaults HTTPS to h2-via-ALPN, which trips Tomcat's 64 KB stream window on streaming PUTs (RMS-10959).
+            curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+
             curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 0); // explicitly disable
 
             // Setup header collection
