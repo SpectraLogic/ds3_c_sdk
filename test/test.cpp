@@ -485,6 +485,13 @@ double timespec_to_seconds(struct timespec* ts) {
     return (double)ts->tv_sec + (double)ts->tv_nsec / 1000000000.0;
 }
 
+uint32_t get_test_file_count(uint32_t fast_count, uint32_t full_count) {
+    if (getenv("DS3_FULL_TESTS") != NULL) {
+        return full_count;
+    }
+    return fast_count;
+}
+
 
 /**
  * Find the size of a local file then create a ds3_bulk_object_list_response with the same name many times, append a number

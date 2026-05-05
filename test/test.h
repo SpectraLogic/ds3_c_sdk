@@ -103,6 +103,11 @@ typedef struct {
 double timespec_to_seconds(struct timespec* ts);
 void test_log(const char* message, void* user_data);
 
+/**
+ * Returns either fast_count or full_count based on whether DS3_FULL_TESTS is set in the environment.
+ */
+uint32_t get_test_file_count(uint32_t fast_count, uint32_t full_count);
+
 /*
  * Returned put_chunks_threads_args* must be freed with put_chunks_threads_args_free();
  */

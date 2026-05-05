@@ -186,7 +186,12 @@ To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and o
 Tests
 -----
 
-The `/test` directory contains function tests of the sdk.  Ensure that the environment variables DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set. To build and run the tests, use the following commands:
+The `/test` directory contains function tests of the sdk.  Ensure that the environment variables DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set.
+By default, some large-scale performance tests run in a 'fast' mode with reduced file counts. To run the 'full' version of these tests, set the `DS3_FULL_TESTS` environment variable:
+```bash
+$ export DS3_FULL_TESTS=1
+```
+To build and run the tests, use the following commands:
 
     $ cd directory/containing/source/tree
     $ cmake .
@@ -197,7 +202,7 @@ The `/test` directory contains function tests of the sdk.  Ensure that the envir
     $ cd test
     $ cmake .
     $ make
-    $ make test
+    $ make test ARGS="--output-on-failure"
 
 
 Documentation
