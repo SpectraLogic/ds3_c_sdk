@@ -103,6 +103,11 @@ typedef struct {
 double timespec_to_seconds(struct timespec* ts);
 void test_log(const char* message, void* user_data);
 
+/**
+ * Returns either fast_count or full_count based on whether DS3_FULL_TESTS is set in the environment.
+ */
+uint32_t get_test_file_count(uint32_t fast_count, uint32_t full_count);
+
 /*
  * Returned put_chunks_threads_args* must be freed with put_chunks_threads_args_free();
  */
@@ -140,5 +145,13 @@ struct xfer_info {
 
 void init_xfer_info(const xfer_info* xfer_info_to_init, uint16_t size_in_mb);
 size_t ds3_test_read_from_mem(void* buffer, size_t size, size_t nmemb, void* user_data);
+
+ds3_error* net_process_request(const ds3_client* client,
+                               const ds3_request* _request,
+                               void* read_user_struct,
+                               size_t (*read_handler_func)(void*, size_t, size_t, void*),
+                               void* write_user_struct,
+                               size_t (*write_handler_func)(void*, size_t, size_t, void*),
+                               ds3_string_multimap** return_headers);
 
 #endif

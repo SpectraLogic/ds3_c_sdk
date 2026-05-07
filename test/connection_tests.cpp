@@ -109,7 +109,8 @@ BOOST_AUTO_TEST_CASE( bulk_put_10k_very_small_files ) {
     const char* bucket_name = "test_bulk_put_10k_very_small_files_bucket";
     const char* object_name = "resources/very_small_file.txt";
     ds3_master_object_list_response* bulk_response = NULL;
-    ds3_bulk_object_list_response* object_list = create_bulk_object_list_single_file(object_name, 10000);
+    uint32_t num_files = get_test_file_count(1000, 10000);
+    ds3_bulk_object_list_response* object_list = create_bulk_object_list_single_file(object_name, num_files);
     ds3_client* client = get_client_at_loglvl(DS3_INFO);
     ds3_error* error = create_bucket_with_data_policy(client, bucket_name, ids.data_policy_id->value);
 
@@ -186,7 +187,8 @@ BOOST_AUTO_TEST_CASE( sequential_vs_parallel_xfer ) {
     struct timespec start_time_t, end_time_t;
     double elapsed_sequential_t, elapsed_parallel_t;
 
-    ds3_bulk_object_list_response* obj_list = create_bulk_object_list_single_file(obj_name, 100);
+    uint32_t num_files = get_test_file_count(12, 100);
+    ds3_bulk_object_list_response* obj_list = create_bulk_object_list_single_file(obj_name, num_files);
     ds3_client* client = get_client();
     ds3_master_object_list_response* mol = NULL;
     ds3_request* request = NULL;
@@ -277,7 +279,8 @@ BOOST_AUTO_TEST_CASE( multiple_client_xfer ) {
     struct timespec start_time_t, end_time_t;
     double elapsed_t;
 
-    ds3_bulk_object_list_response* obj_list = create_bulk_object_list_single_file(obj_name, 100);
+    uint32_t num_files = get_test_file_count(10, 100);
+    ds3_bulk_object_list_response* obj_list = create_bulk_object_list_single_file(obj_name, num_files);
     ds3_client* client1 = get_client();
     ds3_client* client2 = ds3_copy_client(client1); // share the connection pool
 
@@ -381,7 +384,7 @@ BOOST_AUTO_TEST_CASE( performance_bulk_put ) {
     // Create the list of fake files to transfer
     size_t obj_size = 512 * 1024 * 1024; // 512MB
     const char* obj_prefix = "perf_obj";
-    size_t num_files = 10;
+    uint32_t num_files = get_test_file_count(2, 10);
     ds3_bulk_object_list_response* obj_list = create_bulk_object_list_from_prefix_with_size(obj_prefix, num_files, obj_size);
 
     // Create the BULK_PUT jobs

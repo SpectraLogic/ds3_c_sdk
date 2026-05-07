@@ -341,7 +341,7 @@ static ds3_error* _internal_request_dispatcher(
     if (client == NULL || request == NULL) {
         return ds3_create_error(DS3_ERROR_MISSING_ARGS, "All arguments must be filled in for request processing");
     }
-    return net_process_request(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, return_headers);
+    return client->net_callback(client, request, read_user_struct, read_handler_func, write_user_struct, write_handler_func, return_headers);
 }
 
 static int num_chars_in_ds3_str(const ds3_str *const str, char ch) {
@@ -11074,7 +11074,7 @@ static ds3_error* _parse_top_level_ds3_active_job_list_response(const ds3_client
     ds3_error* error = NULL;
     GPtrArray* active_jobs_array = g_ptr_array_new();
 
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Jobs");
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
@@ -11119,7 +11119,7 @@ static ds3_error* _parse_top_level_ds3_canceled_job_list_response(const ds3_clie
     ds3_error* error = NULL;
     GPtrArray* canceled_jobs_array = g_ptr_array_new();
 
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Jobs");
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
@@ -11164,7 +11164,7 @@ static ds3_error* _parse_top_level_ds3_completed_job_list_response(const ds3_cli
     ds3_error* error = NULL;
     GPtrArray* completed_jobs_array = g_ptr_array_new();
 
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Jobs");
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
@@ -14658,7 +14658,9 @@ ds3_error* ds3_get_bucket_acls_spectra_s3_request(const ds3_client* client, cons
 
     error = _parse_top_level_ds3_bucket_acl_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -14702,7 +14704,9 @@ ds3_error* ds3_get_data_policy_acls_spectra_s3_request(const ds3_client* client,
 
     error = _parse_top_level_ds3_data_policy_acl_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -14774,7 +14778,9 @@ ds3_error* ds3_get_buckets_spectra_s3_request(const ds3_client* client, const ds
 
     error = _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -14846,7 +14852,9 @@ ds3_error* ds3_get_cache_filesystems_spectra_s3_request(const ds3_client* client
 
     error = _parse_top_level_ds3_cache_filesystem_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15159,7 +15167,9 @@ ds3_error* ds3_get_azure_data_replication_rules_spectra_s3_request(const ds3_cli
 
     error = _parse_top_level_ds3_azure_data_replication_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15203,7 +15213,9 @@ ds3_error* ds3_get_data_persistence_rules_spectra_s3_request(const ds3_client* c
 
     error = _parse_top_level_ds3_data_persistence_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15227,7 +15239,9 @@ ds3_error* ds3_get_data_policies_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_data_policy_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15291,7 +15305,9 @@ ds3_error* ds3_get_ds3_data_replication_rules_spectra_s3_request(const ds3_clien
 
     error = _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15335,7 +15351,9 @@ ds3_error* ds3_get_s3_data_replication_rules_spectra_s3_request(const ds3_client
 
     error = _parse_top_level_ds3_s3_data_replication_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15549,7 +15567,9 @@ ds3_error* ds3_get_degraded_azure_data_replication_rules_spectra_s3_request(cons
 
     error = _parse_top_level_ds3_azure_data_replication_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15573,7 +15593,9 @@ ds3_error* ds3_get_degraded_blobs_spectra_s3_request(const ds3_client* client, c
 
     error = _parse_top_level_ds3_degraded_blob_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15597,7 +15619,9 @@ ds3_error* ds3_get_degraded_buckets_spectra_s3_request(const ds3_client* client,
 
     error = _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15621,7 +15645,9 @@ ds3_error* ds3_get_degraded_data_persistence_rules_spectra_s3_request(const ds3_
 
     error = _parse_top_level_ds3_data_persistence_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15645,7 +15671,9 @@ ds3_error* ds3_get_degraded_ds3_data_replication_rules_spectra_s3_request(const 
 
     error = _parse_top_level_ds3_data_replication_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15669,7 +15697,9 @@ ds3_error* ds3_get_degraded_s3_data_replication_rules_spectra_s3_request(const d
 
     error = _parse_top_level_ds3_s3_data_replication_rule_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15693,7 +15723,9 @@ ds3_error* ds3_get_suspect_blob_azure_targets_spectra_s3_request(const ds3_clien
 
     error = _parse_top_level_ds3_suspect_blob_azure_target_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15717,7 +15749,9 @@ ds3_error* ds3_get_suspect_blob_ds3_targets_spectra_s3_request(const ds3_client*
 
     error = _parse_top_level_ds3_suspect_blob_ds3_target_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15741,7 +15775,9 @@ ds3_error* ds3_get_suspect_blob_pools_spectra_s3_request(const ds3_client* clien
 
     error = _parse_top_level_ds3_suspect_blob_pool_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15765,7 +15801,9 @@ ds3_error* ds3_get_suspect_blob_s3_targets_spectra_s3_request(const ds3_client* 
 
     error = _parse_top_level_ds3_suspect_blob_s3_target_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15789,7 +15827,9 @@ ds3_error* ds3_get_suspect_blob_tapes_spectra_s3_request(const ds3_client* clien
 
     error = _parse_top_level_ds3_suspect_blob_tape_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15813,7 +15853,9 @@ ds3_error* ds3_get_suspect_buckets_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_bucket_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -15837,7 +15879,9 @@ ds3_error* ds3_get_suspect_objects_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_s3_object_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16061,7 +16105,9 @@ ds3_error* ds3_get_group_members_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_group_member_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16105,7 +16151,9 @@ ds3_error* ds3_get_groups_spectra_s3_request(const ds3_client* client, const ds3
 
     error = _parse_top_level_ds3_group_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16378,7 +16426,9 @@ ds3_error* ds3_get_active_jobs_spectra_s3_request(const ds3_client* client, cons
 
     error = _parse_top_level_ds3_active_job_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16422,7 +16472,9 @@ ds3_error* ds3_get_canceled_jobs_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_canceled_job_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16466,7 +16518,9 @@ ds3_error* ds3_get_completed_jobs_spectra_s3_request(const ds3_client* client, c
 
     error = _parse_top_level_ds3_completed_job_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16547,7 +16601,9 @@ ds3_error* ds3_get_job_creation_failures_spectra_s3_request(const ds3_client* cl
 
     error = _parse_top_level_ds3_job_creation_failed_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -16798,7 +16854,9 @@ ds3_error* ds3_get_nodes_spectra_s3_request(const ds3_client* client, const ds3_
 
     error = _parse_top_level_ds3_node_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17246,7 +17304,9 @@ ds3_error* ds3_get_azure_target_failure_notification_registrations_spectra_s3_re
 
     error = _parse_top_level_ds3_azure_target_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17290,7 +17350,9 @@ ds3_error* ds3_get_bucket_changes_notification_registrations_spectra_s3_request(
 
     error = _parse_top_level_ds3_bucket_changes_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17314,7 +17376,9 @@ ds3_error* ds3_get_bucket_history_spectra_s3_request(const ds3_client* client, c
 
     error = _parse_top_level_ds3_bucket_history_event_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17355,7 +17419,9 @@ ds3_error* ds3_get_ds3_target_failure_notification_registrations_spectra_s3_requ
 
     error = _parse_top_level_ds3_target_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17396,7 +17462,9 @@ ds3_error* ds3_get_job_completed_notification_registrations_spectra_s3_request(c
 
     error = _parse_top_level_ds3_job_completed_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17437,7 +17505,9 @@ ds3_error* ds3_get_job_created_notification_registrations_spectra_s3_request(con
 
     error = _parse_top_level_ds3_job_created_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17478,7 +17548,9 @@ ds3_error* ds3_get_job_creation_failed_notification_registrations_spectra_s3_req
 
     error = _parse_top_level_ds3_job_creation_failed_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17519,7 +17591,9 @@ ds3_error* ds3_get_object_cached_notification_registrations_spectra_s3_request(c
 
     error = _parse_top_level_ds3_s3_object_cached_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17560,7 +17634,9 @@ ds3_error* ds3_get_object_lost_notification_registrations_spectra_s3_request(con
 
     error = _parse_top_level_ds3_s3_object_lost_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17601,7 +17677,9 @@ ds3_error* ds3_get_object_persisted_notification_registrations_spectra_s3_reques
 
     error = _parse_top_level_ds3_s3_object_persisted_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17642,7 +17720,9 @@ ds3_error* ds3_get_pool_failure_notification_registrations_spectra_s3_request(co
 
     error = _parse_top_level_ds3_pool_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17686,7 +17766,9 @@ ds3_error* ds3_get_s3_target_failure_notification_registrations_spectra_s3_reque
 
     error = _parse_top_level_ds3_s3_target_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17727,7 +17809,9 @@ ds3_error* ds3_get_storage_domain_failure_notification_registrations_spectra_s3_
 
     error = _parse_top_level_ds3_storage_domain_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17768,7 +17852,9 @@ ds3_error* ds3_get_system_failure_notification_registrations_spectra_s3_request(
 
     error = _parse_top_level_ds3_system_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17809,7 +17895,9 @@ ds3_error* ds3_get_tape_failure_notification_registrations_spectra_s3_request(co
 
     error = _parse_top_level_ds3_tape_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17850,7 +17938,9 @@ ds3_error* ds3_get_tape_partition_failure_notification_registrations_spectra_s3_
 
     error = _parse_top_level_ds3_tape_partition_failure_notification_registration_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17935,7 +18025,9 @@ ds3_error* ds3_get_objects_details_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_s3_object_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -17959,7 +18051,9 @@ ds3_error* ds3_get_objects_with_full_details_spectra_s3_request(const ds3_client
 
     error = _parse_top_level_ds3_detailed_s3_object_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18311,7 +18405,9 @@ ds3_error* ds3_get_pool_failures_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_pool_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18355,7 +18451,9 @@ ds3_error* ds3_get_pool_partitions_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_pool_partition_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18399,7 +18497,9 @@ ds3_error* ds3_get_pools_spectra_s3_request(const ds3_client* client, const ds3_
 
     error = _parse_top_level_ds3_pool_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18622,7 +18722,9 @@ ds3_error* ds3_get_storage_domain_failures_spectra_s3_request(const ds3_client* 
 
     error = _parse_top_level_ds3_storage_domain_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18666,7 +18768,9 @@ ds3_error* ds3_get_storage_domain_members_spectra_s3_request(const ds3_client* c
 
     error = _parse_top_level_ds3_storage_domain_member_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18710,7 +18814,9 @@ ds3_error* ds3_get_storage_domains_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_storage_domain_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18782,7 +18888,9 @@ ds3_error* ds3_get_feature_keys_spectra_s3_request(const ds3_client* client, con
 
     error = _parse_top_level_ds3_feature_key_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -18806,7 +18914,9 @@ ds3_error* ds3_get_system_failures_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_system_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19323,7 +19433,9 @@ ds3_error* ds3_get_blobs_on_tape_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_bulk_object_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19367,7 +19479,9 @@ ds3_error* ds3_get_tape_density_directives_spectra_s3_request(const ds3_client* 
 
     error = _parse_top_level_ds3_tape_density_directive_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19411,7 +19525,9 @@ ds3_error* ds3_get_tape_drives_spectra_s3_request(const ds3_client* client, cons
 
     error = _parse_top_level_ds3_tape_drive_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19435,7 +19551,9 @@ ds3_error* ds3_get_tape_failures_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_detailed_tape_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19459,7 +19577,9 @@ ds3_error* ds3_get_tape_libraries_spectra_s3_request(const ds3_client* client, c
 
     error = _parse_top_level_ds3_tape_library_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19503,7 +19623,9 @@ ds3_error* ds3_get_tape_partition_failures_spectra_s3_request(const ds3_client* 
 
     error = _parse_top_level_ds3_tape_partition_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19567,7 +19689,9 @@ ds3_error* ds3_get_tape_partitions_spectra_s3_request(const ds3_client* client, 
 
     error = _parse_top_level_ds3_tape_partition_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19591,7 +19715,9 @@ ds3_error* ds3_get_tape_partitions_with_full_details_spectra_s3_request(const ds
 
     error = _parse_top_level_ds3_named_detailed_tape_partition_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -19635,7 +19761,9 @@ ds3_error* ds3_get_tapes_spectra_s3_request(const ds3_client* client, const ds3_
 
     error = _parse_top_level_ds3_tape_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20020,7 +20148,9 @@ ds3_error* ds3_get_azure_target_bucket_names_spectra_s3_request(const ds3_client
 
     error = _parse_top_level_ds3_azure_target_bucket_name_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20044,7 +20174,9 @@ ds3_error* ds3_get_azure_target_failures_spectra_s3_request(const ds3_client* cl
 
     error = _parse_top_level_ds3_azure_target_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20088,7 +20220,9 @@ ds3_error* ds3_get_azure_target_read_preferences_spectra_s3_request(const ds3_cl
 
     error = _parse_top_level_ds3_azure_target_read_preference_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20132,7 +20266,9 @@ ds3_error* ds3_get_azure_targets_spectra_s3_request(const ds3_client* client, co
 
     error = _parse_top_level_ds3_azure_target_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20342,7 +20478,9 @@ ds3_error* ds3_get_ds3_target_failures_spectra_s3_request(const ds3_client* clie
 
     error = _parse_top_level_ds3_target_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20386,7 +20524,9 @@ ds3_error* ds3_get_ds3_target_read_preferences_spectra_s3_request(const ds3_clie
 
     error = _parse_top_level_ds3_target_read_preference_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20430,7 +20570,9 @@ ds3_error* ds3_get_ds3_targets_spectra_s3_request(const ds3_client* client, cons
 
     error = _parse_top_level_ds3_target_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20628,7 +20770,9 @@ ds3_error* ds3_get_s3_target_bucket_names_spectra_s3_request(const ds3_client* c
 
     error = _parse_top_level_ds3_s3_target_bucket_name_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20652,7 +20796,9 @@ ds3_error* ds3_get_s3_target_failures_spectra_s3_request(const ds3_client* clien
 
     error = _parse_top_level_ds3_s3_target_failure_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20696,7 +20842,9 @@ ds3_error* ds3_get_s3_target_read_preferences_spectra_s3_request(const ds3_clien
 
     error = _parse_top_level_ds3_s3_target_read_preference_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20740,7 +20888,9 @@ ds3_error* ds3_get_s3_targets_spectra_s3_request(const ds3_client* client, const
 
     error = _parse_top_level_ds3_s3_target_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;
@@ -20888,7 +21038,9 @@ ds3_error* ds3_get_users_spectra_s3_request(const ds3_client* client, const ds3_
 
     error = _parse_top_level_ds3_spectra_user_list_response(client, request, response, xml_blob);
 
-    (*response)->paging = _parse_paging_headers(return_headers);
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
     ds3_string_multimap_free(return_headers);
 
     return error;

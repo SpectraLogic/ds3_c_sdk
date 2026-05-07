@@ -8,6 +8,13 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../modules/")
 
 add_definitions(-DCURL_STATICLIB)
 
+# To run tests, the following environment variables are required:
+# DS3_ENDPOINT, DS3_ACCESS_KEY, DS3_SECRET_KEY
+#
+# To run the 'full' version of performance/stress tests, set:
+# DS3_FULL_TESTS=1
+# Otherwise, a 'fast' version will be run by default.
+
 add_executable(ds3_c_tests
         bucket_tests.cpp
         bulk_get.cpp
