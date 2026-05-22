@@ -667,6 +667,18 @@ static ds3_feature_key_type _match_ds3_feature_key_type(const ds3_log* log, cons
         return DS3_FEATURE_KEY_TYPE_AWS_S3_CLOUD_OUT;
     }
 }
+static ds3_iom_type _match_ds3_iom_type(const ds3_log* log, const xmlChar* text) {
+    if (xmlStrcmp(text, (const xmlChar*) "NO") == 0) {
+        return DS3_IOM_TYPE_NO;
+    } else if (xmlStrcmp(text, (const xmlChar*) "YES") == 0) {
+        return DS3_IOM_TYPE_YES;
+    } else if (xmlStrcmp(text, (const xmlChar*) "PERMANENT_ONLY") == 0) {
+        return DS3_IOM_TYPE_PERMANENT_ONLY;
+    } else {
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_IOM_TYPE_NO for safety.", text);
+        return DS3_IOM_TYPE_NO;
+    }
+}
 static ds3_job_chunk_blob_store_state _match_ds3_job_chunk_blob_store_state(const ds3_log* log, const xmlChar* text) {
     if (xmlStrcmp(text, (const xmlChar*) "PENDING") == 0) {
         return DS3_JOB_CHUNK_BLOB_STORE_STATE_PENDING;
@@ -690,11 +702,13 @@ static ds3_job_chunk_client_processing_order_guarantee _match_ds3_job_chunk_clie
     }
 }
 static ds3_job_creation_failed_type _match_ds3_job_creation_failed_type(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "TAPES_MUST_BE_ONLINED") == 0) {
+    if (xmlStrcmp(text, (const xmlChar*) "DATA_UNAVAILABLE") == 0) {
+        return DS3_JOB_CREATION_FAILED_TYPE_DATA_UNAVAILABLE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "TAPES_MUST_BE_ONLINED") == 0) {
         return DS3_JOB_CREATION_FAILED_TYPE_TAPES_MUST_BE_ONLINED;
     } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_JOB_CREATION_FAILED_TYPE_TAPES_MUST_BE_ONLINED for safety.", text);
-        return DS3_JOB_CREATION_FAILED_TYPE_TAPES_MUST_BE_ONLINED;
+        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_JOB_CREATION_FAILED_TYPE_DATA_UNAVAILABLE for safety.", text);
+        return DS3_JOB_CREATION_FAILED_TYPE_DATA_UNAVAILABLE;
     }
 }
 static ds3_job_request_type _match_ds3_job_request_type(const ds3_log* log, const xmlChar* text) {
@@ -707,18 +721,6 @@ static ds3_job_request_type _match_ds3_job_request_type(const ds3_log* log, cons
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_JOB_REQUEST_TYPE_PUT for safety.", text);
         return DS3_JOB_REQUEST_TYPE_PUT;
-    }
-}
-static ds3_job_restore _match_ds3_job_restore(const ds3_log* log, const xmlChar* text) {
-    if (xmlStrcmp(text, (const xmlChar*) "NO") == 0) {
-        return DS3_JOB_RESTORE_NO;
-    } else if (xmlStrcmp(text, (const xmlChar*) "YES") == 0) {
-        return DS3_JOB_RESTORE_YES;
-    } else if (xmlStrcmp(text, (const xmlChar*) "PERMANENT_ONLY") == 0) {
-        return DS3_JOB_RESTORE_PERMANENT_ONLY;
-    } else {
-        ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_JOB_RESTORE_NO for safety.", text);
-        return DS3_JOB_RESTORE_NO;
     }
 }
 static ds3_ltfs_file_naming_mode _match_ds3_ltfs_file_naming_mode(const ds3_log* log, const xmlChar* text) {
@@ -902,6 +904,8 @@ static ds3_cache_entry_state _match_ds3_cache_entry_state(const ds3_log* log, co
         return DS3_CACHE_ENTRY_STATE_ALLOCATED;
     } else if (xmlStrcmp(text, (const xmlChar*) "IN_CACHE") == 0) {
         return DS3_CACHE_ENTRY_STATE_IN_CACHE;
+    } else if (xmlStrcmp(text, (const xmlChar*) "PENDING_DELETE") == 0) {
+        return DS3_CACHE_ENTRY_STATE_PENDING_DELETE;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_CACHE_ENTRY_STATE_ALLOCATED for safety.", text);
         return DS3_CACHE_ENTRY_STATE_ALLOCATED;
@@ -1118,10 +1122,14 @@ static ds3_tape_failure_type _match_ds3_tape_failure_type(const ds3_log* log, co
         return DS3_TAPE_FAILURE_TYPE_REIMPORT_REQUIRED;
     } else if (xmlStrcmp(text, (const xmlChar*) "SERIAL_NUMBER_MISMATCH") == 0) {
         return DS3_TAPE_FAILURE_TYPE_SERIAL_NUMBER_MISMATCH;
+    } else if (xmlStrcmp(text, (const xmlChar*) "SINGLE_PARTITION") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_SINGLE_PARTITION;
     } else if (xmlStrcmp(text, (const xmlChar*) "VERIFY_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_VERIFY_FAILED;
     } else if (xmlStrcmp(text, (const xmlChar*) "WRITE_FAILED") == 0) {
         return DS3_TAPE_FAILURE_TYPE_WRITE_FAILED;
+    } else if (xmlStrcmp(text, (const xmlChar*) "WRITE_SOURCE_FAILED") == 0) {
+        return DS3_TAPE_FAILURE_TYPE_WRITE_SOURCE_FAILED;
     } else {
         ds3_log_message(log, DS3_ERROR, "ERROR: Unknown value of '%s'.  Returning DS3_TAPE_FAILURE_TYPE_BAR_CODE_CHANGED for safety.", text);
         return DS3_TAPE_FAILURE_TYPE_BAR_CODE_CHANGED;
@@ -1266,6 +1274,8 @@ static ds3_tape_type _match_ds3_tape_type(const ds3_log* log, const xmlChar* tex
         return DS3_TAPE_TYPE_LTO9;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO10") == 0) {
         return DS3_TAPE_TYPE_LTO10;
+    } else if (xmlStrcmp(text, (const xmlChar*) "LTO10P") == 0) {
+        return DS3_TAPE_TYPE_LTO10P;
     } else if (xmlStrcmp(text, (const xmlChar*) "LTO_CLEANING_TAPE") == 0) {
         return DS3_TAPE_TYPE_LTO_CLEANING_TAPE;
     } else if (xmlStrcmp(text, (const xmlChar*) "TS_JC") == 0) {
@@ -1627,6 +1637,53 @@ static ds3_error* _parse_ds3_bucket_acl_response(const ds3_client* client, const
             response->user_id = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_bucket_acl_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_cache_throttle_rule_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_cache_throttle_rule_response** _response) {
+    ds3_cache_throttle_rule_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_cache_throttle_rule_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "BurstThreshold")) {
+            response->burst_threshold = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxCachePercent")) {
+            response->max_cache_percent = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "Priority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "RequestType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->request_type = _match_ds3_job_request_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_cache_throttle_rule_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -2189,6 +2246,13 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "ImplicitJobIdResolution")) {
             response->implicit_job_id_resolution = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Restore")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->iom_type = _match_ds3_iom_type(client->log, text);
+            xmlFree(text);
         } else if (element_equal(child_node, "MinimizeSpanningAcrossMedia")) {
             response->minimize_spanning_across_media = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Naked")) {
@@ -2216,13 +2280,6 @@ static ds3_error* _parse_ds3_active_job_response(const ds3_client* client, const
                 continue;
             }
             response->request_type = _match_ds3_job_request_type(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "Restore")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->restore = _match_ds3_job_restore(client->log, text);
             xmlFree(text);
         } else if (element_equal(child_node, "Truncated")) {
             response->truncated = xml_get_bool(client->log, doc, child_node);
@@ -2276,6 +2333,62 @@ static ds3_error* _parse_ds3_job_creation_failed_response(const ds3_client* clie
             response->user_name = xml_get_string(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_creation_failed_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_job_entry_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_entry_response** _response) {
+    ds3_job_entry_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_job_entry_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BlobId")) {
+            response->blob_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "BlobStoreState")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->blob_store_state = _match_ds3_job_chunk_blob_store_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ChunkId")) {
+            response->chunk_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ChunkNumber")) {
+            response->chunk_number = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "JobId")) {
+            response->job_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NodeId")) {
+            response->node_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PendingTargetCommit")) {
+            response->pending_target_commit = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "ReadFromAzureTargetId")) {
+            response->read_from_azure_target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromDs3TargetId")) {
+            response->read_from_ds3_target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromPoolId")) {
+            response->read_from_pool_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromS3TargetId")) {
+            response->read_from_s3_target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromTapeId")) {
+            response->read_from_tape_id = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_entry_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -3982,7 +4095,9 @@ static ds3_error* _parse_ds3_tape_response(const ds3_client* client, const xmlDo
 
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "AssignedToStorageDomain")) {
+        if (element_equal(child_node, "AllowRollback")) {
+            response->allow_rollback = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AssignedToStorageDomain")) {
             response->assigned_to_storage_domain = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "AvailableRawCapacity")) {
             response->available_raw_capacity = xml_get_uint64(doc, child_node);
@@ -3990,6 +4105,8 @@ static ds3_error* _parse_ds3_tape_response(const ds3_client* client, const xmlDo
             response->bar_code = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "BucketId")) {
             response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CharacterizationVer")) {
+            response->characterization_ver = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DescriptionForIdentification")) {
             response->description_for_identification = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "EjectDate")) {
@@ -4138,7 +4255,9 @@ static ds3_error* _parse_ds3_tape_drive_response(const ds3_client* client, const
 
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "CleaningRequired")) {
+        if (element_equal(child_node, "CharacterizationVer")) {
+            response->characterization_ver = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CleaningRequired")) {
             response->cleaning_required = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "ErrorMessage")) {
             response->error_message = xml_get_string(doc, child_node);
@@ -5202,65 +5321,6 @@ static ds3_error* _parse_ds3_tapes_must_be_onlined_response(const ds3_client* cl
     return error;
 }
 
-static ds3_error* _parse_ds3_blob_store_task_information_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_blob_store_task_information_response** _response) {
-    ds3_blob_store_task_information_response* response;
-    xmlNodePtr child_node;
-    ds3_error* error = NULL;
-
-    response = g_new0(ds3_blob_store_task_information_response, 1);
-
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "DateScheduled")) {
-            response->date_scheduled = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "DateStarted")) {
-            response->date_started = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Description")) {
-            response->description = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "DriveId")) {
-            response->drive_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Id")) {
-            response->id = xml_get_uint64(doc, child_node);
-        } else if (element_equal(child_node, "Name")) {
-            response->name = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "PoolId")) {
-            response->pool_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Priority")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->priority = _match_ds3_priority(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "State")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->state = _match_ds3_blob_store_task_state(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "TapeId")) {
-            response->tape_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "TargetId")) {
-            response->target_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "TargetType")) {
-            response->target_type = xml_get_string(doc, child_node);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_blob_store_task_information_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-
-    *_response = response;
-
-    return error;
-}
-
 static ds3_error* _parse_ds3_cache_entry_information_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_cache_entry_information_response** _response) {
     ds3_cache_entry_information_response* response;
     xmlNodePtr child_node;
@@ -5399,6 +5459,167 @@ static ds3_error* _parse_ds3_bucket_details_response_array(const ds3_client* cli
 
     return error;
 }
+static ds3_error* _parse_ds3_data_persistence_rule_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_persistence_rule_api_bean_response** _response) {
+    ds3_data_persistence_rule_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_data_persistence_rule_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "StorageDomainName") == true) {
+            response->storage_domain_name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_data_persistence_rule_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "IsolationLevel")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->isolation_level = _match_ds3_data_isolation_level(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "MinimumDaysToRetain")) {
+            response->minimum_days_to_retain = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "StorageDomainId")) {
+            response->storage_domain_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_data_persistence_rule_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_data_persistence_rule_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_data_persistence_rule_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_data_persistence_rule_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_data_persistence_rule_api_bean_response* response = NULL;
+        error = _parse_ds3_data_persistence_rule_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_data_persistence_rule_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_data_persistence_rule_api_bean_response_array;
+
+    return error;
+}
+static ds3_error* _parse_ds3_data_replication_rule_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_replication_rule_api_bean_response** _response) {
+    ds3_data_replication_rule_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_data_replication_rule_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "TargetName") == true) {
+            response->target_name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_data_replication_rule_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReplicateDeletes")) {
+            response->replicate_deletes = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_data_placement_rule_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_data_replication_rule_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_data_replication_rule_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_data_replication_rule_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_data_replication_rule_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_data_replication_rule_api_bean_response* response = NULL;
+        error = _parse_ds3_data_replication_rule_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_data_replication_rule_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_data_replication_rule_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_delete_object_error_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_delete_object_error_response** _response) {
     ds3_delete_object_error_response* response;
     xmlNodePtr child_node;
@@ -5432,23 +5653,32 @@ static ds3_error* _parse_ds3_delete_object_error_response(const ds3_client* clie
     return error;
 }
 
-static ds3_error* _parse_ds3_multi_part_upload_part_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_multi_part_upload_part_response** _response) {
-    ds3_multi_part_upload_part_response* response;
+static ds3_error* _parse_ds3_human_readable_bucket_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_human_readable_bucket_api_bean_response** _response) {
+    ds3_human_readable_bucket_api_bean_response* response;
+    struct _xmlAttr* attribute;
     xmlNodePtr child_node;
     ds3_error* error = NULL;
 
-    response = g_new0(ds3_multi_part_upload_part_response, 1);
+    response = g_new0(ds3_human_readable_bucket_api_bean_response, 1);
 
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_human_readable_bucket_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "ETag")) {
-            response->e_tag = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "LastModified")) {
-            response->last_modified = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "PartNumber")) {
-            response->part_number = xml_get_uint16(doc, child_node);
+        if (element_equal(child_node, "CreationDate")) {
+            response->creation_date = xml_get_string(doc, child_node);
         } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_multi_part_upload_part_response [%s]\n", child_node->name, root->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_human_readable_bucket_api_bean_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -5463,6 +5693,25 @@ static ds3_error* _parse_ds3_multi_part_upload_part_response(const ds3_client* c
     return error;
 }
 
+static ds3_error* _parse_ds3_human_readable_bucket_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_human_readable_bucket_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_human_readable_bucket_api_bean_response* response = NULL;
+        error = _parse_ds3_human_readable_bucket_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_human_readable_bucket_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_human_readable_bucket_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_job_node_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_node_response** _response) {
     ds3_job_node_response* response;
     struct _xmlAttr* attribute;
@@ -5515,6 +5764,74 @@ static ds3_error* _parse_ds3_job_node_response_array(const ds3_client* client, c
 
     return error;
 }
+static ds3_error* _parse_ds3_pool_partition_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_pool_partition_api_bean_response** _response) {
+    ds3_pool_partition_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_pool_partition_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_pool_partition_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PoolCount")) {
+            response->pool_count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Type")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->type = _match_ds3_pool_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_pool_partition_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_pool_partition_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_pool_partition_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_pool_partition_api_bean_response* response = NULL;
+        error = _parse_ds3_pool_partition_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_pool_partition_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_pool_partition_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_s3_object_to_delete_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_s3_object_to_delete_response** _response) {
     ds3_s3_object_to_delete_response* response;
     xmlNodePtr child_node;
@@ -5544,6 +5861,194 @@ static ds3_error* _parse_ds3_s3_object_to_delete_response(const ds3_client* clie
     return error;
 }
 
+static ds3_error* _parse_ds3_storage_domain_member_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_storage_domain_member_api_bean_response** _response) {
+    ds3_storage_domain_member_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_storage_domain_member_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "PartitionName") == true) {
+            response->partition_name = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "TapeType") == true) {
+            response->tape_type = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_storage_domain_member_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AutoCompactionThreshold")) {
+            response->auto_compaction_threshold = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PoolPartitionId")) {
+            response->pool_partition_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_storage_domain_member_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TapePartitionId")) {
+            response->tape_partition_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "WritePreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->write_preference = _match_ds3_write_preference_level(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_storage_domain_member_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_storage_domain_member_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_storage_domain_member_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_storage_domain_member_api_bean_response* response = NULL;
+        error = _parse_ds3_storage_domain_member_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_storage_domain_member_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_storage_domain_member_api_bean_response_array;
+
+    return error;
+}
+static ds3_error* _parse_ds3_tape_partition_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_partition_api_bean_response** _response) {
+    ds3_tape_partition_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_tape_partition_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_tape_partition_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AutoCompactionEnabled")) {
+            response->auto_compaction_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoQuiesceEnabled")) {
+            response->auto_quiesce_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "DriveCount")) {
+            response->drive_count = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "DriveIdleTimeoutInMinutes")) {
+            response->drive_idle_timeout_in_minutes = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "DriveType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->drive_type = _match_ds3_tape_drive_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ErrorMessage")) {
+            response->error_message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ImportExportConfiguration")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->import_export_configuration = _match_ds3_import_export_configuration(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "LibraryId")) {
+            response->library_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MinimumReadReservedDrives")) {
+            response->minimum_read_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MinimumWriteReservedDrives")) {
+            response->minimum_write_reserved_drives = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "SerialNumber")) {
+            response->serial_number = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_tape_partition_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TapeCount")) {
+            response->tape_count = xml_get_uint16(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_tape_partition_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_tape_partition_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_tape_partition_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_tape_partition_api_bean_response* response = NULL;
+        error = _parse_ds3_tape_partition_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_tape_partition_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_tape_partition_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_tape_type_summary_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_type_summary_api_bean_response** _response) {
     ds3_tape_type_summary_api_bean_response* response;
     xmlNodePtr child_node;
@@ -5595,6 +6100,95 @@ static ds3_error* _parse_ds3_tape_type_summary_api_bean_response_array(const ds3
     }
 
     *_response = ds3_tape_type_summary_api_bean_response_array;
+
+    return error;
+}
+static ds3_error* _parse_ds3_target_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_target_api_bean_response** _response) {
+    ds3_target_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_target_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_target_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "CloudNamingMode")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->cloud_naming_mode = _match_ds3_cloud_naming_mode(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DefaultReadPreference")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_read_preference = _match_ds3_target_read_preference_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PermitGoingOutOfSync")) {
+            response->permit_going_out_of_sync = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Quiesced")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->quiesced = _match_ds3_quiesced(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_target_state(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_target_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_target_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_target_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_target_api_bean_response* response = NULL;
+        error = _parse_ds3_target_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_target_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_target_api_bean_response_array;
 
     return error;
 }
@@ -5708,6 +6302,41 @@ static ds3_error* _parse_ds3_type_response(const ds3_client* client, const xmlDo
             response->number_of_type = xml_get_uint16(doc, child_node);
         } else {
             ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_type_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    *_response = response;
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_duration_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_duration_response** _response) {
+    ds3_duration_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_duration_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "ElapsedHours")) {
+            response->elapsed_hours = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "ElapsedMillis")) {
+            response->elapsed_millis = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "ElapsedMinutes")) {
+            response->elapsed_minutes = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "ElapsedNanos")) {
+            response->elapsed_nanos = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "ElapsedSeconds")) {
+            response->elapsed_seconds = xml_get_uint16(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_duration_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -5925,6 +6554,223 @@ static ds3_error* _parse_ds3_bulk_object_list_response(const ds3_client* client,
     return error;
 }
 
+static ds3_error* _parse_ds3_blob_store_task_information_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_blob_store_task_information_response** _response) {
+    ds3_blob_store_task_information_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_blob_store_task_information_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "DateScheduled")) {
+            response->date_scheduled = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DateStarted")) {
+            response->date_started = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Description")) {
+            response->description = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DriveId")) {
+            response->drive_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "DurationInProgress")) {
+            error = _parse_ds3_duration_response(client, doc, child_node, &response->duration_in_progress);
+        } else if (element_equal(child_node, "DurationScheduled")) {
+            error = _parse_ds3_duration_response(client, doc, child_node, &response->duration_scheduled);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "JobId")) {
+            xmlNodePtr loop_node;
+            GPtrArray* job_ids_array = g_ptr_array_new();
+            int num_nodes = 0;
+            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
+                ds3_str* job_ids = xml_get_string(doc, loop_node);
+                g_ptr_array_add(job_ids_array, job_ids);
+            }
+            response->job_ids = (ds3_str**)job_ids_array->pdata;
+            response->num_job_ids = job_ids_array->len;
+            g_ptr_array_free(job_ids_array, FALSE);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PoolId")) {
+            response->pool_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Priority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "State")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->state = _match_ds3_blob_store_task_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "TapeId")) {
+            response->tape_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetId")) {
+            response->target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "TargetType")) {
+            response->target_type = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_blob_store_task_information_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_blob_store_task_information_response_free(response);
+    }
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_data_policy_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_data_policy_api_bean_response** _response) {
+    ds3_data_policy_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_data_policy_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_data_policy_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AlwaysForcePutJobCreation")) {
+            response->always_force_put_job_creation = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AlwaysMinimizeSpanningAcrossMedia")) {
+            response->always_minimize_spanning_across_media = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "BlobbingEnabled")) {
+            response->blobbing_enabled = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Buckets")) {
+            GPtrArray* buckets_array;
+            error = _parse_ds3_human_readable_bucket_api_bean_response_array(client, doc, child_node, &buckets_array);
+            response->buckets = (ds3_human_readable_bucket_api_bean_response**)buckets_array->pdata;
+            response->num_buckets = buckets_array->len;
+            g_ptr_array_free(buckets_array, FALSE);
+        } else if (element_equal(child_node, "ChecksumType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->checksum_type = _match_ds3_checksum_type(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "CreationDate")) {
+            response->creation_date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LocalCopies")) {
+            GPtrArray* data_persistence_rules_array;
+            error = _parse_ds3_data_persistence_rule_api_bean_response_array(client, doc, child_node, &data_persistence_rules_array);
+            response->data_persistence_rules = (ds3_data_persistence_rule_api_bean_response**)data_persistence_rules_array->pdata;
+            response->num_data_persistence_rules = data_persistence_rules_array->len;
+            g_ptr_array_free(data_persistence_rules_array, FALSE);
+        } else if (element_equal(child_node, "RemoteCopies")) {
+            GPtrArray* data_replication_rules_array;
+            error = _parse_ds3_data_replication_rule_api_bean_response_array(client, doc, child_node, &data_replication_rules_array);
+            response->data_replication_rules = (ds3_data_replication_rule_api_bean_response**)data_replication_rules_array->pdata;
+            response->num_data_replication_rules = data_replication_rules_array->len;
+            g_ptr_array_free(data_replication_rules_array, FALSE);
+        } else if (element_equal(child_node, "DefaultBlobSize")) {
+            response->default_blob_size = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "DefaultGetJobPriority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_get_job_priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DefaultPutJobPriority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_put_job_priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "DefaultVerifyAfterWrite")) {
+            response->default_verify_after_write = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "DefaultVerifyJobPriority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->default_verify_job_priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "EndToEndCrcRequired")) {
+            response->end_to_end_crc_required = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxVersionsToKeep")) {
+            response->max_versions_to_keep = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "RebuildPriority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->rebuild_priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "Versioning")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->versioning = _match_ds3_versioning_level(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_data_policy_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_data_policy_api_bean_response_free(response);
+    }
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_data_policy_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_data_policy_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_data_policy_api_bean_response* response = NULL;
+        error = _parse_ds3_data_policy_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_data_policy_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_data_policy_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_job_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_job_response** _response) {
     ds3_job_response* response;
     struct _xmlAttr* attribute;
@@ -6097,43 +6943,25 @@ static ds3_error* _parse_ds3_objects_response(const ds3_client* client, const xm
     return error;
 }
 
-static ds3_error* _parse_ds3_multi_part_upload_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_multi_part_upload_response** _response) {
-    ds3_multi_part_upload_response* response;
-    xmlNodePtr child_node;
+static ds3_error* _parse_ds3_objects_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
     ds3_error* error = NULL;
-
-    response = g_new0(ds3_multi_part_upload_response, 1);
-
+    xmlNodePtr child_node;
+    GPtrArray* ds3_objects_response_array = g_ptr_array_new();
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Initiated")) {
-            response->initiated = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Key")) {
-            response->key = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Owner")) {
-            error = _parse_ds3_user_response(client, doc, child_node, &response->owner);
-        } else if (element_equal(child_node, "UploadId")) {
-            response->upload_id = xml_get_string(doc, child_node);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_multi_part_upload_response [%s]\n", child_node->name, root->name);
-        }
+        ds3_objects_response* response = NULL;
+        error = _parse_ds3_objects_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_objects_response_array, response);
 
         if (error != NULL) {
             break;
         }
-
     }
 
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_multi_part_upload_response_free(response);
-    }
+    *_response = ds3_objects_response_array;
 
     return error;
 }
-
 static ds3_error* _parse_ds3_contents_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_contents_response** _response) {
     ds3_contents_response* response;
     xmlNodePtr child_node;
@@ -6179,6 +7007,114 @@ static ds3_error* _parse_ds3_contents_response(const ds3_client* client, const x
     return error;
 }
 
+static ds3_error* _parse_ds3_storage_domain_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_storage_domain_api_bean_response** _response) {
+    ds3_storage_domain_api_bean_response* response;
+    struct _xmlAttr* attribute;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_storage_domain_api_bean_response, 1);
+
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_storage_domain_api_bean_response [%s]\n", attribute->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "AutoEjectMediaFullThreshold")) {
+            response->auto_eject_media_full_threshold = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "AutoEjectUponCron")) {
+            response->auto_eject_upon_cron = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "AutoEjectUponJobCancellation")) {
+            response->auto_eject_upon_job_cancellation = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoEjectUponJobCompletion")) {
+            response->auto_eject_upon_job_completion = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AutoEjectUponMediaFull")) {
+            response->auto_eject_upon_media_full = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "LtfsFileNaming")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->ltfs_file_naming = _match_ds3_ltfs_file_naming_mode(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "MaxTapeFragmentationPercent")) {
+            response->max_tape_fragmentation_percent = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MaximumAutoVerificationFrequencyInDays")) {
+            response->maximum_auto_verification_frequency_in_days = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "MediaEjectionAllowed")) {
+            response->media_ejection_allowed = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "SecureMediaAllocation")) {
+            response->secure_media_allocation = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "StorageDomainMembers")) {
+            GPtrArray* storage_domain_members_array;
+            error = _parse_ds3_storage_domain_member_api_bean_response_array(client, doc, child_node, &storage_domain_members_array);
+            response->storage_domain_members = (ds3_storage_domain_member_api_bean_response**)storage_domain_members_array->pdata;
+            response->num_storage_domain_members = storage_domain_members_array->len;
+            g_ptr_array_free(storage_domain_members_array, FALSE);
+        } else if (element_equal(child_node, "VerifyPriorToAutoEject")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->verify_prior_to_auto_eject = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "WriteOptimization")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->write_optimization = _match_ds3_write_optimization(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_storage_domain_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_storage_domain_api_bean_response_free(response);
+    }
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_storage_domain_api_bean_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_storage_domain_api_bean_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_storage_domain_api_bean_response* response = NULL;
+        error = _parse_ds3_storage_domain_api_bean_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_storage_domain_api_bean_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_storage_domain_api_bean_response_array;
+
+    return error;
+}
 static ds3_error* _parse_ds3_tape_state_summary_api_bean_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_tape_state_summary_api_bean_response** _response) {
     ds3_tape_state_summary_api_bean_response* response;
     xmlNodePtr child_node;
@@ -6437,6 +7373,70 @@ static ds3_error* _parse_ds3_named_detailed_tape_partition_response(const ds3_cl
     return error;
 }
 
+static ds3_error* _parse_ds3_destination_summary_response(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, ds3_destination_summary_response** _response) {
+    ds3_destination_summary_response* response;
+    xmlNodePtr child_node;
+    ds3_error* error = NULL;
+
+    response = g_new0(ds3_destination_summary_response, 1);
+
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Complete")) {
+            GPtrArray* completed_chunks_array;
+            error = _parse_ds3_objects_response_array(client, doc, child_node, &completed_chunks_array);
+            response->completed_chunks = (ds3_objects_response**)completed_chunks_array->pdata;
+            response->num_completed_chunks = completed_chunks_array->len;
+            g_ptr_array_free(completed_chunks_array, FALSE);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "Incomplete")) {
+            GPtrArray* incomplete_chunks_array;
+            error = _parse_ds3_objects_response_array(client, doc, child_node, &incomplete_chunks_array);
+            response->incomplete_chunks = (ds3_objects_response**)incomplete_chunks_array->pdata;
+            response->num_incomplete_chunks = incomplete_chunks_array->len;
+            g_ptr_array_free(incomplete_chunks_array, FALSE);
+        } else if (element_equal(child_node, "Name")) {
+            response->name = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_destination_summary_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_destination_summary_response_free(response);
+    }
+
+    return error;
+}
+
+static ds3_error* _parse_ds3_destination_summary_response_array(const ds3_client* client, const xmlDocPtr doc, const xmlNodePtr root, GPtrArray** _response) {
+    ds3_error* error = NULL;
+    xmlNodePtr child_node;
+    GPtrArray* ds3_destination_summary_response_array = g_ptr_array_new();
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        ds3_destination_summary_response* response = NULL;
+        error = _parse_ds3_destination_summary_response(client, doc, child_node, &response);
+        g_ptr_array_add(ds3_destination_summary_response_array, response);
+
+        if (error != NULL) {
+            break;
+        }
+    }
+
+    *_response = ds3_destination_summary_response_array;
+
+    return error;
+}
 
 //************ TOP LEVEL STRUCT PARSERS **************
 static ds3_error* _parse_top_level_ds3_azure_data_replication_rule_response(const ds3_client* client, const ds3_request* request, ds3_azure_data_replication_rule_response** _response, GByteArray* xml_blob) {
@@ -6600,6 +7600,64 @@ static ds3_error* _parse_top_level_ds3_bucket_acl_response(const ds3_client* cli
         *_response = response;
     } else {
         ds3_bucket_acl_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_cache_throttle_rule_response(const ds3_client* client, const ds3_request* request, ds3_cache_throttle_rule_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_cache_throttle_rule_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_cache_throttle_rule_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "BucketId")) {
+            response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "BurstThreshold")) {
+            response->burst_threshold = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "MaxCachePercent")) {
+            response->max_cache_percent = xml_get_uint64(doc, child_node);
+        } else if (element_equal(child_node, "Priority")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "RequestType")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->request_type = _match_ds3_job_request_type(client->log, text);
+            xmlFree(text);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_cache_throttle_rule_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_cache_throttle_rule_response_free(response);
     }
 
     return error;
@@ -6791,6 +7849,8 @@ static ds3_error* _parse_top_level_ds3_data_path_backend_response(const ds3_clie
             response->activated = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "AllowNewJobRequests")) {
             response->allow_new_job_requests = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AlwaysRollback")) {
+            response->always_rollback = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "AutoActivateTimeoutInMins")) {
             response->auto_activate_timeout_in_mins = xml_get_uint16(doc, child_node);
         } else if (element_equal(child_node, "AutoInspect")) {
@@ -7256,6 +8316,13 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             response->id = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "ImplicitJobIdResolution")) {
             response->implicit_job_id_resolution = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "Restore")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->iom_type = _match_ds3_iom_type(client->log, text);
+            xmlFree(text);
         } else if (element_equal(child_node, "MinimizeSpanningAcrossMedia")) {
             response->minimize_spanning_across_media = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "Naked")) {
@@ -7284,13 +8351,6 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
             }
             response->request_type = _match_ds3_job_request_type(client->log, text);
             xmlFree(text);
-        } else if (element_equal(child_node, "Restore")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->restore = _match_ds3_job_restore(client->log, text);
-            xmlFree(text);
         } else if (element_equal(child_node, "Truncated")) {
             response->truncated = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "TruncatedDueToTimeout")) {
@@ -7316,71 +8376,6 @@ static ds3_error* _parse_top_level_ds3_active_job_response(const ds3_client* cli
         *_response = response;
     } else {
         ds3_active_job_response_free(response);
-    }
-
-    return error;
-}
-static ds3_error* _parse_top_level_ds3_job_chunk_response(const ds3_client* client, const ds3_request* request, ds3_job_chunk_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_job_chunk_response* response;
-    ds3_error* error = NULL;
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_job_chunk_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "BlobStoreState")) {
-            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
-            if (text == NULL) {
-                continue;
-            }
-            response->blob_store_state = _match_ds3_job_chunk_blob_store_state(client->log, text);
-            xmlFree(text);
-        } else if (element_equal(child_node, "ChunkNumber")) {
-            response->chunk_number = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "Id")) {
-            response->id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "JobCreationDate")) {
-            response->job_creation_date = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "JobId")) {
-            response->job_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "NodeId")) {
-            response->node_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "PendingTargetCommit")) {
-            response->pending_target_commit = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "ReadFromAzureTargetId")) {
-            response->read_from_azure_target_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ReadFromDs3TargetId")) {
-            response->read_from_ds3_target_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ReadFromPoolId")) {
-            response->read_from_pool_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ReadFromS3TargetId")) {
-            response->read_from_s3_target_id = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ReadFromTapeId")) {
-            response->read_from_tape_id = xml_get_string(doc, child_node);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_chunk_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_job_chunk_response_free(response);
     }
 
     return error;
@@ -9065,7 +10060,9 @@ static ds3_error* _parse_top_level_ds3_tape_response(const ds3_client* client, c
     response = g_new0(ds3_tape_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "AssignedToStorageDomain")) {
+        if (element_equal(child_node, "AllowRollback")) {
+            response->allow_rollback = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "AssignedToStorageDomain")) {
             response->assigned_to_storage_domain = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "AvailableRawCapacity")) {
             response->available_raw_capacity = xml_get_uint64(doc, child_node);
@@ -9073,6 +10070,8 @@ static ds3_error* _parse_top_level_ds3_tape_response(const ds3_client* client, c
             response->bar_code = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "BucketId")) {
             response->bucket_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CharacterizationVer")) {
+            response->characterization_ver = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "DescriptionForIdentification")) {
             response->description_for_identification = xml_get_string(doc, child_node);
         } else if (element_equal(child_node, "EjectDate")) {
@@ -9224,7 +10223,9 @@ static ds3_error* _parse_top_level_ds3_tape_drive_response(const ds3_client* cli
     response = g_new0(ds3_tape_drive_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "CleaningRequired")) {
+        if (element_equal(child_node, "CharacterizationVer")) {
+            response->characterization_ver = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "CleaningRequired")) {
             response->cleaning_required = xml_get_bool(client->log, doc, child_node);
         } else if (element_equal(child_node, "ErrorMessage")) {
             response->error_message = xml_get_string(doc, child_node);
@@ -9942,51 +10943,6 @@ static ds3_error* _parse_top_level_ds3_s3_target_read_preference_response(const 
 
     return error;
 }
-static ds3_error* _parse_top_level_ds3_blob_store_tasks_information_response(const ds3_client* client, const ds3_request* request, ds3_blob_store_tasks_information_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_blob_store_tasks_information_response* response;
-    ds3_error* error = NULL;
-    GPtrArray* tasks_array = g_ptr_array_new();
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_blob_store_tasks_information_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Tasks")) {
-            ds3_blob_store_task_information_response* tasks_response = NULL;
-            error = _parse_ds3_blob_store_task_information_response(client, doc, child_node, &tasks_response);
-            response->tasks = (ds3_blob_store_task_information_response**)tasks_array->pdata;
-            g_ptr_array_add(tasks_array, tasks_response);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_blob_store_tasks_information_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-    response->tasks = (ds3_blob_store_task_information_response**)tasks_array->pdata;
-    response->num_tasks = tasks_array->len;
-    g_ptr_array_free(tasks_array, FALSE);
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_blob_store_tasks_information_response_free(response);
-    }
-
-    return error;
-}
 static ds3_error* _parse_top_level_ds3_cache_information_response(const ds3_client* client, const ds3_request* request, ds3_cache_information_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -10032,31 +10988,52 @@ static ds3_error* _parse_top_level_ds3_cache_information_response(const ds3_clie
 
     return error;
 }
-static ds3_error* _parse_top_level_ds3_complete_multipart_upload_result_response(const ds3_client* client, const ds3_request* request, ds3_complete_multipart_upload_result_response** _response, GByteArray* xml_blob) {
+static ds3_error* _parse_top_level_ds3_job_chunk_response(const ds3_client* client, const ds3_request* request, ds3_job_chunk_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    ds3_complete_multipart_upload_result_response* response;
+    ds3_job_chunk_response* response;
     ds3_error* error = NULL;
 
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "CompleteMultipartUploadResult");
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
     if (error != NULL) {
         return error;
     }
 
-    response = g_new0(ds3_complete_multipart_upload_result_response, 1);
+    response = g_new0(ds3_job_chunk_response, 1);
 
     for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Bucket")) {
-            response->bucket = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "ETag")) {
-            response->e_tag = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Key")) {
-            response->key = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Location")) {
-            response->location = xml_get_string(doc, child_node);
+        if (element_equal(child_node, "BlobStoreState")) {
+            xmlChar* text = xmlNodeListGetString(doc, child_node, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->blob_store_state = _match_ds3_job_chunk_blob_store_state(client->log, text);
+            xmlFree(text);
+        } else if (element_equal(child_node, "ChunkNumber")) {
+            response->chunk_number = xml_get_uint16(doc, child_node);
+        } else if (element_equal(child_node, "Id")) {
+            response->id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "JobCreationDate")) {
+            response->job_creation_date = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "JobId")) {
+            response->job_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "NodeId")) {
+            response->node_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PendingTargetCommit")) {
+            response->pending_target_commit = xml_get_bool(client->log, doc, child_node);
+        } else if (element_equal(child_node, "ReadFromAzureTargetId")) {
+            response->read_from_azure_target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromDs3TargetId")) {
+            response->read_from_ds3_target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromPoolId")) {
+            response->read_from_pool_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromS3TargetId")) {
+            response->read_from_s3_target_id = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "ReadFromTapeId")) {
+            response->read_from_tape_id = xml_get_string(doc, child_node);
         } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_complete_multipart_upload_result_response [%s]\n", child_node->name, root->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_chunk_response [%s]\n", child_node->name, root->name);
         }
 
         if (error != NULL) {
@@ -10071,49 +11048,7 @@ static ds3_error* _parse_top_level_ds3_complete_multipart_upload_result_response
     if (error == NULL) {
         *_response = response;
     } else {
-        ds3_complete_multipart_upload_result_response_free(response);
-    }
-
-    return error;
-}
-static ds3_error* _parse_top_level_ds3_initiate_multipart_upload_result_response(const ds3_client* client, const ds3_request* request, ds3_initiate_multipart_upload_result_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_initiate_multipart_upload_result_response* response;
-    ds3_error* error = NULL;
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "InitiateMultipartUploadResult");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_initiate_multipart_upload_result_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Bucket")) {
-            response->bucket = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Key")) {
-            response->key = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "UploadId")) {
-            response->upload_id = xml_get_string(doc, child_node);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_initiate_multipart_upload_result_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_initiate_multipart_upload_result_response_free(response);
+        ds3_job_chunk_response_free(response);
     }
 
     return error;
@@ -10432,6 +11367,51 @@ static ds3_error* _parse_top_level_ds3_cache_filesystem_list_response(const ds3_
         *_response = response;
     } else {
         ds3_cache_filesystem_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_cache_throttle_rule_list_response(const ds3_client* client, const ds3_request* request, ds3_cache_throttle_rule_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_cache_throttle_rule_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* cache_throttle_rules_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_cache_throttle_rule_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "CacheThrottleRule")) {
+            ds3_cache_throttle_rule_response* cache_throttle_rules_response = NULL;
+            error = _parse_ds3_cache_throttle_rule_response(client, doc, child_node, &cache_throttle_rules_response);
+            response->cache_throttle_rules = (ds3_cache_throttle_rule_response**)cache_throttle_rules_array->pdata;
+            g_ptr_array_add(cache_throttle_rules_array, cache_throttle_rules_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_cache_throttle_rule_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->cache_throttle_rules = (ds3_cache_throttle_rule_response**)cache_throttle_rules_array->pdata;
+    response->num_cache_throttle_rules = cache_throttle_rules_array->len;
+    g_ptr_array_free(cache_throttle_rules_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_cache_throttle_rule_list_response_free(response);
     }
 
     return error;
@@ -11242,6 +12222,51 @@ static ds3_error* _parse_top_level_ds3_job_creation_failed_list_response(const d
         *_response = response;
     } else {
         ds3_job_creation_failed_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_job_entry_list_response(const ds3_client* client, const ds3_request* request, ds3_job_entry_list_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_job_entry_list_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* job_entries_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_job_entry_list_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "JobEntry")) {
+            ds3_job_entry_response* job_entries_response = NULL;
+            error = _parse_ds3_job_entry_response(client, doc, child_node, &job_entries_response);
+            response->job_entries = (ds3_job_entry_response**)job_entries_array->pdata;
+            g_ptr_array_add(job_entries_array, job_entries_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_entry_list_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->job_entries = (ds3_job_entry_response**)job_entries_array->pdata;
+    response->num_job_entries = job_entries_array->len;
+    g_ptr_array_free(job_entries_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_job_entry_list_response_free(response);
     }
 
     return error;
@@ -13377,6 +14402,51 @@ static ds3_error* _parse_top_level_ds3_bulk_object_list_response(const ds3_clien
 
     return error;
 }
+static ds3_error* _parse_top_level_ds3_blob_store_tasks_information_response(const ds3_client* client, const ds3_request* request, ds3_blob_store_tasks_information_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_blob_store_tasks_information_response* response;
+    ds3_error* error = NULL;
+    GPtrArray* tasks_array = g_ptr_array_new();
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_blob_store_tasks_information_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Tasks")) {
+            ds3_blob_store_task_information_response* tasks_response = NULL;
+            error = _parse_ds3_blob_store_task_information_response(client, doc, child_node, &tasks_response);
+            response->tasks = (ds3_blob_store_task_information_response**)tasks_array->pdata;
+            g_ptr_array_add(tasks_array, tasks_response);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_blob_store_tasks_information_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+    response->tasks = (ds3_blob_store_task_information_response**)tasks_array->pdata;
+    response->num_tasks = tasks_array->len;
+    g_ptr_array_free(tasks_array, FALSE);
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_blob_store_tasks_information_response_free(response);
+    }
+
+    return error;
+}
 static ds3_error* _parse_top_level_ds3_list_all_my_buckets_result_response(const ds3_client* client, const ds3_request* request, ds3_list_all_my_buckets_result_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -13696,67 +14766,6 @@ static ds3_error* _parse_top_level_ds3_job_list_response(const ds3_client* clien
 
     return error;
 }
-static ds3_error* _parse_top_level_ds3_list_parts_result_response(const ds3_client* client, const ds3_request* request, ds3_list_parts_result_response** _response, GByteArray* xml_blob) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr child_node;
-    ds3_list_parts_result_response* response;
-    ds3_error* error = NULL;
-    GPtrArray* parts_array = g_ptr_array_new();
-
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListPartsResult");
-    if (error != NULL) {
-        return error;
-    }
-
-    response = g_new0(ds3_list_parts_result_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Bucket")) {
-            response->bucket = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Key")) {
-            response->key = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "MaxParts")) {
-            response->max_parts = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "NextPartNumberMarker")) {
-            response->next_part_number_marker = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "Owner")) {
-            error = _parse_ds3_user_response(client, doc, child_node, &response->owner);
-        } else if (element_equal(child_node, "PartNumberMarker")) {
-            response->part_number_marker = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "Part")) {
-            ds3_multi_part_upload_part_response* parts_response = NULL;
-            error = _parse_ds3_multi_part_upload_part_response(client, doc, child_node, &parts_response);
-            response->parts = (ds3_multi_part_upload_part_response**)parts_array->pdata;
-            g_ptr_array_add(parts_array, parts_response);
-        } else if (element_equal(child_node, "IsTruncated")) {
-            response->truncated = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "UploadId")) {
-            response->upload_id = xml_get_string(doc, child_node);
-        } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_list_parts_result_response [%s]\n", child_node->name, root->name);
-        }
-
-        if (error != NULL) {
-            break;
-        }
-
-    }
-
-    response->parts = (ds3_multi_part_upload_part_response**)parts_array->pdata;
-    response->num_parts = parts_array->len;
-    g_ptr_array_free(parts_array, FALSE);
-
-    xmlFreeDoc(doc);
-
-    if (error == NULL) {
-        *_response = response;
-    } else {
-        ds3_list_parts_result_response_free(response);
-    }
-
-    return error;
-}
 static ds3_error* _parse_top_level_ds3_detailed_s3_object_list_response(const ds3_client* client, const ds3_request* request, ds3_detailed_s3_object_list_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
@@ -13843,6 +14852,74 @@ static ds3_error* _parse_top_level_ds3_named_detailed_tape_partition_list_respon
         *_response = response;
     } else {
         ds3_named_detailed_tape_partition_list_response_free(response);
+    }
+
+    return error;
+}
+static ds3_error* _parse_top_level_ds3_abm_config_api_bean_response(const ds3_client* client, const ds3_request* request, ds3_abm_config_api_bean_response** _response, GByteArray* xml_blob) {
+    xmlDocPtr doc;
+    xmlNodePtr root;
+    xmlNodePtr child_node;
+    ds3_abm_config_api_bean_response* response;
+    ds3_error* error = NULL;
+
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "Data");
+    if (error != NULL) {
+        return error;
+    }
+
+    response = g_new0(ds3_abm_config_api_bean_response, 1);
+
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "DataPoliciesThatHaveBuckets")) {
+            GPtrArray* data_policies_array;
+            error = _parse_ds3_data_policy_api_bean_response_array(client, doc, child_node, &data_policies_array);
+            response->data_policies = (ds3_data_policy_api_bean_response**)data_policies_array->pdata;
+            response->num_data_policies = data_policies_array->len;
+            g_ptr_array_free(data_policies_array, FALSE);
+        } else if (element_equal(child_node, "Message")) {
+            response->message = xml_get_string(doc, child_node);
+        } else if (element_equal(child_node, "PoolPartitions")) {
+            GPtrArray* pool_partitions_array;
+            error = _parse_ds3_pool_partition_api_bean_response_array(client, doc, child_node, &pool_partitions_array);
+            response->pool_partitions = (ds3_pool_partition_api_bean_response**)pool_partitions_array->pdata;
+            response->num_pool_partitions = pool_partitions_array->len;
+            g_ptr_array_free(pool_partitions_array, FALSE);
+        } else if (element_equal(child_node, "StorageDomains")) {
+            GPtrArray* storage_domains_array;
+            error = _parse_ds3_storage_domain_api_bean_response_array(client, doc, child_node, &storage_domains_array);
+            response->storage_domains = (ds3_storage_domain_api_bean_response**)storage_domains_array->pdata;
+            response->num_storage_domains = storage_domains_array->len;
+            g_ptr_array_free(storage_domains_array, FALSE);
+        } else if (element_equal(child_node, "TapePartitions")) {
+            GPtrArray* tape_partitions_array;
+            error = _parse_ds3_tape_partition_api_bean_response_array(client, doc, child_node, &tape_partitions_array);
+            response->tape_partitions = (ds3_tape_partition_api_bean_response**)tape_partitions_array->pdata;
+            response->num_tape_partitions = tape_partitions_array->len;
+            g_ptr_array_free(tape_partitions_array, FALSE);
+        } else if (element_equal(child_node, "Targets")) {
+            GPtrArray* targets_array;
+            error = _parse_ds3_target_api_bean_response_array(client, doc, child_node, &targets_array);
+            response->targets = (ds3_target_api_bean_response**)targets_array->pdata;
+            response->num_targets = targets_array->len;
+            g_ptr_array_free(targets_array, FALSE);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_abm_config_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
+
+    xmlFreeDoc(doc);
+
+    if (error == NULL) {
+        *_response = response;
+    } else {
+        ds3_abm_config_api_bean_response_free(response);
     }
 
     return error;
@@ -14063,55 +15140,75 @@ static ds3_error* _parse_top_level_ds3_detailed_tape_partition_response(const ds
 
     return error;
 }
-static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(const ds3_client* client, const ds3_request* request, ds3_list_multi_part_uploads_result_response** _response, GByteArray* xml_blob) {
+static ds3_error* _parse_top_level_ds3_job_summary_api_bean_response(const ds3_client* client, const ds3_request* request, ds3_job_summary_api_bean_response** _response, GByteArray* xml_blob) {
     xmlDocPtr doc;
     xmlNodePtr root;
     xmlNodePtr child_node;
-    ds3_list_multi_part_uploads_result_response* response;
+    struct _xmlAttr* attribute;
+    ds3_job_summary_api_bean_response* response;
     ds3_error* error = NULL;
-    GPtrArray* common_prefixes_array = g_ptr_array_new();
-    GPtrArray* uploads_array = g_ptr_array_new();
 
-    error = _get_request_xml_nodes(xml_blob, &doc, &root, "ListMultipartUploadsResult");
+    error = _get_request_xml_nodes(xml_blob, &doc, &root, "JobSummary");
     if (error != NULL) {
         return error;
     }
 
-    response = g_new0(ds3_list_multi_part_uploads_result_response, 1);
-
-    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
-        if (element_equal(child_node, "Bucket")) {
-            response->bucket = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "CommonPrefixes")) {
-            xmlNodePtr loop_node;
-            int num_nodes = 0;
-            for (loop_node = child_node->xmlChildrenNode; loop_node != NULL; loop_node = loop_node->next, num_nodes++) {
-                ds3_str* common_prefixes = xml_get_string(doc, loop_node);
-                g_ptr_array_add(common_prefixes_array, common_prefixes);
+    response = g_new0(ds3_job_summary_api_bean_response, 1);
+    for (attribute = root->properties; attribute != NULL; attribute = attribute->next) {
+        if (attribute_equal(attribute, "Aggregating") == true) {
+            response->aggregating = xml_get_bool_from_attribute(client->log, doc, attribute);
+        } else if (attribute_equal(attribute, "BucketName") == true) {
+            response->bucket_name = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "CachedSizeInBytes") == true) {
+            response->cached_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "ChunkClientProcessingOrderGuarantee") == true) {
+            xmlChar* text = xmlNodeListGetString(doc, attribute->children, 1);
+            if (text == NULL) {
+                continue;
             }
-        } else if (element_equal(child_node, "Delimiter")) {
-            response->delimiter = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "KeyMarker")) {
-            response->key_marker = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "MaxUploads")) {
-            response->max_uploads = xml_get_uint16(doc, child_node);
-        } else if (element_equal(child_node, "NextKeyMarker")) {
-            response->next_key_marker = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "NextUploadIdMarker")) {
-            response->next_upload_id_marker = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Prefix")) {
-            response->prefix = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "IsTruncated")) {
-            response->truncated = xml_get_bool(client->log, doc, child_node);
-        } else if (element_equal(child_node, "UploadIdMarker")) {
-            response->upload_id_marker = xml_get_string(doc, child_node);
-        } else if (element_equal(child_node, "Upload")) {
-            ds3_multi_part_upload_response* uploads_response = NULL;
-            error = _parse_ds3_multi_part_upload_response(client, doc, child_node, &uploads_response);
-            response->uploads = (ds3_multi_part_upload_response**)uploads_array->pdata;
-            g_ptr_array_add(uploads_array, uploads_response);
+            response->chunk_client_processing_order_guarantee = _match_ds3_job_chunk_client_processing_order_guarantee(client->log, text);
+            xmlFree(text);
+        } else if (attribute_equal(attribute, "CompletedSizeInBytes") == true) {
+            response->completed_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "EntirelyInCache") == true) {
+            response->entirely_in_cache = xml_get_bool_from_attribute(client->log, doc, attribute);
+        } else if (attribute_equal(attribute, "JobId") == true) {
+            response->job_id = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "Naked") == true) {
+            response->naked = xml_get_bool_from_attribute(client->log, doc, attribute);
+        } else if (attribute_equal(attribute, "Name") == true) {
+            response->name = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "OriginalSizeInBytes") == true) {
+            response->original_size_in_bytes = xml_get_uint64_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "Priority") == true) {
+            xmlChar* text = xmlNodeListGetString(doc, attribute->children, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->priority = _match_ds3_priority(client->log, text);
+            xmlFree(text);
+        } else if (attribute_equal(attribute, "RequestType") == true) {
+            xmlChar* text = xmlNodeListGetString(doc, attribute->children, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->request_type = _match_ds3_job_request_type(client->log, text);
+            xmlFree(text);
+        } else if (attribute_equal(attribute, "StartDate") == true) {
+            response->start_date = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "Status") == true) {
+            xmlChar* text = xmlNodeListGetString(doc, attribute->children, 1);
+            if (text == NULL) {
+                continue;
+            }
+            response->status = _match_ds3_job_status(client->log, text);
+            xmlFree(text);
+        } else if (attribute_equal(attribute, "UserId") == true) {
+            response->user_id = xml_get_string_from_attribute(doc, attribute);
+        } else if (attribute_equal(attribute, "UserName") == true) {
+            response->user_name = xml_get_string_from_attribute(doc, attribute);
         } else {
-            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_list_multi_part_uploads_result_response [%s]\n", child_node->name, root->name);
+            ds3_log_message(client->log, DS3_ERROR, "Unknown attribute[%s] of ds3_job_summary_api_bean_response [%s]\n", attribute->name, root->name);
         }
 
         if (error != NULL) {
@@ -14120,19 +15217,38 @@ static ds3_error* _parse_top_level_ds3_list_multi_part_uploads_result_response(c
 
     }
 
-    response->common_prefixes = (ds3_str**)common_prefixes_array->pdata;
-    response->num_common_prefixes = common_prefixes_array->len;
-    g_ptr_array_free(common_prefixes_array, FALSE);
-    response->uploads = (ds3_multi_part_upload_response**)uploads_array->pdata;
-    response->num_uploads = uploads_array->len;
-    g_ptr_array_free(uploads_array, FALSE);
+    for (child_node = root->xmlChildrenNode; child_node != NULL; child_node = child_node->next) {
+        if (element_equal(child_node, "Destinations")) {
+            GPtrArray* destination_summaries_array;
+            error = _parse_ds3_destination_summary_response_array(client, doc, child_node, &destination_summaries_array);
+            response->destination_summaries = (ds3_destination_summary_response**)destination_summaries_array->pdata;
+            response->num_destination_summaries = destination_summaries_array->len;
+            g_ptr_array_free(destination_summaries_array, FALSE);
+        } else if (element_equal(child_node, "Nodes")) {
+            GPtrArray* nodes_array;
+            error = _parse_ds3_job_node_response_array(client, doc, child_node, &nodes_array);
+            response->nodes = (ds3_job_node_response**)nodes_array->pdata;
+            response->num_nodes = nodes_array->len;
+            g_ptr_array_free(nodes_array, FALSE);
+        } else if (element_equal(child_node, "Summary")) {
+            response->summary = xml_get_string(doc, child_node);
+        } else {
+            ds3_log_message(client->log, DS3_ERROR, "Unknown node[%s] of ds3_job_summary_api_bean_response [%s]\n", child_node->name, root->name);
+        }
+
+        if (error != NULL) {
+            break;
+        }
+
+    }
+
 
     xmlFreeDoc(doc);
 
     if (error == NULL) {
         *_response = response;
     } else {
-        ds3_list_multi_part_uploads_result_response_free(response);
+        ds3_job_summary_api_bean_response_free(response);
     }
 
     return error;
@@ -14174,17 +15290,6 @@ static ds3_paging* _parse_paging_headers(ds3_string_multimap* response_headers) 
 }
 
 
-ds3_error* ds3_abort_multi_part_upload_request(const ds3_client* client, const ds3_request* request) {
-
-    int num_slashes = num_chars_in_ds3_str(request->path, '/');
-    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
-    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
-    }
-
-    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
-}
 ds3_error* ds3_complete_blob_request(const ds3_client* client, const ds3_request* request) {
 
     int num_slashes = num_chars_in_ds3_str(request->path, '/');
@@ -14196,34 +15301,6 @@ ds3_error* ds3_complete_blob_request(const ds3_client* client, const ds3_request
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
 }
-ds3_error* ds3_complete_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_complete_multipart_upload_result_response** response) {
-    ds3_error* error;
-    ds3_xml_send_buff send_buff;
-    GByteArray* xml_blob;
-
-    int num_slashes = num_chars_in_ds3_str(request->path, '/');
-    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
-    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
-    }
-
-    error = _init_request_payload(request, &send_buff, COMPLETE_MPU);
-    if (error != NULL) return error;
-
-    xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, (void*) &send_buff, _ds3_send_xml_buff, NULL);
-
-    // Clean up the data sent to the server
-    xmlFree(send_buff.buff);
-
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    return _parse_top_level_ds3_complete_multipart_upload_result_response(client, request, response, xml_blob);
-}
 ds3_error* ds3_put_bucket_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
@@ -14231,17 +15308,6 @@ ds3_error* ds3_put_bucket_request(const ds3_client* client, const ds3_request* r
     }
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
-}
-ds3_error* ds3_put_multi_part_upload_part_request(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*)) {
-
-    int num_slashes = num_chars_in_ds3_str(request->path, '/');
-    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
-    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
-    }
-
-    return _internal_request_dispatcher(client, request, NULL, NULL, user_data, callback, NULL);
 }
 ds3_error* ds3_put_object_request(const ds3_client* client, const ds3_request* request, void* user_data, size_t (*callback)(void*, size_t, size_t, void*)) {
 
@@ -14404,63 +15470,6 @@ ds3_error* ds3_head_object_request(const ds3_client* client, const ds3_request* 
     return error;
 }
 
-ds3_error* ds3_initiate_multi_part_upload_request(const ds3_client* client, const ds3_request* request, ds3_initiate_multipart_upload_result_response** response) {
-    ds3_error* error;
-    GByteArray* xml_blob;
-
-    int num_slashes = num_chars_in_ds3_str(request->path, '/');
-    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
-    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
-    }
-
-    xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    return _parse_top_level_ds3_initiate_multipart_upload_result_response(client, request, response, xml_blob);
-}
-ds3_error* ds3_list_multi_part_upload_parts_request(const ds3_client* client, const ds3_request* request, ds3_list_parts_result_response** response) {
-    ds3_error* error;
-    GByteArray* xml_blob;
-
-    int num_slashes = num_chars_in_ds3_str(request->path, '/');
-    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
-    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The object name parameter is required.");
-    }
-
-    xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    return _parse_top_level_ds3_list_parts_result_response(client, request, response, xml_blob);
-}
-ds3_error* ds3_list_multi_part_uploads_request(const ds3_client* client, const ds3_request* request, ds3_list_multi_part_uploads_result_response** response) {
-    ds3_error* error;
-    GByteArray* xml_blob;
-
-    if (request->path->size < 2) {
-        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The bucket name parameter is required.");
-    }
-
-    xml_blob = g_byte_array_new();
-    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
-    if (error != NULL) {
-        g_byte_array_free(xml_blob, TRUE);
-        return error;
-    }
-
-    return _parse_top_level_ds3_list_multi_part_uploads_result_response(client, request, response, xml_blob);
-}
 ds3_error* ds3_put_bucket_acl_for_group_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_bucket_acl_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -14805,6 +15814,34 @@ ds3_error* ds3_modify_bucket_spectra_s3_request(const ds3_client* client, const 
 
     return _parse_top_level_ds3_bucket_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_put_cache_throttle_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_throttle_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_cache_throttle_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_delete_cache_throttle_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
 ds3_error* ds3_force_full_cache_reclaim_spectra_s3_request(const ds3_client* client, const ds3_request* request) {
 
     if (request->path->size < 2) {
@@ -14876,6 +15913,52 @@ ds3_error* ds3_get_cache_state_spectra_s3_request(const ds3_client* client, cons
 
     return _parse_top_level_ds3_cache_information_response(client, request, response, xml_blob);
 }
+ds3_error* ds3_get_cache_throttle_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_throttle_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_cache_throttle_rule_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_cache_throttle_rules_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_throttle_rule_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_cache_throttle_rule_list_response(client, request, response, xml_blob);
+
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
 ds3_error* ds3_modify_cache_filesystem_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_filesystem_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -14895,6 +15978,26 @@ ds3_error* ds3_modify_cache_filesystem_spectra_s3_request(const ds3_client* clie
     }
 
     return _parse_top_level_ds3_cache_filesystem_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_modify_cache_throttle_rule_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_cache_throttle_rule_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_cache_throttle_rule_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_get_bucket_capacity_summary_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_capacity_summary_container_response** response) {
     ds3_error* error;
@@ -16608,6 +17711,32 @@ ds3_error* ds3_get_job_creation_failures_spectra_s3_request(const ds3_client* cl
 
     return error;
 }
+ds3_error* ds3_get_job_entries_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_entry_list_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+    ds3_string_multimap* return_headers = NULL;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, &return_headers);
+    if (error != NULL) {
+        ds3_string_multimap_free(return_headers);
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    error = _parse_top_level_ds3_job_entry_list_response(client, request, response, xml_blob);
+
+    if (error == NULL) {
+        (*response)->paging = _parse_paging_headers(return_headers);
+    }
+    ds3_string_multimap_free(return_headers);
+
+    return error;
+}
 ds3_error* ds3_get_job_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_master_object_list_response** response) {
     ds3_error* error;
     GByteArray* xml_blob;
@@ -16627,6 +17756,26 @@ ds3_error* ds3_get_job_spectra_s3_request(const ds3_client* client, const ds3_re
     }
 
     return _parse_top_level_ds3_master_object_list_response(client, request, response, xml_blob);
+}
+ds3_error* ds3_get_job_summary_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_job_summary_api_bean_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    int num_slashes = num_chars_in_ds3_str(request->path, '/');
+    if (num_slashes < 2 || ((num_slashes == 2) && ('/' == request->path->value[request->path->size-1]))) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    } else if (g_ascii_strncasecmp(request->path->value, "//", 2) == 0) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource id parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_job_summary_api_bean_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_get_job_to_replicate_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_str** response) {
     ds3_error* error;
@@ -18868,6 +20017,23 @@ ds3_error* ds3_force_feature_key_validation_spectra_s3_request(const ds3_client*
     }
 
     return _internal_request_dispatcher(client, request, NULL, NULL, NULL, NULL, NULL);
+}
+ds3_error* ds3_get_abm_config_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_abm_config_api_bean_response** response) {
+    ds3_error* error;
+    GByteArray* xml_blob;
+
+    if (request->path->size < 2) {
+        return ds3_create_error(DS3_ERROR_MISSING_ARGS, "The resource type parameter is required.");
+    }
+
+    xml_blob = g_byte_array_new();
+    error = _internal_request_dispatcher(client, request, xml_blob, ds3_load_buffer, NULL, NULL, NULL);
+    if (error != NULL) {
+        g_byte_array_free(xml_blob, TRUE);
+        return error;
+    }
+
+    return _parse_top_level_ds3_abm_config_api_bean_response(client, request, response, xml_blob);
 }
 ds3_error* ds3_get_feature_keys_spectra_s3_request(const ds3_client* client, const ds3_request* request, ds3_feature_key_list_response** response) {
     ds3_error* error;

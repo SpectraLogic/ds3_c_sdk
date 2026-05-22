@@ -569,6 +569,16 @@ void ds3_bucket_acl_response_free(ds3_bucket_acl_response* response) {
 
     g_free(response);
 }
+void ds3_cache_throttle_rule_response_free(ds3_cache_throttle_rule_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->bucket_id);
+    ds3_str_free(response->id);
+
+    g_free(response);
+}
 void ds3_canceled_job_response_free(ds3_canceled_job_response* response) {
     if (response == NULL) {
         return;
@@ -721,23 +731,6 @@ void ds3_active_job_response_free(ds3_active_job_response* response) {
 
     g_free(response);
 }
-void ds3_job_chunk_response_free(ds3_job_chunk_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    ds3_str_free(response->id);
-    ds3_str_free(response->job_creation_date);
-    ds3_str_free(response->job_id);
-    ds3_str_free(response->node_id);
-    ds3_str_free(response->read_from_azure_target_id);
-    ds3_str_free(response->read_from_ds3_target_id);
-    ds3_str_free(response->read_from_pool_id);
-    ds3_str_free(response->read_from_s3_target_id);
-    ds3_str_free(response->read_from_tape_id);
-
-    g_free(response);
-}
 void ds3_job_creation_failed_response_free(ds3_job_creation_failed_response* response) {
     if (response == NULL) {
         return;
@@ -748,6 +741,24 @@ void ds3_job_creation_failed_response_free(ds3_job_creation_failed_response* res
     ds3_str_free(response->id);
     ds3_str_free(response->tape_bar_codes);
     ds3_str_free(response->user_name);
+
+    g_free(response);
+}
+void ds3_job_entry_response_free(ds3_job_entry_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->blob_id);
+    ds3_str_free(response->chunk_id);
+    ds3_str_free(response->id);
+    ds3_str_free(response->job_id);
+    ds3_str_free(response->node_id);
+    ds3_str_free(response->read_from_azure_target_id);
+    ds3_str_free(response->read_from_ds3_target_id);
+    ds3_str_free(response->read_from_pool_id);
+    ds3_str_free(response->read_from_s3_target_id);
+    ds3_str_free(response->read_from_tape_id);
 
     g_free(response);
 }
@@ -1181,6 +1192,7 @@ void ds3_tape_response_free(ds3_tape_response* response) {
 
     ds3_str_free(response->bar_code);
     ds3_str_free(response->bucket_id);
+    ds3_str_free(response->characterization_ver);
     ds3_str_free(response->description_for_identification);
     ds3_str_free(response->eject_date);
     ds3_str_free(response->eject_label);
@@ -1215,6 +1227,7 @@ void ds3_tape_drive_response_free(ds3_tape_drive_response* response) {
         return;
     }
 
+    ds3_str_free(response->characterization_ver);
     ds3_str_free(response->error_message);
     ds3_str_free(response->id);
     ds3_str_free(response->last_cleaned);
@@ -1609,36 +1622,6 @@ void ds3_tapes_must_be_onlined_response_free(ds3_tapes_must_be_onlined_response*
 
     g_free(response);
 }
-void ds3_blob_store_task_information_response_free(ds3_blob_store_task_information_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    ds3_str_free(response->date_scheduled);
-    ds3_str_free(response->date_started);
-    ds3_str_free(response->description);
-    ds3_str_free(response->drive_id);
-    ds3_str_free(response->name);
-    ds3_str_free(response->pool_id);
-    ds3_str_free(response->tape_id);
-    ds3_str_free(response->target_id);
-    ds3_str_free(response->target_type);
-
-    g_free(response);
-}
-void ds3_blob_store_tasks_information_response_free(ds3_blob_store_tasks_information_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    size_t index;
-    for (index = 0; index < response->num_tasks; index++) {
-        ds3_blob_store_task_information_response_free(response->tasks[index]);
-    }
-    g_free(response->tasks);
-
-    g_free(response);
-}
 void ds3_cache_entry_information_response_free(ds3_cache_entry_information_response* response) {
     if (response == NULL) {
         return;
@@ -1686,15 +1669,25 @@ void ds3_bucket_details_response_free(ds3_bucket_details_response* response) {
 
     g_free(response);
 }
-void ds3_complete_multipart_upload_result_response_free(ds3_complete_multipart_upload_result_response* response) {
+void ds3_data_persistence_rule_api_bean_response_free(ds3_data_persistence_rule_api_bean_response* response) {
     if (response == NULL) {
         return;
     }
 
-    ds3_str_free(response->bucket);
-    ds3_str_free(response->e_tag);
-    ds3_str_free(response->key);
-    ds3_str_free(response->location);
+    ds3_str_free(response->id);
+    ds3_str_free(response->storage_domain_id);
+    ds3_str_free(response->storage_domain_name);
+
+    g_free(response);
+}
+void ds3_data_replication_rule_api_bean_response_free(ds3_data_replication_rule_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->id);
+    ds3_str_free(response->target_id);
+    ds3_str_free(response->target_name);
 
     g_free(response);
 }
@@ -1710,6 +1703,23 @@ void ds3_delete_object_error_response_free(ds3_delete_object_error_response* res
 
     g_free(response);
 }
+void ds3_job_chunk_response_free(ds3_job_chunk_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->id);
+    ds3_str_free(response->job_creation_date);
+    ds3_str_free(response->job_id);
+    ds3_str_free(response->node_id);
+    ds3_str_free(response->read_from_azure_target_id);
+    ds3_str_free(response->read_from_ds3_target_id);
+    ds3_str_free(response->read_from_pool_id);
+    ds3_str_free(response->read_from_s3_target_id);
+    ds3_str_free(response->read_from_tape_id);
+
+    g_free(response);
+}
 void ds3_error_response_free(ds3_error_response* response) {
     if (response == NULL) {
         return;
@@ -1721,24 +1731,13 @@ void ds3_error_response_free(ds3_error_response* response) {
 
     g_free(response);
 }
-void ds3_initiate_multipart_upload_result_response_free(ds3_initiate_multipart_upload_result_response* response) {
+void ds3_human_readable_bucket_api_bean_response_free(ds3_human_readable_bucket_api_bean_response* response) {
     if (response == NULL) {
         return;
     }
 
-    ds3_str_free(response->bucket);
-    ds3_str_free(response->key);
-    ds3_str_free(response->upload_id);
-
-    g_free(response);
-}
-void ds3_multi_part_upload_part_response_free(ds3_multi_part_upload_part_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    ds3_str_free(response->e_tag);
-    ds3_str_free(response->last_modified);
+    ds3_str_free(response->creation_date);
+    ds3_str_free(response->name);
 
     g_free(response);
 }
@@ -1752,6 +1751,16 @@ void ds3_job_node_response_free(ds3_job_node_response* response) {
 
     g_free(response);
 }
+void ds3_pool_partition_api_bean_response_free(ds3_pool_partition_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->id);
+    ds3_str_free(response->name);
+
+    g_free(response);
+}
 void ds3_s3_object_to_delete_response_free(ds3_s3_object_to_delete_response* response) {
     if (response == NULL) {
         return;
@@ -1762,12 +1771,48 @@ void ds3_s3_object_to_delete_response_free(ds3_s3_object_to_delete_response* res
 
     g_free(response);
 }
+void ds3_storage_domain_member_api_bean_response_free(ds3_storage_domain_member_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->id);
+    ds3_str_free(response->partition_name);
+    ds3_str_free(response->pool_partition_id);
+    ds3_str_free(response->tape_partition_id);
+    ds3_str_free(response->tape_type);
+
+    g_free(response);
+}
+void ds3_tape_partition_api_bean_response_free(ds3_tape_partition_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->error_message);
+    ds3_str_free(response->id);
+    ds3_str_free(response->library_id);
+    ds3_str_free(response->name);
+    ds3_str_free(response->serial_number);
+
+    g_free(response);
+}
 void ds3_tape_type_summary_api_bean_response_free(ds3_tape_type_summary_api_bean_response* response) {
     if (response == NULL) {
         return;
     }
 
     ds3_str_free(response->type);
+
+    g_free(response);
+}
+void ds3_target_api_bean_response_free(ds3_target_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    ds3_str_free(response->id);
+    ds3_str_free(response->name);
 
     g_free(response);
 }
@@ -1921,6 +1966,20 @@ void ds3_cache_filesystem_list_response_free(ds3_cache_filesystem_list_response*
         ds3_cache_filesystem_response_free(response->cache_filesystems[index]);
     }
     g_free(response->cache_filesystems);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_cache_throttle_rule_list_response_free(ds3_cache_throttle_rule_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_cache_throttle_rules; index++) {
+        ds3_cache_throttle_rule_response_free(response->cache_throttle_rules[index]);
+    }
+    g_free(response->cache_throttle_rules);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -2173,6 +2232,20 @@ void ds3_job_creation_failed_list_response_free(ds3_job_creation_failed_list_res
         ds3_job_creation_failed_response_free(response->job_creation_faileds[index]);
     }
     g_free(response->job_creation_faileds);
+    ds3_paging_free(response->paging);
+
+    g_free(response);
+}
+void ds3_job_entry_list_response_free(ds3_job_entry_list_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_job_entries; index++) {
+        ds3_job_entry_response_free(response->job_entries[index]);
+    }
+    g_free(response->job_entries);
     ds3_paging_free(response->paging);
 
     g_free(response);
@@ -2944,6 +3017,43 @@ void ds3_s3_objects_persisted_notification_payload_response_free(ds3_s3_objects_
 
     g_free(response);
 }
+void ds3_blob_store_task_information_response_free(ds3_blob_store_task_information_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    ds3_str_free(response->date_scheduled);
+    ds3_str_free(response->date_started);
+    ds3_str_free(response->description);
+    ds3_str_free(response->drive_id);
+    ds3_duration_response_free(response->duration_in_progress);
+    ds3_duration_response_free(response->duration_scheduled);
+    for (index = 0; index < response->num_job_ids; index++) {
+        ds3_str_free(response->job_ids[index]);
+    }
+    g_free(response->job_ids);
+    ds3_str_free(response->name);
+    ds3_str_free(response->pool_id);
+    ds3_str_free(response->tape_id);
+    ds3_str_free(response->target_id);
+    ds3_str_free(response->target_type);
+
+    g_free(response);
+}
+void ds3_blob_store_tasks_information_response_free(ds3_blob_store_tasks_information_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_tasks; index++) {
+        ds3_blob_store_task_information_response_free(response->tasks[index]);
+    }
+    g_free(response->tasks);
+
+    g_free(response);
+}
 void ds3_list_all_my_buckets_result_response_free(ds3_list_all_my_buckets_result_response* response) {
     if (response == NULL) {
         return;
@@ -2955,6 +3065,30 @@ void ds3_list_all_my_buckets_result_response_free(ds3_list_all_my_buckets_result
     }
     g_free(response->buckets);
     ds3_user_response_free(response->owner);
+
+    g_free(response);
+}
+void ds3_data_policy_api_bean_response_free(ds3_data_policy_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_buckets; index++) {
+        ds3_human_readable_bucket_api_bean_response_free(response->buckets[index]);
+    }
+    g_free(response->buckets);
+    ds3_str_free(response->creation_date);
+    for (index = 0; index < response->num_data_persistence_rules; index++) {
+        ds3_data_persistence_rule_api_bean_response_free(response->data_persistence_rules[index]);
+    }
+    g_free(response->data_persistence_rules);
+    for (index = 0; index < response->num_data_replication_rules; index++) {
+        ds3_data_replication_rule_api_bean_response_free(response->data_replication_rules[index]);
+    }
+    g_free(response->data_replication_rules);
+    ds3_str_free(response->id);
+    ds3_str_free(response->name);
 
     g_free(response);
 }
@@ -3045,35 +3179,6 @@ void ds3_job_list_response_free(ds3_job_list_response* response) {
 
     g_free(response);
 }
-void ds3_list_parts_result_response_free(ds3_list_parts_result_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    size_t index;
-    ds3_str_free(response->bucket);
-    ds3_str_free(response->key);
-    ds3_user_response_free(response->owner);
-    for (index = 0; index < response->num_parts; index++) {
-        ds3_multi_part_upload_part_response_free(response->parts[index]);
-    }
-    g_free(response->parts);
-    ds3_str_free(response->upload_id);
-
-    g_free(response);
-}
-void ds3_multi_part_upload_response_free(ds3_multi_part_upload_response* response) {
-    if (response == NULL) {
-        return;
-    }
-
-    ds3_str_free(response->initiated);
-    ds3_str_free(response->key);
-    ds3_user_response_free(response->owner);
-    ds3_str_free(response->upload_id);
-
-    g_free(response);
-}
 void ds3_contents_response_free(ds3_contents_response* response) {
     if (response == NULL) {
         return;
@@ -3085,6 +3190,22 @@ void ds3_contents_response_free(ds3_contents_response* response) {
     ds3_user_response_free(response->owner);
     ds3_str_free(response->storage_class);
     ds3_str_free(response->version_id);
+
+    g_free(response);
+}
+void ds3_storage_domain_api_bean_response_free(ds3_storage_domain_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    ds3_str_free(response->auto_eject_upon_cron);
+    ds3_str_free(response->id);
+    ds3_str_free(response->name);
+    for (index = 0; index < response->num_storage_domain_members; index++) {
+        ds3_storage_domain_member_api_bean_response_free(response->storage_domain_members[index]);
+    }
+    g_free(response->storage_domain_members);
 
     g_free(response);
 }
@@ -3184,6 +3305,36 @@ void ds3_named_detailed_tape_partition_list_response_free(ds3_named_detailed_tap
 
     g_free(response);
 }
+void ds3_abm_config_api_bean_response_free(ds3_abm_config_api_bean_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_data_policies; index++) {
+        ds3_data_policy_api_bean_response_free(response->data_policies[index]);
+    }
+    g_free(response->data_policies);
+    ds3_str_free(response->message);
+    for (index = 0; index < response->num_pool_partitions; index++) {
+        ds3_pool_partition_api_bean_response_free(response->pool_partitions[index]);
+    }
+    g_free(response->pool_partitions);
+    for (index = 0; index < response->num_storage_domains; index++) {
+        ds3_storage_domain_api_bean_response_free(response->storage_domains[index]);
+    }
+    g_free(response->storage_domains);
+    for (index = 0; index < response->num_tape_partitions; index++) {
+        ds3_tape_partition_api_bean_response_free(response->tape_partitions[index]);
+    }
+    g_free(response->tape_partitions);
+    for (index = 0; index < response->num_targets; index++) {
+        ds3_target_api_bean_response_free(response->targets[index]);
+    }
+    g_free(response->targets);
+
+    g_free(response);
+}
 void ds3_list_bucket_result_response_free(ds3_list_bucket_result_response* response) {
     if (response == NULL) {
         return;
@@ -3208,6 +3359,25 @@ void ds3_list_bucket_result_response_free(ds3_list_bucket_result_response* respo
         ds3_contents_response_free(response->versioned_objects[index]);
     }
     g_free(response->versioned_objects);
+
+    g_free(response);
+}
+void ds3_destination_summary_response_free(ds3_destination_summary_response* response) {
+    if (response == NULL) {
+        return;
+    }
+
+    size_t index;
+    for (index = 0; index < response->num_completed_chunks; index++) {
+        ds3_objects_response_free(response->completed_chunks[index]);
+    }
+    g_free(response->completed_chunks);
+    ds3_str_free(response->id);
+    for (index = 0; index < response->num_incomplete_chunks; index++) {
+        ds3_objects_response_free(response->incomplete_chunks[index]);
+    }
+    g_free(response->incomplete_chunks);
+    ds3_str_free(response->name);
 
     g_free(response);
 }
@@ -3238,27 +3408,27 @@ void ds3_detailed_tape_partition_response_free(ds3_detailed_tape_partition_respo
 
     g_free(response);
 }
-void ds3_list_multi_part_uploads_result_response_free(ds3_list_multi_part_uploads_result_response* response) {
+void ds3_job_summary_api_bean_response_free(ds3_job_summary_api_bean_response* response) {
     if (response == NULL) {
         return;
     }
 
     size_t index;
-    ds3_str_free(response->bucket);
-    for (index = 0; index < response->num_common_prefixes; index++) {
-        ds3_str_free(response->common_prefixes[index]);
+    ds3_str_free(response->bucket_name);
+    for (index = 0; index < response->num_destination_summaries; index++) {
+        ds3_destination_summary_response_free(response->destination_summaries[index]);
     }
-    g_free(response->common_prefixes);
-    ds3_str_free(response->delimiter);
-    ds3_str_free(response->key_marker);
-    ds3_str_free(response->next_key_marker);
-    ds3_str_free(response->next_upload_id_marker);
-    ds3_str_free(response->prefix);
-    ds3_str_free(response->upload_id_marker);
-    for (index = 0; index < response->num_uploads; index++) {
-        ds3_multi_part_upload_response_free(response->uploads[index]);
+    g_free(response->destination_summaries);
+    ds3_str_free(response->job_id);
+    ds3_str_free(response->name);
+    for (index = 0; index < response->num_nodes; index++) {
+        ds3_job_node_response_free(response->nodes[index]);
     }
-    g_free(response->uploads);
+    g_free(response->nodes);
+    ds3_str_free(response->start_date);
+    ds3_str_free(response->summary);
+    ds3_str_free(response->user_id);
+    ds3_str_free(response->user_name);
 
     g_free(response);
 }

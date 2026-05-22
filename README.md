@@ -176,7 +176,7 @@ To build the sample, use the following commands:
     $ make deps # Builds the SDK and installs it into directory/containing/source/tree**/install**
     $ make
 
-To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set in environment variables to match the target device. For the simulator, see [Installation Instructions] (https://developer.spectralogic.com/sim-install/) 
+To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http_proxy) are set in environment variables to match the target device. For the simulator, see [Installation Instructions] (https://developer.spectralogic.com/sim-install/) 
 
     $ make run-put-bulk     # create "books" bucket and put files into it
     $ make run-get-service  # list all buckets
@@ -186,7 +186,7 @@ To run it, first ensure that DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and o
 Tests
 -----
 
-The `/test` directory contains function tests of the sdk.  Ensure that the environment variables DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http:proxy) are set.
+The `/test` directory contains function tests of the sdk.  Ensure that the environment variables DS3_ACCESS_KEY, DS3_SECRET_KEY, DS3_ENDPOINT (and optionally http_proxy) are set.
 By default, some large-scale performance tests run in a 'fast' mode with reduced file counts. To run the 'full' version of these tests, set the `DS3_FULL_TESTS` environment variable:
 ```bash
 $ export DS3_FULL_TESTS=1
