@@ -57,6 +57,36 @@ static char* _get_ds3_bucket_acl_permission_str(ds3_bucket_acl_permission input)
     }
 
 }
+static char* _get_ds3_priority_str(ds3_priority input) {
+    if (input == DS3_PRIORITY_CRITICAL) {
+        return "CRITICAL";
+    } else if (input == DS3_PRIORITY_URGENT) {
+        return "URGENT";
+    } else if (input == DS3_PRIORITY_HIGH) {
+        return "HIGH";
+    } else if (input == DS3_PRIORITY_NORMAL) {
+        return "NORMAL";
+    } else if (input == DS3_PRIORITY_LOW) {
+        return "LOW";
+    } else if (input == DS3_PRIORITY_BACKGROUND) {
+        return "BACKGROUND";
+    } else {
+        return "";
+    }
+
+}
+static char* _get_ds3_job_request_type_str(ds3_job_request_type input) {
+    if (input == DS3_JOB_REQUEST_TYPE_PUT) {
+        return "PUT";
+    } else if (input == DS3_JOB_REQUEST_TYPE_GET) {
+        return "GET";
+    } else if (input == DS3_JOB_REQUEST_TYPE_VERIFY) {
+        return "VERIFY";
+    } else {
+        return "";
+    }
+
+}
 static char* _get_ds3_pool_health_str(ds3_pool_health input) {
     if (input == DS3_POOL_HEALTH_OK) {
         return "OK";
@@ -167,24 +197,6 @@ static char* _get_ds3_auto_inspect_mode_str(ds3_auto_inspect_mode input) {
     }
 
 }
-static char* _get_ds3_priority_str(ds3_priority input) {
-    if (input == DS3_PRIORITY_CRITICAL) {
-        return "CRITICAL";
-    } else if (input == DS3_PRIORITY_URGENT) {
-        return "URGENT";
-    } else if (input == DS3_PRIORITY_HIGH) {
-        return "HIGH";
-    } else if (input == DS3_PRIORITY_NORMAL) {
-        return "NORMAL";
-    } else if (input == DS3_PRIORITY_LOW) {
-        return "LOW";
-    } else if (input == DS3_PRIORITY_BACKGROUND) {
-        return "BACKGROUND";
-    } else {
-        return "";
-    }
-
-}
 static char* _get_ds3_unavailable_media_usage_policy_str(ds3_unavailable_media_usage_policy input) {
     if (input == DS3_UNAVAILABLE_MEDIA_USAGE_POLICY_ALLOW) {
         return "ALLOW";
@@ -278,18 +290,6 @@ static char* _get_ds3_data_placement_rule_state_str(ds3_data_placement_rule_stat
         return "NORMAL";
     } else if (input == DS3_DATA_PLACEMENT_RULE_STATE_INCLUSION_IN_PROGRESS) {
         return "INCLUSION_IN_PROGRESS";
-    } else {
-        return "";
-    }
-
-}
-static char* _get_ds3_job_request_type_str(ds3_job_request_type input) {
-    if (input == DS3_JOB_REQUEST_TYPE_PUT) {
-        return "PUT";
-    } else if (input == DS3_JOB_REQUEST_TYPE_GET) {
-        return "GET";
-    } else if (input == DS3_JOB_REQUEST_TYPE_VERIFY) {
-        return "VERIFY";
     } else {
         return "";
     }
@@ -606,10 +606,14 @@ static char* _get_ds3_tape_failure_type_str(ds3_tape_failure_type input) {
         return "REIMPORT_REQUIRED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_SERIAL_NUMBER_MISMATCH) {
         return "SERIAL_NUMBER_MISMATCH";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_SINGLE_PARTITION) {
+        return "SINGLE_PARTITION";
     } else if (input == DS3_TAPE_FAILURE_TYPE_VERIFY_FAILED) {
         return "VERIFY_FAILED";
     } else if (input == DS3_TAPE_FAILURE_TYPE_WRITE_FAILED) {
         return "WRITE_FAILED";
+    } else if (input == DS3_TAPE_FAILURE_TYPE_WRITE_SOURCE_FAILED) {
+        return "WRITE_SOURCE_FAILED";
     } else {
         return "";
     }
@@ -967,12 +971,20 @@ void ds3_request_set_allow_new_job_requests(const ds3_request* request, ds3_bool
     _set_query_param_ds3_bool(request, "allow_new_job_requests", value);
 
 }
+void ds3_request_set_allow_rollback(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "allow_rollback", value);
+
+}
 void ds3_request_set_always_force_put_job_creation(const ds3_request* request, ds3_bool value) {
     _set_query_param_ds3_bool(request, "always_force_put_job_creation", value);
 
 }
 void ds3_request_set_always_minimize_spanning_across_media(const ds3_request* request, ds3_bool value) {
     _set_query_param_ds3_bool(request, "always_minimize_spanning_across_media", value);
+
+}
+void ds3_request_set_always_rollback(const ds3_request* request, ds3_bool value) {
+    _set_query_param_ds3_bool(request, "always_rollback", value);
 
 }
 void ds3_request_set_assigned_to_storage_domain(const ds3_request* request, ds3_bool value) {
@@ -1081,6 +1093,10 @@ void ds3_request_set_cached_only(const ds3_request* request, ds3_bool value) {
 }
 void ds3_request_set_canceled_due_to_timeout(const ds3_request* request, ds3_bool value) {
     _set_query_param_ds3_bool(request, "canceled_due_to_timeout", value);
+
+}
+void ds3_request_set_characterize(const ds3_request* request, ds3_bool value) {
+    _set_query_param_flag(request, "characterize", value);
 
 }
 void ds3_request_set_checksum_type_ds3_checksum_type(const ds3_request* request, const ds3_checksum_type value) {
@@ -1299,10 +1315,6 @@ void ds3_request_set_key_ds3_feature_key_type(const ds3_request* request, const 
     _set_query_param(request, "key", (const char*)_get_ds3_feature_key_type_str(value));
 
 }
-void ds3_request_set_key_marker(const ds3_request* request, const char * const value) {
-    _set_query_param(request, "key_marker", value);
-
-}
 void ds3_request_set_last_page(const ds3_request* request, ds3_bool value) {
     _set_query_param_flag(request, "last_page", value);
 
@@ -1343,6 +1355,10 @@ void ds3_request_set_max_buckets(const ds3_request* request, const int value) {
     _set_query_param_int(request, "max_buckets", value);
 
 }
+void ds3_request_set_max_cache_percent(const ds3_request* request, const float value) {
+    _set_query_param_float(request, "max_cache_percent", value);
+
+}
 void ds3_request_set_max_capacity_in_bytes(const ds3_request* request, const uint64_t value) {
     _set_query_param_uint64_t(request, "max_capacity_in_bytes", value);
 
@@ -1359,20 +1375,12 @@ void ds3_request_set_max_number_of_concurrent_jobs(const ds3_request* request, c
     _set_query_param_int(request, "max_number_of_concurrent_jobs", value);
 
 }
-void ds3_request_set_max_parts(const ds3_request* request, const int value) {
-    _set_query_param_int(request, "max_parts", value);
-
-}
 void ds3_request_set_max_tape_fragmentation_percent(const ds3_request* request, const int value) {
     _set_query_param_int(request, "max_tape_fragmentation_percent", value);
 
 }
 void ds3_request_set_max_upload_size(const ds3_request* request, const uint64_t value) {
     _set_query_param_uint64_t(request, "max_upload_size", value);
-
-}
-void ds3_request_set_max_uploads(const ds3_request* request, const int value) {
-    _set_query_param_int(request, "max_uploads", value);
 
 }
 void ds3_request_set_max_versions_to_keep(const ds3_request* request, const int value) {
@@ -1461,10 +1469,6 @@ void ds3_request_set_page_offset(const ds3_request* request, const int value) {
 }
 void ds3_request_set_page_start_marker(const ds3_request* request, const char * const value) {
     _set_query_param(request, "page_start_marker", value);
-
-}
-void ds3_request_set_part_number_marker(const ds3_request* request, const int value) {
-    _set_query_param_int(request, "part_number_marker", value);
 
 }
 void ds3_request_set_partially_verified_end_of_tape(const ds3_request* request, const char * const value) {
@@ -1779,10 +1783,6 @@ void ds3_request_set_unavailable_tape_partition_max_job_retry_in_mins(const ds3_
     _set_query_param_int(request, "unavailable_tape_partition_max_job_retry_in_mins", value);
 
 }
-void ds3_request_set_upload_id_marker(const ds3_request* request, const char * const value) {
-    _set_query_param(request, "upload_id_marker", value);
-
-}
 void ds3_request_set_user_id(const ds3_request* request, const char * const value) {
     _set_query_param(request, "user_id", value);
 
@@ -1896,13 +1896,6 @@ static ds3_str* _build_path(const char *const path_prefix, const char *const buc
     return buildPathArgs;
 }
 
-ds3_request* ds3_init_abort_multi_part_upload_request(const char *const bucket_name, const char *const object_name, const char* upload_id) {
-    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/", bucket_name, object_name));
-    if (upload_id != NULL) {
-        _set_query_param((ds3_request*) request, "upload_id", upload_id);
-    }
-    return (ds3_request*) request;
-}
 ds3_request* ds3_init_complete_blob_request(const char *const bucket_name, const char *const object_name, const char* blob, const char* job) {
     struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/", bucket_name, object_name));
     if (blob != NULL) {
@@ -1913,28 +1906,8 @@ ds3_request* ds3_init_complete_blob_request(const char *const bucket_name, const
     }
     return (ds3_request*) request;
 }
-ds3_request* ds3_init_complete_multi_part_upload_request(const char *const bucket_name, const char *const object_name, const char* upload_id, const ds3_complete_multipart_upload_response* mpu_list) {
-    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/", bucket_name, object_name));
-    if (upload_id != NULL) {
-        _set_query_param((ds3_request*) request, "upload_id", upload_id);
-    }
-    request->mpu_list = (ds3_complete_multipart_upload_response*) mpu_list;
-
-    return (ds3_request*) request;
-}
 ds3_request* ds3_init_put_bucket_request(const char *const bucket_name) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, NULL));
-    return (ds3_request*) request;
-}
-ds3_request* ds3_init_put_multi_part_upload_part_request(const char *const bucket_name, const char *const object_name, const int part_number, const char* upload_id) {
-    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/", bucket_name, object_name));
-    char tmp_buff[32];
-    sprintf(tmp_buff, "%d", part_number);
-    _set_query_param((ds3_request*) request, "part_number", tmp_buff);
-
-    if (upload_id != NULL) {
-        _set_query_param((ds3_request*) request, "upload_id", upload_id);
-    }
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_object_request(const char *const bucket_name, const char *const object_name, const uint64_t length) {
@@ -1979,25 +1952,6 @@ ds3_request* ds3_init_head_bucket_request(const char *const bucket_name) {
 }
 ds3_request* ds3_init_head_object_request(const char *const bucket_name, const char *const object_name) {
     struct _ds3_request* request = _common_request_init(HTTP_HEAD, _build_path("/", bucket_name, object_name));
-    return (ds3_request*) request;
-}
-ds3_request* ds3_init_initiate_multi_part_upload_request(const char *const bucket_name, const char *const object_name) {
-    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/", bucket_name, object_name));
-    _set_query_param((ds3_request*) request, "uploads", NULL);
-
-    return (ds3_request*) request;
-}
-ds3_request* ds3_init_list_multi_part_upload_parts_request(const char *const bucket_name, const char *const object_name, const char* upload_id) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, object_name));
-    if (upload_id != NULL) {
-        _set_query_param((ds3_request*) request, "upload_id", upload_id);
-    }
-    return (ds3_request*) request;
-}
-ds3_request* ds3_init_list_multi_part_uploads_request(const char *const bucket_name) {
-    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/", bucket_name, NULL));
-    _set_query_param((ds3_request*) request, "uploads", NULL);
-
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_put_bucket_acl_for_group_spectra_s3_request(const char* bucket_id, const char* group_id, const ds3_bucket_acl_permission permission) {
@@ -2123,6 +2077,18 @@ ds3_request* ds3_init_modify_bucket_spectra_s3_request(const char *const resourc
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/bucket/", resource_id, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_put_cache_throttle_rule_spectra_s3_request(const float max_cache_percent) {
+    struct _ds3_request* request = _common_request_init(HTTP_POST, _build_path("/_rest_/cache_throttle_rule/", NULL, NULL));
+    char tmp_buff[32];
+    sprintf(tmp_buff, "%f", max_cache_percent);
+    _set_query_param((ds3_request*) request, "max_cache_percent", tmp_buff);
+
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_delete_cache_throttle_rule_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_DELETE, _build_path("/_rest_/cache_throttle_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_force_full_cache_reclaim_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/cache_filesystem/", NULL, NULL));
     _set_query_param((ds3_request*) request, "reclaim", NULL);
@@ -2141,8 +2107,20 @@ ds3_request* ds3_init_get_cache_state_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/cache_state/", NULL, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_get_cache_throttle_rule_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/cache_throttle_rule/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_cache_throttle_rules_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/cache_throttle_rule/", NULL, NULL));
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_modify_cache_filesystem_spectra_s3_request(const char *const resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/cache_filesystem/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_modify_cache_throttle_rule_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/cache_throttle_rule/", resource_id, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_bucket_capacity_summary_spectra_s3_request(const char* bucket_id, const char* storage_domain_id) {
@@ -2609,8 +2587,21 @@ ds3_request* ds3_init_get_job_creation_failures_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_creation_failed/", NULL, NULL));
     return (ds3_request*) request;
 }
+ds3_request* ds3_init_get_job_entries_spectra_s3_request(const char* job_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job_chunk_dao/", NULL, NULL));
+    if (job_id != NULL) {
+        _set_query_param((ds3_request*) request, "job_id", job_id);
+    }
+    return (ds3_request*) request;
+}
 ds3_request* ds3_init_get_job_spectra_s3_request(const char *const resource_id) {
     struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job/", resource_id, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_job_summary_spectra_s3_request(const char *const resource_id) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/job/", resource_id, NULL));
+    _set_query_param((ds3_request*) request, "summary", NULL);
+
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_job_to_replicate_spectra_s3_request(const char *const resource_id) {
@@ -3274,6 +3265,10 @@ ds3_request* ds3_init_modify_storage_domain_spectra_s3_request(const char *const
 }
 ds3_request* ds3_init_force_feature_key_validation_spectra_s3_request(void) {
     struct _ds3_request* request = _common_request_init(HTTP_PUT, _build_path("/_rest_/feature_key/", NULL, NULL));
+    return (ds3_request*) request;
+}
+ds3_request* ds3_init_get_abm_config_spectra_s3_request(void) {
+    struct _ds3_request* request = _common_request_init(HTTP_GET, _build_path("/_rest_/abm_config/", NULL, NULL));
     return (ds3_request*) request;
 }
 ds3_request* ds3_init_get_feature_keys_spectra_s3_request(void) {
